@@ -38,7 +38,8 @@ export default async function MyReportsPage() {
       <div className="mx-auto max-w-3xl space-y-4">
         <p className="text-sm text-muted-foreground">
           Issues you&apos;ve reported with the Report button, and what the support team has
-          done about them. You&apos;ll also get an email when one is updated.
+          done about them. You get an email when you report something, and
+          again whenever there&apos;s an update.
         </p>
 
         {reports.length === 0 ? (

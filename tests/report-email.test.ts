@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { reportChanged, reportUpdateEmail, type ReportChange } from "../lib/report-email";
+import {
+  reportChanged,
+  reportReceivedEmail,
+  reportUpdateEmail,
+  type ReportChange,
+} from "../lib/report-email";
 
 const base: ReportChange = {
   reportNo: 40,
@@ -39,6 +44,44 @@ describe("report update email (issue #41)", () => {
     const { html } = reportUpdateEmail(
       "<b>",
       { ...base, summary: "<script>", note: "a & b" },
+      "https://x",
+    );
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("a &amp; b");
+  });
+});
+
+describe("report received email (issue #47)", () => {
+  it("names the report and its number in the subject", () => {
+    const { subject } = reportReceivedEmail(
+      "Norwood",
+      { reportNo: 47, summary: "Filter not working" },
+      "https://x",
+    );
+    expect(subject).toBe("We've logged your report #47: Filter not working");
+  });
+
+  it("quotes back what they wrote, and links to their reports", () => {
+    const { html } = reportReceivedEmail(
+      "Norwood",
+      { reportNo: 47, summary: "Filter not working", description: "The dropdown does nothing." },
+      "https://x",
+    );
+    expect(html).toContain("Hi Norwood");
+    expect(html).toContain("The dropdown does nothing.");
+    expect(html).toContain("https://x/report");
+  });
+
+  it("leaves out the detail block when they only gave a summary", () => {
+    const { html } = reportReceivedEmail(null, { reportNo: 48, summary: "Slow" }, "https://x");
+    expect(html).toContain("Hi there");
+    expect(html).not.toContain("What you told us");
+  });
+
+  it("escapes what they typed", () => {
+    const { html } = reportReceivedEmail(
+      "<b>",
+      { reportNo: 49, summary: "<script>", description: "a & b" },
       "https://x",
     );
     expect(html).not.toContain("<script>");

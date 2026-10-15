@@ -174,8 +174,9 @@ export function ReportWidget() {
                   <span className="font-semibold text-foreground">
                     #{reportNo}
                   </span>
-                  . We&apos;ll email you when it&apos;s updated, and you can check on it
-                  any time in My reports — thanks for helping us improve.
+                  . We&apos;ve emailed you a copy, and we&apos;ll email again when
+                  there&apos;s an update. You can check on it any time in My
+                  reports — thanks for helping us improve.
                 </p>
                 <div className="flex items-center justify-between gap-2">
                   <Link

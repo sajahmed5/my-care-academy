@@ -4,6 +4,9 @@ import { getUserContext } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
+import { sendEmail } from "@/lib/email";
+import { siteOrigin } from "@/lib/site-url";
+import { reportReceivedEmail } from "@/lib/report-email";
 
 export interface SubmitReportResult {
   ok: boolean;
@@ -78,6 +81,38 @@ export async function submitReportAction(input: {
     entityId: String(data.report_no),
     detail: { summary: summary.slice(0, 200), page: input.pagePath ?? null },
   });
+
+  // Confirm it in writing (issue #47). Best-effort: a mail failure must not
+  // lose a report that is already saved, so nothing here can throw into the
+  // caller and the widget still shows the number on screen either way.
+  if (context.email) {
+    try {
+      const { data: reporter } = await admin
+        .from("users")
+        .select("full_name")
+        .eq("id", context.userId)
+        .maybeSingle();
+      const { subject, html } = reportReceivedEmail(
+        (reporter?.full_name as string | null) ?? null,
+        {
+          reportNo: Number(data.report_no),
+          summary: summary.slice(0, 200),
+          description: input.description?.trim().slice(0, 5000) || null,
+        },
+        await siteOrigin(),
+      );
+      const sent = await sendEmail({ to: context.email, subject, html });
+      await admin.from("email_log").insert({
+        organisation_id: context.organisationId,
+        to_email: context.email,
+        type: "issue_report_received",
+        subject,
+        sent,
+      });
+    } catch (err) {
+      console.error("report confirmation email failed:", err);
+    }
+  }
 
   return { ok: true, reportNo: Number(data.report_no) };
 }
