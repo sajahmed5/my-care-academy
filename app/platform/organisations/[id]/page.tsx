@@ -19,13 +19,30 @@ import { EditOrgForm } from "./edit-org-form";
 import { OrgAdmins, type OrgPerson } from "./org-admins";
 import { OrgNudgeButton } from "../../org-nudge-button";
 
+/** The page in three parts: what is going on, who is in it, how it is set up. */
+const SECTIONS = [
+  { key: "overview", label: "Overview" },
+  { key: "learners", label: "Learners" },
+  { key: "settings", label: "Settings" },
+] as const;
+type Section = (typeof SECTIONS)[number]["key"];
+
 export default async function OrganisationDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ section?: string }>;
 }) {
   const context = await requireRole("platform_admin");
   const { id } = await params;
+  const { section: sectionParam } = await searchParams;
+  // One page used to carry the stats, the admins, every learner and the
+  // settings form in a single scroll; on a 260-learner organisation that was
+  // a page nobody reached the bottom of (Saj, 24 Oct 2026).
+  const section: Section = SECTIONS.some((s) => s.key === sectionParam)
+    ? (sectionParam as Section)
+    : "overview";
 
   const supabase = await createClient();
   const [
@@ -129,29 +146,53 @@ export default async function OrganisationDetailPage({
           <OrgNudgeButton orgId={org.id} />
         </div>
 
-        {/* Engagement at a glance */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatTile label="Learners" value={current.length} icon={Users} color="#0284c7" />
-          <StatTile label="Assigned training complete" value={`${completionPct}%`} icon={CheckCircle2} color="#10b981" hint={`${completed} of ${assigned} courses`} />
-          <StatTile label="With overdue" value={overdueLearners} icon={AlertTriangle} color="#ef4444" />
-          <StatTile label="Inactive 30d+" value={inactive} icon={MoonStar} color="#8b5cf6" />
-          <StatTile label="Never signed in" value={neverActive} icon={UserRoundX} color="#e11d48" />
-        </div>
+        <nav aria-label="Sections" className="flex items-center gap-1 border-b">
+          {SECTIONS.map((s) => (
+            <Link
+              key={s.key}
+              href={`/platform/organisations/${org.id}?section=${s.key}`}
+              aria-current={s.key === section ? "page" : undefined}
+              className={`inline-flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-medium transition-colors ${
+                s.key === section
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {s.label}
+              {s.key === "learners" && (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{learners.length}</span>
+              )}
+            </Link>
+          ))}
+        </nav>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Admins</CardTitle>
-            <CardDescription>
-              Who can manage this organisation. Role changes apply when that
-              person&apos;s session next refreshes.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <OrgAdmins orgId={org.id} admins={admins} promotable={promotable} />
-          </CardContent>
-        </Card>
+        {section === "overview" && (
+          <>
+            {/* Engagement at a glance */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <StatTile label="Learners" value={current.length} icon={Users} color="#0284c7" />
+              <StatTile label="Assigned training complete" value={`${completionPct}%`} icon={CheckCircle2} color="#10b981" hint={`${completed} of ${assigned} courses`} />
+              <StatTile label="With overdue" value={overdueLearners} icon={AlertTriangle} color="#ef4444" />
+              <StatTile label="Inactive 30d+" value={inactive} icon={MoonStar} color="#8b5cf6" />
+              <StatTile label="Never signed in" value={neverActive} icon={UserRoundX} color="#e11d48" />
+            </div>
 
-        {learners.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Admins</CardTitle>
+                <CardDescription>
+                  Who can manage this organisation. Role changes apply when that
+                  person&apos;s session next refreshes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <OrgAdmins orgId={org.id} admins={admins} promotable={promotable} />
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {section === "learners" && (
           <Card>
             <CardHeader>
               <CardTitle>Learners</CardTitle>
@@ -161,45 +202,50 @@ export default async function OrganisationDetailPage({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Capped: a few hundred rows otherwise buries everything below
-                  it, which is what made this page unusable (issues #19/#20). */}
-              <div className="max-h-[32rem] overflow-y-auto">
+              {/* Its own page now, so no scroll cap: the cap existed because
+                  a few hundred rows buried the settings form beneath them
+                  (issues #19/#20). */}
+              {learners.length > 0 ? (
                 <LearnersTable rows={learners} readOnly />
-              </div>
+              ) : (
+                <p className="py-6 text-center text-sm text-muted-foreground">No learners yet.</p>
+              )}
             </CardContent>
           </Card>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Organisation settings</CardTitle>
-            <CardDescription>
-              Package, size, agreed amount, and any features that differ from
-              the package.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <EditOrgForm
-              org={{
-                id: org.id,
-                name: org.name,
-                package_tier: org.package_tier,
-                status: org.status,
-                service_type: org.service_type,
-                size_band: org.size_band,
-                monthly_amount_pence: agreedPence,
-                learners: current.length,
-                overrides: (overrides ?? []).map((o) => ({
-                  feature: o.feature_key as string,
-                  enabled: o.enabled as boolean,
-                  note: (o.note as string | null) ?? null,
-                })),
-              }}
-              tierFeatures={tierFeatures}
-              stripe={stripe}
-            />
-          </CardContent>
-        </Card>
+        {section === "settings" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Organisation settings</CardTitle>
+              <CardDescription>
+                Package, size, agreed amount, and any features that differ from
+                the package.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EditOrgForm
+                org={{
+                  id: org.id,
+                  name: org.name,
+                  package_tier: org.package_tier,
+                  status: org.status,
+                  service_type: org.service_type,
+                  size_band: org.size_band,
+                  monthly_amount_pence: agreedPence,
+                  learners: current.length,
+                  overrides: (overrides ?? []).map((o) => ({
+                    feature: o.feature_key as string,
+                    enabled: o.enabled as boolean,
+                    note: (o.note as string | null) ?? null,
+                  })),
+                }}
+                tierFeatures={tierFeatures}
+                stripe={stripe}
+              />
+            </CardContent>
+          </Card>
+        )}
 
       </div>
     </DashboardShell>
