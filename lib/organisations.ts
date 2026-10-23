@@ -69,3 +69,49 @@ export const ORG_STATUSES = [
 ] as const;
 
 export type OrgStatus = (typeof ORG_STATUSES)[number]["value"];
+
+/**
+ * What an organisation is, which decides which documents and forms it sees.
+ * Not courses — the whole library is available to everyone.
+ */
+export const SERVICE_TYPES = [
+  { value: "homecare", label: "Homecare" },
+  { value: "care_home", label: "Care home" },
+  { value: "both", label: "Both" },
+] as const;
+
+export type ServiceType = (typeof SERVICE_TYPES)[number]["value"];
+
+export function serviceTypeLabel(value: string | null): string {
+  if (!value) return "Not set";
+  return SERVICE_TYPES.find((t) => t.value === value)?.label ?? value;
+}
+
+/**
+ * Size bands. Learners are unlimited on every package and no invite is ever
+ * blocked — the band is what the monthly price is agreed against, because a
+ * flat fee is too steep for a service with a handful of staff.
+ *
+ * Nothing enforces a band. When an organisation grows past the one recorded
+ * against it, the platform admin sees that and decides when to re-price; a
+ * customer's price never moves on its own.
+ */
+export const SIZE_BANDS = [
+  { value: "under_10", label: "Under 10 staff", min: 0, max: 9 },
+  { value: "10_to_25", label: "10–25 staff", min: 10, max: 25 },
+  { value: "over_25", label: "25+ staff", min: 26, max: null },
+] as const;
+
+export type SizeBand = (typeof SIZE_BANDS)[number]["value"];
+
+export function sizeBandLabel(value: string | null): string {
+  if (!value) return "Not set";
+  return SIZE_BANDS.find((b) => b.value === value)?.label ?? value;
+}
+
+/** The band a headcount actually falls in, for comparison with the recorded one. */
+export function bandForHeadcount(learners: number): SizeBand {
+  if (learners <= 9) return "under_10";
+  if (learners <= 25) return "10_to_25";
+  return "over_25";
+}
