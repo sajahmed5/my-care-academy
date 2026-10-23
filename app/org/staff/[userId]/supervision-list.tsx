@@ -6,12 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { dueStatus, type DueStatus } from "@/lib/records";
 import {
   SUPERVISION_KINDS,
-  dueStatus,
   kindLabel,
   nextDueOf,
-  type DueStatus,
   type Supervision,
 } from "@/lib/supervisions";
 import { addSupervisionAction, type SupervisionState } from "./actions";

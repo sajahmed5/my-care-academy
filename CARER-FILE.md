@@ -42,7 +42,7 @@ one section among several.
 | Forms completed | `forms.builder` | `form_submissions` | **built** (own area) |
 | Recruitment & right to work | `recruitment.tracker` | `candidates` | **partial** — candidates only, not current staff |
 | Supervisions & appraisals | `people.supervisions` | `supervisions` | **built** — 23 Oct 2026 |
-| Spot checks & competency | `people.competency` *(new)* | new | not built |
+| Spot checks & competency | `people.competency` | `competency_checks` | **built** — 23 Oct 2026 |
 | Complaints & incidents | `complaints.register` | new | **sold, not built** |
 | Actions & tasks | — (core) | derived + `record_actions` | **built** — 23 Oct 2026 |
 
@@ -195,6 +195,11 @@ raises the stakes of every existing rule rather than creating new ones.
    actions in the carer's task list. Gated on `people.supervisions`, which is in no package yet
    — that tick is a commercial decision for the Packages screen.
 4. **Spot checks & competency** — same engine, aimed at existing staff rather than new ones.
+   **Built 23 Oct 2026** (v2.12.7): an area, an outcome, what was seen, when the next one is
+   due, and follow-up actions into the task list. A carer has several areas running at once, so
+   "next due" is the soonest across them and anything short of competent is surfaced at the
+   top. The half it shares with supervisions moved to `lib/records.ts` rather than being
+   copied — two definitions of "overdue" in one product is how this goes wrong.
 5. **Complaints & incidents** — finishes a feature already on the matrix, and brings the
    suggested-training link (below).
 6. **Evidence pack** — last, because it is only as good as what it has to assemble.

@@ -18,10 +18,12 @@ import { NudgeButton } from "../../nudge-button";
 import { UnassignButton } from "../../unassign-button";
 import { AssignToPerson } from "./assign-to-person";
 import { buildPersonTasks, loadPersonActions } from "@/lib/person-tasks";
+import { loadCompetencyChecks } from "@/lib/competency";
 import { loadSupervisions } from "@/lib/supervisions";
 import { SectionPanel } from "./section-panel";
 import { SectionTabs } from "./section-tabs";
 import { sectionByKey, sectionState } from "./sections";
+import { CompetencyList } from "./competency-list";
 import { SupervisionList } from "./supervision-list";
 import { TaskList } from "./task-list";
 import { endOfMonthISO } from "@/lib/assign";
@@ -59,6 +61,7 @@ const INLINE_SECTIONS = new Set([
   "certificates",
   "actions",
   "supervisions",
+  "competency",
 ]);
 
 /** Which courses the list below shows — the tiles switch between these. */
@@ -146,6 +149,10 @@ export default async function StaffDetailPage({
   const supervisions =
     section.key === "supervisions" && state === "open"
       ? await loadSupervisions(supabase, userId)
+      : [];
+  const competencyChecks =
+    section.key === "competency" && state === "open"
+      ? await loadCompetencyChecks(supabase, userId)
       : [];
 
   // The written-down half of the task list, on the tab that shows it. The
@@ -518,6 +525,12 @@ export default async function StaffDetailPage({
         {section.key === "supervisions" && state === "open" && (
           <div id="supervisions" className="scroll-mt-24 space-y-2">
             <SupervisionList userId={userId} supervisions={supervisions} />
+          </div>
+        )}
+
+        {section.key === "competency" && state === "open" && (
+          <div id="competency" className="scroll-mt-24 space-y-2">
+            <CompetencyList userId={userId} checks={competencyChecks} />
           </div>
         )}
 

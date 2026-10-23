@@ -99,6 +99,12 @@ export const FEATURES = [
     isCore: false,
   },
   {
+    key: "people.competency",
+    category: "people",
+    label: "Spot checks & competency",
+    isCore: false,
+  },
+  {
     key: "platform.white_label",
     category: "platform",
     label: "White-label logo",

@@ -99,9 +99,9 @@ export const SECTIONS: SectionDef[] = [
     key: "competency",
     label: "Spot checks & competency",
     blurb:
-      "Medication competency, moving and handling, infection control — repeated on a schedule.",
-    feature: null,
-    built: false,
+      "Medication competency, moving and handling, infection control — watched, recorded and repeated on a schedule.",
+    feature: "people.competency",
+    built: true,
   },
   {
     key: "complaints",
