@@ -1,88 +1,104 @@
 import Link from "next/link";
+import { ClipboardList } from "lucide-react";
 import { requireRole } from "@/lib/auth";
-import { requireFeature } from "@/lib/entitlements";
+import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
-import { buttonVariants } from "@/components/ui/button";
 import { DashboardShell } from "@/components/dashboard-shell";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { FORM_TEMPLATES } from "@/lib/forms";
-import { NewFormForm } from "./new-form";
+import { Card, CardContent } from "@/components/ui/card";
+import { categoryLabel, loadFormLibrary } from "@/lib/form-library";
 
-export default async function FormsPage() {
+/**
+ * The forms an organisation can ask its staff to complete.
+ *
+ * We make the forms; the organisation uses them (Saj, 24 Oct 2026). Filed by
+ * category, with how many asks are open against each. The old builder is
+ * still reachable under "your own forms" for anything bespoke.
+ */
+export default async function OrgFormsPage() {
   const context = await requireRole("org_admin");
-
-  const supabase = await createClient();
   await requireFeature(context, "forms.builder");
 
-  const { data: forms } = await supabase
-    .from("forms")
-    .select("id, title, status, created_at")
-    .order("created_at", { ascending: false });
+  const supabase = await createClient();
+  const [enabled, { data: org }] = await Promise.all([
+    enabledMap(context),
+    supabase.from("organisations").select("service_type").eq("id", context.organisationId!).single(),
+  ]);
+  const templates = await loadFormLibrary(supabase, {
+    enabled,
+    serviceType: (org?.service_type as string | null) ?? null,
+  });
+
+  const { data: open } = await supabase
+    .from("form_assignments")
+    .select("template_id")
+    .is("completed_at", null)
+    .limit(2000);
+  const openCount = new Map<string, number>();
+  for (const a of open ?? []) {
+    openCount.set(a.template_id as string, (openCount.get(a.template_id as string) ?? 0) + 1);
+  }
+
+  const groups = new Map<string, typeof templates>();
+  for (const t of templates) {
+    const list = groups.get(t.category) ?? [];
+    list.push(t);
+    groups.set(t.category, list);
+  }
 
   return (
     <DashboardShell title="Forms" context={context}>
       <div className="mx-auto max-w-3xl space-y-6">
-        <Link href="/org" className="text-sm text-muted-foreground hover:underline">
-          ← Back to console
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Link href="/org" className="text-sm text-muted-foreground hover:underline">
+            ← Back to console
+          </Link>
+          <Link href="/org/forms/own" className="text-sm text-primary hover:underline">
+            Your own forms →
+          </Link>
+        </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>New form</CardTitle>
-            <CardDescription>
-              Start blank or from a template.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <NewFormForm templates={FORM_TEMPLATES} />
-          </CardContent>
-        </Card>
+        <p className="text-sm text-muted-foreground">
+          Ask a member of staff to complete a form and it appears in their task
+          list; what they submit is kept against their file.
+        </p>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Your forms</CardTitle>
-            <CardDescription>{forms?.length ?? 0} form(s).</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {forms && forms.length > 0 ? (
-              <ul className="divide-y text-sm">
-                {forms.map((f) => (
-                  <li key={f.id} className="flex items-center justify-between py-3">
-                    <span className="flex items-center gap-2">
-                      <span className="font-medium">{f.title}</span>
-                      <Badge variant={f.status === "published" ? "secondary" : "destructive"}>
-                        {f.status === "published" ? "Published" : "Draft"}
-                      </Badge>
-                    </span>
-                    <span className="flex gap-2">
-                      <Link
-                        href={`/org/forms/${f.id}/submissions`}
-                        className={buttonVariants({ size: "sm", variant: "outline" })}
-                      >
-                        Submissions
-                      </Link>
-                      <Link
-                        href={`/org/forms/${f.id}`}
-                        className={buttonVariants({ size: "sm" })}
-                      >
-                        Edit
-                      </Link>
-                    </span>
-                  </li>
+        {templates.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-muted-foreground">
+              Nothing in the library for your service yet.
+            </CardContent>
+          </Card>
+        ) : (
+          [...groups.entries()].map(([category, items]) => (
+            <section key={category} className="space-y-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">{categoryLabel(category)}</h3>
+              <div className="space-y-2">
+                {items.map((t) => (
+                  <Card key={t.id}>
+                    <CardContent className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-6">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <ClipboardList className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+                        <div className="min-w-0">
+                          <Link href={`/org/forms/library/${t.code}`} className="font-medium hover:underline">
+                            {t.title}
+                          </Link>
+                          <p className="text-xs text-muted-foreground">
+                            {t.description ?? `${t.fieldCount} questions`}
+                          </p>
+                        </div>
+                      </div>
+                      {(openCount.get(t.id) ?? 0) > 0 && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                          {openCount.get(t.id)} open
+                        </span>
+                      )}
+                    </CardContent>
+                  </Card>
                 ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">No forms yet.</p>
-            )}
-          </CardContent>
-        </Card>
+              </div>
+            </section>
+          ))
+        )}
       </div>
     </DashboardShell>
   );

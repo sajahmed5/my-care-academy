@@ -106,6 +106,31 @@ and an importer that leaves published text alone on re-run.
 
 ---
 
+## 1b. The forms library
+
+Decided 24 Oct 2026 and **built** (v2.13.9): the forms feature had shipped as a builder — a
+manager made forms from three code templates and, because the fill page required `org_admin`,
+filled them in on the carer's behalf. That is the wrong way round. We make the forms; companies
+use them.
+
+- **Authored centrally**, at `/platform/forms`: title, category (recruitment, quality, reviews,
+  care, HR, other), pack, and the fields — the builder's own field model, so conditionals and
+  required flags carry over. Saving changed fields bumps the version.
+- **Assigned by an organisation**, at `/org/forms` → a form → "Ask someone to complete it":
+  everyone or a picked few, a due date, a note. Someone who already has it open is skipped.
+- **Completed by the carer** on their own login at `/learn/forms`, validated against the fields
+  they were shown (a hidden conditional question is never required), with a typed name as the
+  signature. The response is the carer's own row; a manager cannot write one.
+- **In the task list and the carer file**: an open ask is a task — "Complete Supervision record,
+  due 1 Nov" — and the file's Forms section shows what was asked and what was done.
+
+The three builder templates were seeded as the first published forms. The old builder still
+exists under `/org/forms/own` for anything bespoke.
+
+Still to do: file uploads on a library form (the field type exists; the fill page says to hand
+the document over instead), responses in the evidence pack, reading a submitted response in
+full from the manager's side, and turning the 63 Word forms into real fields.
+
 ## 2. White-label
 
 Decided: an organisation uploads its own logo **on its own profile**, and it then appears on

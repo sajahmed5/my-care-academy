@@ -73,7 +73,7 @@ export const FEATURES = [
   {
     key: "forms.builder",
     category: "forms",
-    label: "Forms builder",
+    label: "Forms library",
     isCore: false,
   },
   // Two versions of the same shelf: the basic set, and the full compliance

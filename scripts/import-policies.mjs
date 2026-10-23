@@ -38,7 +38,6 @@ const ROOT =
   process.env.MCA_LIBRARY ??
   "/Users/saj/Library/CloudStorage/OneDrive-HGCareServicesLtd/HG Care - Share Drive/My Care Academy";
 
-const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
 /** Word paragraphs, with their style, straight out of document.xml. */
 function paragraphs(buf) {
@@ -50,7 +49,12 @@ function paragraphs(buf) {
   // One <w:p> per paragraph; <w:t> holds the text; <w:pStyle w:val="…"> the style.
   for (const [, body] of xml.matchAll(/<w:p[ >]([\s\S]*?)<\/w:p>/g)) {
     const style = body.match(/<w:pStyle w:val="([^"]+)"/)?.[1] ?? "Normal";
-    const text = [...body.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g)]
+    // Exactly <w:t> or <w:t …>, never <w:tbl>, <w:tc>, <w:tcPr> and the rest
+    // of the table vocabulary that also starts with "w:t". The looser pattern
+    // swallowed a cell's whole XML up to its first real run, which is how a
+    // sign-off table once rendered as <w:tblPrEx><w:tblCellMar>… on a live
+    // policy (Saj, 24 Oct 2026).
+    const text = [...body.matchAll(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g)]
       .map((m) => m[1])
       .join("")
       .replace(/&amp;/g, "&")

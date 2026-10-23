@@ -151,7 +151,45 @@ export default async function PlatformDocumentsPage({
           </Card>
         )}
 
-        <PackActions />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <PackActions />
+          {/* Status and type, as links: the list is filtered server-side and a
+              filter should survive a refresh and a shared URL. */}
+          <nav aria-label="Filter" className="flex flex-wrap items-center gap-1 text-xs">
+            {[
+              { label: "All", href: "/platform/documents", on: !status && !kind },
+              { label: "Published", href: "/platform/documents?status=published", on: status === "published" },
+              { label: "Draft", href: "/platform/documents?status=draft", on: status === "draft" },
+              { label: "Retired", href: "/platform/documents?status=retired", on: status === "retired" },
+            ].map((f) => (
+              <Link
+                key={f.label}
+                href={f.href}
+                className={`rounded-full px-2.5 py-1 font-medium ${
+                  f.on ? "bg-[#134f63] text-white" : "bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {f.label}
+              </Link>
+            ))}
+            <span className="mx-1 text-muted-foreground">·</span>
+            {[
+              { label: "Policies", value: "policy" },
+              { label: "Forms", value: "form" },
+              { label: "Logs", value: "log" },
+            ].map((f) => (
+              <Link
+                key={f.value}
+                href={`/platform/documents?${status ? `status=${status}&` : ""}kind=${f.value}`}
+                className={`rounded-full px-2.5 py-1 font-medium ${
+                  kind === f.value ? "bg-[#134f63] text-white" : "bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {f.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
 
         {[...groups.entries()].map(([category, items]) => (
           <section key={category} className="space-y-2">

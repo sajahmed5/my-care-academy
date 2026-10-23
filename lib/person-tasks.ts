@@ -25,7 +25,7 @@ import { daysUntil, expiryFlag, isExpired, isOverdue } from "./engine-logic";
 /** Inside this many days, a dated thing is "soon" rather than merely pending. */
 export const DUE_SOON_DAYS = 30;
 
-export type TaskKind = "training" | "certificate" | "action";
+export type TaskKind = "training" | "certificate" | "action" | "form";
 
 export type TaskUrgency = "overdue" | "due_soon" | "open";
 
@@ -54,6 +54,14 @@ export interface ActionRow {
   detail: string | null;
   due_date: string | null;
   source_type: string;
+  completed_at: string | null;
+}
+
+/** An open ask to complete a form, as the task list needs it. */
+export interface FormAsk {
+  id: string;
+  title: string;
+  due_date: string | null;
   completed_at: string | null;
 }
 
@@ -97,11 +105,13 @@ export function buildPersonTasks({
   enrolments,
   certificates,
   actions,
+  forms = [],
   now,
 }: {
   enrolments: Enrolment[];
   certificates: Certificate[];
   actions: ActionRow[];
+  forms?: FormAsk[];
   now: Date;
 }): PersonTask[] {
   const tasks: PersonTask[] = [];
@@ -163,6 +173,22 @@ export function buildPersonTasks({
       urgency: urgencyOf(a.due_date, now),
       actionId: a.id,
       source: SOURCE_LABEL[a.source_type] ?? "Action",
+    });
+  }
+
+  // Forms a manager has asked for. Completed by submitting the form, so no
+  // tick here — the same rule as training.
+  for (const f of forms) {
+    if (f.completed_at) continue;
+    tasks.push({
+      key: `form:${f.id}`,
+      kind: "form",
+      title: `Complete ${f.title}`,
+      detail: null,
+      dueDate: f.due_date,
+      urgency: urgencyOf(f.due_date, now),
+      actionId: null,
+      source: "Form",
     });
   }
 

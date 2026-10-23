@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPersonTasks, type ActionRow } from "../lib/person-tasks";
+import { buildPersonTasks, type ActionRow, type FormAsk } from "../lib/person-tasks";
 import type { Certificate, Enrolment } from "../lib/learner-data";
 
 const NOW = new Date("2026-10-23T12:00:00Z");
@@ -49,11 +49,13 @@ const build = (args: {
   enrolments?: Enrolment[];
   certificates?: Certificate[];
   actions?: ActionRow[];
+  forms?: FormAsk[];
 }) =>
   buildPersonTasks({
     enrolments: args.enrolments ?? [],
     certificates: args.certificates ?? [],
     actions: args.actions ?? [],
+    forms: args.forms ?? [],
     now: NOW,
   });
 
@@ -168,5 +170,26 @@ describe("what can be ticked off", () => {
   it("says where an action came from", () => {
     const [task] = build({ actions: [action({ source_type: "supervision" })] });
     expect(task.source).toBe("From a supervision");
+  });
+});
+
+describe("forms a manager has asked for", () => {
+  it("become tasks until they are completed", () => {
+    const tasks = build({
+      forms: [
+        { id: "open", title: "Supervision record", due_date: "2026-11-01", completed_at: null },
+        { id: "done", title: "Job application", due_date: null, completed_at: "2026-10-20T10:00:00Z" },
+      ],
+    });
+    expect(tasks.map((t) => t.key)).toEqual(["form:open"]);
+    expect(tasks[0].title).toBe("Complete Supervision record");
+    expect(tasks[0].urgency).toBe("due_soon");
+  });
+
+  it("cannot be ticked off from the list — only submitted", () => {
+    const [task] = build({
+      forms: [{ id: "f", title: "Spot check", due_date: null, completed_at: null }],
+    });
+    expect(task.actionId).toBeNull();
   });
 });

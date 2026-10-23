@@ -71,11 +71,9 @@ export const SECTIONS: SectionDef[] = [
   {
     key: "forms",
     label: "Forms",
-    blurb: "Forms this person has completed and signed.",
+    blurb: "Forms this person has been asked to complete, and has.",
     feature: "forms.builder",
     built: true,
-    href: "/org/forms",
-    hrefLabel: "Open Forms",
   },
   {
     key: "recruitment",

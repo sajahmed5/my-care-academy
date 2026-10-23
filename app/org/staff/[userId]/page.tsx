@@ -18,6 +18,7 @@ import { NudgeButton } from "../../nudge-button";
 import { UnassignButton } from "../../unassign-button";
 import { AssignToPerson } from "./assign-to-person";
 import { buildPersonTasks, loadPersonActions } from "@/lib/person-tasks";
+import { loadAssignmentsForPerson } from "@/lib/form-library";
 import { loadCompetencyChecks } from "@/lib/competency";
 import {
   loadIncidentTraining,
@@ -71,6 +72,7 @@ const INLINE_SECTIONS = new Set([
   "supervisions",
   "competency",
   "complaints",
+  "forms",
 ]);
 
 /** Which courses the list below shows — the tiles switch between these. */
@@ -166,12 +168,23 @@ export default async function StaffDetailPage({
 
   // The written-down half of the task list, on the tab that shows it. The
   // derived half is already in hand: enrolments and certificates above.
-  const actionRows =
-    section.key === "actions" ? await loadPersonActions(supabase, userId) : [];
+  const [actionRows, formAsks] =
+    section.key === "actions" || section.key === "forms"
+      ? await Promise.all([
+          loadPersonActions(supabase, userId),
+          enabled["forms.builder"] ? loadAssignmentsForPerson(supabase, userId) : Promise.resolve([]),
+        ])
+      : [[], []];
   const tasks = buildPersonTasks({
     enrolments,
     certificates,
     actions: actionRows,
+    forms: formAsks.map((a) => ({
+      id: a.id,
+      title: a.template_title,
+      due_date: a.due_date,
+      completed_at: a.completed_at,
+    })),
     now,
   });
   const doneActions = actionRows.filter((a) => a.completed_at);
@@ -589,6 +602,54 @@ export default async function StaffDetailPage({
               incidents={incidents}
               suggestions={suggestions}
             />
+          </div>
+        )}
+
+        {section.key === "forms" && state === "open" && (
+          <div id="forms" className="scroll-mt-24 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">
+                Forms ({formAsks.length})
+              </h3>
+              <Link href="/org/forms" className="text-sm font-medium text-primary hover:underline">
+                Ask them to complete a form →
+              </Link>
+            </div>
+            {formAsks.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                  No forms asked of this person yet.
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {formAsks.map((a) => (
+                  <Card key={a.id}>
+                    <CardContent className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-6">
+                      <div>
+                        <Link href={`/org/forms/library/${a.template_code}`} className="font-medium hover:underline">
+                          {a.template_title}
+                        </Link>
+                        <p className="text-xs text-muted-foreground">
+                          {a.completed_at
+                            ? `Completed ${fmtDate(a.completed_at)}`
+                            : a.due_date
+                              ? `Due ${fmtDate(a.due_date)}`
+                              : "No date"}
+                        </p>
+                      </div>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          a.completed_at ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {a.completed_at ? "Completed" : "Open"}
+                      </span>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
