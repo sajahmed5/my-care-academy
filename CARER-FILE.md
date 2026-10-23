@@ -43,12 +43,12 @@ one section among several.
 | Recruitment & right to work | `recruitment.tracker` | `candidates` | **partial** — candidates only, not current staff |
 | Supervisions & appraisals | `people.supervisions` | `supervisions` | **built** — 23 Oct 2026 |
 | Spot checks & competency | `people.competency` | `competency_checks` | **built** — 23 Oct 2026 |
-| Complaints & incidents | `complaints.register` | new | **sold, not built** |
+| Complaints & incidents | `complaints.register` | `incidents` (+ people, training) | **built** — 23 Oct 2026 |
 | Actions & tasks | — (core) | derived + `record_actions` | **built** — 23 Oct 2026 |
 
-Two of these — `complaints.register` and the policies library — are already tickable on the
-Packages screen with nothing behind them. They get built or they come off the matrix; a tick
-that grants nothing is worse than an absent feature.
+The policies library is still tickable on the Packages screen with nothing behind it. It gets
+built or it comes off the matrix; a tick that grants nothing is worse than an absent feature.
+(`complaints.register` was the other one. It is built, as of 23 Oct 2026.)
 
 ### Behaviour
 
@@ -201,7 +201,11 @@ raises the stakes of every existing rule rather than creating new ones.
    top. The half it shares with supervisions moved to `lib/records.ts` rather than being
    copied — two definitions of "overdue" in one product is how this goes wrong.
 5. **Complaints & incidents** — finishes a feature already on the matrix, and brings the
-   suggested-training link (below).
+   suggested-training link (below). **Built 23 Oct 2026** (v2.12.8): complaints, accidents,
+   near misses and safeguarding concerns, with a register at `/org/incidents` and the people
+   named in each one tagged from their own file. Closing one asks what came of it. The
+   suggestion panel sits under each record in the carer's file; `incident_training` records
+   which course a manager assigned, when, and why.
 6. **Evidence pack** — last, because it is only as good as what it has to assemble.
 
 **Suggested training, not automatic.** When a complaint or a failed spot check is linked to a

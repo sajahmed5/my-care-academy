@@ -107,9 +107,9 @@ export const SECTIONS: SectionDef[] = [
     key: "complaints",
     label: "Complaints & incidents",
     blurb:
-      "Complaints, accidents and safeguarding concerns this person was involved in, and what came of them.",
+      "Complaints, accidents and safeguarding concerns this person was named in, what came of them, and the training they suggest.",
     feature: "complaints.register",
-    built: false,
+    built: true,
   },
   {
     // Not feature-gated, and deliberately: the list is mostly a view over

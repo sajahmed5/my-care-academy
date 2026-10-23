@@ -19,11 +19,18 @@ import { UnassignButton } from "../../unassign-button";
 import { AssignToPerson } from "./assign-to-person";
 import { buildPersonTasks, loadPersonActions } from "@/lib/person-tasks";
 import { loadCompetencyChecks } from "@/lib/competency";
+import {
+  loadIncidentTraining,
+  loadIncidentsForPerson,
+  suggestionsFor,
+  type Suggestion,
+} from "@/lib/incidents";
 import { loadSupervisions } from "@/lib/supervisions";
 import { SectionPanel } from "./section-panel";
 import { SectionTabs } from "./section-tabs";
 import { sectionByKey, sectionState } from "./sections";
 import { CompetencyList } from "./competency-list";
+import { IncidentList } from "./incident-list";
 import { SupervisionList } from "./supervision-list";
 import { TaskList } from "./task-list";
 import { endOfMonthISO } from "@/lib/assign";
@@ -62,6 +69,7 @@ const INLINE_SECTIONS = new Set([
   "actions",
   "supervisions",
   "competency",
+  "complaints",
 ]);
 
 /** Which courses the list below shows — the tiles switch between these. */
@@ -166,6 +174,37 @@ export default async function StaffDetailPage({
     now,
   });
   const doneActions = actionRows.filter((a) => a.completed_at);
+
+  // Complaints this person is named in, and what each one suggests. The
+  // suggestion needs the catalogue and what has already been assigned off
+  // that record — both only on this tab, and only when entitled.
+  const incidents =
+    section.key === "complaints" && state === "open"
+      ? await loadIncidentsForPerson(supabase, userId)
+      : [];
+  const suggestions: Record<string, Suggestion[]> = {};
+  if (incidents.length) {
+    const [{ data: courseRows }, assignedByIncident] = await Promise.all([
+      supabase.from("courses").select("id, slug, title").order("title"),
+      loadIncidentTraining(
+        supabase,
+        incidents.map((i) => i.id),
+        userId,
+      ),
+    ]);
+    const catalogue = (courseRows ?? []).map((c) => ({
+      id: c.id as string,
+      slug: c.slug as string,
+      title: c.title as string,
+    }));
+    for (const incident of incidents) {
+      suggestions[incident.id] = suggestionsFor({
+        category: incident.category,
+        courses: catalogue,
+        assigned: assignedByIncident.get(incident.id) ?? new Map(),
+      });
+    }
+  }
 
   // Newest certificate per course (list is already issued_at desc).
   const certByCourse = new Map<string, (typeof certificates)[number]>();
@@ -531,6 +570,16 @@ export default async function StaffDetailPage({
         {section.key === "competency" && state === "open" && (
           <div id="competency" className="scroll-mt-24 space-y-2">
             <CompetencyList userId={userId} checks={competencyChecks} />
+          </div>
+        )}
+
+        {section.key === "complaints" && state === "open" && (
+          <div id="complaints" className="scroll-mt-24 space-y-2">
+            <IncidentList
+              userId={userId}
+              incidents={incidents}
+              suggestions={suggestions}
+            />
           </div>
         )}
 
