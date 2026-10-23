@@ -115,6 +115,39 @@ describe("my_entitlements", () => {
   });
 });
 
+// The old platform-admin switches and the Stripe webhook still write the
+// boolean columns until their replacements ship. A write to a switch must
+// still change what the organisation can reach — otherwise it saves, audits,
+// and silently does nothing.
+describe("the legacy add-on switches", () => {
+  it("still take effect when written", async () => {
+    const { client, orgId } = await orgAdminOn("core", "legacy");
+    expect(await has(client, "forms.builder")).toBe(false);
+
+    await adminClient()
+      .from("organisations")
+      .update({ forms_enabled: true })
+      .eq("id", orgId);
+    expect(await has(client, "forms.builder")).toBe(true);
+
+    await adminClient()
+      .from("organisations")
+      .update({ forms_enabled: false })
+      .eq("id", orgId);
+    expect(await has(client, "forms.builder")).toBe(false);
+  });
+
+  it("leave a package's features alone when a write does not name them", async () => {
+    const { client, orgId } = await orgAdminOn("core", "rename");
+    await adminClient()
+      .from("organisations")
+      .update({ name: `Renamed ${RUN}`, package_tier: "core_forms" })
+      .eq("id", orgId);
+    // No switch was written, so the package decides.
+    expect(await has(client, "forms.builder")).toBe(true);
+  });
+});
+
 describe("org_has_feature", () => {
   // It takes an arbitrary organisation id, so an org admin must not be able to
   // call it to find out what another organisation has bought.
