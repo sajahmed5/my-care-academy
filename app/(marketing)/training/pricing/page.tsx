@@ -14,10 +14,10 @@ export const metadata: Metadata = {
 };
 
 // Monthly prices per organisation. CONFIRMED by Saj on 7 Oct 2026 as the
-// real prices; he will say if they change. Two other places hold the same
-// numbers and are NOT kept in sync automatically: the Stripe prices behind
-// checkout (STRIPE_PRICE_*) and the MRR estimate on the platform analytics
-// page (PLATFORM_TIER_GBP_*). Change a price here, change those too.
+// real prices; he will say if they change. The Stripe prices behind checkout
+// (STRIPE_PRICE_*) hold the same numbers and are NOT kept in sync
+// automatically — change a price here, change those too. Platform MRR does not
+// use these: it sums each organisation's agreed amount, set on its page.
 // Tier names and features come from lib/organisations, the same source the
 // org Account page uses.
 const PRICE: Record<string, { monthly: number; highlight?: boolean }> = {

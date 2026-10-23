@@ -1,10 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PACKAGE_TIERS, type PackageTier } from "@/lib/organisations";
-import { tierMonthlyGbp, pricingConfigured } from "@/lib/pricing";
+import { FEATURES } from "@/lib/features";
+import { fetchAll } from "@/lib/fetch-all";
 
 export interface Slice {
   label: string;
   value: number;
+}
+export interface FeatureAdoption {
+  key: string;
+  label: string;
+  /** Organisations that can reach it — their package and exceptions combined. */
+  organisations: number;
 }
 export interface CoursePopularity {
   title: string;
@@ -13,11 +20,14 @@ export interface CoursePopularity {
 }
 export interface PlatformAnalytics {
   tierMix: Slice[];
-  addOns: { forms: number; recruitment: number; observations: number };
+  /** Every paid feature, with how many organisations have it. */
+  adoption: FeatureAdoption[];
   subStatus: Slice[];
   payingOrgs: number;
-  /** Monthly recurring revenue estimate in GBP, or null if tier prices unset. */
-  mrr: number | null;
+  /** Agreed monthly amounts of active (non-suspended) organisations, in GBP. */
+  mrr: number;
+  /** Active organisations with no agreed amount recorded, so left out of mrr. */
+  orgsWithoutAmount: number;
   coursePopularity: CoursePopularity[];
   completionsByMonth: Slice[];
   totals: {
@@ -44,12 +54,13 @@ export async function loadPlatformAnalytics(
     { data: certs },
     { data: attempts },
     { data: courses },
+    { data: amounts },
+    { data: ticks },
+    exceptions,
   ] = await Promise.all([
     supabase
       .from("organisations")
-      .select(
-        "package_tier, status, subscription_status, forms_enabled, recruitment_enabled, observations_enabled, stripe_subscription_id",
-      ),
+      .select("id, package_tier, status, subscription_status, stripe_subscription_id"),
     supabase
       .from("users")
       .select("id", { count: "exact" })
@@ -61,34 +72,66 @@ export async function loadPlatformAnalytics(
       .select("passed")
       .not("submitted_at", "is", null),
     supabase.from("courses").select("id, title"),
+    supabase
+      .from("organisation_subscriptions")
+      .select("organisation_id, monthly_amount_pence"),
+    supabase.from("tier_features").select("tier_key, feature_key"),
+    // Organisations × features grows past the 1,000-row cap long before the
+    // other tables here do.
+    fetchAll<{ organisation_id: string; feature_key: string; enabled: boolean }>(
+      (from, to) =>
+        supabase
+          .from("organisation_features")
+          .select("organisation_id, feature_key, enabled")
+          .order("organisation_id")
+          .order("feature_key")
+          .range(from, to),
+    ),
   ]);
 
   const orgRows = orgs ?? [];
 
-  // Tier mix + add-ons + subscription status + MRR.
+  // Tier mix + subscription status + MRR.
   const tierCount = new Map<PackageTier, number>();
   const subCount = new Map<string, number>();
-  let forms = 0,
-    recruitment = 0,
-    observations = 0,
-    payingOrgs = 0;
-  let mrr = 0;
-  const priced = pricingConfigured();
+  const penceByOrg = new Map(
+    (amounts ?? []).map((a) => [a.organisation_id as string, a.monthly_amount_pence as number | null]),
+  );
+  let payingOrgs = 0;
+  let mrrPence = 0;
+  let orgsWithoutAmount = 0;
   for (const o of orgRows) {
     const tier = (o.package_tier ?? "core") as PackageTier;
     tierCount.set(tier, (tierCount.get(tier) ?? 0) + 1);
-    if (o.forms_enabled) forms += 1;
-    if (o.recruitment_enabled) recruitment += 1;
-    if (o.observations_enabled) observations += 1;
     const sub = o.subscription_status ?? "none";
     subCount.set(sub, (subCount.get(sub) ?? 0) + 1);
     if (o.stripe_subscription_id) payingOrgs += 1;
-    // MRR estimate: active (non-suspended) orgs at their tier's list price.
+    // MRR is what active organisations actually agreed to pay, not a list
+    // price per package — prices are agreed per customer, by size band. An
+    // active organisation with nothing recorded is counted separately rather
+    // than as £0, so a missing figure shows up as missing.
     if (o.status !== "suspended") {
-      const price = tierMonthlyGbp(tier);
-      if (price != null) mrr += price;
+      const pence = penceByOrg.get(o.id);
+      if (pence == null) orgsWithoutAmount += 1;
+      else mrrPence += pence;
     }
   }
+
+  // Adoption, resolved the way has_feature() resolves it: an organisation's
+  // exception if it has one, otherwise whether its package includes it.
+  const ticked = new Set((ticks ?? []).map((t) => `${t.tier_key}|${t.feature_key}`));
+  const exception = new Map(
+    exceptions.map((e) => [`${e.organisation_id}|${e.feature_key}`, e.enabled]),
+  );
+  const adoption: FeatureAdoption[] = FEATURES.filter((f) => !f.isCore).map((f) => ({
+    key: f.key,
+    label: f.label,
+    organisations: orgRows.filter(
+      (o) =>
+        exception.get(`${o.id}|${f.key}`) ??
+        ticked.has(`${o.package_tier}|${f.key}`),
+    ).length,
+  }));
 
   const tierMix: Slice[] = PACKAGE_TIERS.map((t) => ({
     label: t.label,
@@ -148,10 +191,11 @@ export async function loadPlatformAnalytics(
 
   return {
     tierMix,
-    addOns: { forms, recruitment, observations },
+    adoption,
     subStatus,
     payingOrgs,
-    mrr: priced ? mrr : null,
+    mrr: mrrPence / 100,
+    orgsWithoutAmount,
     coursePopularity,
     completionsByMonth,
     totals: {

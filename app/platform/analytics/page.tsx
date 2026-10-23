@@ -39,7 +39,7 @@ export default async function AnalyticsPage() {
 
         {/* Headline numbers */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          <StatTile label="MRR (est.)" value={a.mrr != null ? gbp(a.mrr) : "—"} icon={BadgePoundSterling} color="#16a34a" />
+          <StatTile label="MRR" value={gbp(a.mrr)} icon={BadgePoundSterling} color="#16a34a" />
           <StatTile label="Paying orgs" value={a.payingOrgs} icon={Wallet} color="#0d9488" />
           <StatTile label="Organisations" value={a.totals.orgs} icon={Building2} color="#0284c7" />
           <StatTile label="Learners" value={a.totals.learners} icon={Users} color="#7c3aed" />
@@ -47,13 +47,17 @@ export default async function AnalyticsPage() {
           <StatTile label="Pass rate" value={`${a.totals.passRate}%`} icon={Target} color="#ef4444" />
         </div>
 
-        {a.mrr == null && (
+        {a.orgsWithoutAmount > 0 && (
           <p className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-            Revenue is hidden until tier prices are configured. Set{" "}
-            <code>PLATFORM_TIER_GBP_CORE</code>,{" "}
-            <code>PLATFORM_TIER_GBP_CORE_FORMS</code>,{" "}
-            <code>PLATFORM_TIER_GBP_CORE_RECRUITMENT</code> and{" "}
-            <code>PLATFORM_TIER_GBP_FULL</code> (monthly £) to show an MRR estimate.
+            MRR is the sum of each active organisation&apos;s agreed monthly
+            amount. {a.orgsWithoutAmount}{" "}
+            {a.orgsWithoutAmount === 1 ? "organisation has" : "organisations have"}{" "}
+            no amount recorded yet, so {a.orgsWithoutAmount === 1 ? "it isn't" : "they aren't"}{" "}
+            counted —{" "}
+            <Link href="/platform/organisations" className="underline">
+              set it on each organisation&apos;s page
+            </Link>
+            .
           </p>
         )}
 
@@ -66,9 +70,11 @@ export default async function AnalyticsPage() {
             <CardContent>
               <TierMixChart data={a.tierMix} />
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span>Forms add-on: {a.addOns.forms}</span>
-                <span>Recruitment: {a.addOns.recruitment}</span>
-                <span>Observations: {a.addOns.observations}</span>
+                {a.adoption.map((f) => (
+                  <span key={f.key}>
+                    {f.label}: {f.organisations}
+                  </span>
+                ))}
               </div>
             </CardContent>
           </Card>
