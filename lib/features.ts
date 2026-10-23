@@ -24,6 +24,7 @@ export const FEATURE_CATEGORIES = [
   { key: "complaints", label: "Complaints & safeguarding" },
   { key: "forms", label: "Forms" },
   { key: "documents", label: "Documents" },
+  { key: "people", label: "Staff records" },
   { key: "platform", label: "Platform & integration" },
 ] as const;
 
@@ -87,6 +88,14 @@ export const FEATURES = [
     key: "documents.compliance_pack",
     category: "documents",
     label: "Full compliance pack",
+    isCore: false,
+  },
+  // What the employer records about a person. The carer file is where these
+  // are read; CARER-FILE.md is the plan they follow.
+  {
+    key: "people.supervisions",
+    category: "people",
+    label: "Supervisions & appraisals",
     isCore: false,
   },
   {

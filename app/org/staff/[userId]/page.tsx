@@ -18,9 +18,11 @@ import { NudgeButton } from "../../nudge-button";
 import { UnassignButton } from "../../unassign-button";
 import { AssignToPerson } from "./assign-to-person";
 import { buildPersonTasks, loadPersonActions } from "@/lib/person-tasks";
+import { loadSupervisions } from "@/lib/supervisions";
 import { SectionPanel } from "./section-panel";
 import { SectionTabs } from "./section-tabs";
 import { sectionByKey, sectionState } from "./sections";
+import { SupervisionList } from "./supervision-list";
 import { TaskList } from "./task-list";
 import { endOfMonthISO } from "@/lib/assign";
 import { isOverdue, isAssessmentDue, expiryFlag } from "@/lib/engine-logic";
@@ -52,7 +54,12 @@ function statusVariant(e: OrgEnrolment, now: Date): StatusVariant {
 }
 
 /** Sections this page renders itself; the rest get a panel. */
-const INLINE_SECTIONS = new Set(["training", "certificates", "actions"]);
+const INLINE_SECTIONS = new Set([
+  "training",
+  "certificates",
+  "actions",
+  "supervisions",
+]);
 
 /** Which courses the list below shows — the tiles switch between these. */
 type Show = "all" | "in_progress" | "completed" | "overdue";
@@ -132,6 +139,14 @@ export default async function StaffDetailPage({
     title: c.title as string,
     already: assignedIds.has(c.id as string),
   }));
+
+  // Locked sections run no query — CARER-FILE.md §3. The organisation may
+  // still have rows from before a downgrade, and fetching them to grey them
+  // out would be a way to read what they stopped paying for.
+  const supervisions =
+    section.key === "supervisions" && state === "open"
+      ? await loadSupervisions(supabase, userId)
+      : [];
 
   // The written-down half of the task list, on the tab that shows it. The
   // derived half is already in hand: enrolments and certificates above.
@@ -500,7 +515,13 @@ export default async function StaffDetailPage({
           </div>
         )}
 
-        {!INLINE_SECTIONS.has(section.key) && (
+        {section.key === "supervisions" && state === "open" && (
+          <div id="supervisions" className="scroll-mt-24 space-y-2">
+            <SupervisionList userId={userId} supervisions={supervisions} />
+          </div>
+        )}
+
+        {(!INLINE_SECTIONS.has(section.key) || state !== "open") && (
           <SectionPanel
             section={section}
             state={state}

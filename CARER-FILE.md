@@ -41,7 +41,7 @@ one section among several.
 | Care Certificate | `training.observations` | `observations` | **built** (own area) |
 | Forms completed | `forms.builder` | `form_submissions` | **built** (own area) |
 | Recruitment & right to work | `recruitment.tracker` | `candidates` | **partial** — candidates only, not current staff |
-| Supervisions & appraisals | `people.supervisions` *(new)* | new | not built |
+| Supervisions & appraisals | `people.supervisions` | `supervisions` | **built** — 23 Oct 2026 |
 | Spot checks & competency | `people.competency` *(new)* | new | not built |
 | Complaints & incidents | `complaints.register` | new | **sold, not built** |
 | Actions & tasks | — (core) | derived + `record_actions` | **built** — 23 Oct 2026 |
@@ -190,7 +190,10 @@ raises the stakes of every existing rule rather than creating new ones.
    do, certificates at or near expiry, and written-down actions a manager can add and tick off.
    Only the written-down ones can be ticked — a derived task is completed by doing the work.
 3. **Supervisions & appraisals** — the most-asked-for evidence, and the template for every
-   record type after it.
+   record type after it. **Built 23 Oct 2026** (v2.12.6): a dated record with who held it, what
+   was discussed and when the next one is due, and a "what was agreed" box whose lines become
+   actions in the carer's task list. Gated on `people.supervisions`, which is in no package yet
+   — that tick is a commercial decision for the Packages screen.
 4. **Spot checks & competency** — same engine, aimed at existing staff rather than new ones.
 5. **Complaints & incidents** — finishes a feature already on the matrix, and brings the
    suggested-training link (below).
