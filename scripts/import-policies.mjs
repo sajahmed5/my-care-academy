@@ -76,9 +76,14 @@ function toBlocks(paras) {
   let orgHits = 0;
   const blocks = [];
   for (const { style, text } of paras) {
+    // The templates use [ORGANISATION NAME]; one of them still says
+    // "HG Care Services" where that should be, which is the only reason the
+    // audit of 24 Oct 2026 found the company named at all. Longest form first.
     const value = text
       .replace(/\[ORGANISATION NAME\]/gi, () => (orgHits++, ORG))
-      .replace(/\[COMPANY NAME\]/gi, () => (orgHits++, ORG));
+      .replace(/\[COMPANY NAME\]/gi, () => (orgHits++, ORG))
+      .replace(/HG\s+Care\s+Services(?:\s+(?:Limited|Ltd\.?))?/g, () => (orgHits++, ORG))
+      .replace(/\bHG\s+Care\b/g, () => (orgHits++, ORG));
 
     // A paragraph that is entirely bracketed is guidance for the provider, not
     // policy text. Kept, and marked, because deleting it would leave a policy
