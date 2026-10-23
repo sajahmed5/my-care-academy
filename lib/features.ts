@@ -1,0 +1,113 @@
+/**
+ * The feature catalogue — the things a package can include.
+ *
+ * This mirrors the feature_categories and features rows seeded by
+ * supabase/migrations/20261023120000_feature_catalogue.sql. Features are code,
+ * not content: a row with no code behind it would be a feature that does not
+ * exist, so the catalogue is seeded by migration and never edited from the UI.
+ * What a platform admin edits is which features each package includes
+ * (tier_features) and per-organisation exceptions (organisation_features).
+ *
+ * Keeping the keys here as well as in the database buys compile-time safety —
+ * a nav item or a page guard naming a feature that does not exist is a type
+ * error rather than a gate that silently denies forever. tests/entitlements
+ * asserts the two lists agree, because a drifted key looks exactly like a
+ * billing bug.
+ *
+ * Pure: no Supabase import, safe in client components. The server-side
+ * resolution lives in lib/entitlements.ts.
+ */
+
+export const FEATURE_CATEGORIES = [
+  { key: "training", label: "Training" },
+  { key: "recruitment", label: "Recruitment" },
+  { key: "complaints", label: "Complaints & safeguarding" },
+  { key: "forms", label: "Forms" },
+  { key: "documents", label: "Documents" },
+  { key: "platform", label: "Platform & integration" },
+] as const;
+
+export type FeatureCategoryKey = (typeof FEATURE_CATEGORIES)[number]["key"];
+
+export const FEATURES = [
+  // Core features are in every package and cannot be unticked — everyone gets
+  // the training, and learners are unlimited. What varies by package is the
+  // price band, not access.
+  {
+    key: "training.courses",
+    category: "training",
+    label: "Course library",
+    isCore: true,
+  },
+  {
+    key: "training.matrix",
+    category: "training",
+    label: "Training matrix & exports",
+    isCore: true,
+  },
+  {
+    key: "training.programmes",
+    category: "training",
+    label: "Induction programmes",
+    isCore: true,
+  },
+  {
+    key: "training.observations",
+    category: "training",
+    label: "Care Certificate observations",
+    isCore: false,
+  },
+  {
+    key: "recruitment.tracker",
+    category: "recruitment",
+    label: "Recruitment tracker",
+    isCore: false,
+  },
+  {
+    key: "complaints.register",
+    category: "complaints",
+    label: "Complaints & safeguarding register",
+    isCore: false,
+  },
+  {
+    key: "forms.builder",
+    category: "forms",
+    label: "Forms builder",
+    isCore: false,
+  },
+  {
+    key: "documents.library",
+    category: "documents",
+    label: "Policies & procedures library",
+    isCore: false,
+  },
+  {
+    key: "platform.white_label",
+    category: "platform",
+    label: "White-label logo",
+    isCore: false,
+  },
+  {
+    key: "platform.portal_api",
+    category: "platform",
+    label: "Rostering portal integration",
+    isCore: false,
+  },
+] as const;
+
+export type FeatureKey = (typeof FEATURES)[number]["key"];
+
+/** The catalogue label, falling back to the raw key for an unknown one. */
+export function featureLabel(key: string): string {
+  return FEATURES.find((f) => f.key === key)?.label ?? key;
+}
+
+/** The features of one category, in catalogue order. */
+export function featuresInCategory(category: FeatureCategoryKey) {
+  return FEATURES.filter((f) => f.category === category);
+}
+
+/** Keys every package includes, whatever the tier matrix says. */
+export function coreFeatureKeys(): FeatureKey[] {
+  return FEATURES.filter((f) => f.isCore).map((f) => f.key);
+}
