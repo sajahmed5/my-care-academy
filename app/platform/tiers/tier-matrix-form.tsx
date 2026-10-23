@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { startTransition, useActionState, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { saveTierCompositionAction } from "./actions";
 import type { SaveState } from "@/app/platform/actions";
@@ -31,7 +31,14 @@ export function TierMatrixForm({
     saveTierCompositionAction,
     {} as SaveState,
   );
-  const [initial] = useState(() => new Set(ticked));
+  // What is saved, from the server. After a save the page re-renders with the
+  // new ticks, so "unsaved changes" is measured against what is actually
+  // stored rather than against whatever was on screen when the page opened.
+  const savedKey = ticked.join(",");
+  const initial = useMemo(
+    () => new Set(savedKey ? savedKey.split(",") : []),
+    [savedKey],
+  );
   const [cells, setCells] = useState(() => new Set(ticked));
 
   const toggle = (cell: string) =>
@@ -62,7 +69,18 @@ export function TierMatrixForm({
   const dirty = reach.added > 0 || reach.removed > 0;
 
   return (
-    <form action={action} className="space-y-4">
+    <form
+      // Submitted through a transition rather than <form action>: React resets
+      // a form after a successful action, and for a settings form that puts the
+      // pre-save values back on screen over the ones just saved — so a second,
+      // untouched save would quietly write them all back.
+      onSubmit={(e) => {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        startTransition(() => action(data));
+      }}
+      className="space-y-4"
+    >
       {[...cells].map((cell) => (
         <input key={cell} type="hidden" name="tick" value={cell} />
       ))}
