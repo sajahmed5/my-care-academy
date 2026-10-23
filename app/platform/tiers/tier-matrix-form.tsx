@@ -161,7 +161,9 @@ function FeatureGroup({
         <th
           scope="colgroup"
           colSpan={columns.length + 1}
-          className="px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+          // A band, not a row: a category heading in the same grey as the
+          // features under it read as one more feature (Saj, 23 Oct 2026).
+          className="bg-[#134f63] px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-white"
         >
           {group.label}
         </th>
