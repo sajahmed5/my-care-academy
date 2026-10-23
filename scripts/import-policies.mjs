@@ -1,182 +1,218 @@
 /**
- * Import the policies & procedures library from the share drive.
+ * Import the My Care Academy document library from the share drive.
  *
- * Reads the PDFs under HG Policies & Procedures, turns each one into content
- * blocks with {{organisation}} wherever the company is named, and upserts them
- * into policy_documents as DRAFTS. Nothing reaches a customer until a human
- * has read it back — this is a machine's reading of a PDF.
+ * Source: "HG Care - Share Drive/My Care Academy" — our own packs, not HG
+ * Care's internal policies. The folders are the product:
  *
- * What it takes and what it leaves: a file is imported only if it has a code
- * (CC12, PR04), carries Issue/Version metadata, is called a policy or
- * procedure, and has some substance. That is 200 of the 383 files. The rest
- * are forms, letters, CQC outcome statements, floor plans and site-specific
- * documents — some worth selling later, none of them a policy, and the floor
- * plans must never ship to another provider at all.
+ *   Domiciliary Care/CQC Basic Forms          → pack 'basic',  homecare
+ *   Domiciliary Care/Full Compliance Pack     → pack 'full',   homecare
+ *   Residential Care Home/Full Compliance Pack→ pack 'full',   care_home
+ *   Add On Packages/<name>                    → pack 'addon',  both
  *
- * unpdf is not a dependency of this project: it is needed once per import.
+ * The documents are Word templates: they carry [ORGANISATION NAME] where the
+ * provider's name goes, and bracketed guidance — "[State who this applies
+ * to]" — for them to complete. Both survive the import: the name becomes
+ * {{organisation}}, and a guidance paragraph is marked so the UI can show it
+ * as something to fill in rather than as policy text.
  *
- *   mkdir -p /tmp/policy-import && cd /tmp/policy-import && npm i unpdf
- *   NODE_PATH=/tmp/policy-import/node_modules \
- *     node scripts/import-policies.mjs --dry-run
- *   NODE_PATH=/tmp/policy-import/node_modules node scripts/import-policies.mjs
+ * Word gives us real heading styles, so the block structure is read from the
+ * document rather than guessed. No PDF parsing, and no extra dependency:
+ * .docx is a zip of XML.
  *
- * Re-running is safe: rows are upserted on `code`, and status is only set on
- * insert, so a policy already reviewed and published is not quietly returned
- * to draft.
+ *   node scripts/import-policies.mjs --dry-run
+ *   node scripts/import-policies.mjs
+ *
+ * Re-running is safe: rows upsert on `code`, and a document already reviewed
+ * and published keeps its status.
  */
 
 import { readFile } from "node:fs/promises";
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
-import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
+import { unzipSync, strFromU8 } from "fflate";
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 
-const require = createRequire(import.meta.url);
-const { extractText, getDocumentProxy } = require("unpdf");
+const ROOT =
+  process.env.MCA_LIBRARY ??
+  "/Users/saj/Library/CloudStorage/OneDrive-HGCareServicesLtd/HG Care - Share Drive/My Care Academy";
 
-const ROOT = "/Users/saj/Library/CloudStorage/OneDrive-HGCareServicesLtd/HG Care - Share Drive/HG Policies & Procedures";
-const ORG = "{{organisation}}";
+const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
-// The company is named 1,579 times across these documents. Longest form first,
-// so "HG Care Services Limited" is not left as "{{organisation}} Services Limited".
-const BRAND = [
-  /HG\s+Care\s+Services\s+(?:Limited|Ltd\.?|limited|ltd\.?)/g,
-  /HG\s+Care\s+Services/g,
-  /HG\s+Care/g,
-  /HGCare/g,
-];
-
-/** A running header repeated on every page, which is not the policy. */
-const HEADER = [
-  /^[A-Z]{2,3}\d{2,3}\b.*\b(HG Care|Issue \d+)/i,
-  /^Issue\s+\d+\s+Version\s+\d+/i,
-  /^Updated:\s*\d{2}\/\d{2}\/\d{4}/i,
-  /^Page\s+\d+\s+of\s+\d+/i,
-];
-
-// Only headings we recognise are promoted. An earlier pass also promoted any
-// short line that looked title-ish, which turned wrapped sentences like "To be
-// compliant with NHS England's" into headings. Under-promoting costs a few real
-// sub-headings; over-promoting corrupts the document, and a human reviews every
-// one of these before it is published anyway.
-const KNOWN_HEADINGS = /^(Purpose|Scope|Policy|Procedure|Introduction|Definitions?|Responsibilities|References?|Related Policies|Training|Monitoring|Review|Legislation|Equipment|Record Keeping|Reporting|Appendix\b.*)$/i;
-
-function toBlocks(pages) {
-  const lines = [];
-  for (const page of pages) {
-    for (const raw of page.split("\n")) {
-      const line = raw.replace(/\s+/g, " ").trim();
-      if (!line) continue;
-      if (HEADER.some((re) => re.test(line))) continue;
-      lines.push(line);
-    }
+/** Word paragraphs, with their style, straight out of document.xml. */
+function paragraphs(buf) {
+  const files = unzipSync(new Uint8Array(buf), {
+    filter: (f) => f.name === "word/document.xml",
+  });
+  const xml = strFromU8(files["word/document.xml"]);
+  const out = [];
+  // One <w:p> per paragraph; <w:t> holds the text; <w:pStyle w:val="…"> the style.
+  for (const [, body] of xml.matchAll(/<w:p[ >]([\s\S]*?)<\/w:p>/g)) {
+    const style = body.match(/<w:pStyle w:val="([^"]+)"/)?.[1] ?? "Normal";
+    const text = [...body.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g)]
+      .map((m) => m[1])
+      .join("")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (text) out.push({ style, text });
   }
-
-  const blocks = [];
-  let para = [];
-  const flush = () => {
-    if (!para.length) return;
-    blocks.push({ type: "paragraph", text: para.join(" ") });
-    para = [];
-  };
-
-  for (const line of lines) {
-    const isHeading = KNOWN_HEADINGS.test(line);
-    if (isHeading) {
-      flush();
-      blocks.push({ type: "heading", text: line });
-      continue;
-    }
-    para.push(line);
-    // A line ending a sentence closes the paragraph: in these documents each
-    // sentence is its own point, and joining them loses the bullet list the
-    // original had.
-    if (/[.!?]["')]?$/.test(line)) flush();
-  }
-  flush();
-  return blocks;
+  if (!out.length) throw new Error("no readable paragraphs");
+  return out;
 }
 
-function brandOut(blocks) {
-  let hits = 0;
-  const out = blocks.map((b) => {
-    let text = b.text;
-    for (const re of BRAND) {
-      text = text.replace(re, () => {
-        hits += 1;
-        return ORG;
-      });
-    }
-    return { ...b, text };
-  });
-  return { blocks: out, hits };
+const ORG = "{{organisation}}";
+
+function toBlocks(paras) {
+  let orgHits = 0;
+  const blocks = [];
+  for (const { style, text } of paras) {
+    const value = text
+      .replace(/\[ORGANISATION NAME\]/gi, () => (orgHits++, ORG))
+      .replace(/\[COMPANY NAME\]/gi, () => (orgHits++, ORG));
+
+    // A paragraph that is entirely bracketed is guidance for the provider, not
+    // policy text. Kept, and marked, because deleting it would leave a policy
+    // that looks finished and is not.
+    const guidance = /^\[.*\]$/.test(value.trim());
+    const type = /^Heading(\d)$/.test(style)
+      ? "heading"
+      : style === "ListParagraph"
+        ? "bullet"
+        : guidance
+          ? "guidance"
+          : "paragraph";
+    blocks.push(
+      type === "heading"
+        ? { type, level: Number(style.replace("Heading", "")) || 1, text: value }
+        : { type, text: value },
+    );
+  }
+  return { blocks, orgHits };
+}
+
+/** Stable, readable, unique: MCA-DOM-BASIC-INFECTION-PREVENTIO… */
+function codeFor(rel) {
+  const parts = rel.split(path.sep);
+  const area =
+    { "Domiciliary Care": "DOM", "Residential Care Home": "RES", "Add On Packages": "ADD" }[parts[0]] ??
+    "GEN";
+  const slug = path
+    .basename(rel, path.extname(rel))
+    .replace(/^\d+\.\s*/, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
+  const hash = createHash("sha1").update(rel).digest("hex").slice(0, 4).toUpperCase();
+  return `MCA-${area}-${slug}-${hash}`;
+}
+
+function classify(rel) {
+  const parts = rel.split(path.sep);
+  const [area, second, third] = parts;
+  const name = path.basename(rel).toLowerCase();
+  const ext = path.extname(rel).toLowerCase();
+
+  const service_types =
+    area === "Domiciliary Care"
+      ? ["homecare"]
+      : area === "Residential Care Home"
+        ? ["care_home"]
+        : null;
+
+  const pack =
+    area === "Add On Packages" ? "addon" : second === "CQC Basic Forms" ? "basic" : "full";
+
+  const collection =
+    area === "Add On Packages" ? (second.endsWith(".docx") ? "General" : second) : null;
+
+  // Residential files are named "Safeguarding.docx" where Domiciliary says
+  // "Safeguarding Policy.docx", so the folder has to count: anything filed
+  // under Policies & Assessments is a policy unless it is a spreadsheet.
+  const inPolicyFolder = parts.slice(0, -1).some((p) => /polic/i.test(p));
+  const kind =
+    ext === ".xlsx"
+      ? "log"
+      : /policy|handbook/.test(name) || (inPolicyFolder && !/form|record|chart|checklist|assessment|log/.test(name))
+        ? "policy"
+        : "form";
+
+  // The folder a reader would expect to see it filed under.
+  const category =
+    area === "Add On Packages"
+      ? `Add-on — ${collection}`
+      : third && !third.endsWith(ext)
+        ? `${area} — ${third}`
+        : second === "CQC Basic Forms"
+          ? `${area} — CQC Basics`
+          : `${area} — Full Pack`;
+
+  return { service_types, pack, collection, kind, category };
 }
 
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
+    if (name.startsWith("~$") || name === ".DS_Store") continue;
     const full = path.join(dir, name);
     if (statSync(full).isDirectory()) walk(full, out);
-    else if (name.toLowerCase().endsWith(".pdf")) out.push(full);
+    else out.push(full);
   }
   return out;
 }
 
 const docs = [];
-let skipped = 0;
+const skipped = [];
 
 for (const file of walk(ROOT).sort()) {
   const rel = path.relative(ROOT, file);
-  const base = path.basename(file, path.extname(file));
-  const m = base.match(/^([A-Z]{2,3}\d{2,3})\s*[-–]?\s*(.+)$/);
-  if (!m) { skipped += 1; continue; }
+  const ext = path.extname(file).toLowerCase();
+  const title = path
+    .basename(file, path.extname(file))
+    .replace(/^\d+\.\s*/, "")
+    .trim();
+  const meta = classify(rel);
 
-  const pdf = await getDocumentProxy(new Uint8Array(await readFile(file)));
-  const { text: pages } = await extractText(pdf, { mergePages: false });
-  const joined = pages.join(" ");
-  const meta = joined.slice(0, 400).replace(/\s+/g, " ");
-  const iv = meta.match(/Issue\s+(\d+)\s+Version\s+(\d+)/i);
-  const upd = meta.match(/Updated:\s*(\d{2})\/(\d{2})\/(\d{4})/);
+  // Spreadsheets are logs: a tracker to download and keep, not text to read.
+  // They are listed in the library with no blocks until the UI can offer the
+  // file itself.
+  if (ext === ".xlsx") {
+    docs.push({ ...meta, code: codeFor(rel), title, blocks: [], source_file: rel, orgHits: 0 });
+    continue;
+  }
+  if (ext !== ".docx") {
+    skipped.push({ rel, why: `unsupported (${ext || "no extension"})` });
+    continue;
+  }
 
-  // Only genuine policies: coded, versioned, substantial, and called one.
-  const title = m[2].replace(/\s+/g, " ").trim();
-  if (!iv || joined.length < 600 || !/polic|procedure/i.test(title)) { skipped += 1; continue; }
-
-  const { blocks, hits } = brandOut(toBlocks(pages));
-  docs.push({
-    code: m[1],
-    title,
-    category: rel.split(path.sep)[0],
-    issue: Number(iv[1]),
-    version: Number(iv[2]),
-    source_updated_on: upd ? `${upd[3]}-${upd[2]}-${upd[1]}` : null,
-    blocks,
-    brand_hits: hits,
-    source_file: rel,
-  });
+  try {
+    const { blocks, orgHits } = toBlocks(paragraphs(await readFile(file)));
+    docs.push({ ...meta, code: codeFor(rel), title, blocks, source_file: rel, orgHits });
+  } catch (err) {
+    skipped.push({ rel, why: String(err.message ?? err).slice(0, 80) });
+  }
 }
 
-// One code, one policy: the share drive has a few duplicates in HR subfolders.
-const byCode = new Map();
-for (const d of docs) {
-  const seen = byCode.get(d.code);
-  if (!seen || (d.version ?? 0) > (seen.version ?? 0)) byCode.set(d.code, d);
-}
-const unique = [...byCode.values()].sort((a, b) => a.code.localeCompare(b.code));
+const summary = {
+  imported: docs.length,
+  skipped: skipped.length,
+  byPack: docs.reduce((a, d) => ((a[d.pack] = (a[d.pack] ?? 0) + 1), a), {}),
+  byKind: docs.reduce((a, d) => ((a[d.kind] = (a[d.kind] ?? 0) + 1), a), {}),
+  categories: [...new Set(docs.map((d) => d.category))].length,
+  organisationPlaceholders: docs.reduce((s, d) => s + d.orgHits, 0),
+  guidanceBlocks: docs.reduce(
+    (s, d) => s + d.blocks.filter((b) => b.type === "guidance").length,
+    0,
+  ),
+};
+console.log(JSON.stringify(summary, null, 1));
+if (skipped.length) console.log("skipped:", JSON.stringify(skipped, null, 1));
 
-console.log(JSON.stringify({
-  imported: unique.length,
-  skipped,
-  duplicatesDropped: docs.length - unique.length,
-  categories: [...new Set(unique.map((d) => d.category))].length,
-  brandReplacements: unique.reduce((s, d) => s + d.brand_hits, 0),
-  withNoBrandMention: unique.filter((d) => d.brand_hits === 0).length,
-  medianBlocks: unique.map((d) => d.blocks.length).sort((a, b) => a - b)[Math.floor(unique.length / 2)],
-}, null, 1));
-
-// ---------------------------------------------------------------------------
-// Into the database, as drafts.
-// ---------------------------------------------------------------------------
 if (process.argv.includes("--dry-run")) {
   console.log("Dry run — nothing written.");
   process.exit(0);
@@ -193,16 +229,17 @@ const { data: existing } = await admin.from("policy_documents").select("code, st
 const statusOf = new Map((existing ?? []).map((r) => [r.code, r.status]));
 
 let written = 0;
-for (let i = 0; i < unique.length; i += 25) {
-  const batch = unique.slice(i, i + 25).map((d, j) => ({
+for (let i = 0; i < docs.length; i += 25) {
+  const batch = docs.slice(i, i + 25).map((d, j) => ({
     code: d.code,
     title: d.title,
     category: d.category,
-    issue: d.issue,
-    version: d.version,
-    source_updated_on: d.source_updated_on,
+    pack: d.pack,
+    collection: d.collection,
+    kind: d.kind,
+    service_types: d.service_types,
     blocks: d.blocks,
-    // Keep whatever a human has already decided about this policy.
+    source_file: d.source_file,
     status: statusOf.get(d.code) ?? "draft",
     sort_order: i + j,
   }));
@@ -213,4 +250,4 @@ for (let i = 0; i < unique.length; i += 25) {
   }
   written += batch.length;
 }
-console.log(`Upserted ${written} policies.`);
+console.log(`Upserted ${written} documents.`);

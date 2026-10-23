@@ -36,20 +36,40 @@ company name set in the text. Three ways, cheapest first:
    Also the most work, and extraction has to be checked by a human because these are regulatory
    documents.
 
-**Decided: 3, structured content** (Saj, 23 Oct 2026). **Done, as drafts** — `policy_documents`
-and `scripts/import-policies.mjs`. 200 policies across 18 categories are in the database with
-`{{organisation}}` in place of the company name (747 substitutions), carrying their code, issue,
-version and review date. Every one is `status = 'draft'`: this is a machine's reading of a PDF
-and a human reads it back before a customer sees it.
+**Decided: structured content** (Saj, 23 Oct 2026), and **imported** — `policy_documents`,
+`scripts/import-policies.mjs`.
 
-Of the 383 files in the share drive, 182 were deliberately left out — forms, letters, CQC
-outcome statements, contracts, and site-specific documents like the Wellington Road and Norwood
-Drive floor plans, which must never ship to another provider. Some of those are a second product
-("templates"), not policies.
+**The source is our own pack**, not HG Care's internal policies: `HG Care - Share Drive /
+My Care Academy`, whose folders are the product already — Domiciliary Care and Residential Care
+Home, each with a CQC Basic set and a Full Compliance Pack, plus add-on packs for complaints and
+recruitment. 129 documents are in: 43 policies, 63 forms, 23 spreadsheet logs.
 
-Still to do: the reading UI for an organisation, the acknowledgement flow, publishing from draft,
-and deciding which policies make up the **basic** library as against the full compliance pack
-(every row is `pack = 'full'` until that call is made).
+Three things follow from what the documents actually are:
+
+- **They are templates, not finished policies.** They carry `[ORGANISATION NAME]` (now
+  `{{organisation}}`) and bracketed guidance for the provider to complete — 1,133 guidance
+  paragraphs across the library, kept and marked so the UI can show them as something to fill in
+  rather than as policy text. So the model is not "read our policy and accept it": an
+  organisation **adopts and completes** a template, and its staff acknowledge **their** version.
+  That means an `organisation_policies` table holding their copy, with acknowledgements pointing
+  at it. Not built.
+- **A library that mixes policies with blank forms teaches people to scroll past both**, so
+  every row carries a `kind`. Forms and logs want downloading and printing; policies want
+  reading and accepting.
+- **Several of these are paper versions of what the platform now does** — the Complaints Log,
+  the Staff Training/Supervision/DBS Record, the Spot Check Form, the Medication Competency
+  Observation. Worth deciding which we ship as a spreadsheet and which we point at the feature
+  that replaces it.
+
+Two content problems found in the share drive, both in the add-on pack:
+
+- `Complaints and Safeguarding Pack/Safeguarding Policy Domiciliary Care.docx` is **not a
+  policy**: it is a copy of the Incident, Safeguarding and Notifications Log spreadsheet saved
+  with a .docx name. It is the only file the importer could not read.
+- Which leaves that pack **with no safeguarding policy at all**, though Domiciliary Basic,
+  Domiciliary Full and Residential Full each have one.
+
+Everything lands as `draft`; nothing reaches a customer until it has been read back.
 
 **What makes it worth the money:** not the files, but **"who has read and accepted this
 version"**. Acknowledgement turns a library into evidence, and it feeds the carer file and the
