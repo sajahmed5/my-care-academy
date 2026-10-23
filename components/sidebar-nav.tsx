@@ -50,6 +50,7 @@ const NAV: Record<string, NavItem[]> = {
     { href: "/platform/tiers", label: "Packages", icon: Layers },
     { href: "/platform/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/platform/courses", label: "Courses", icon: BookOpen },
+    { href: "/platform/documents", label: "Documents", icon: BookMarked },
     { href: "/platform/reports", label: "Issues", icon: Bug },
     { href: "/platform/billing", label: "Billing", icon: CreditCard },
     { href: "/platform/settings", label: "Automation", icon: Bell },

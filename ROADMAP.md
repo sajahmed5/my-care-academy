@@ -84,9 +84,15 @@ packs an organisation sees follows its entitlements: the CQC basics with `docume
 full pack with `documents.compliance_pack`, and an add-on pack with the feature it belongs to, so
 the complaints pack arrives with the complaints register.
 
+**The platform side is built too** (v2.13.6): `/platform/documents` lists all 129 with pack,
+type and status, leads with the ones worth a look (no content, no organisation name, oddly
+short), previews each one as a sample organisation would read it with its source file shown, and
+publishes, withdraws or retires a document — or a whole pack at once, scoped by pack and type so
+"publish the policies, leave the forms" is one action. Every status change is audited. The 43
+policies are published; the 63 forms and 23 logs are drafts.
+
 Still to do here: downloading the actual file (the spreadsheet logs have nothing to give yet —
-they need the files in storage), an organisation's own completed copy of a template, and the
-platform screens for publishing a draft once it has been read back.
+they need the files in storage), and an organisation's own completed copy of a template.
 
 ---
 
