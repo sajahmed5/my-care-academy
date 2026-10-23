@@ -4,10 +4,12 @@
  */
 export const PACKAGE_TIERS = [
   // Four-tier model (Saj, 9 Sept 2026: a bronze/silver/gold/platinum ladder
-  // "with more professional names"). Prices and contents to be confirmed.
-  { value: "core", label: "Essentials" },
-  { value: "core_forms", label: "Professional" },
-  { value: "core_recruitment", label: "Premier" },
+  // "with more professional names"), renamed to these on 23 Oct 2026. The
+  // labels are the public names; the keys below are internal and unchanged.
+  // Prices and contents to be confirmed.
+  { value: "core", label: "Starter" },
+  { value: "core_forms", label: "Growth" },
+  { value: "core_recruitment", label: "Pro" },
   { value: "full", label: "Enterprise" },
 ] as const;
 
@@ -38,7 +40,7 @@ export const TIER_DETAILS: Record<
   core_forms: {
     tagline: "Training plus your own digital paperwork.",
     features: [
-      "Everything in Essentials",
+      "Everything in Starter",
       "Forms builder — custom forms with e-signatures",
       "Form submissions tracked per staff member",
     ],
@@ -46,7 +48,7 @@ export const TIER_DETAILS: Record<
   core_recruitment: {
     tagline: "Training plus recruitment compliance.",
     features: [
-      "Everything in Essentials",
+      "Everything in Starter",
       "Recruitment tracker — candidates and interviews",
       "Document checklist with DBS and right-to-work expiry dates",
     ],
@@ -54,7 +56,7 @@ export const TIER_DETAILS: Record<
   full: {
     tagline: "The complete platform for growing care providers.",
     features: [
-      "Everything in Essentials, Professional and Premier",
+      "Everything in Starter, Growth and Pro",
       "Forms builder with e-signatures",
       "Recruitment tracker with document expiry alerts",
       "Care Certificate workplace assessment",

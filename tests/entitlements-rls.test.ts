@@ -25,9 +25,9 @@ const email = (l: string) => `ent-${l}-${RUN}@example.test`;
 const userIds: string[] = [];
 const orgIds: string[] = [];
 
-let tierOnly: SupabaseClient; // Professional, no overrides
-let overriddenOff: SupabaseClient; // Professional, forms forced off
-let overriddenOn: SupabaseClient; // Essentials, Care Certificate forced on
+let tierOnly: SupabaseClient; // Growth, no overrides
+let overriddenOff: SupabaseClient; // Growth, forms forced off
+let overriddenOn: SupabaseClient; // Starter, Care Certificate forced on
 
 async function orgAdminOn(
   tier: string,

@@ -123,7 +123,7 @@ describe("tier contents", () => {
     expect(has("full", "forms.builder")).toBe(true);
     expect(has("full", "recruitment.tracker")).toBe(true);
 
-    // Essentials has neither.
+    // Starter has neither.
     expect(has("core", "forms.builder")).toBe(false);
     expect(has("core", "recruitment.tracker")).toBe(false);
 

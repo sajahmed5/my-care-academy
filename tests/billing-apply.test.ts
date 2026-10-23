@@ -42,7 +42,7 @@ describe("applySubscriptionToOrg (what the webhook does)", () => {
     expect(await has(org, "recruitment.tracker")).toBe(true);
   });
 
-  it("cancelling downgrades to Essentials and the add-ons go with it", async () => {
+  it("cancelling downgrades to Starter and the add-ons go with it", async () => {
     const admin = adminClient();
     const org = await createOrg(`Bill Cancel ${RUN}`);
     orgIds.push(org);
