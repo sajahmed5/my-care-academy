@@ -36,8 +36,20 @@ company name set in the text. Three ways, cheapest first:
    Also the most work, and extraction has to be checked by a human because these are regulatory
    documents.
 
-**Recommendation: 3, done in batches by category**, starting with Care Practice. Not started —
-the approach needs confirming first.
+**Decided: 3, structured content** (Saj, 23 Oct 2026). **Done, as drafts** — `policy_documents`
+and `scripts/import-policies.mjs`. 200 policies across 18 categories are in the database with
+`{{organisation}}` in place of the company name (747 substitutions), carrying their code, issue,
+version and review date. Every one is `status = 'draft'`: this is a machine's reading of a PDF
+and a human reads it back before a customer sees it.
+
+Of the 383 files in the share drive, 182 were deliberately left out — forms, letters, CQC
+outcome statements, contracts, and site-specific documents like the Wellington Road and Norwood
+Drive floor plans, which must never ship to another provider. Some of those are a second product
+("templates"), not policies.
+
+Still to do: the reading UI for an organisation, the acknowledgement flow, publishing from draft,
+and deciding which policies make up the **basic** library as against the full compliance pack
+(every row is `pack = 'full'` until that call is made).
 
 **What makes it worth the money:** not the files, but **"who has read and accepted this
 version"**. Acknowledgement turns a library into evidence, and it feeds the carer file and the
