@@ -58,10 +58,17 @@ export function EditOrgForm({
     ? bandOrder.indexOf(actualBand) - bandOrder.indexOf(band)
     : 0;
 
-  const pounds =
-    org.monthly_amount_pence == null
-      ? ""
-      : (org.monthly_amount_pence / 100).toFixed(2).replace(/\.00$/, "");
+  // Text inputs keep their defaults from when the form opened. The form is
+  // never reset (see onSubmit), so after a save the fields already hold what
+  // was saved; handing Base UI a new default when the page re-renders would
+  // only make it warn.
+  const [defaults] = useState(() => ({
+    name: org.name,
+    pounds:
+      org.monthly_amount_pence == null
+        ? ""
+        : (org.monthly_amount_pence / 100).toFixed(2).replace(/\.00$/, ""),
+  }));
 
   return (
     <form
@@ -80,7 +87,7 @@ export function EditOrgForm({
 
       <div className="space-y-2">
         <Label htmlFor="name">Organisation name</Label>
-        <Input id="name" name="name" defaultValue={org.name} required />
+        <Input id="name" name="name" defaultValue={defaults.name} required />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -182,7 +189,7 @@ export function EditOrgForm({
             id="monthly_amount"
             name="monthly_amount"
             inputMode="decimal"
-            defaultValue={pounds}
+            defaultValue={defaults.pounds}
             placeholder="Not agreed yet"
             className="pl-7"
           />
