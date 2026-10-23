@@ -75,10 +75,18 @@ export const FEATURES = [
     label: "Forms builder",
     isCore: false,
   },
+  // Two versions of the same shelf: the basic set, and the full compliance
+  // pack. A guard on the basic library must treat the pack as including it.
   {
     key: "documents.library",
     category: "documents",
-    label: "Policies & procedures library",
+    label: "Policies & procedures (basic)",
+    isCore: false,
+  },
+  {
+    key: "documents.compliance_pack",
+    category: "documents",
+    label: "Full compliance pack",
     isCore: false,
   },
   {
