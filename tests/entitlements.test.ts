@@ -117,7 +117,7 @@ describe("tier contents", () => {
     const has = (tier: string, feature: string) =>
       ticks.some((t) => t.tier_key === tier && t.feature_key === feature);
 
-    // What tierFlags() in lib/billing.ts derives today.
+    // What tierFlags() in lib/billing.ts used to derive.
     expect(has("core_forms", "forms.builder")).toBe(true);
     expect(has("core_recruitment", "recruitment.tracker")).toBe(true);
     expect(has("full", "forms.builder")).toBe(true);
@@ -128,7 +128,7 @@ describe("tier contents", () => {
     expect(has("core", "recruitment.tracker")).toBe(false);
 
     // Enterprise's published feature list promises the Care Certificate, so
-    // the matrix says so too — tierFlags() never did.
+    // the matrix says so too — the old tierFlags() never did.
     expect(has("full", "training.observations")).toBe(true);
   });
 });

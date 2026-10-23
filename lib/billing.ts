@@ -1,17 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PackageTier } from "@/lib/organisations";
 
-/** Feature flags entailed by each package tier. */
-export function tierFlags(tier: PackageTier): {
-  forms_enabled: boolean;
-  recruitment_enabled: boolean;
-} {
-  return {
-    forms_enabled: tier === "core_forms" || tier === "full",
-    recruitment_enabled: tier === "core_recruitment" || tier === "full",
-  };
-}
-
 /** Env var holding each tier's Stripe price id. */
 const TIER_PRICE_ENV: Record<PackageTier, string> = {
   core: "STRIPE_PRICE_CORE",
@@ -33,9 +22,13 @@ export function tierForPriceId(priceId: string): PackageTier | null {
 }
 
 /**
- * Apply a subscription's tier to an organisation: sets package_tier and the
- * entailed feature flags. This is the ONLY place flags change from billing —
- * the webhook calls it.
+ * Apply a subscription to an organisation: sets its package and the Stripe
+ * columns. The webhook calls it.
+ *
+ * It sets nothing about features. What a package includes lives in
+ * tier_features, which a platform admin edits, so setting the package is
+ * enough — and billing can no longer overwrite an exception a platform admin
+ * set by hand, as the old flag writes could.
  */
 export async function applySubscriptionToOrg(
   admin: SupabaseClient,
@@ -47,13 +40,10 @@ export async function applySubscriptionToOrg(
     status?: string;
   },
 ): Promise<void> {
-  const flags = tierFlags(params.tier);
   await admin
     .from("organisations")
     .update({
       package_tier: params.tier,
-      forms_enabled: flags.forms_enabled,
-      recruitment_enabled: flags.recruitment_enabled,
       ...(params.customerId ? { stripe_customer_id: params.customerId } : {}),
       ...(params.subscriptionId !== undefined
         ? { stripe_subscription_id: params.subscriptionId }
