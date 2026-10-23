@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { dueStatus, type DueStatus } from "@/lib/records";
+import { defaultNextDue, dueStatus, type DueStatus } from "@/lib/records";
 import {
   COMPETENCY_AREAS,
   COMPETENCY_OUTCOMES,
@@ -147,6 +147,12 @@ export function CompetencyList({
 
 function RecordCheck({ userId }: { userId: string }) {
   const [open, setOpen] = useState(false);
+  // The next-due date follows the date it was held, on the organisation's
+  // default interval, until somebody sets it themselves — after which it is
+  // theirs and nothing moves it.
+  const [on, setOn] = useState(todayISO);
+  const [nextDue, setNextDue] = useState(() => defaultNextDue(todayISO(), "competency"));
+  const [ownNextDue, setOwnNextDue] = useState(false);
   const [state, formAction, pending] = useActionState<SupervisionState, FormData>(
     addCompetencyCheckAction,
     {},
@@ -192,11 +198,33 @@ function RecordCheck({ userId }: { userId: string }) {
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
               <Label htmlFor="cc-checked">Checked on</Label>
-              <Input id="cc-checked" name="checkedOn" type="date" required defaultValue={todayISO()} />
+              <Input
+                id="cc-checked"
+                name="checkedOn"
+                type="date"
+                required
+                value={on}
+                onChange={(e) => {
+                  setOn(e.target.value);
+                  if (!ownNextDue) setNextDue(defaultNextDue(e.target.value, "competency"));
+                }}
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="cc-next">Next due (optional)</Label>
-              <Input id="cc-next" name="nextDue" type="date" />
+              <Input
+                id="cc-next"
+                name="nextDue"
+                type="date"
+                value={nextDue}
+                onChange={(e) => {
+                  setOwnNextDue(true);
+                  setNextDue(e.target.value);
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Every three months unless you change it.
+              </p>
             </div>
           </div>
 

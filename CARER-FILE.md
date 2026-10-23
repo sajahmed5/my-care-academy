@@ -247,6 +247,8 @@ Settled by Saj, 23 Oct 2026:
 Still open:
 
 - **Retention periods** per record type — how long a supervision, a spot check or a complaint
-  is kept, and what happens at the end of it. `tests/user-erasure.test.ts` must grow to cover
-  every new table whatever the answer.
+  is *kept*, and what happens at the end of it. `tests/user-erasure.test.ts` must grow to cover
+  every new table whatever the answer. (How often each review *recurs* is settled — three months
+  for supervisions and spot checks, six for satisfaction; see `ROADMAP.md` §5. Keeping is the
+  other question.)
 - **Multi-site** — a carer who works across two of an organisation's services.

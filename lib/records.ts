@@ -51,3 +51,47 @@ export function parseAgreedActions(input: string): string[] {
     .slice(0, MAX_AGREED_ACTIONS)
     .map((line) => line.slice(0, MAX_ACTION_TITLE));
 }
+
+/**
+ * How often each kind of review comes round by default.
+ *
+ * Saj, 23 Oct 2026: supervisions, spot checks and client quality checks every
+ * three months; carer satisfaction every six; six months for anything else we
+ * add later. These are DEFAULTS, not rules — an organisation decides its own
+ * frequency, and every form lets the date be changed before saving. The point
+ * is that a manager recording a supervision should not have to work out when
+ * the next one is due, because the one nobody schedules is the one that never
+ * happens.
+ */
+export const REVIEW_INTERVAL_MONTHS = {
+  supervision: 3,
+  competency: 3,
+  client_qa: 3,
+  carer_satisfaction: 6,
+  other: 6,
+} as const;
+
+export type ReviewKind = keyof typeof REVIEW_INTERVAL_MONTHS;
+
+/**
+ * The same day, `months` later, clamped to the end of a shorter month.
+ *
+ * 31 January plus one month is 28 February, not 3 March. JavaScript's Date
+ * rolls over by itself, which would quietly schedule a supervision into the
+ * following month and look like a bug to the person who booked it.
+ */
+export function addMonths(iso: string, months: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  const target = new Date(Date.UTC(y, m - 1 + months, 1));
+  const lastDay = new Date(
+    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  target.setUTCDate(Math.min(d, lastDay));
+  return target.toISOString().slice(0, 10);
+}
+
+/** When the next one falls due, from the day this one was held. */
+export function defaultNextDue(iso: string, kind: ReviewKind): string {
+  return addMonths(iso, REVIEW_INTERVAL_MONTHS[kind]);
+}

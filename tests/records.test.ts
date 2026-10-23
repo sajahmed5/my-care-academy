@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   MAX_AGREED_ACTIONS,
+  addMonths,
+  defaultNextDue,
   dueStatus,
   parseAgreedActions,
 } from "../lib/records";
@@ -51,5 +53,45 @@ describe("parseAgreedActions", () => {
   it("trims an over-long line rather than dropping it", () => {
     const [only] = parseAgreedActions("x".repeat(500));
     expect(only).toHaveLength(200);
+  });
+});
+
+describe("addMonths", () => {
+  it("keeps the same day of the month", () => {
+    expect(addMonths("2026-10-23", 3)).toBe("2027-01-23");
+    expect(addMonths("2026-01-15", 6)).toBe("2026-07-15");
+  });
+
+  it("clamps to the end of a shorter month rather than rolling over", () => {
+    // The trap: JS Date turns 31 Jan + 1 month into 3 March, which would
+    // schedule a supervision into the following month.
+    expect(addMonths("2026-01-31", 1)).toBe("2026-02-28");
+    expect(addMonths("2026-08-31", 3)).toBe("2026-11-30");
+  });
+
+  it("crosses a year end", () => {
+    expect(addMonths("2026-11-30", 3)).toBe("2027-02-28");
+  });
+
+  it("handles a leap year", () => {
+    expect(addMonths("2028-01-31", 1)).toBe("2028-02-29");
+  });
+
+  it("leaves a malformed date alone", () => {
+    expect(addMonths("", 3)).toBe("");
+    expect(addMonths("not-a-date", 3)).toBe("not-a-date");
+  });
+});
+
+describe("defaultNextDue", () => {
+  it("uses three months for the quarterly reviews", () => {
+    expect(defaultNextDue("2026-10-23", "supervision")).toBe("2027-01-23");
+    expect(defaultNextDue("2026-10-23", "competency")).toBe("2027-01-23");
+    expect(defaultNextDue("2026-10-23", "client_qa")).toBe("2027-01-23");
+  });
+
+  it("uses six months for satisfaction, and for anything else", () => {
+    expect(defaultNextDue("2026-10-23", "carer_satisfaction")).toBe("2027-04-23");
+    expect(defaultNextDue("2026-10-23", "other")).toBe("2027-04-23");
   });
 });
