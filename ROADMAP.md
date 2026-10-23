@@ -91,8 +91,18 @@ publishes, withdraws or retires a document — or a whole pack at once, scoped b
 "publish the policies, leave the forms" is one action. Every status change is audited. The 43
 policies are published; the 63 forms and 23 logs are drafts.
 
+**Carers can read and accept** (v2.13.7): `/learn/policies`, in the learner nav when the
+organisation has the feature, leads with what is still to accept and tucks the accepted ones
+away. The acceptance is the carer's own — the insert runs as them and the table permits no other
+row. **Managers see who has accepted**: "12 of 40 accepted" against each policy in the library,
+and on each policy the list of who has not, with anyone who accepted an older version shown as
+outstanding and their old acceptance stated for what it is.
+
 Still to do here: downloading the actual file (the spreadsheet logs have nothing to give yet —
-they need the files in storage), and an organisation's own completed copy of a template.
+they need the files in storage), an organisation's own completed copy of a template, policy
+acceptances in the carer file and the evidence pack, the duplicate titles across packs (set each
+organisation's service type; show only the full-pack version of a title the basics also carry),
+and an importer that leaves published text alone on re-run.
 
 ---
 

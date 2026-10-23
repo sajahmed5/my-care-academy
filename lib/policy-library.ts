@@ -193,3 +193,122 @@ export function byCategory(items: PolicySummary[]): [string, PolicySummary[]][] 
   }
   return [...groups.entries()];
 }
+
+// ---------------------------------------------------------------------------
+// Who has accepted what — the manager's side of the acknowledgement.
+// ---------------------------------------------------------------------------
+
+export interface Acceptance {
+  user_id: string;
+  name: string;
+  role: string;
+  /** The version they accepted, or null if they never have. */
+  version: number | null;
+  acknowledged_at: string | null;
+}
+
+export interface AcceptanceSummary {
+  /** Active staff who have accepted the current version. */
+  accepted: Acceptance[];
+  /** Active staff who have not, or who accepted an older version. */
+  outstanding: Acceptance[];
+  total: number;
+}
+
+/**
+ * Every active member of the organisation against one policy: who has
+ * accepted the current version, and who has not.
+ *
+ * "Accepted an older version" counts as outstanding. A revision is a new
+ * document as far as the reader is concerned, and the old acceptance stays on
+ * the row as the truth about the old text — which is exactly why the version
+ * is stored there rather than looked up.
+ *
+ * RLS scopes the acknowledgements: an org admin reads their own
+ * organisation's, and the users read is the same org_admin_reads_org_users
+ * the rest of the console relies on.
+ */
+export async function loadAcceptance(
+  supabase: SupabaseClient,
+  policyId: string,
+  currentVersion: number,
+): Promise<AcceptanceSummary> {
+  const [{ data: staff }, { data: acks }] = await Promise.all([
+    supabase
+      .from("users")
+      .select("id, full_name, email, role, status")
+      .in("role", ["learner", "org_admin"])
+      .eq("status", "active")
+      .order("full_name")
+      .limit(1000),
+    supabase
+      .from("policy_acknowledgements")
+      .select("user_id, version, acknowledged_at")
+      .eq("policy_id", policyId),
+  ]);
+
+  // Latest acceptance per person: the highest version they have signed.
+  const latest = new Map<string, { version: number; at: string }>();
+  for (const a of acks ?? []) {
+    const prev = latest.get(a.user_id as string);
+    if (!prev || (a.version as number) > prev.version) {
+      latest.set(a.user_id as string, {
+        version: a.version as number,
+        at: a.acknowledged_at as string,
+      });
+    }
+  }
+
+  const accepted: Acceptance[] = [];
+  const outstanding: Acceptance[] = [];
+  for (const u of staff ?? []) {
+    const ack = latest.get(u.id as string);
+    const row: Acceptance = {
+      user_id: u.id as string,
+      name: (u.full_name as string | null) ?? (u.email as string) ?? "Unnamed",
+      role: u.role as string,
+      version: ack?.version ?? null,
+      acknowledged_at: ack?.at ?? null,
+    };
+    (ack && ack.version >= currentVersion ? accepted : outstanding).push(row);
+  }
+
+  return { accepted, outstanding, total: accepted.length + outstanding.length };
+}
+
+/** Accepted-count per policy for a list of ids, for the list's "12 of 40". */
+export async function loadAcceptanceCounts(
+  supabase: SupabaseClient,
+  policies: { id: string; version: number | null }[],
+): Promise<{ counts: Map<string, number>; staff: number }> {
+  const counts = new Map<string, number>();
+  if (policies.length === 0) return { counts, staff: 0 };
+
+  const [{ count: staff }, { data: acks }] = await Promise.all([
+    supabase
+      .from("users")
+      .select("id", { count: "exact", head: true })
+      .in("role", ["learner", "org_admin"])
+      .eq("status", "active"),
+    supabase
+      .from("policy_acknowledgements")
+      .select("policy_id, user_id, version")
+      .in(
+        "policy_id",
+        policies.map((p) => p.id),
+      )
+      .limit(5000),
+  ]);
+
+  const currentOf = new Map(policies.map((p) => [p.id, p.version ?? 1]));
+  const seen = new Set<string>();
+  for (const a of acks ?? []) {
+    const key = `${a.policy_id}|${a.user_id}`;
+    if (seen.has(key)) continue;
+    if ((a.version as number) >= (currentOf.get(a.policy_id as string) ?? 1)) {
+      seen.add(key);
+      counts.set(a.policy_id as string, (counts.get(a.policy_id as string) ?? 0) + 1);
+    }
+  }
+  return { counts, staff: staff ?? 0 };
+}

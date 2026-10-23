@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { acceptPolicyAction } from "../actions";
+import { acceptPolicyAction } from "@/app/org/policies/actions";
 import type { SaveState } from "@/app/platform/actions";
 
 /**
@@ -12,8 +12,9 @@ import type { SaveState } from "@/app/platform/actions";
  * The person clicking is the person recorded — the insert runs as them, and
  * the policy on the table permits no other row. A manager cannot tick this on
  * a carer's behalf, which is what makes it evidence rather than a checkbox.
+ * Shared by the carer's page and the manager's, because the act is the same.
  */
-export function AcceptButton({
+export function PolicyAcceptButton({
   policyId,
   code,
   version,

@@ -8,11 +8,14 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   PACK_LABEL,
+  loadAcceptance,
   loadPolicy,
   render,
   visiblePacks,
 } from "@/lib/policy-library";
-import { AcceptButton } from "./accept-button";
+import { PolicyBody } from "@/components/policy-body";
+import { PolicyAcceptButton } from "@/components/policy-accept-button";
+import { AcceptancePanel } from "./acceptance-panel";
 
 /**
  * One policy or document, with the organisation's name already in it.
@@ -54,6 +57,13 @@ export default async function PolicyPage({
 
   const name = (org?.name as string) ?? "Your organisation";
   const blocks = render(doc.blocks, name);
+  const version0 = doc.version ?? 1;
+  // Who has accepted this version — the manager's half of the evidence. Only
+  // for policies: a form is printed, not accepted.
+  const acceptance =
+    doc.kind === "policy"
+      ? await loadAcceptance(supabase, doc.id, version0)
+      : { accepted: [], outstanding: [], total: 0 };
   const toComplete = blocks.filter((b) => b.type === "guidance").length;
   const version = doc.version ?? 1;
 
@@ -100,59 +110,25 @@ export default async function PolicyPage({
             )}
 
             <Card>
-              <CardContent className="space-y-3 pt-6">
-                {blocks.map((block, i) => {
-                  if (block.type === "heading") {
-                    return (
-                      <h3
-                        key={i}
-                        className={
-                          (block.level ?? 1) <= 1
-                            ? "pt-2 text-base font-semibold"
-                            : "pt-1 text-sm font-semibold"
-                        }
-                      >
-                        {block.text}
-                      </h3>
-                    );
-                  }
-                  if (block.type === "guidance") {
-                    return (
-                      <p
-                        key={i}
-                        className="rounded-lg border border-dashed border-amber-300 bg-amber-50/60 p-3 text-sm text-amber-900"
-                      >
-                        {block.text}
-                      </p>
-                    );
-                  }
-                  if (block.type === "bullet") {
-                    return (
-                      <p key={i} className="pl-5 text-sm before:-ml-4 before:mr-2 before:content-['•']">
-                        {block.text}
-                      </p>
-                    );
-                  }
-                  return (
-                    <p key={i} className="text-sm leading-relaxed">
-                      {block.text}
-                    </p>
-                  );
-                })}
+              <CardContent className="pt-6">
+                <PolicyBody blocks={blocks} />
               </CardContent>
             </Card>
 
             {doc.kind === "policy" && (
-              <Card>
-                <CardContent className="pt-6">
-                  <AcceptButton
-                    policyId={doc.id}
-                    code={doc.code}
-                    version={version}
-                    accepted={doc.acknowledgedVersion === version}
-                  />
-                </CardContent>
-              </Card>
+              <>
+                <Card>
+                  <CardContent className="pt-6">
+                    <PolicyAcceptButton
+                      policyId={doc.id}
+                      code={doc.code}
+                      version={version}
+                      accepted={doc.acknowledgedVersion != null && doc.acknowledgedVersion >= version}
+                    />
+                  </CardContent>
+                </Card>
+                <AcceptancePanel summary={acceptance} version={version} />
+              </>
             )}
           </>
         )}

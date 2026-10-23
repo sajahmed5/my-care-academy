@@ -90,6 +90,7 @@ const NAV: Record<string, NavItem[]> = {
     { href: "/learn", label: "Dashboard", icon: LayoutDashboard },
     { href: "/learn/modules", label: "Training", icon: BookOpen },
     { href: "/learn/certificates", label: "Certificates", icon: Award },
+    { href: "/learn/policies", label: "Policies", icon: BookMarked, feature: "documents.library" },
     { href: "/learn/notifications", label: "Notifications", icon: Bell },
     { href: "/learn/profile", label: "Profile", icon: User },
   ],

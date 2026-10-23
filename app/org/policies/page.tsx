@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   PACK_LABEL,
   byCategory,
+  loadAcceptanceCounts,
   loadLibrary,
   type PolicySummary,
 } from "@/lib/policy-library";
@@ -50,6 +51,13 @@ export default async function PoliciesPage({
   const documents = all.filter((d) => d.kind !== "policy");
   const shown = active === "policies" ? policies : documents;
 
+  // "12 of 40 accepted" against each policy: the number a manager scans for,
+  // and the one an inspector asks about.
+  const { counts, staff } =
+    active === "policies"
+      ? await loadAcceptanceCounts(supabase, policies)
+      : { counts: new Map<string, number>(), staff: 0 };
+
   return (
     <DashboardShell title="Policies & documents" context={context}>
       <div className="mx-auto max-w-4xl space-y-6">
@@ -85,7 +93,12 @@ export default async function PoliciesPage({
               <h3 className="text-sm font-semibold text-muted-foreground">{category}</h3>
               <div className="space-y-2">
                 {items.map((item) => (
-                  <Row key={item.id} item={item} />
+                  <Row
+                    key={item.id}
+                    item={item}
+                    accepted={counts.get(item.id) ?? 0}
+                    staff={staff}
+                  />
                 ))}
               </div>
             </section>
@@ -123,7 +136,15 @@ function Tab({
   );
 }
 
-function Row({ item }: { item: PolicySummary }) {
+function Row({
+  item,
+  accepted: acceptedCount,
+  staff,
+}: {
+  item: PolicySummary;
+  accepted: number;
+  staff: number;
+}) {
   const accepted =
     item.kind === "policy" && item.acknowledgedVersion != null &&
     item.acknowledgedVersion === (item.version ?? 1);
@@ -145,11 +166,24 @@ function Row({ item }: { item: PolicySummary }) {
             </p>
           </div>
         </div>
-        {accepted && (
-          <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-            You have accepted this
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {item.kind === "policy" && staff > 0 && (
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                acceptedCount >= staff
+                  ? "bg-green-100 text-green-700"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {acceptedCount} of {staff} accepted
+            </span>
+          )}
+          {accepted && (
+            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+              You have accepted this
+            </span>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

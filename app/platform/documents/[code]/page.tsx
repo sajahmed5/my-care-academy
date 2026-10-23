@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { PACK_LABEL, render, type PolicyBlock, type PolicyPack } from "@/lib/policy-library";
+import { PolicyBody } from "@/components/policy-body";
 import { StatusForm } from "./status-form";
 
 /** The name stood in for a real customer's, so the preview reads as theirs will. */
@@ -103,44 +104,7 @@ export default async function PlatformDocumentPage({
               <p className="text-xs text-muted-foreground">
                 Previewed as {SAMPLE_ORG}.
               </p>
-              {rendered.map((block, i) => {
-                if (block.type === "heading") {
-                  return (
-                    <h3
-                      key={i}
-                      className={
-                        (block.level ?? 1) <= 1
-                          ? "pt-2 text-base font-semibold"
-                          : "pt-1 text-sm font-semibold"
-                      }
-                    >
-                      {block.text}
-                    </h3>
-                  );
-                }
-                if (block.type === "guidance") {
-                  return (
-                    <p
-                      key={i}
-                      className="rounded-lg border border-dashed border-amber-300 bg-amber-50/60 p-3 text-sm text-amber-900"
-                    >
-                      {block.text}
-                    </p>
-                  );
-                }
-                if (block.type === "bullet") {
-                  return (
-                    <p key={i} className="pl-5 text-sm before:-ml-4 before:mr-2 before:content-['•']">
-                      {block.text}
-                    </p>
-                  );
-                }
-                return (
-                  <p key={i} className="text-sm leading-relaxed">
-                    {block.text}
-                  </p>
-                );
-              })}
+              <PolicyBody blocks={rendered} />
             </CardContent>
           </Card>
         )}
