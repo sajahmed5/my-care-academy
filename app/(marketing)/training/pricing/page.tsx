@@ -18,10 +18,11 @@ export const metadata: Metadata = {
 // once the packages became a ladder — Pro contains Growth, so an equal price
 // made Growth the plan nobody should buy.
 //
-// The Stripe prices behind checkout (STRIPE_PRICE_*) hold the OLD numbers and
-// are NOT kept in sync automatically. Until new Stripe prices are created and
-// those four env vars repointed, this page advertises £99 and £149 while
-// checkout charges £79 and £129. Change a price here, change those too.
+// There is no Stripe behind these today: the original account was closed on
+// 23 Oct 2026 and STRIPE_* was deleted from Vercel. Nothing here charges
+// anyone — every "Choose" button goes to /contact — so this page is simply
+// what we tell people the plans cost. When billing returns, the Stripe prices
+// must be created to match these numbers, and kept in step by hand.
 //
 // Platform MRR does not use these: it sums each organisation's agreed amount,
 // set on its page. Tier names and features come from lib/organisations, the

@@ -45,19 +45,23 @@ export const TIER_DETAILS: Record<
     ],
   },
   core_forms: {
-    tagline: "Training plus your own digital paperwork.",
+    tagline: "Training plus your own paperwork.",
     features: [
       "Everything in Starter",
       "Forms builder — custom forms with e-signatures",
       "Form submissions tracked per staff member",
+      "Policies & procedures library",
     ],
   },
   core_recruitment: {
-    tagline: "Training and forms, plus recruitment compliance.",
+    tagline: "Everything it takes to run compliance, not just training.",
     features: [
       "Everything in Growth",
-      "Recruitment tracker — candidates and interviews",
-      "Document checklist with DBS and right-to-work expiry dates",
+      "Recruitment tracker — candidates, interviews and DBS expiry",
+      "Complaints, accidents and safeguarding register",
+      "Supervisions and appraisals, with agreed actions tracked",
+      "Spot checks and competency assessments",
+      "Full compliance pack of policies and procedures",
     ],
   },
   full: {
@@ -65,6 +69,8 @@ export const TIER_DETAILS: Record<
     features: [
       "Everything in Pro",
       "Care Certificate workplace assessment",
+      "Your own branding on certificates and the portal",
+      "Rostering system integration",
       "Priority support",
     ],
   },
