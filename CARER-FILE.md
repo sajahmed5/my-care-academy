@@ -161,8 +161,11 @@ hold the two together.
 - **org_admin** — the whole file for their organisation.
 - **learner, own file** — training, certificates, Care Certificate, their own forms, their own
   tasks. **Not** supervision notes, complaints they are named in, or competency assessor
-  comments until that is deliberately designed; a carer opening the app and reading a manager's
-  unfinished note about them is a serious problem, not a small one.
+  comments. Settled by Saj, 23 Oct 2026: carers never read these. They sign the supervision at
+  the time, on the manager's screen, as it is being completed — so the agreement is captured in
+  the room rather than by giving them an account that reads HR records later. A carer's login is
+  the training part of the product; everything built since the carer file is for the
+  organisation to use.
 - **platform_admin** — read-only, as everywhere else.
 
 RLS does the scoping. No section may rely on the page having filtered by organisation.
@@ -225,13 +228,25 @@ automatic; those are not judgements about a person.
 
 ---
 
-## 9. Open questions
+## 9. Decisions, and what is still open
 
-- **Which plan owns which section.** §2 names feature keys; the Packages screen decides what is
-  in Growth, Pro and Enterprise. Not set.
-- **Retention periods** per record type.
-- **Does a learner see their own supervision?** Signed and agreed, arguably yes; in draft,
-  clearly not. Needs a decision before supervisions are built.
-- **Agency and bank staff** — people who are not employees but whose file an inspector will
-  still ask for.
+Settled by Saj, 23 Oct 2026:
+
+- **Which plan owns which section** — done, and in the database: Growth adds forms and the
+  policies library; Pro adds recruitment, complaints, supervisions, spot checks and the full
+  compliance pack; Enterprise adds the Care Certificate, white-label and the rostering
+  integration.
+- **A carer never reads their own supervision, complaint or spot check.** They sign the
+  supervision while it is being completed, on the staff member's screen. *Not built yet:* a
+  signature at the point of saving a supervision, which is the only part of this decision the
+  code does not yet implement.
+- **Agency and bank staff** need nothing special. If they are not employed by the organisation
+  it is that organisation's call how to handle them; they are usually trained by whoever employs
+  them. A carer account is the training part of the product either way.
+
+Still open:
+
+- **Retention periods** per record type — how long a supervision, a spot check or a complaint
+  is kept, and what happens at the end of it. `tests/user-erasure.test.ts` must grow to cover
+  every new table whatever the answer.
 - **Multi-site** — a carer who works across two of an organisation's services.
