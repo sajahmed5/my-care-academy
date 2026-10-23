@@ -1,11 +1,20 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { PACKAGE_TIERS, ORG_STATUSES } from "@/lib/organisations";
+import {
+  PACKAGE_TIERS,
+  ORG_STATUSES,
+  SERVICE_TYPES,
+  SIZE_BANDS,
+  bandForHeadcount,
+  sizeBandLabel,
+  tierLabel,
+} from "@/lib/organisations";
+import { FEATURE_CATEGORIES, FEATURES } from "@/lib/features";
+import { choiceFor, type OverrideChoice } from "@/lib/org-subscription";
 import {
   updateOrganisationAction,
   type SaveState,
@@ -16,37 +25,58 @@ export interface EditableOrg {
   name: string;
   package_tier: string;
   status: string;
-  forms_enabled: boolean;
-  recruitment_enabled: boolean;
-  observations_enabled: boolean;
+  service_type: string | null;
+  size_band: string | null;
+  monthly_amount_pence: number | null;
+  /** Current staff (leavers excluded) — compared with the recorded band. */
+  learners: number;
+  overrides: { feature: string; enabled: boolean; note: string | null }[];
 }
 
 const selectClass =
   "flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm";
 
-export function EditOrgForm({ org }: { org: EditableOrg }) {
+const bandOrder = SIZE_BANDS.map((b) => b.value as string);
+
+export function EditOrgForm({
+  org,
+  tierFeatures,
+}: {
+  org: EditableOrg;
+  /** What each package includes, so the hints follow the package picked here. */
+  tierFeatures: Record<string, string[]>;
+}) {
   const [state, action, pending] = useActionState(
     updateOrganisationAction,
     {} as SaveState,
   );
-  const [forms, setForms] = useState(org.forms_enabled);
-  const [recruitment, setRecruitment] = useState(org.recruitment_enabled);
-  const [observations, setObservations] = useState(org.observations_enabled);
+  const [tier, setTier] = useState(org.package_tier);
+  const [band, setBand] = useState(org.size_band ?? "");
+
+  const actualBand = bandForHeadcount(org.learners);
+  const bandGap = band
+    ? bandOrder.indexOf(actualBand) - bandOrder.indexOf(band)
+    : 0;
+
+  const pounds =
+    org.monthly_amount_pence == null
+      ? ""
+      : (org.monthly_amount_pence / 100).toFixed(2).replace(/\.00$/, "");
 
   return (
-    <form action={action} className="space-y-6">
+    <form
+      // Submitted through a transition rather than <form action>: React resets
+      // a form after a successful action, and for a settings form that puts the
+      // pre-save values back on screen over the ones just saved — so a second,
+      // untouched save would quietly write them all back.
+      onSubmit={(e) => {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        startTransition(() => action(data));
+      }}
+      className="space-y-6"
+    >
       <input type="hidden" name="id" value={org.id} />
-      <input type="hidden" name="forms_enabled" value={String(forms)} />
-      <input
-        type="hidden"
-        name="recruitment_enabled"
-        value={String(recruitment)}
-      />
-      <input
-        type="hidden"
-        name="observations_enabled"
-        value={String(observations)}
-      />
 
       <div className="space-y-2">
         <Label htmlFor="name">Organisation name</Label>
@@ -55,11 +85,12 @@ export function EditOrgForm({ org }: { org: EditableOrg }) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="package_tier">Package tier</Label>
+          <Label htmlFor="package_tier">Package</Label>
           <select
             id="package_tier"
             name="package_tier"
-            defaultValue={org.package_tier}
+            value={tier}
+            onChange={(e) => setTier(e.target.value)}
             className={selectClass}
           >
             {PACKAGE_TIERS.map((t) => (
@@ -87,43 +118,82 @@ export function EditOrgForm({ org }: { org: EditableOrg }) {
         </div>
       </div>
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between rounded-lg border p-3">
-          <div>
-            <p className="text-sm font-medium">Forms add-on</p>
-            <p className="text-xs text-muted-foreground">
-              Enables the Forms builder for this organisation.
-            </p>
-          </div>
-          <Switch checked={forms} onCheckedChange={setForms} />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="service_type">Type of service</Label>
+          <select
+            id="service_type"
+            name="service_type"
+            defaultValue={org.service_type ?? ""}
+            className={selectClass}
+          >
+            <option value="">Not set</option>
+            {SERVICE_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">
+            Decides which policies, procedures and forms they see. It
+            doesn&apos;t change the courses — every course is open to everyone.
+          </p>
         </div>
 
-        <div className="flex items-center justify-between rounded-lg border p-3">
-          <div>
-            <p className="text-sm font-medium">Recruitment add-on</p>
-            <p className="text-xs text-muted-foreground">
-              Enables the Recruitment tracker for this organisation.
-            </p>
-          </div>
-          <Switch
-            checked={recruitment}
-            onCheckedChange={setRecruitment}
-          />
-        </div>
-
-        <div className="flex items-center justify-between rounded-lg border p-3">
-          <div>
-            <p className="text-sm font-medium">
-              Care Certificate observations add-on
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Enables workplace observation &amp; employer sign-off for the Care
-              Certificate.
-            </p>
-          </div>
-          <Switch checked={observations} onCheckedChange={setObservations} />
+        <div className="space-y-2">
+          <Label htmlFor="size_band">Size band</Label>
+          <select
+            id="size_band"
+            name="size_band"
+            value={band}
+            onChange={(e) => setBand(e.target.value)}
+            className={selectClass}
+          >
+            <option value="">Not set</option>
+            {SIZE_BANDS.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">
+            {org.learners} current staff — {sizeBandLabel(actualBand).toLowerCase()}.
+            {bandGap > 0 && (
+              <span className="ml-1.5 inline-flex rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-900 dark:bg-amber-500/15 dark:text-amber-300">
+                Has outgrown its band
+              </span>
+            )}
+            {bandGap < 0 && (
+              <span className="ml-1.5 inline-flex rounded-full bg-muted px-2 py-0.5 font-medium text-foreground">
+                Smaller than its band
+              </span>
+            )}
+          </p>
         </div>
       </div>
+
+      <div className="space-y-2 sm:max-w-xs">
+        <Label htmlFor="monthly_amount">Agreed monthly amount</Label>
+        <div className="relative">
+          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground">
+            £
+          </span>
+          <Input
+            id="monthly_amount"
+            name="monthly_amount"
+            inputMode="decimal"
+            defaultValue={pounds}
+            placeholder="Not agreed yet"
+            className="pl-7"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Our record of what they agreed to pay. Only platform admins can see
+          it, and it doesn&apos;t change what Stripe charges.
+        </p>
+      </div>
+
+      <FeatureExceptions org={org} tier={tier} tierFeatures={tierFeatures} />
 
       <div className="flex items-center gap-4">
         <Button type="submit" disabled={pending}>
@@ -139,5 +209,91 @@ export function EditOrgForm({ org }: { org: EditableOrg }) {
         )}
       </div>
     </form>
+  );
+}
+
+function FeatureExceptions({
+  org,
+  tier,
+  tierFeatures,
+}: {
+  org: EditableOrg;
+  tier: string;
+  tierFeatures: Record<string, string[]>;
+}) {
+  const included = new Set(tierFeatures[tier] ?? []);
+  const byFeature = new Map(org.overrides.map((o) => [o.feature, o]));
+  const [choices, setChoices] = useState<Record<string, OverrideChoice>>(() =>
+    Object.fromEntries(
+      FEATURES.filter((f) => !f.isCore).map((f) => [f.key, choiceFor(byFeature.get(f.key))]),
+    ),
+  );
+
+  return (
+    <fieldset className="space-y-3">
+      <legend className="text-sm font-medium">Features</legend>
+      <p className="text-xs text-muted-foreground">
+        Each feature follows the package unless you set an exception here.
+        Training is in every package.
+      </p>
+
+      {FEATURE_CATEGORIES.map((category) => {
+        const features = FEATURES.filter(
+          (f) => f.category === category.key && !f.isCore,
+        );
+        if (features.length === 0) return null;
+        return (
+          <div key={category.key} className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {category.label}
+            </p>
+            {features.map((f) => {
+              const choice = choices[f.key];
+              const inPackage = included.has(f.key);
+              const on = choice === "follow" ? inPackage : choice === "on";
+              const note = byFeature.get(f.key)?.note;
+              return (
+                <div
+                  key={f.key}
+                  className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{f.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {inPackage
+                        ? `${tierLabel(tier)} includes this`
+                        : `Not in ${tierLabel(tier)}`}
+                      {" · "}
+                      <span className={on ? "text-green-700 dark:text-green-500" : ""}>
+                        {on ? "On" : "Off"} for this organisation
+                      </span>
+                    </p>
+                    {note && choice !== "follow" && (
+                      <p className="text-xs text-muted-foreground/80">{note}</p>
+                    )}
+                  </div>
+                  <select
+                    name={`feature:${f.key}`}
+                    aria-label={`${f.label} for this organisation`}
+                    value={choice}
+                    onChange={(e) =>
+                      setChoices((prev) => ({
+                        ...prev,
+                        [f.key]: e.target.value as OverrideChoice,
+                      }))
+                    }
+                    className={`${selectClass} sm:w-44`}
+                  >
+                    <option value="follow">Follow package</option>
+                    <option value="on">Always on</option>
+                    <option value="off">Always off</option>
+                  </select>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </fieldset>
   );
 }

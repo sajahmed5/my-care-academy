@@ -6,7 +6,18 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createInvite } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
-import { PACKAGE_TIERS, ORG_STATUSES } from "@/lib/organisations";
+import {
+  PACKAGE_TIERS,
+  ORG_STATUSES,
+  SERVICE_TYPES,
+  SIZE_BANDS,
+} from "@/lib/organisations";
+import { FEATURES } from "@/lib/features";
+import {
+  overrideChanges,
+  parsePounds,
+  type OverrideChoice,
+} from "@/lib/org-subscription";
 
 export interface InviteState {
   ok?: boolean;
@@ -74,7 +85,16 @@ export interface SaveState {
   error?: string;
 }
 
-/** Update an organisation's name, tier, feature flags and status. */
+/**
+ * Save an organisation's settings: name, package, status, what kind of service
+ * it is, its size band, the agreed monthly amount, and any feature exceptions.
+ *
+ * The old forms/recruitment/observations switches are gone. Each feature is now
+ * "follow the package", "always on" or "always off", and only the last two
+ * store anything — so a deliberate exception is recorded as one, with who set
+ * it and when, instead of three switches that drifted free of the package with
+ * no record of why.
+ */
 export async function updateOrganisationAction(
   _prev: SaveState,
   formData: FormData,
@@ -85,9 +105,8 @@ export async function updateOrganisationAction(
   const name = String(formData.get("name") ?? "").trim();
   const packageTier = String(formData.get("package_tier") ?? "");
   const status = String(formData.get("status") ?? "");
-  const formsEnabled = formData.get("forms_enabled") === "true";
-  const recruitmentEnabled = formData.get("recruitment_enabled") === "true";
-  const observationsEnabled = formData.get("observations_enabled") === "true";
+  const serviceType = String(formData.get("service_type") ?? "");
+  const sizeBand = String(formData.get("size_band") ?? "");
 
   if (!id) return { ok: false, error: "Missing organisation id." };
   if (!name) return { ok: false, error: "Name is required." };
@@ -97,21 +116,99 @@ export async function updateOrganisationAction(
   if (!ORG_STATUSES.some((s) => s.value === status)) {
     return { ok: false, error: "Invalid status." };
   }
+  if (serviceType && !SERVICE_TYPES.some((t) => t.value === serviceType)) {
+    return { ok: false, error: "Invalid service type." };
+  }
+  if (sizeBand && !SIZE_BANDS.some((b) => b.value === sizeBand)) {
+    return { ok: false, error: "Invalid size band." };
+  }
+  const amount = parsePounds(String(formData.get("monthly_amount") ?? ""));
+  if (!amount.ok) return { ok: false, error: amount.error };
 
-  // Updates go through RLS — only a platform_admin can write any org.
+  // Core features are in every package and cannot be excepted.
+  const desired: Record<string, OverrideChoice> = {};
+  for (const feature of FEATURES) {
+    if (feature.isCore) continue;
+    const choice = String(formData.get(`feature:${feature.key}`) ?? "follow");
+    if (choice !== "follow" && choice !== "on" && choice !== "off") {
+      return { ok: false, error: "Invalid feature setting." };
+    }
+    desired[feature.key] = choice;
+  }
+
+  // Everything goes through RLS — only a platform_admin can write any of it.
   const supabase = await createClient();
+  const [{ data: before }, { data: sub }, { data: overrides }] = await Promise.all([
+    supabase
+      .from("organisations")
+      .select("package_tier, status, size_band, service_type")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("organisation_subscriptions")
+      .select("monthly_amount_pence")
+      .eq("organisation_id", id)
+      .maybeSingle(),
+    supabase
+      .from("organisation_features")
+      .select("feature_key, enabled")
+      .eq("organisation_id", id),
+  ]);
+  if (!before) return { ok: false, error: "That organisation no longer exists." };
+
   const { error } = await supabase
     .from("organisations")
     .update({
       name,
       package_tier: packageTier,
       status,
-      forms_enabled: formsEnabled,
-      recruitment_enabled: recruitmentEnabled,
-      observations_enabled: observationsEnabled,
+      service_type: serviceType || null,
+      size_band: sizeBand || null,
     })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
+
+  const previousPence = (sub?.monthly_amount_pence as number | null | undefined) ?? null;
+  if (previousPence !== amount.pence) {
+    const { error: subError } = await supabase
+      .from("organisation_subscriptions")
+      .upsert(
+        { organisation_id: id, monthly_amount_pence: amount.pence },
+        { onConflict: "organisation_id" },
+      );
+    if (subError) return { ok: false, error: subError.message };
+  }
+
+  const { set, clear } = overrideChanges(
+    (overrides ?? []).map((o) => ({
+      feature: o.feature_key as string,
+      enabled: o.enabled as boolean,
+    })),
+    desired,
+  );
+  const stamp = `Set by ${context.email ?? "a platform admin"} on ${new Date()
+    .toISOString()
+    .slice(0, 10)}`;
+  if (set.length) {
+    const { error: setError } = await supabase.from("organisation_features").upsert(
+      set.map((s) => ({
+        organisation_id: id,
+        feature_key: s.feature,
+        enabled: s.enabled,
+        note: stamp,
+      })),
+      { onConflict: "organisation_id,feature_key" },
+    );
+    if (setError) return { ok: false, error: setError.message };
+  }
+  if (clear.length) {
+    const { error: clearError } = await supabase
+      .from("organisation_features")
+      .delete()
+      .eq("organisation_id", id)
+      .in("feature_key", clear);
+    if (clearError) return { ok: false, error: clearError.message };
+  }
 
   await logAudit({
     context,
@@ -122,8 +219,14 @@ export async function updateOrganisationAction(
     detail: {
       package_tier: packageTier,
       status,
-      forms_enabled: formsEnabled,
-      recruitment_enabled: recruitmentEnabled,
+      service_type: serviceType || null,
+      size_band: sizeBand || null,
+      // The one figure here with commercial consequences, so keep the history.
+      ...(previousPence !== amount.pence && {
+        monthly_amount_pence: { from: previousPence, to: amount.pence },
+      }),
+      ...(set.length && { exceptions_set: set }),
+      ...(clear.length && { exceptions_cleared: clear }),
     },
   });
 

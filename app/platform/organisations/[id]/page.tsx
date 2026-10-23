@@ -27,12 +27,17 @@ export default async function OrganisationDetailPage({
   const { id } = await params;
 
   const supabase = await createClient();
-  const [{ data: org }, { data: staff }, learners] = await Promise.all([
+  const [
+    { data: org },
+    { data: staff },
+    learners,
+    { data: subscription },
+    { data: overrides },
+    { data: ticks },
+  ] = await Promise.all([
     supabase
       .from("organisations")
-      .select(
-        "id, name, package_tier, status, forms_enabled, recruitment_enabled, observations_enabled",
-      )
+      .select("id, name, package_tier, status, service_type, size_band")
       .eq("id", id)
       .single(),
     supabase
@@ -41,9 +46,24 @@ export default async function OrganisationDetailPage({
       .eq("organisation_id", id)
       .order("created_at", { ascending: true }),
     loadOrgLearners(supabase, id),
+    supabase
+      .from("organisation_subscriptions")
+      .select("monthly_amount_pence")
+      .eq("organisation_id", id)
+      .maybeSingle(),
+    supabase
+      .from("organisation_features")
+      .select("feature_key, enabled, note")
+      .eq("organisation_id", id),
+    supabase.from("tier_features").select("tier_key, feature_key"),
   ]);
 
   if (!org) notFound();
+
+  const tierFeatures: Record<string, string[]> = {};
+  for (const t of ticks ?? []) {
+    (tierFeatures[t.tier_key as string] ??= []).push(t.feature_key as string);
+  }
 
   const nowMs = new Date().getTime();
   // Deactivated accounts (leavers) stay in the table for their history, but
@@ -130,11 +150,25 @@ export default async function OrganisationDetailPage({
           <CardHeader>
             <CardTitle>Organisation settings</CardTitle>
             <CardDescription>
-              Manage the tier, feature add-ons and status.
+              Package, size, agreed amount, and any features that differ from
+              the package.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <EditOrgForm org={org} />
+            <EditOrgForm
+              org={{
+                ...org,
+                monthly_amount_pence:
+                  (subscription?.monthly_amount_pence as number | null | undefined) ?? null,
+                learners: current.length,
+                overrides: (overrides ?? []).map((o) => ({
+                  feature: o.feature_key as string,
+                  enabled: o.enabled as boolean,
+                  note: (o.note as string | null) ?? null,
+                })),
+              }}
+              tierFeatures={tierFeatures}
+            />
           </CardContent>
         </Card>
 
