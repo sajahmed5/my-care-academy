@@ -17,6 +17,7 @@ import {
   ClipboardCheck,
   Bug,
   FileBarChart,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ const NAV: Record<string, NavItem[]> = {
   platform_admin: [
     { href: "/platform", label: "Overview", icon: LayoutDashboard },
     { href: "/platform/organisations", label: "Organisations", icon: Building2 },
+    { href: "/platform/tiers", label: "Packages", icon: Layers },
     { href: "/platform/analytics", label: "Analytics", icon: BarChart3 },
     { href: "/platform/courses", label: "Courses", icon: BookOpen },
     { href: "/platform/reports", label: "Issues", icon: Bug },
