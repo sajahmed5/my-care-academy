@@ -1,6 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { adminClient, cleanup, createOrg, createUser, signIn } from "./helpers";
+import {
+  adminClient,
+  cleanup,
+  createOrg,
+  createUser,
+  setFeature,
+  signIn,
+} from "./helpers";
 
 // A foreign org_admin must see NONE of another org's data across every
 // tenant-scoped table — the core multi-tenancy guarantee.
@@ -25,11 +32,16 @@ beforeAll(async () => {
   orgIds.push(orgA, orgB);
   // Both orgs entitled, so denials are org-scoping (not just feature gating).
   for (const id of [orgA, orgB]) {
-    await admin
-      .from("organisations")
-      .update({ forms_enabled: true, recruitment_enabled: true })
-      .eq("id", id);
+    await setFeature(id, "forms.builder", true);
+    await setFeature(id, "recruitment.tracker", true);
   }
+
+  // Both orgs have an agreed amount on record — including B, so the test below
+  // proves an org admin cannot read even their OWN organisation's figure.
+  await admin.from("organisation_subscriptions").insert([
+    { organisation_id: orgA, monthly_amount_pence: 9900 },
+    { organisation_id: orgB, monthly_amount_pence: 4900 },
+  ]);
 
   const aAdmin = await createUser({ email: email("a"), password: PW, role: "org_admin", organisationId: orgA });
   const bAdmin = await createUser({ email: email("b"), password: PW, role: "org_admin", organisationId: orgB });
@@ -99,6 +111,28 @@ describe("cross-org isolation (foreign org_admin sees nothing)", () => {
       expect(data ?? []).toEqual([]);
     });
   }
+
+  // organisation_features can't join the loop above: B legitimately reads its
+  // own override rows, so "no rows at all" would be wrong. What must hold is
+  // that none of A's are visible.
+  it("organisation_features: no rows leak from another org", async () => {
+    const { data, error } = await adminB
+      .from("organisation_features")
+      .select("organisation_id")
+      .eq("organisation_id", orgA);
+    expect(error).toBeNull();
+    expect(data ?? []).toEqual([]);
+  });
+
+  // Stricter than isolation: the agreed amount is our commercial record of an
+  // organisation, not theirs, so an org admin sees no row at all — own included.
+  it("organisation_subscriptions: invisible to every org admin", async () => {
+    const { data, error } = await adminB
+      .from("organisation_subscriptions")
+      .select("*");
+    expect(error).toBeNull();
+    expect(data ?? []).toEqual([]);
+  });
 
   it("cannot write into another org's form", async () => {
     const { error } = await adminB.from("form_submissions").insert({

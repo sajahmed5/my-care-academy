@@ -1,10 +1,12 @@
 import { beforeAll, afterAll, describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  adminClient,
   claimsOf,
   cleanup,
   createOrg,
   createUser,
+  setFeature,
   signIn,
 } from "./helpers";
 
@@ -100,21 +102,75 @@ describe("organisations RLS", () => {
     expect(data).toEqual([]);
   });
 
-  it("org_admin cannot change their own org's feature flags", async () => {
-    // Only platform_admin may write orgs — feature-gating integrity.
+  it("org_admin cannot write their own organisation row", async () => {
+    // Only platform_admin may write orgs — tier, status and service type all
+    // live here.
     const { data } = await adminAClient
       .from("organisations")
-      .update({ forms_enabled: true })
+      .update({ package_tier: "full" })
       .eq("id", orgA)
       .select("id");
     expect(data ?? []).toEqual([]);
 
     const { data: check } = await platformClient
       .from("organisations")
-      .select("forms_enabled")
+      .select("package_tier")
       .eq("id", orgA)
       .single();
-    expect(check?.forms_enabled).toBe(false);
+    expect(check?.package_tier).toBe("core");
+  });
+
+  // The integrity of the whole entitlement model: an organisation must not be
+  // able to switch on a feature it has not bought, by any of the three verbs.
+  it("org_admin cannot grant themselves a feature", async () => {
+    const { error } = await adminAClient
+      .from("organisation_features")
+      .insert({ organisation_id: orgA, feature_key: "forms.builder", enabled: true });
+    expect(error).not.toBeNull();
+
+    // Seed an override as a platform admin would, then try to flip it.
+    await setFeature(orgA, "recruitment.tracker", false);
+
+    const { data: updated } = await adminAClient
+      .from("organisation_features")
+      .update({ enabled: true })
+      .eq("organisation_id", orgA)
+      .eq("feature_key", "recruitment.tracker")
+      .select("feature_key");
+    expect(updated ?? []).toEqual([]);
+
+    // Deleting an "off" override would fall back to the tier — another way in.
+    const { data: deleted } = await adminAClient
+      .from("organisation_features")
+      .delete()
+      .eq("organisation_id", orgA)
+      .eq("feature_key", "recruitment.tracker")
+      .select("feature_key");
+    expect(deleted ?? []).toEqual([]);
+
+    const { data: row } = await adminClient()
+      .from("organisation_features")
+      .select("enabled")
+      .eq("organisation_id", orgA)
+      .eq("feature_key", "recruitment.tracker")
+      .single();
+    expect(row?.enabled).toBe(false);
+  });
+
+  it("org_admin can read their own overrides but not another org's", async () => {
+    await setFeature(orgB, "forms.builder", true);
+
+    const { data: own } = await adminAClient
+      .from("organisation_features")
+      .select("organisation_id")
+      .eq("organisation_id", orgA);
+    expect((own ?? []).length).toBeGreaterThan(0);
+
+    const { data: other } = await adminAClient
+      .from("organisation_features")
+      .select("organisation_id")
+      .eq("organisation_id", orgB);
+    expect(other ?? []).toEqual([]);
   });
 
   it("platform_admin sees all organisations", async () => {

@@ -1,6 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { adminClient, cleanup, createOrg, createUser, signIn } from "./helpers";
+import {
+  adminClient,
+  cleanup,
+  createOrg,
+  createUser,
+  setFeature,
+  signIn,
+} from "./helpers";
 
 const RUN = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 const PW = "Test-Passw0rd!";
@@ -21,8 +28,11 @@ beforeAll(async () => {
   orgOff = await createOrg(`Forms Off ${RUN}`);
   orgIds.push(orgOn, orgOff);
 
-  await admin.from("organisations").update({ forms_enabled: true }).eq("id", orgOn);
-  await admin.from("organisations").update({ forms_enabled: false }).eq("id", orgOff);
+  // Entitlement now comes from the feature catalogue. Everything below this
+  // line is unchanged from when it read organisations.forms_enabled — which is
+  // the point: the gate behaves identically.
+  await setFeature(orgOn, "forms.builder", true);
+  await setFeature(orgOff, "forms.builder", false);
 
   const a1 = await createUser({
     email: email("on"),

@@ -36,6 +36,28 @@ export async function createOrg(name: string): Promise<string> {
   return data.id as string;
 }
 
+/**
+ * Switch one feature on or off for an org, as a platform admin would.
+ *
+ * An override row beats whatever the org's package includes, so this entitles
+ * a test org regardless of its tier — which is also what makes it the right
+ * way to set up a gated-feature suite.
+ */
+export async function setFeature(
+  organisationId: string,
+  featureKey: string,
+  enabled: boolean,
+): Promise<void> {
+  const admin = adminClient();
+  const { error } = await admin
+    .from("organisation_features")
+    .upsert(
+      { organisation_id: organisationId, feature_key: featureKey, enabled },
+      { onConflict: "organisation_id,feature_key" },
+    );
+  if (error) throw error;
+}
+
 /** Create an auth user + profile (via the handle_new_user trigger + metadata). */
 export async function createUser(opts: {
   email: string;

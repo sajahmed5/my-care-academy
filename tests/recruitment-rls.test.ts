@@ -1,6 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { adminClient, cleanup, createOrg, createUser, signIn } from "./helpers";
+import {
+  adminClient,
+  cleanup,
+  createOrg,
+  createUser,
+  setFeature,
+  signIn,
+} from "./helpers";
 
 const RUN = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 const PW = "Test-Passw0rd!";
@@ -18,8 +25,10 @@ beforeAll(async () => {
   orgOn = await createOrg(`Rec On ${RUN}`);
   orgOff = await createOrg(`Rec Off ${RUN}`);
   orgIds.push(orgOn, orgOff);
-  await admin.from("organisations").update({ recruitment_enabled: true }).eq("id", orgOn);
-  await admin.from("organisations").update({ recruitment_enabled: false }).eq("id", orgOff);
+  // Entitlement now comes from the feature catalogue; the assertions below are
+  // unchanged, which is how we know the gate behaves identically.
+  await setFeature(orgOn, "recruitment.tracker", true);
+  await setFeature(orgOff, "recruitment.tracker", false);
 
   const a1 = await createUser({ email: email("on"), password: PW, role: "org_admin", organisationId: orgOn });
   const a2 = await createUser({ email: email("off"), password: PW, role: "org_admin", organisationId: orgOff });
