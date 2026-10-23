@@ -115,3 +115,15 @@ export function bandForHeadcount(learners: number): SizeBand {
   if (learners <= 25) return "10_to_25";
   return "over_25";
 }
+
+/**
+ * Whether current staff have grown past the band recorded against an
+ * organisation — the signal to look at its price. An organisation with no band
+ * recorded has nothing to outgrow.
+ */
+export function hasOutgrownBand(recorded: string | null, staff: number): boolean {
+  if (!recorded) return false;
+  const order: string[] = SIZE_BANDS.map((b) => b.value);
+  const recordedAt = order.indexOf(recorded);
+  return recordedAt >= 0 && order.indexOf(bandForHeadcount(staff)) > recordedAt;
+}

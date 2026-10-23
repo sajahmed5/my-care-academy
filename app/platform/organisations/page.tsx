@@ -26,6 +26,16 @@ export default async function OrganisationsPage() {
           <StatTile label="Overall completion" value={`${totals.completionPct}%`} icon={CheckCircle2} color="#16a34a" />
         </div>
 
+        {totals.outgrownOrgs > 0 && (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+            {totals.outgrownOrgs}{" "}
+            {totals.outgrownOrgs === 1 ? "organisation has" : "organisations have"} more
+            staff than the size band their price was agreed on. They&apos;re
+            marked below — nothing changes until you update the band and amount
+            on their page.
+          </p>
+        )}
+
         <OrgsTable rows={orgs} />
       </div>
     </DashboardShell>

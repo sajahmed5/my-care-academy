@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { hasOutgrownBand } from "@/lib/organisations";
 
 /** One organisation's platform-level engagement rollup. */
 export interface OrgEngagementRow {
@@ -15,6 +16,13 @@ export interface OrgEngagementRow {
   lastActive: string | null;
   /** No learner active in the last 30 days (or never active). */
   dormant: boolean;
+  /** The size band recorded against it, or null if none has been set. */
+  sizeBand: string | null;
+  /**
+   * Current staff (leavers excluded) have grown past the recorded band — the
+   * signal to look at its price. Nothing changes on its own.
+   */
+  outgrownBand: boolean;
   createdAt: string;
 }
 
@@ -25,6 +33,8 @@ export interface PlatformEngagement {
     activeOrgs: number; // not dormant, not suspended
     dormantOrgs: number;
     suspendedOrgs: number;
+    /** Active organisations that have outgrown their recorded size band. */
+    outgrownOrgs: number;
     learners: number;
     completions: number;
     completionPct: number;
@@ -44,11 +54,11 @@ export async function loadOrgEngagement(
     await Promise.all([
       supabase
         .from("organisations")
-        .select("id, name, package_tier, status, created_at")
+        .select("id, name, package_tier, status, size_band, created_at")
         .order("name", { ascending: true }),
       supabase
         .from("users")
-        .select("organisation_id, last_seen_at")
+        .select("organisation_id, last_seen_at, status")
         .eq("role", "learner"),
       supabase.from("enrolments").select("organisation_id, status, due_date"),
       supabase.from("certificates").select("organisation_id"),
@@ -60,9 +70,15 @@ export async function loadOrgEngagement(
 
   // Per-org accumulators.
   const learners = new Map<string, number>();
+  // Bands are measured against current staff, as on the organisation's own
+  // page — a leaver kept for their training history is not a seat.
+  const currentStaff = new Map<string, number>();
   const lastActive = new Map<string, number>(); // ms
   for (const u of users ?? []) {
     learners.set(u.organisation_id, (learners.get(u.organisation_id) ?? 0) + 1);
+    if (u.status !== "deactivated") {
+      currentStaff.set(u.organisation_id, (currentStaff.get(u.organisation_id) ?? 0) + 1);
+    }
     if (u.last_seen_at) {
       const t = new Date(u.last_seen_at).getTime();
       if (t > (lastActive.get(u.organisation_id) ?? 0)) {
@@ -86,6 +102,7 @@ export async function loadOrgEngagement(
   }
 
   const rows: OrgEngagementRow[] = (orgs ?? []).map((o) => {
+    const sizeBand = (o.size_band as string | null) ?? null;
     const asg = assigned.get(o.id) ?? 0;
     const cmp = completed.get(o.id) ?? 0;
     const activeMs = lastActive.get(o.id) ?? null;
@@ -101,6 +118,8 @@ export async function loadOrgEngagement(
       overdue: overdue.get(o.id) ?? 0,
       lastActive: activeMs ? new Date(activeMs).toISOString() : null,
       dormant: !activeMs || activeMs < dormantCutoff,
+      sizeBand,
+      outgrownBand: hasOutgrownBand(sizeBand, currentStaff.get(o.id) ?? 0),
       createdAt: o.created_at,
     };
   });
@@ -114,6 +133,7 @@ export async function loadOrgEngagement(
       activeOrgs: rows.filter((r) => r.status !== "suspended" && !r.dormant).length,
       dormantOrgs: rows.filter((r) => r.status !== "suspended" && r.dormant).length,
       suspendedOrgs: rows.filter((r) => r.status === "suspended").length,
+      outgrownOrgs: rows.filter((r) => r.outgrownBand && r.status !== "suspended").length,
       learners: rows.reduce((n, r) => n + r.learners, 0),
       completions: totalCompleted,
       completionPct:

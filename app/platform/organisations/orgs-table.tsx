@@ -169,7 +169,14 @@ export function OrgsTable({ rows }: { rows: OrgEngagementRow[] }) {
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-muted-foreground">{tierLabel(r.tier)}</td>
+                    <td className="px-3 py-2 text-muted-foreground">
+                      {tierLabel(r.tier)}
+                      {r.outgrownBand && (
+                        <span className="ml-2 whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                          outgrown band
+                        </span>
+                      )}
+                    </td>
                     <td className="px-3 py-2">{r.learners}</td>
                     <td className="px-3 py-2">
                       <span
