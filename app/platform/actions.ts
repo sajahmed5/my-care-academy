@@ -15,7 +15,6 @@ import {
 import { FEATURES } from "@/lib/features";
 import {
   overrideChanges,
-  parsePounds,
   type OverrideChoice,
 } from "@/lib/org-subscription";
 
@@ -122,9 +121,6 @@ export async function updateOrganisationAction(
   if (sizeBand && !SIZE_BANDS.some((b) => b.value === sizeBand)) {
     return { ok: false, error: "Invalid size band." };
   }
-  const amount = parsePounds(String(formData.get("monthly_amount") ?? ""));
-  if (!amount.ok) return { ok: false, error: amount.error };
-
   // Core features are in every package and cannot be excepted.
   const desired: Record<string, OverrideChoice> = {};
   for (const feature of FEATURES) {
@@ -138,17 +134,12 @@ export async function updateOrganisationAction(
 
   // Everything goes through RLS — only a platform_admin can write any of it.
   const supabase = await createClient();
-  const [{ data: before }, { data: sub }, { data: overrides }] = await Promise.all([
+  const [{ data: before }, { data: overrides }] = await Promise.all([
     supabase
       .from("organisations")
       .select("package_tier, status, size_band, service_type")
       .eq("id", id)
       .single(),
-    supabase
-      .from("organisation_subscriptions")
-      .select("monthly_amount_pence")
-      .eq("organisation_id", id)
-      .maybeSingle(),
     supabase
       .from("organisation_features")
       .select("feature_key, enabled")
@@ -167,17 +158,6 @@ export async function updateOrganisationAction(
     })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
-
-  const previousPence = (sub?.monthly_amount_pence as number | null | undefined) ?? null;
-  if (previousPence !== amount.pence) {
-    const { error: subError } = await supabase
-      .from("organisation_subscriptions")
-      .upsert(
-        { organisation_id: id, monthly_amount_pence: amount.pence },
-        { onConflict: "organisation_id" },
-      );
-    if (subError) return { ok: false, error: subError.message };
-  }
 
   const { set, clear } = overrideChanges(
     (overrides ?? []).map((o) => ({
@@ -221,10 +201,6 @@ export async function updateOrganisationAction(
       status,
       service_type: serviceType || null,
       size_band: sizeBand || null,
-      // The one figure here with commercial consequences, so keep the history.
-      ...(previousPence !== amount.pence && {
-        monthly_amount_pence: { from: previousPence, to: amount.pence },
-      }),
       ...(set.length && { exceptions_set: set }),
       ...(clear.length && { exceptions_cleared: clear }),
     },

@@ -14,7 +14,6 @@ import {
 import { StatTile } from "@/components/learner-ui";
 import { isInactive30d, isNeverActive, loadOrgLearners } from "@/lib/org-learners";
 import { LearnersTable } from "@/app/org/learners/learners-table";
-import { formatMoney, getBillingSummary } from "@/lib/account-billing";
 import { EditOrgForm } from "./edit-org-form";
 import { OrgAdmins, type OrgPerson } from "./org-admins";
 import { OrgNudgeButton } from "../../org-nudge-button";
@@ -49,14 +48,13 @@ export default async function OrganisationDetailPage({
     { data: org },
     { data: staff },
     learners,
-    { data: subscription },
     { data: overrides },
     { data: ticks },
   ] = await Promise.all([
     supabase
       .from("organisations")
       .select(
-        "id, name, package_tier, status, service_type, size_band, stripe_customer_id, stripe_subscription_id",
+        "id, name, package_tier, status, service_type, size_band",
       )
       .eq("id", id)
       .single(),
@@ -67,11 +65,6 @@ export default async function OrganisationDetailPage({
       .order("created_at", { ascending: true }),
     loadOrgLearners(supabase, id),
     supabase
-      .from("organisation_subscriptions")
-      .select("monthly_amount_pence")
-      .eq("organisation_id", id)
-      .maybeSingle(),
-    supabase
       .from("organisation_features")
       .select("feature_key, enabled, note")
       .eq("organisation_id", id),
@@ -79,27 +72,6 @@ export default async function OrganisationDetailPage({
   ]);
 
   if (!org) notFound();
-
-  // What Stripe is actually charging, shown beside the agreed amount so the two
-  // can't quietly disagree. Best-effort: null if there is no subscription or
-  // Stripe can't be reached.
-  const { price: stripePrice } = await getBillingSummary({
-    stripe_customer_id: org.stripe_customer_id,
-    stripe_subscription_id: org.stripe_subscription_id,
-  });
-  const agreedPence =
-    (subscription?.monthly_amount_pence as number | null | undefined) ?? null;
-  const stripe = stripePrice
-    ? {
-        charging: `${formatMoney(stripePrice.amount, stripePrice.currency)} per ${stripePrice.interval}`,
-        // Only a monthly GBP price compares with a monthly amount in pence.
-        differs:
-          agreedPence != null &&
-          stripePrice.interval === "month" &&
-          stripePrice.currency.toLowerCase() === "gbp" &&
-          stripePrice.amount !== agreedPence,
-      }
-    : null;
 
   const tierFeatures: Record<string, string[]> = {};
   for (const t of ticks ?? []) {
@@ -232,7 +204,6 @@ export default async function OrganisationDetailPage({
                   status: org.status,
                   service_type: org.service_type,
                   size_band: org.size_band,
-                  monthly_amount_pence: agreedPence,
                   learners: current.length,
                   overrides: (overrides ?? []).map((o) => ({
                     feature: o.feature_key as string,
@@ -241,7 +212,6 @@ export default async function OrganisationDetailPage({
                   })),
                 }}
                 tierFeatures={tierFeatures}
-                stripe={stripe}
               />
             </CardContent>
           </Card>

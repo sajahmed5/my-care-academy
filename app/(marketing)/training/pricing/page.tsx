@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { GraduationCap, ShieldCheck, Users } from "lucide-react";
 import { PACKAGE_TIERS, TIER_DETAILS } from "@/lib/organisations";
+import { HIGHLIGHTED_TIER, LIST_PRICE_GBP } from "@/lib/pricing";
 import TierCards from "./tier-cards";
 import { Arrow, CtaBand, H2, PillLink, Section } from "../../ui";
 import { BreadcrumbLd, FaqLd } from "@/components/structured-data";
@@ -18,21 +19,14 @@ export const metadata: Metadata = {
 // once the packages became a ladder — Pro contains Growth, so an equal price
 // made Growth the plan nobody should buy.
 //
-// There is no Stripe behind these today: the original account was closed on
-// 23 Oct 2026 and STRIPE_* was deleted from Vercel. Nothing here charges
-// anyone — every "Choose" button goes to /contact — so this page is simply
-// what we tell people the plans cost. When billing returns, the Stripe prices
-// must be created to match these numbers, and kept in step by hand.
-//
-// Platform MRR does not use these: it sums each organisation's agreed amount,
-// set on its page. Tier names and features come from lib/organisations, the
-// same source the org Account page uses.
-const PRICE: Record<string, { monthly: number; highlight?: boolean }> = {
-  core: { monthly: 49 },
-  core_forms: { monthly: 99, highlight: true },
-  core_recruitment: { monthly: 149 },
-  full: { monthly: 249 },
-};
+// List prices and the highlighted plan live in lib/pricing.ts, which platform
+// analytics also reads — one number, two places that show it.
+const PRICE: Record<string, { monthly: number; highlight?: boolean }> = Object.fromEntries(
+  PACKAGE_TIERS.map((t) => [
+    t.value,
+    { monthly: LIST_PRICE_GBP[t.value], highlight: t.value === HIGHLIGHTED_TIER || undefined },
+  ]),
+);
 
 const FAQ: [string, string][] = [
   ["Is there a per-learner charge?", "No. Every plan includes unlimited learners and admin users. You pay one monthly price for your organisation."],

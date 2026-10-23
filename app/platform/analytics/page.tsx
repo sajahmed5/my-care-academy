@@ -3,7 +3,6 @@ import {
   Building2,
   Users,
   Award,
-  Wallet,
   Target,
   BadgePoundSterling,
 } from "lucide-react";
@@ -38,28 +37,14 @@ export default async function AnalyticsPage() {
         </Link>
 
         {/* Headline numbers */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          <StatTile label="MRR" value={gbp(a.mrr)} icon={BadgePoundSterling} color="#16a34a" />
-          <StatTile label="Paying orgs" value={a.payingOrgs} icon={Wallet} color="#0d9488" />
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          <StatTile label="MRR at list price" value={gbp(a.mrr)} icon={BadgePoundSterling} color="#16a34a" hint="Before any Stripe discounts" />
           <StatTile label="Organisations" value={a.totals.orgs} icon={Building2} color="#0284c7" />
           <StatTile label="Learners" value={a.totals.learners} icon={Users} color="#7c3aed" />
           <StatTile label="Certificates" value={a.totals.certificates} icon={Award} color="#f59e0b" />
           <StatTile label="Pass rate" value={`${a.totals.passRate}%`} icon={Target} color="#ef4444" />
         </div>
 
-        {a.orgsWithoutAmount > 0 && (
-          <p className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-            MRR is the sum of each active organisation&apos;s agreed monthly
-            amount. {a.orgsWithoutAmount}{" "}
-            {a.orgsWithoutAmount === 1 ? "organisation has" : "organisations have"}{" "}
-            no amount recorded yet, so {a.orgsWithoutAmount === 1 ? "it isn't" : "they aren't"}{" "}
-            counted —{" "}
-            <Link href="/platform/organisations" className="underline">
-              set it on each organisation&apos;s page
-            </Link>
-            .
-          </p>
-        )}
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>

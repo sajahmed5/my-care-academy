@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { adminClient } from "./helpers";
+import { LIST_PRICE_GBP } from "../lib/pricing";
+import type { PackageTier } from "../lib/organisations";
 import { loadPlatformAnalytics } from "../lib/platform-analytics";
 
 /**
@@ -27,24 +29,15 @@ describe("platform analytics", () => {
     }
   }, 60_000);
 
-  it("sums agreed amounts of active organisations, and counts the gaps", async () => {
+  it("counts MRR at list price for every active organisation", async () => {
     const admin = adminClient();
     const analytics = await loadPlatformAnalytics(admin);
-    const [{ data: orgs }, { data: amounts }] = await Promise.all([
-      admin.from("organisations").select("id, status"),
-      admin.from("organisation_subscriptions").select("organisation_id, monthly_amount_pence"),
-    ]);
-    const pence = new Map((amounts ?? []).map((a) => [a.organisation_id, a.monthly_amount_pence]));
-
+    const { data: orgs } = await admin.from("organisations").select("package_tier, status");
     let total = 0;
-    let missing = 0;
     for (const o of orgs ?? []) {
       if (o.status === "suspended") continue;
-      const p = pence.get(o.id);
-      if (p == null) missing += 1;
-      else total += p;
+      total += LIST_PRICE_GBP[(o.package_tier ?? "core") as PackageTier] ?? 0;
     }
-    expect(analytics.mrr).toBe(total / 100);
-    expect(analytics.orgsWithoutAmount).toBe(missing);
+    expect(analytics.mrr).toBe(total);
   }, 60_000);
 });

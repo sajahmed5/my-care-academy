@@ -27,7 +27,6 @@ export interface EditableOrg {
   status: string;
   service_type: string | null;
   size_band: string | null;
-  monthly_amount_pence: number | null;
   /** Current staff (leavers excluded) — compared with the recorded band. */
   learners: number;
   overrides: { feature: string; enabled: boolean; note: string | null }[];
@@ -41,16 +40,10 @@ const bandOrder = SIZE_BANDS.map((b) => b.value as string);
 export function EditOrgForm({
   org,
   tierFeatures,
-  stripe,
 }: {
   org: EditableOrg;
   /** What each package includes, so the hints follow the package picked here. */
   tierFeatures: Record<string, string[]>;
-  /**
-   * What Stripe is charging, worked out on the server — the Stripe helpers
-   * must not be imported into this client component. Null: no subscription.
-   */
-  stripe: { charging: string; differs: boolean } | null;
 }) {
   const [state, action, pending] = useActionState(
     updateOrganisationAction,
@@ -68,13 +61,7 @@ export function EditOrgForm({
   // never reset (see onSubmit), so after a save the fields already hold what
   // was saved; handing Base UI a new default when the page re-renders would
   // only make it warn.
-  const [defaults] = useState(() => ({
-    name: org.name,
-    pounds:
-      org.monthly_amount_pence == null
-        ? ""
-        : (org.monthly_amount_pence / 100).toFixed(2).replace(/\.00$/, ""),
-  }));
+  const [defaults] = useState(() => ({ name: org.name }));
 
   return (
     <form
@@ -185,42 +172,6 @@ export function EditOrgForm({
         </div>
       </div>
 
-      <div className="space-y-2 sm:max-w-xs">
-        <Label htmlFor="monthly_amount">Agreed monthly amount</Label>
-        <div className="relative">
-          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground">
-            £
-          </span>
-          <Input
-            id="monthly_amount"
-            name="monthly_amount"
-            inputMode="decimal"
-            defaultValue={defaults.pounds}
-            placeholder="Not agreed yet"
-            className="pl-7"
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Our record of what they agreed to pay. Only platform admins can see
-          it, and it doesn&apos;t change what Stripe charges.
-        </p>
-        {stripe ? (
-          <p
-            className={
-              stripe.differs
-                ? "text-xs font-medium text-amber-800 dark:text-amber-300"
-                : "text-xs text-muted-foreground"
-            }
-          >
-            Stripe is charging {stripe.charging}
-            {stripe.differs ? " — not the amount agreed here." : "."}
-          </p>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            No Stripe subscription — invoiced outside Stripe, or not set up yet.
-          </p>
-        )}
-      </div>
 
       <FeatureExceptions org={org} tier={tier} tierFeatures={tierFeatures} />
 
