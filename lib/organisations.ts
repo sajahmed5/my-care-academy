@@ -20,8 +20,15 @@ export function tierLabel(value: string): string {
 }
 
 /**
- * What each package includes, shown on the org Account page. Drafted from
- * what each tier actually enables — awaiting the official package sheet.
+ * What each package includes, shown on the org Account page and the public
+ * pricing page. Drafted from what each tier actually enables — awaiting the
+ * official package sheet.
+ *
+ * The packages are a ladder: each one includes everything in the one below,
+ * so the bullets say "Everything in X" rather than repeating it. That is a
+ * claim about tier_features, not just copy — 20261023190000 ticks the rows
+ * that make it true, and unticking one on the Packages screen makes this copy
+ * a lie.
  */
 export const TIER_DETAILS: Record<
   PackageTier,
@@ -46,9 +53,9 @@ export const TIER_DETAILS: Record<
     ],
   },
   core_recruitment: {
-    tagline: "Training plus recruitment compliance.",
+    tagline: "Training and forms, plus recruitment compliance.",
     features: [
-      "Everything in Starter",
+      "Everything in Growth",
       "Recruitment tracker — candidates and interviews",
       "Document checklist with DBS and right-to-work expiry dates",
     ],
@@ -56,9 +63,7 @@ export const TIER_DETAILS: Record<
   full: {
     tagline: "The complete platform for growing care providers.",
     features: [
-      "Everything in Starter, Growth and Pro",
-      "Forms builder with e-signatures",
-      "Recruitment tracker with document expiry alerts",
+      "Everything in Pro",
       "Care Certificate workplace assessment",
       "Priority support",
     ],
