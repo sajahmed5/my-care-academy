@@ -76,7 +76,7 @@ export default function CareCertificatePage() {
             record the workplace observations that complete it.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <PillLink href="mailto:hello@mycareacademy.co.uk?subject=Care%20Certificate" tone="dark">
+            <PillLink href="/contact?topic=care-certificate" tone="dark">
               Book a demo <Arrow />
             </PillLink>
             <PillLink href="/training" tone="ghost">

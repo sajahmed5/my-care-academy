@@ -68,7 +68,7 @@ export default function TierCards({ tiers }: { tiers: TierCard[] }) {
                   line up across the four cards. */}
               <div className="mt-auto pt-8">
                 <PillLink
-                  href={`mailto:hello@mycareacademy.co.uk?subject=Training%20${encodeURIComponent(t.label)}%20plan`}
+                  href={`/contact?topic=pricing&plan=${t.value}`}
                   tone={t.highlight ? "white" : "dark"}
                   className="w-full justify-center text-center"
                 >

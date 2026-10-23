@@ -41,7 +41,7 @@ export default function TrainingPage() {
               well-led service. Know where you stand before your inspector does.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <PillLink href="mailto:hello@mycareacademy.co.uk?subject=Training%20access" tone="dark">
+              <PillLink href="/contact?topic=access" tone="dark">
                 Request access <Arrow />
               </PillLink>
               <PillLink href="/training/pricing" tone="ghost">

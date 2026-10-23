@@ -9,6 +9,7 @@ import "./marketing.css";
 const NAV = [
   { href: "/training", label: "Training" },
   { href: "/training/pricing", label: "Pricing" },
+  { href: "/contact", label: "Contact" },
   { href: "/verify", label: "Verify a certificate", hideOnMobile: true },
 ];
 
@@ -41,12 +42,12 @@ export default function MarketingLayout({
             >
               Sign in
             </Link>
-            <a
-              href="mailto:hello@mycareacademy.co.uk?subject=Demo%20request"
+            <Link
+              href="/contact?topic=demo"
               className="inline-flex items-center gap-2 rounded-full bg-[#134f63] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1d6f8a]"
             >
               Book a demo <ArrowRight className="size-4 max-[380px]:hidden" />
-            </a>
+            </Link>
           </nav>
         </div>
         {/* On a phone the links don't fit in the pill beside the logo and the
@@ -54,11 +55,11 @@ export default function MarketingLayout({
             in a row underneath instead. */}
         <nav aria-label="Products" className="mx-auto mt-2 flex w-fit gap-1 rounded-full bg-white/90 p-1 text-sm font-medium shadow-md shadow-[#134f63]/10 ring-1 ring-[#134f63]/8 backdrop-blur sm:hidden">
           {NAV.filter((item) => !item.hideOnMobile).map((item) => (
-            <Link key={item.href} href={item.href} className="rounded-full px-4 py-1.5 text-[#0f2f3c]/80 hover:bg-[#134f63]/6">
+            <Link key={item.href} href={item.href} className="whitespace-nowrap rounded-full px-3 py-1.5 text-[#0f2f3c]/80 hover:bg-[#134f63]/6">
               {item.label}
             </Link>
           ))}
-          <Link href="/login" className="rounded-full px-4 py-1.5 text-[#0f2f3c]/80 hover:bg-[#134f63]/6">
+          <Link href="/login" className="whitespace-nowrap rounded-full px-3 py-1.5 text-[#0f2f3c]/80 hover:bg-[#134f63]/6">
             Sign in
           </Link>
         </nav>
@@ -95,6 +96,11 @@ export default function MarketingLayout({
             <div>
               <p className="font-semibold">Get in touch</p>
               <ul className="mt-3 space-y-2 text-[#0f2f3c]/65">
+                <li>
+                  <Link href="/contact" className="hover:text-[#134f63]">
+                    Contact us &amp; book a demo
+                  </Link>
+                </li>
                 <li>
                   <a href="mailto:hello@mycareacademy.co.uk" className="hover:text-[#134f63]">
                     hello@mycareacademy.co.uk

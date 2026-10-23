@@ -88,7 +88,7 @@ export default function TrainingPricingPage() {
             </p>
           </div>
           <div className="flex md:justify-end">
-            <PillLink href="mailto:hello@mycareacademy.co.uk?subject=Mock%20inspection">
+            <PillLink href="/contact?topic=mock-inspection">
               Ask for a quote <Arrow />
             </PillLink>
           </div>

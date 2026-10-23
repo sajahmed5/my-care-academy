@@ -100,7 +100,7 @@ export default function CqcCompliancePage() {
             tell you honestly where you stand.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <PillLink href="mailto:hello@mycareacademy.co.uk?subject=Mock%20CQC%20inspection">
+            <PillLink href="/contact?topic=mock-inspection">
               Ask about a mock inspection <Arrow />
             </PillLink>
             <PillLink href="/training" tone="ghost">

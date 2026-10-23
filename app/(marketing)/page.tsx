@@ -126,7 +126,7 @@ export default function Home() {
               .
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <PillLink href="mailto:hello@mycareacademy.co.uk?subject=Demo%20request">
+              <PillLink href="/contact?topic=demo">
                 Book a demo <Arrow />
               </PillLink>
               <PillLink href="/training" tone="ghost">

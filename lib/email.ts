@@ -1,12 +1,20 @@
-/** Send an email via Resend. Returns true if dispatched. */
+/**
+ * Send an email via Resend. Returns true if dispatched.
+ *
+ * `replyTo` exists for mail we send on someone else's behalf — a website
+ * enquiry lands in the team inbox from our own sending domain, so without it
+ * hitting Reply answers us rather than the person who asked.
+ */
 export async function sendEmail({
   to,
   subject,
   html,
+  replyTo,
 }: {
   to: string;
   subject: string;
   html: string;
+  replyTo?: string;
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   const from =
@@ -19,7 +27,13 @@ export async function sendEmail({
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from, to, subject, html }),
+      body: JSON.stringify({
+        from,
+        to,
+        subject,
+        html,
+        ...(replyTo ? { reply_to: replyTo } : {}),
+      }),
     });
     if (!res.ok) console.error("Resend send failed:", res.status);
     return res.ok;

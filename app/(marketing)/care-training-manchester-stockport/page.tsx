@@ -84,7 +84,7 @@ export default function CareTrainingManchesterStockportPage() {
             2002 — and still does.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <PillLink href="mailto:hello@mycareacademy.co.uk?subject=Care%20training%20in%20Greater%20Manchester">
+            <PillLink href="/contact?topic=demo">
               Book a demo <Arrow />
             </PillLink>
             <PillLink href="/training" tone="ghost">
