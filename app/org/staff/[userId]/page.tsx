@@ -17,9 +17,11 @@ import { learnerStats } from "@/lib/learner-data";
 import { NudgeButton } from "../../nudge-button";
 import { UnassignButton } from "../../unassign-button";
 import { AssignToPerson } from "./assign-to-person";
+import { buildPersonTasks, loadPersonActions } from "@/lib/person-tasks";
 import { SectionPanel } from "./section-panel";
 import { SectionTabs } from "./section-tabs";
 import { sectionByKey, sectionState } from "./sections";
+import { TaskList } from "./task-list";
 import { endOfMonthISO } from "@/lib/assign";
 import { isOverdue, isAssessmentDue, expiryFlag } from "@/lib/engine-logic";
 import {
@@ -48,6 +50,9 @@ function statusVariant(e: OrgEnrolment, now: Date): StatusVariant {
   if (e.status === "in_progress") return "in_progress";
   return "assigned";
 }
+
+/** Sections this page renders itself; the rest get a panel. */
+const INLINE_SECTIONS = new Set(["training", "certificates", "actions"]);
 
 /** Which courses the list below shows — the tiles switch between these. */
 type Show = "all" | "in_progress" | "completed" | "overdue";
@@ -128,9 +133,17 @@ export default async function StaffDetailPage({
     already: assignedIds.has(c.id as string),
   }));
 
-  // Course titles for the certificates section, which has course_id but not
-  // the title — enrolments carry both.
-  const titleByCourse = new Map(enrolments.map((e) => [e.course_id, e.title]));
+  // The written-down half of the task list, on the tab that shows it. The
+  // derived half is already in hand: enrolments and certificates above.
+  const actionRows =
+    section.key === "actions" ? await loadPersonActions(supabase, userId) : [];
+  const tasks = buildPersonTasks({
+    enrolments,
+    certificates,
+    actions: actionRows,
+    now,
+  });
+  const doneActions = actionRows.filter((a) => a.completed_at);
 
   // Newest certificate per course (list is already issued_at desc).
   const certByCourse = new Map<string, (typeof certificates)[number]>();
@@ -438,7 +451,7 @@ export default async function StaffDetailPage({
                       <CardContent className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-6">
                         <div className="space-y-1">
                           <p className="font-medium">
-                            {titleByCourse.get(c.course_id) ?? "Course"}
+                            {c.title}
                           </p>
                           <p className="font-mono text-xs text-muted-foreground">
                             {c.number}
@@ -478,7 +491,16 @@ export default async function StaffDetailPage({
           </div>
         )}
 
-        {section.key !== "training" && section.key !== "certificates" && (
+        {section.key === "actions" && (
+          <div id="actions" className="scroll-mt-24 space-y-2">
+            <h3 className="text-sm font-semibold text-muted-foreground">
+              Outstanding ({tasks.length})
+            </h3>
+            <TaskList userId={userId} tasks={tasks} completed={doneActions} />
+          </div>
+        )}
+
+        {!INLINE_SECTIONS.has(section.key) && (
           <SectionPanel
             section={section}
             state={state}

@@ -112,12 +112,15 @@ export const SECTIONS: SectionDef[] = [
     built: false,
   },
   {
+    // Not feature-gated, and deliberately: the list is mostly a view over
+    // training, which every package includes. What is paid for is what feeds
+    // it — supervision actions exist only where supervisions do.
     key: "actions",
     label: "Actions & tasks",
     blurb:
-      "Everything outstanding for this person in one list — training due, documents expiring, actions agreed in a supervision.",
+      "Everything outstanding for this person in one list — training due, certificates expiring, actions agreed with a manager.",
     feature: null,
-    built: false,
+    built: true,
   },
 ];
 

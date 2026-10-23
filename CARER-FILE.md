@@ -44,7 +44,7 @@ one section among several.
 | Supervisions & appraisals | `people.supervisions` *(new)* | new | not built |
 | Spot checks & competency | `people.competency` *(new)* | new | not built |
 | Complaints & incidents | `complaints.register` | new | **sold, not built** |
-| Actions & tasks | `people.tasks` *(new)* | derived + new | not built |
+| Actions & tasks | — (core) | derived + `record_actions` | **built** — 23 Oct 2026 |
 
 Two of these — `complaints.register` and the policies library — are already tickable on the
 Packages screen with nothing behind them. They get built or they come off the matrix; a tick
@@ -140,7 +140,12 @@ done-at — is what makes "tasks per person" one list rather than five.
 **The task list is a union, not a copy.** Training due dates, certificate expiries and DBS
 expiries are already derived from their own rows; do not write them into a tasks table as well,
 or the two will disagree within a week. The list is derived rows plus `record_actions`, resolved
-at read time.
+at read time — `lib/person-tasks.ts`, built 23 Oct 2026.
+
+**The list itself is not gated**, though the spec first assumed a `people.tasks` key. It is
+mostly a view over training, which every package includes, and gating it would hide a carer's
+own overdue course behind an upsell. What is paid for is what feeds it: supervision actions
+exist only for organisations that have supervisions.
 
 **Every new table** (`AGENTS.md`): its own grants — `select, insert, update, delete` to
 `service_role`, the narrowest set the UI needs to `authenticated`, nothing to `anon` — RLS
@@ -181,7 +186,9 @@ raises the stakes of every existing rule rather than creating new ones.
    future section present and locked. No new tables. This is a day's work and it sells the
    roadmap on its own.
 2. **Actions & tasks** — `record_actions` plus the derived union. The keystone: it makes the
-   existing features feel like one product.
+   existing features feel like one product. **Built 23 Oct 2026** (v2.12.5): training still to
+   do, certificates at or near expiry, and written-down actions a manager can add and tick off.
+   Only the written-down ones can be ticked — a derived task is completed by doing the work.
 3. **Supervisions & appraisals** — the most-asked-for evidence, and the template for every
    record type after it.
 4. **Spot checks & competency** — same engine, aimed at existing staff rather than new ones.
