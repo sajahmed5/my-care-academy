@@ -49,8 +49,27 @@ const ROLE_LABELS: Record<string, string> = {
  * Admin: add, deactivate and remove staff (learners and admin users alike),
  * plus the reminder history and bulk-remind (design doc v2).
  */
-export default async function LearnersAdminPage() {
+/** Three jobs that were one scroll: the staff list, reminders, and inviting. */
+const SECTIONS = [
+  { key: "staff", label: "Staff" },
+  { key: "reminders", label: "Reminders" },
+  { key: "invite", label: "Invite" },
+] as const;
+type Section = (typeof SECTIONS)[number]["key"];
+
+export default async function LearnersAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ section?: string }>;
+}) {
   const context = await requireRole("org_admin");
+  const { section: sectionParam } = await searchParams;
+  // The staff table, the reminder picker, the reminder log, the invite form
+  // and the CSV import sat on one page; on a 260-person organisation the
+  // invite form was below everything (Saj, 24 Oct 2026).
+  const section: Section = SECTIONS.some((x) => x.key === sectionParam)
+    ? (sectionParam as Section)
+    : "staff";
   const supabase = await createClient();
   const [{ data: organisation }, { data: staff }, { data: nudgeLog }, learnerRows] =
     await Promise.all([
@@ -64,7 +83,8 @@ export default async function LearnersAdminPage() {
         .select("id, to_email, subject, sent, created_at, type")
         .in("type", NUDGE_TYPES)
         .order("created_at", { ascending: false })
-        .limit(200),
+        // Was 200, which silently hid 61 of HG Care's 261 (24 Oct 2026).
+        .limit(1000),
       loadOrgLearners(supabase),
     ]);
 
@@ -123,6 +143,27 @@ export default async function LearnersAdminPage() {
 
   return (
     <div className="space-y-6">
+      <nav aria-label="Sections" className="flex items-center gap-1 border-b">
+        {SECTIONS.map((x) => (
+          <Link
+            key={x.key}
+            href={`/org/learners/admin?section=${x.key}`}
+            aria-current={x.key === section ? "page" : undefined}
+            className={`inline-flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-medium transition-colors ${
+              x.key === section
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {x.label}
+            {x.key === "staff" && (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{staff?.length ?? 0}</span>
+            )}
+          </Link>
+        ))}
+      </nav>
+
+      {section === "staff" && (
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
           <div>
@@ -138,7 +179,7 @@ export default async function LearnersAdminPage() {
         </CardHeader>
         <CardContent>
           {/* Desktop: table (boxed + scrollable so it doesn't swallow the page) */}
-          <div className="hidden max-h-96 overflow-y-auto rounded-xl border md:block">
+          <div className="hidden overflow-x-auto rounded-xl border md:block">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-card">
                 <tr className="border-b text-left text-muted-foreground">
@@ -214,7 +255,7 @@ export default async function LearnersAdminPage() {
           </div>
 
           {/* Mobile: cards */}
-          <div className="max-h-96 space-y-2 overflow-y-auto md:hidden">
+          <div className="space-y-2 md:hidden">
             {(staff ?? []).map((u) => {
               const status = u.status ?? "active";
               const isSelf = u.id === context.userId;
@@ -269,7 +310,10 @@ export default async function LearnersAdminPage() {
           </div>
         </CardContent>
       </Card>
+      )}
 
+      {section === "reminders" && (
+      <>
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0">
           <div>
@@ -296,7 +340,10 @@ export default async function LearnersAdminPage() {
           <RemindersTable rows={reminders} />
         </CardContent>
       </Card>
+      </>
+      )}
 
+      {section === "invite" && (
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
@@ -320,6 +367,7 @@ export default async function LearnersAdminPage() {
           </CardContent>
         </Card>
       </div>
+      )}
     </div>
   );
 }
