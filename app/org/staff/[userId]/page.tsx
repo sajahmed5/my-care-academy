@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookOpen, Clock, CheckCircle2, AlertTriangle, Download, FileArchive } from "lucide-react";
 import { requireRole } from "@/lib/auth";
+import { enabledMap } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +17,9 @@ import { learnerStats } from "@/lib/learner-data";
 import { NudgeButton } from "../../nudge-button";
 import { UnassignButton } from "../../unassign-button";
 import { AssignToPerson } from "./assign-to-person";
+import { SectionPanel } from "./section-panel";
+import { SectionTabs } from "./section-tabs";
+import { sectionByKey, sectionState } from "./sections";
 import { endOfMonthISO } from "@/lib/assign";
 import { isOverdue, isAssessmentDue, expiryFlag } from "@/lib/engine-logic";
 import {
@@ -54,12 +58,18 @@ export default async function StaffDetailPage({
   searchParams,
 }: {
   params: Promise<{ userId: string }>;
-  searchParams: Promise<{ show?: string }>;
+  searchParams: Promise<{ show?: string; section?: string }>;
 }) {
   const context = await requireRole("org_admin");
   const { userId } = await params;
-  const { show: showParam } = await searchParams;
+  const { show: showParam, section: sectionParam } = await searchParams;
   const show: Show = SHOWS.includes(showParam as Show) ? (showParam as Show) : "all";
+
+  // Which part of the file is open. An unknown key falls back to Training
+  // rather than 404ing: these links are pasted into emails.
+  const section = sectionByKey(sectionParam);
+  const enabled = await enabledMap(context);
+  const state = sectionState(section, enabled);
 
   const supabase = await createClient();
   const { profile, enrolments, certificates, assessments } =
@@ -105,16 +115,22 @@ export default async function StaffDetailPage({
 
   // Everything in the library, flagged with what they already have, so a
   // manager can give this carer one more course without leaving the page.
-  const { data: libraryRows } = await supabase
-    .from("courses")
-    .select("id, title")
-    .order("title");
+  // Only the Training section offers it, and it reads the whole course table,
+  // so the other sections do not pay for it.
+  const { data: libraryRows } =
+    section.key === "training"
+      ? await supabase.from("courses").select("id, title").order("title")
+      : { data: null };
   const assignedIds = new Set(enrolments.map((e) => e.course_id));
   const library = (libraryRows ?? []).map((c) => ({
     id: c.id as string,
     title: c.title as string,
     already: assignedIds.has(c.id as string),
   }));
+
+  // Course titles for the certificates section, which has course_id but not
+  // the title — enrolments carry both.
+  const titleByCourse = new Map(enrolments.map((e) => [e.course_id, e.title]));
 
   // Newest certificate per course (list is already issued_at desc).
   const certByCourse = new Map<string, (typeof certificates)[number]>();
@@ -162,225 +178,318 @@ export default async function StaffDetailPage({
           </CardContent>
         </Card>
 
-        {/* At-a-glance tiles */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatTile
-            label="Assigned"
-            value={stats.assigned}
-            icon={BookOpen}
-            color="#6366f1"
-            href={`/org/staff/${userId}#courses`}
-            hint={show === "all" ? "Showing all" : "Show all"}
-          />
-          <StatTile
-            label="In progress"
-            value={stats.inProgress}
-            icon={Clock}
-            color="#f59e0b"
-            href={`/org/staff/${userId}?show=in_progress#courses`}
-            hint={show === "in_progress" ? "Showing these" : undefined}
-          />
-          <StatTile
-            label="Completed"
-            value={stats.completed}
-            icon={CheckCircle2}
-            color="#10b981"
-            href={`/org/staff/${userId}?show=completed#courses`}
-            hint={show === "completed" ? "Showing these" : undefined}
-          />
-          <StatTile
-            label="Overdue"
-            value={stats.overdue}
-            icon={AlertTriangle}
-            color="#ef4444"
-            href={`/org/staff/${userId}?show=overdue#courses`}
-            hint={show === "overdue" ? "Showing these" : undefined}
-          />
-        </div>
+        <SectionTabs userId={userId} active={section.key} enabled={enabled} />
 
-        {certificates.length > 0 && (
-          <a
-            href={`/org/certificates/pack?userId=${userId}`}
-            className="inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors hover:bg-accent sm:min-h-9"
-          >
-            <FileArchive className="size-4" />
-            Download all {certificates.length} certificates (ZIP)
-          </a>
-        )}
-
-        {profile.role === "learner" && profile.status !== "deactivated" && (
-          <AssignToPerson
-            userId={userId}
-            name={name}
-            courses={library}
-            defaultDueDate={endOfMonthISO()}
-          />
-        )}
-
-        {/* Per-course breakdown */}
-        <div id="courses" className="scroll-mt-24 space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-muted-foreground">
-              {SHOW_LABEL[show]} ({shownEnrolments.length}
-              {show === "all" ? "" : ` of ${enrolments.length}`})
-            </h3>
-            {show !== "all" && (
-              <Link
+        {section.key === "training" && (
+          <>
+            {/* At-a-glance tiles */}
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <StatTile
+                label="Assigned"
+                value={stats.assigned}
+                icon={BookOpen}
+                color="#6366f1"
                 href={`/org/staff/${userId}#courses`}
-                className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline sm:min-h-0"
+                hint={show === "all" ? "Showing all" : "Show all"}
+              />
+              <StatTile
+                label="In progress"
+                value={stats.inProgress}
+                icon={Clock}
+                color="#f59e0b"
+                href={`/org/staff/${userId}?show=in_progress#courses`}
+                hint={show === "in_progress" ? "Showing these" : undefined}
+              />
+              <StatTile
+                label="Completed"
+                value={stats.completed}
+                icon={CheckCircle2}
+                color="#10b981"
+                href={`/org/staff/${userId}?show=completed#courses`}
+                hint={show === "completed" ? "Showing these" : undefined}
+              />
+              <StatTile
+                label="Overdue"
+                value={stats.overdue}
+                icon={AlertTriangle}
+                color="#ef4444"
+                href={`/org/staff/${userId}?show=overdue#courses`}
+                hint={show === "overdue" ? "Showing these" : undefined}
+              />
+            </div>
+
+            {certificates.length > 0 && (
+              <a
+                href={`/org/certificates/pack?userId=${userId}`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors hover:bg-accent sm:min-h-9"
               >
-                Show all courses
-              </Link>
+                <FileArchive className="size-4" />
+                Download all {certificates.length} certificates (ZIP)
+              </a>
             )}
-          </div>
-          {shownEnrolments.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                {show === "all"
-                  ? "No training assigned to this person yet."
-                  : `Nothing ${SHOW_LABEL[show].toLowerCase()} for this person.`}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {shownEnrolments.map((e) => {
-                const a = assessments.get(e.course_id);
-                const cert = certByCourse.get(e.course_id);
-                const pct = e.status === "completed" ? 100 : e.progress;
-                const certFlag = cert
-                  ? expiryFlag(cert.expires_at ? new Date(cert.expires_at) : null, now)
-                  : "none";
-                return (
-                  <Card key={e.id}>
-                    <CardContent className="space-y-3 pt-6">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div className="space-y-1">
-                          <p className="font-medium">{e.title}</p>
-                          <TopicBadge topic={e.topic} />
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <StatusPill variant={statusVariant(e, now)} />
-                          {/* Completed and expired training is a record, not
-                              an assignment — no way to delete it from here. */}
-                          {(e.status === "not_started" ||
-                            e.status === "in_progress") && (
-                            <UnassignButton
-                              userId={userId}
-                              courseId={e.course_id}
-                              course={e.title}
-                              learner={name}
-                              inProgress={e.status === "in_progress"}
-                            />
-                          )}
-                        </div>
-                      </div>
 
-                      {/* Progress bar */}
-                      <div className="space-y-1">
-                        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                          <div
-                            className="h-full rounded-full bg-teal-500"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                          <span>{pct}% content</span>
-                          <span>Time spent: {formatDuration(e.time_spent)}</span>
-                          <span>Assigned {fmtDate(e.assigned_at)}</span>
-                          {e.due_date && <span>Due {fmtDate(e.due_date)}</span>}
-                        </div>
-                      </div>
+            {profile.role === "learner" && profile.status !== "deactivated" && (
+              <AssignToPerson
+                userId={userId}
+                name={name}
+                courses={library}
+                defaultDueDate={endOfMonthISO()}
+              />
+            )}
 
-                      {/* Assessment history */}
-                      {a && a.attempts > 0 ? (
-                        <div className="rounded-lg border bg-muted/30 p-3">
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                            <span className="font-medium">Assessment</span>
-                            <span className="text-muted-foreground">
-                              {a.attempts} attempt{a.attempts === 1 ? "" : "s"}
-                            </span>
-                            <span className="text-muted-foreground">
-                              Best {a.best ?? 0}%
-                            </span>
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                                a.passed
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-rose-100 text-rose-700"
-                              }`}
-                            >
-                              {a.passed ? "Passed" : "Not yet passed"}
-                            </span>
+            {/* Per-course breakdown */}
+            <div id="courses" className="scroll-mt-24 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-muted-foreground">
+                  {SHOW_LABEL[show]} ({shownEnrolments.length}
+                  {show === "all" ? "" : ` of ${enrolments.length}`})
+                </h3>
+                {show !== "all" && (
+                  <Link
+                    href={`/org/staff/${userId}#courses`}
+                    className="inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline sm:min-h-0"
+                  >
+                    Show all courses
+                  </Link>
+                )}
+              </div>
+              {shownEnrolments.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                    {show === "all"
+                      ? "No training assigned to this person yet."
+                      : `Nothing ${SHOW_LABEL[show].toLowerCase()} for this person.`}
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {shownEnrolments.map((e) => {
+                    const a = assessments.get(e.course_id);
+                    const cert = certByCourse.get(e.course_id);
+                    const pct = e.status === "completed" ? 100 : e.progress;
+                    const certFlag = cert
+                      ? expiryFlag(cert.expires_at ? new Date(cert.expires_at) : null, now)
+                      : "none";
+                    return (
+                      <Card key={e.id}>
+                        <CardContent className="space-y-3 pt-6">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div className="space-y-1">
+                              <p className="font-medium">{e.title}</p>
+                              <TopicBadge topic={e.topic} />
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <StatusPill variant={statusVariant(e, now)} />
+                              {/* Completed and expired training is a record, not
+                                  an assignment — no way to delete it from here. */}
+                              {(e.status === "not_started" ||
+                                e.status === "in_progress") && (
+                                <UnassignButton
+                                  userId={userId}
+                                  courseId={e.course_id}
+                                  course={e.title}
+                                  learner={name}
+                                  inProgress={e.status === "in_progress"}
+                                />
+                              )}
+                            </div>
                           </div>
-                          <ul className="mt-2 space-y-1">
-                            {a.history.map((h, i) => (
-                              <li
-                                key={i}
-                                className="flex items-center justify-between text-xs text-muted-foreground"
-                              >
-                                <span>{fmtDate(h.submitted_at)}</span>
-                                <span className="flex items-center gap-2">
-                                  <span className="font-medium text-foreground">
-                                    {h.score}%
-                                  </span>
-                                  <span
-                                    className={
-                                      h.passed ? "text-green-600" : "text-rose-600"
-                                    }
-                                  >
-                                    {h.passed ? "Pass" : "Fail"}
-                                  </span>
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          No assessment attempts yet.
-                        </p>
-                      )}
 
-                      {/* Certificate */}
-                      {cert && (
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                          <span className="font-medium">Certificate</span>
-                          <span className="font-mono text-muted-foreground">
-                            {cert.number}
-                          </span>
+                          {/* Progress bar */}
+                          <div className="space-y-1">
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                              <div
+                                className="h-full rounded-full bg-teal-500"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                              <span>{pct}% content</span>
+                              <span>Time spent: {formatDuration(e.time_spent)}</span>
+                              <span>Assigned {fmtDate(e.assigned_at)}</span>
+                              {e.due_date && <span>Due {fmtDate(e.due_date)}</span>}
+                            </div>
+                          </div>
+
+                          {/* Assessment history */}
+                          {a && a.attempts > 0 ? (
+                            <div className="rounded-lg border bg-muted/30 p-3">
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                                <span className="font-medium">Assessment</span>
+                                <span className="text-muted-foreground">
+                                  {a.attempts} attempt{a.attempts === 1 ? "" : "s"}
+                                </span>
+                                <span className="text-muted-foreground">
+                                  Best {a.best ?? 0}%
+                                </span>
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                    a.passed
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-rose-100 text-rose-700"
+                                  }`}
+                                >
+                                  {a.passed ? "Passed" : "Not yet passed"}
+                                </span>
+                              </div>
+                              <ul className="mt-2 space-y-1">
+                                {a.history.map((h, i) => (
+                                  <li
+                                    key={i}
+                                    className="flex items-center justify-between text-xs text-muted-foreground"
+                                  >
+                                    <span>{fmtDate(h.submitted_at)}</span>
+                                    <span className="flex items-center gap-2">
+                                      <span className="font-medium text-foreground">
+                                        {h.score}%
+                                      </span>
+                                      <span
+                                        className={
+                                          h.passed ? "text-green-600" : "text-rose-600"
+                                        }
+                                      >
+                                        {h.passed ? "Pass" : "Fail"}
+                                      </span>
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              No assessment attempts yet.
+                            </p>
+                          )}
+
+                          {/* Certificate */}
+                          {cert && (
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                              <span className="font-medium">Certificate</span>
+                              <span className="font-mono text-muted-foreground">
+                                {cert.number}
+                              </span>
+                              <span className="text-muted-foreground">
+                                · issued {fmtDate(cert.issued_at)}
+                              </span>
+                              <span
+                                className={
+                                  certFlag === "red"
+                                    ? "text-rose-600"
+                                    : certFlag === "amber"
+                                      ? "text-amber-600"
+                                      : "text-muted-foreground"
+                                }
+                              >
+                                ·{" "}
+                                {cert.expires_at
+                                  ? `expires ${fmtDate(cert.expires_at)}`
+                                  : "no expiry"}
+                              </span>
+                              <a
+                                href={`/org/certificates/${cert.id}/download`}
+                                className="inline-flex min-h-11 items-center gap-1 font-medium text-primary hover:underline sm:min-h-0"
+                              >
+                                <Download className="size-3.5" />
+                                Download PDF
+                              </a>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {section.key === "certificates" && (
+          <div id="certificates" className="scroll-mt-24 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-muted-foreground">
+                Certificates ({certificates.length})
+              </h3>
+              {certificates.length > 0 && (
+                <a
+                  href={`/org/certificates/pack?userId=${userId}`}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors hover:bg-accent sm:min-h-9"
+                >
+                  <FileArchive className="size-4" />
+                  Download all {certificates.length} (ZIP)
+                </a>
+              )}
+            </div>
+            {certificates.length === 0 ? (
+              <Card>
+                <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                  No certificates yet — they are issued as courses are completed.
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {certificates.map((c) => {
+                  const flag = expiryFlag(
+                    c.expires_at ? new Date(c.expires_at) : null,
+                    now,
+                  );
+                  return (
+                    <Card key={c.id}>
+                      <CardContent className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-6">
+                        <div className="space-y-1">
+                          <p className="font-medium">
+                            {titleByCourse.get(c.course_id) ?? "Course"}
+                          </p>
+                          <p className="font-mono text-xs text-muted-foreground">
+                            {c.number}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                           <span className="text-muted-foreground">
-                            · issued {fmtDate(cert.issued_at)}
+                            Issued {fmtDate(c.issued_at)}
                           </span>
                           <span
                             className={
-                              certFlag === "red"
+                              flag === "red"
                                 ? "text-rose-600"
-                                : certFlag === "amber"
+                                : flag === "amber"
                                   ? "text-amber-600"
                                   : "text-muted-foreground"
                             }
                           >
-                            ·{" "}
-                            {cert.expires_at
-                              ? `expires ${fmtDate(cert.expires_at)}`
-                              : "no expiry"}
+                            {c.expires_at
+                              ? `Expires ${fmtDate(c.expires_at)}`
+                              : "No expiry"}
                           </span>
                           <a
-                            href={`/org/certificates/${cert.id}/download`}
+                            href={`/org/certificates/${c.id}/download`}
                             className="inline-flex min-h-11 items-center gap-1 font-medium text-primary hover:underline sm:min-h-0"
                           >
                             <Download className="size-3.5" />
-                            Download PDF
+                            PDF
                           </a>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {section.key !== "training" && section.key !== "certificates" && (
+          <SectionPanel
+            section={section}
+            state={state}
+            href={
+              section.key === "care-certificate"
+                ? `/org/observations/${userId}`
+                : section.href
+            }
+          />
+        )}
+
       </div>
     </DashboardShell>
   );
