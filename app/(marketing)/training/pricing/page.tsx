@@ -13,18 +13,24 @@ export const metadata: Metadata = {
   alternates: { canonical: "/training/pricing" },
 };
 
-// Monthly prices per organisation. CONFIRMED by Saj on 7 Oct 2026 as the
-// real prices; he will say if they change. The Stripe prices behind checkout
-// (STRIPE_PRICE_*) hold the same numbers and are NOT kept in sync
-// automatically — change a price here, change those too. Platform MRR does not
-// use these: it sums each organisation's agreed amount, set on its page.
-// Tier names and features come from lib/organisations, the same source the
-// org Account page uses.
+// Monthly prices per organisation. CONFIRMED by Saj on 23 Oct 2026, replacing
+// the 7 Oct figures: Growth and Pro were both £79, which stopped making sense
+// once the packages became a ladder — Pro contains Growth, so an equal price
+// made Growth the plan nobody should buy.
+//
+// The Stripe prices behind checkout (STRIPE_PRICE_*) hold the OLD numbers and
+// are NOT kept in sync automatically. Until new Stripe prices are created and
+// those four env vars repointed, this page advertises £99 and £149 while
+// checkout charges £79 and £129. Change a price here, change those too.
+//
+// Platform MRR does not use these: it sums each organisation's agreed amount,
+// set on its page. Tier names and features come from lib/organisations, the
+// same source the org Account page uses.
 const PRICE: Record<string, { monthly: number; highlight?: boolean }> = {
   core: { monthly: 49 },
-  core_forms: { monthly: 79, highlight: true },
-  core_recruitment: { monthly: 79 },
-  full: { monthly: 129 },
+  core_forms: { monthly: 99, highlight: true },
+  core_recruitment: { monthly: 149 },
+  full: { monthly: 249 },
 };
 
 const FAQ: [string, string][] = [
