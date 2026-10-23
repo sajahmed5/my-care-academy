@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
+import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { buttonVariants } from "@/components/ui/button";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -22,12 +23,7 @@ export default async function CandidatePage({
   const { id } = await params;
 
   const supabase = await createClient();
-  const { data: org } = await supabase
-    .from("organisations")
-    .select("recruitment_enabled")
-    .eq("id", context.organisationId!)
-    .maybeSingle();
-  if (!org?.recruitment_enabled) redirect("/org");
+  await requireFeature(context, "recruitment.tracker");
 
   const [{ data: candidate }, { data: documents }] = await Promise.all([
     supabase

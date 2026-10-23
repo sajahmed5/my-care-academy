@@ -7,16 +7,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
 import { FORM_TEMPLATES, type FieldType, type Conditional } from "@/lib/forms";
+import { hasFeatureForOrg, requireFeature } from "@/lib/entitlements";
 
 /** Forms is a paid add-on; block if the org isn't entitled. */
 async function assertForms(context: UserContext): Promise<void> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("organisations")
-    .select("forms_enabled")
-    .eq("id", context.organisationId!)
-    .maybeSingle();
-  if (!data?.forms_enabled) redirect("/org");
+  await requireFeature(context, "forms.builder");
 }
 
 export async function createFormAction(
@@ -187,16 +182,19 @@ export async function submitFormAction(
 
   const admin = createAdminClient();
 
-  // Confirm the form belongs to the caller's org and the feature is on.
+  // Confirm the form belongs to the caller's org and the feature is on. This
+  // runs as the service role, so RLS is not doing the entitlement check here —
+  // ask for the form's organisation explicitly.
   const { data: form } = await admin
     .from("forms")
-    .select("id, title, organisation_id, organisations(forms_enabled)")
+    .select("id, title, organisation_id")
     .eq("id", formId)
     .maybeSingle();
-  const enabled = (
-    form?.organisations as unknown as { forms_enabled: boolean } | null
-  )?.forms_enabled;
-  if (!form || form.organisation_id !== context.organisationId || !enabled) {
+  if (
+    !form ||
+    form.organisation_id !== context.organisationId ||
+    !(await hasFeatureForOrg(admin, form.organisation_id, "forms.builder"))
+  ) {
     return { ok: false, error: "Form not available." };
   }
 

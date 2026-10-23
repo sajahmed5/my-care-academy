@@ -3,6 +3,7 @@ import JSZip from "jszip";
 import { getUserContext } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { docLabel } from "@/lib/recruitment";
+import { hasFeatureForOrg } from "@/lib/entitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,13 @@ export async function GET(
     .eq("id", id)
     .maybeSingle();
   if (!candidate || candidate.organisation_id !== context.organisationId) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
+  // This reads as the service role, so RLS is not gating it — without this an
+  // organisation that has stopped paying for recruitment could still pull a
+  // candidate's DBS and right-to-work documents by URL. Same 404 as a foreign
+  // candidate: an unentitled org learns nothing about what exists.
+  if (!(await hasFeatureForOrg(admin, context.organisationId, "recruitment.tracker"))) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 

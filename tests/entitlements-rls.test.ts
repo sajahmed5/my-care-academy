@@ -149,6 +149,24 @@ describe("the legacy add-on switches", () => {
 });
 
 describe("org_has_feature", () => {
+  // The service-role routes (the candidate-documents ZIP, form submission)
+  // gate on exactly this call, because RLS is not in the way there.
+  it("answers for a named organisation when asked by the service role", async () => {
+    const { orgId } = await orgAdminOn("core_recruitment", "svc");
+    const ask = async (feature: string) => {
+      const { data, error } = await adminClient().rpc("org_has_feature", {
+        p_org: orgId,
+        p_feature: feature,
+      });
+      if (error) throw error;
+      return data as boolean;
+    };
+    expect(await ask("recruitment.tracker")).toBe(true);
+
+    await setFeature(orgId, "recruitment.tracker", false);
+    expect(await ask("recruitment.tracker")).toBe(false);
+  });
+
   // It takes an arbitrary organisation id, so an org admin must not be able to
   // call it to find out what another organisation has bought.
   it("cannot be called by a signed-in user", async () => {

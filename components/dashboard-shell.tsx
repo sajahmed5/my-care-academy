@@ -11,6 +11,7 @@ import { VERSION_LABEL } from "@/lib/version";
 import { StarBank } from "@/components/star-bank";
 import { ReportWidget } from "@/components/report-widget";
 import type { UserContext } from "@/lib/auth";
+import { hasFeature } from "@/lib/entitlements";
 
 async function learnerBadges(
   context: UserContext,
@@ -37,21 +38,16 @@ async function orgAddOns(
   context: UserContext,
 ): Promise<Record<string, boolean>> {
   if (context.role !== "org_admin" || !context.organisationId) return {};
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("organisations")
-      .select("forms_enabled, recruitment_enabled, observations_enabled")
-      .eq("id", context.organisationId)
-      .single();
-    return {
-      forms_enabled: !!data?.forms_enabled,
-      recruitment_enabled: !!data?.recruitment_enabled,
-      observations_enabled: !!data?.observations_enabled,
-    };
-  } catch {
-    return {};
-  }
+  const [forms, recruitment, observations] = await Promise.all([
+    hasFeature(context, "forms.builder"),
+    hasFeature(context, "recruitment.tracker"),
+    hasFeature(context, "training.observations"),
+  ]);
+  return {
+    forms_enabled: forms,
+    recruitment_enabled: recruitment,
+    observations_enabled: observations,
+  };
 }
 
 /**

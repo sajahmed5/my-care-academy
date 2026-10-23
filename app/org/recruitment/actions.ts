@@ -7,15 +7,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createInvite } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
+import { requireFeature } from "@/lib/entitlements";
 
+/** Recruitment is a paid add-on; block if the org isn't entitled. */
 async function assertRecruitment(context: UserContext): Promise<void> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("organisations")
-    .select("recruitment_enabled")
-    .eq("id", context.organisationId!)
-    .maybeSingle();
-  if (!data?.recruitment_enabled) redirect("/org");
+  await requireFeature(context, "recruitment.tracker");
 }
 
 export async function addCandidateAction(

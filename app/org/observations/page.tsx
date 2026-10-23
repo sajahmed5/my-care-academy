@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ClipboardCheck, ArrowRight, Lock } from "lucide-react";
 import { requireRole } from "@/lib/auth";
+import { hasFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { loadOrgObservationRollup } from "@/lib/observations";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -17,14 +18,8 @@ export default async function ObservationsPage() {
   const context = await requireRole("org_admin");
   const supabase = await createClient();
 
-  const { data: org } = await supabase
-    .from("organisations")
-    .select("observations_enabled")
-    .eq("id", context.organisationId!)
-    .maybeSingle();
-
   // Upsell when the add-on is off — a sales surface, not a dead end.
-  if (!org?.observations_enabled) {
+  if (!(await hasFeature(context, "training.observations"))) {
     return (
       <DashboardShell title="Care Certificate assessment" context={context}>
         <div className="mx-auto max-w-2xl space-y-6">

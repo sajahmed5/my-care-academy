@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
+import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { loadLearnerCareCert } from "@/lib/observations";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -17,12 +18,7 @@ export default async function LearnerAssessmentPage({
   const { userId } = await params;
   const supabase = await createClient();
 
-  const { data: org } = await supabase
-    .from("organisations")
-    .select("observations_enabled")
-    .eq("id", context.organisationId!)
-    .maybeSingle();
-  if (!org?.observations_enabled) redirect("/org/observations");
+  await requireFeature(context, "training.observations", "/org/observations");
 
   const learner = await loadLearnerCareCert(supabase, userId);
   if (!learner) notFound();

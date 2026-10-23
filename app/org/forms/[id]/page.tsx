@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
+import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { buttonVariants } from "@/components/ui/button";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -23,12 +24,7 @@ export default async function FormBuilderPage({
   const { id } = await params;
 
   const supabase = await createClient();
-  const { data: org } = await supabase
-    .from("organisations")
-    .select("forms_enabled")
-    .eq("id", context.organisationId!)
-    .maybeSingle();
-  if (!org?.forms_enabled) redirect("/org");
+  await requireFeature(context, "forms.builder");
 
   const [{ data: form }, { data: fields }] = await Promise.all([
     supabase.from("forms").select("id, title, status").eq("id", id).maybeSingle(),

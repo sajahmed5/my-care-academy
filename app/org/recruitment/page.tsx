@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
+import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import {
@@ -17,12 +17,7 @@ export default async function RecruitmentPage() {
   const context = await requireRole("org_admin");
 
   const supabase = await createClient();
-  const { data: org } = await supabase
-    .from("organisations")
-    .select("recruitment_enabled")
-    .eq("id", context.organisationId!)
-    .maybeSingle();
-  if (!org?.recruitment_enabled) redirect("/org");
+  await requireFeature(context, "recruitment.tracker");
 
   const [{ data: candidates }, { data: docs }] = await Promise.all([
     supabase

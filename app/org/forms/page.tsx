@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
+import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { buttonVariants } from "@/components/ui/button";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -19,12 +19,7 @@ export default async function FormsPage() {
   const context = await requireRole("org_admin");
 
   const supabase = await createClient();
-  const { data: org } = await supabase
-    .from("organisations")
-    .select("forms_enabled")
-    .eq("id", context.organisationId!)
-    .maybeSingle();
-  if (!org?.forms_enabled) redirect("/org");
+  await requireFeature(context, "forms.builder");
 
   const { data: forms } = await supabase
     .from("forms")

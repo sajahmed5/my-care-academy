@@ -27,7 +27,7 @@ export default async function OrgDashboard() {
   const [{ data: organisation }, allLearners] = await Promise.all([
     supabase
       .from("organisations")
-      .select("name, package_tier, forms_enabled, recruitment_enabled, observations_enabled")
+      .select("name, package_tier")
       .single(),
     loadOrgLearners(supabase),
   ]);
