@@ -75,6 +75,19 @@ Everything lands as `draft`; nothing reaches a customer until it has been read b
 version"**. Acknowledgement turns a library into evidence, and it feeds the carer file and the
 evidence pack.
 
+**Built 23 Oct 2026** (v2.13.5): `/org/policies`, with a **Policies** tab and a **Documents**
+tab, because a policy is read and accepted while a form is downloaded and filled in. The reader
+sees the organisation's own name where `{{organisation}}` was, the bracketed guidance marked as
+guidance with a count of how many parts are still to write, and — on policies — "I have read and
+accepted this", recorded against the person who clicked it and the version they read. Which
+packs an organisation sees follows its entitlements: the CQC basics with `documents.library`, the
+full pack with `documents.compliance_pack`, and an add-on pack with the feature it belongs to, so
+the complaints pack arrives with the complaints register.
+
+Still to do here: downloading the actual file (the spreadsheet logs have nothing to give yet —
+they need the files in storage), an organisation's own completed copy of a template, and the
+platform screens for publishing a draft once it has been read back.
+
 ---
 
 ## 2. White-label

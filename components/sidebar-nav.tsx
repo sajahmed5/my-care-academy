@@ -20,6 +20,7 @@ import {
   Layers,
   type LucideIcon,
   MessageSquareWarning,
+  BookMarked,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
@@ -80,6 +81,7 @@ const NAV: Record<string, NavItem[]> = {
     { href: "/org/recruitment", label: "Recruitment", icon: Briefcase, feature: "recruitment.tracker" },
     { href: "/org/observations", label: "Care Certificate", icon: ClipboardCheck, feature: "training.observations" },
     { href: "/org/incidents", label: "Complaints", icon: MessageSquareWarning, feature: "complaints.register" },
+    { href: "/org/policies", label: "Policies & documents", icon: BookMarked, feature: "documents.library" },
     { href: "/org/reports", label: "Evidence & exports", icon: FileBarChart },
     { href: "/org/billing", label: "Account", icon: CreditCard },
   ],
