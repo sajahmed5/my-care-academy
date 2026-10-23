@@ -30,6 +30,7 @@ import { SectionPanel } from "./section-panel";
 import { SectionTabs } from "./section-tabs";
 import { sectionByKey, sectionState } from "./sections";
 import { CompetencyList } from "./competency-list";
+import { EvidencePackButton } from "./evidence-pack-button";
 import { IncidentList } from "./incident-list";
 import { SupervisionList } from "./supervision-list";
 import { TaskList } from "./task-list";
@@ -251,6 +252,14 @@ export default async function StaffDetailPage({
             </div>
           </CardContent>
         </Card>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-muted-foreground">
+            The whole file on this person — training, records and what is
+            outstanding.
+          </p>
+          <EvidencePackButton userId={userId} />
+        </div>
 
         <SectionTabs userId={userId} active={section.key} enabled={enabled} />
 

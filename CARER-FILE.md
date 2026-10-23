@@ -110,7 +110,9 @@ One button on the file: **Download evidence pack**.
   looks like a provider with no supervisions.
 - **Plus the source files**, where they exist, as a ZIP alongside: certificate PDFs (the
   certificates pack already does this — reuse it), uploaded right-to-work documents, signed
-  forms.
+  forms. **Not built.** The certificates ZIP stays its own download: one route that renders a
+  PDF *and* streams a hundred attachments is the one that hits the 60-second limit on a carer
+  of four years' standing.
 - **Only entitled sections.** Same `enabledMap()` as the page, resolved once at the start of the
   job. A pack must never contain a section the page would have locked.
 
@@ -207,6 +209,11 @@ raises the stakes of every existing rule rather than creating new ones.
    suggestion panel sits under each record in the carer's file; `incident_training` records
    which course a manager assigned, when, and why.
 6. **Evidence pack** — last, because it is only as good as what it has to assemble.
+   **Built 23 Oct 2026** (v2.12.9): `GET /org/staff/<id>/evidence`, optionally `?from=`, returns
+   one dated PDF — cover sheet, then a page per section. The cover names what is in it and what
+   is not, keeping "nothing recorded" (about the carer) apart from "not included in this
+   organisation's plan" (about the customer). Every export is written to audit_logs with its
+   range.
 
 **Suggested training, not automatic.** When a complaint or a failed spot check is linked to a
 person, the file suggests courses — medication error → Medication Administration, a dignity
