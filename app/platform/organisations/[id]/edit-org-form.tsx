@@ -41,10 +41,16 @@ const bandOrder = SIZE_BANDS.map((b) => b.value as string);
 export function EditOrgForm({
   org,
   tierFeatures,
+  stripe,
 }: {
   org: EditableOrg;
   /** What each package includes, so the hints follow the package picked here. */
   tierFeatures: Record<string, string[]>;
+  /**
+   * What Stripe is charging, worked out on the server — the Stripe helpers
+   * must not be imported into this client component. Null: no subscription.
+   */
+  stripe: { charging: string; differs: boolean } | null;
 }) {
   const [state, action, pending] = useActionState(
     updateOrganisationAction,
@@ -198,6 +204,22 @@ export function EditOrgForm({
           Our record of what they agreed to pay. Only platform admins can see
           it, and it doesn&apos;t change what Stripe charges.
         </p>
+        {stripe ? (
+          <p
+            className={
+              stripe.differs
+                ? "text-xs font-medium text-amber-800 dark:text-amber-300"
+                : "text-xs text-muted-foreground"
+            }
+          >
+            Stripe is charging {stripe.charging}
+            {stripe.differs ? " — not the amount agreed here." : "."}
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            No Stripe subscription — invoiced outside Stripe, or not set up yet.
+          </p>
+        )}
       </div>
 
       <FeatureExceptions org={org} tier={tier} tierFeatures={tierFeatures} />
@@ -304,3 +326,4 @@ function FeatureExceptions({
     </fieldset>
   );
 }
+
