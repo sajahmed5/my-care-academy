@@ -111,3 +111,31 @@ export function featuresInCategory(category: FeatureCategoryKey) {
 export function coreFeatureKeys(): FeatureKey[] {
   return FEATURES.filter((f) => f.isCore).map((f) => f.key);
 }
+
+interface Gated {
+  feature?: FeatureKey;
+  children?: { feature?: FeatureKey }[];
+}
+
+/**
+ * Drop the nav entries an organisation does not have, children included.
+ *
+ * Children are filtered on the item itself, so anything that reads
+ * `item.children` later — the desktop panel and the mobile strip alike — sees
+ * the same filtered list. A section left with no pages at all is dropped with
+ * them, rather than showing as an empty heading.
+ */
+export function withoutGated<T extends Gated>(
+  items: readonly T[],
+  enabled: Record<string, boolean>,
+): T[] {
+  const allowed = (feature?: FeatureKey) => !feature || !!enabled[feature];
+  return items
+    .filter((item) => allowed(item.feature))
+    .map((item) =>
+      item.children
+        ? { ...item, children: item.children.filter((c) => allowed(c.feature)) }
+        : item,
+    )
+    .filter((item) => !item.children || item.children.length > 0);
+}

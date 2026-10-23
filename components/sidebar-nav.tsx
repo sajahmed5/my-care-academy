@@ -21,18 +21,21 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
+import { withoutGated, type FeatureKey } from "@/lib/features";
 
 interface NavChild {
   href: string;
   label: string;
+  /** Only show when the organisation has this feature. */
+  feature?: FeatureKey;
 }
 
 interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  /** Only show when this org add-on flag is enabled (org_admin add-ons). */
-  flag?: "forms_enabled" | "recruitment_enabled" | "observations_enabled";
+  /** Only show when the organisation has this feature (org_admin packs). */
+  feature?: FeatureKey;
   /** Sub-pages listed under the heading in the left panel (design doc v2). */
   children?: NavChild[];
 }
@@ -70,9 +73,9 @@ const NAV: Record<string, NavItem[]> = {
       ],
     },
     { href: "/org/certificates", label: "Certificates", icon: Award },
-    { href: "/org/forms", label: "Forms", icon: FileText, flag: "forms_enabled" },
-    { href: "/org/recruitment", label: "Recruitment", icon: Briefcase, flag: "recruitment_enabled" },
-    { href: "/org/observations", label: "Care Certificate", icon: ClipboardCheck, flag: "observations_enabled" },
+    { href: "/org/forms", label: "Forms", icon: FileText, feature: "forms.builder" },
+    { href: "/org/recruitment", label: "Recruitment", icon: Briefcase, feature: "recruitment.tracker" },
+    { href: "/org/observations", label: "Care Certificate", icon: ClipboardCheck, feature: "training.observations" },
     { href: "/org/reports", label: "Evidence & exports", icon: FileBarChart },
     { href: "/org/billing", label: "Account", icon: CreditCard },
   ],
@@ -104,14 +107,15 @@ export function SidebarNav({
   role: UserRole | null;
   orientation?: "vertical" | "horizontal";
   badges?: Record<string, number>;
-  /** Org add-on flags — items with a `flag` only show when enabled here. */
+  /** Feature keys the organisation has — gated items and children only show when enabled here. */
   enabled?: Record<string, boolean>;
   collapsed?: boolean;
 }) {
   const pathname = usePathname();
-  const items = (role ? (NAV[role] ?? []) : []).filter(
-    (item) => !item.flag || enabled[item.flag],
-  );
+  // Filtered on the item itself: the horizontal (mobile) strip reads
+  // item.children directly, so filtering only in the desktop render would
+  // leak gated pages onto phones alone.
+  const items = withoutGated(role ? (NAV[role] ?? []) : [], enabled);
 
   return (
     <nav

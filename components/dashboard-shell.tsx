@@ -11,7 +11,7 @@ import { VERSION_LABEL } from "@/lib/version";
 import { StarBank } from "@/components/star-bank";
 import { ReportWidget } from "@/components/report-widget";
 import type { UserContext } from "@/lib/auth";
-import { hasFeature } from "@/lib/entitlements";
+import { enabledMap } from "@/lib/entitlements";
 
 async function learnerBadges(
   context: UserContext,
@@ -33,21 +33,12 @@ async function learnerStarTotal(context: UserContext): Promise<number> {
   return loadStarTotal(supabase);
 }
 
-/** Which paid add-ons this org has — used to gate the org sidebar nav items. */
+/** Which features this org has — gates the org sidebar's pack items. */
 async function orgAddOns(
   context: UserContext,
 ): Promise<Record<string, boolean>> {
   if (context.role !== "org_admin" || !context.organisationId) return {};
-  const [forms, recruitment, observations] = await Promise.all([
-    hasFeature(context, "forms.builder"),
-    hasFeature(context, "recruitment.tracker"),
-    hasFeature(context, "training.observations"),
-  ]);
-  return {
-    forms_enabled: forms,
-    recruitment_enabled: recruitment,
-    observations_enabled: observations,
-  };
+  return enabledMap(context);
 }
 
 /**
