@@ -3,7 +3,7 @@
 ## 0. Deploying
 
 **Primary path — push to GitHub.** The Vercel project is connected to
-`sajahmed5/homecare-training` (Project → Settings → Git). Pushing to `main` builds and
+`sajahmed5/my-care-academy` (Project → Settings → Git). Pushing to `main` builds and
 promotes to production automatically; any other branch gets its own preview URL.
 
 ```bash
