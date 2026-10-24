@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { NameForm, PasswordChangeForm } from "@/components/account-fields";
-import { updateProfileNameAction } from "@/app/learn/actions";
+import { updateMyNameAction } from "@/app/account/actions";
 import { PrivacyData } from "../privacy-data";
 
 export default async function ProfilePage() {
@@ -42,10 +42,7 @@ export default async function ProfilePage() {
               <span className="text-muted-foreground">Role</span>
               <span>Learner</span>
             </div>
-            <NameForm
-              initial={fullName ?? ""}
-              action={updateProfileNameAction}
-            />
+            <NameForm initial={fullName ?? ""} action={updateMyNameAction} />
           </CardContent>
         </Card>
 

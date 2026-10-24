@@ -94,25 +94,6 @@ export async function selfEnrolAction(
   return { ok: true };
 }
 
-/** Update the learner's own display name (service role, scoped to self). */
-export async function updateProfileNameAction(
-  fullName: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const context = await requireRole("learner");
-  const name = fullName.trim();
-  if (!name) return { ok: false, error: "Name can't be empty." };
-
-  const admin = createAdminClient();
-  const { error } = await admin
-    .from("users")
-    .update({ full_name: name })
-    .eq("id", context.userId);
-  if (error) return { ok: false, error: error.message };
-
-  revalidatePath("/learn/profile");
-  return { ok: true };
-}
-
 /** Mark the learner's notifications as read (updates notifications_read_at). */
 export async function markNotificationsReadAction(): Promise<{ ok: boolean }> {
   const context = await requireRole("learner");

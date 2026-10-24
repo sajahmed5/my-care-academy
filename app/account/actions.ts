@@ -18,6 +18,10 @@ import { createPasswordReset } from "@/lib/invites";
  * Change your own display name. Runs as the service role, so the
  * `.eq("id", context.userId)` is the whole guard — the caller never says
  * whose row to write.
+ *
+ * Both pages that show your name are refreshed, because this is the only
+ * action that changes it: /account for everyone, and /learn/profile, which
+ * is where a carer edits theirs.
  */
 export async function updateMyNameAction(
   fullName: string,
@@ -34,6 +38,7 @@ export async function updateMyNameAction(
   if (error) return { ok: false, error: error.message };
 
   revalidatePath("/account");
+  revalidatePath("/learn/profile");
   return { ok: true };
 }
 
