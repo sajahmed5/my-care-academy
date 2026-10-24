@@ -59,7 +59,8 @@ export default async function OrgFormsPage() {
 
         <p className="text-sm text-muted-foreground">
           Ask a member of staff to complete a form and it appears in their task
-          list; what they submit is kept against their file.
+          list; what they submit is kept against their file. A form that is
+          yours to fill in — a client check, an audit — you complete yourself.
         </p>
 
         {templates.length === 0 ? (

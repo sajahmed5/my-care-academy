@@ -13,14 +13,15 @@ import { assignFormAction, type AssignState } from "../../library-actions";
  *
  * Everyone, or a picked few; a date, which lands in their task list; and a
  * note, which is the only place to say why. Someone who already has it open
- * is skipped, so asking "everyone" twice does not nag anyone.
+ * is skipped, so asking "everyone" twice does not nag anyone. The people are
+ * learners only — an admin has no page to open it on (issue #50).
  */
 export function AssignForm({
   templateId,
   people,
 }: {
   templateId: string;
-  people: { id: string; name: string; role: string }[];
+  people: { id: string; name: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const [everyone, setEveryone] = useState(false);
@@ -56,7 +57,6 @@ export function AssignForm({
                   <label key={p.id} className="flex items-center gap-2 text-sm">
                     <input type="checkbox" name="userId" value={p.id} />
                     {p.name}
-                    {p.role === "org_admin" && <span className="text-xs text-muted-foreground">admin</span>}
                   </label>
                 ))}
                 {shown.length === 0 && <p className="text-sm text-muted-foreground">Nobody matches.</p>}

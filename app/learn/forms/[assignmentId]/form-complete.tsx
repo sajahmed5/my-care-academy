@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,20 @@ const textareaClass =
  * validated again on the server. A signature is a typed name: good enough for
  * "I confirm this is mine", and far more reliable on a phone than a canvas.
  */
-export function FormComplete({ assignmentId, fields }: { assignmentId: string; fields: FormField[] }) {
+export function FormComplete({
+  assignmentId,
+  fields,
+  doneMessage = "Thank you — your answers are saved and your manager can see them.",
+  doneHref,
+  doneLabel = "Back",
+}: {
+  assignmentId: string;
+  fields: FormField[];
+  /** What to say once saved; a manager completing their own form reads differently. */
+  doneMessage?: string;
+  doneHref?: string;
+  doneLabel?: string;
+}) {
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [signedName, setSignedName] = useState("");
   const [state, formAction, pending] = useActionState<SubmitState, FormData>(submitFormResponseAction, {});
@@ -30,8 +44,13 @@ export function FormComplete({ assignmentId, fields }: { assignmentId: string; f
   if (state.ok) {
     return (
       <Card>
-        <CardContent className="py-8 text-center text-sm">
-          Thank you — your answers are saved and your manager can see them.
+        <CardContent className="space-y-2 py-8 text-center text-sm">
+          <p>{doneMessage}</p>
+          {doneHref && (
+            <Link href={doneHref} className="text-primary hover:underline">
+              ← {doneLabel}
+            </Link>
+          )}
         </CardContent>
       </Card>
     );

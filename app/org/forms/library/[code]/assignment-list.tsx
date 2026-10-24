@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { Assignment } from "@/lib/form-library";
 import { unassignFormAction } from "../../library-actions";
@@ -12,8 +13,17 @@ function fmtDate(d: string | null): string {
   return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-/** Who has been asked, who has done it, and the withdraw for an open ask. */
-export function AssignmentList({ assignments }: { assignments: Assignment[] }) {
+/**
+ * Who has been asked, who has done it, and the withdraw for an open ask. The
+ * manager's own open one (started with "Complete it yourself") gets Continue.
+ */
+export function AssignmentList({
+  assignments,
+  currentUserId,
+}: {
+  assignments: Assignment[];
+  currentUserId: string;
+}) {
   const open = assignments.filter((a) => !a.completed_at);
   const done = assignments.filter((a) => a.completed_at);
 
@@ -30,11 +40,24 @@ export function AssignmentList({ assignments }: { assignments: Assignment[] }) {
                 <li key={a.id} className="flex items-center justify-between gap-2 py-1.5">
                   <span>
                     {a.user_name}
+                    {a.user_id === currentUserId && (
+                      <span className="ml-2 text-xs text-muted-foreground">you</span>
+                    )}
                     <span className="ml-2 text-xs text-muted-foreground">
                       {a.due_date ? `due ${fmtDate(a.due_date)}` : "no date"}
                     </span>
                   </span>
-                  <WithdrawButton id={a.id} />
+                  <span className="flex items-center gap-1">
+                    {a.user_id === currentUserId && (
+                      <Link
+                        href={`/org/forms/complete/${a.id}`}
+                        className={buttonVariants({ variant: "outline", size: "sm" })}
+                      >
+                        Continue
+                      </Link>
+                    )}
+                    <WithdrawButton id={a.id} />
+                  </span>
                 </li>
               ))}
             </ul>

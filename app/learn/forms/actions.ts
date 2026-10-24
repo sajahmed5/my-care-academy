@@ -90,6 +90,7 @@ export async function submitFormResponseAction(
 
   revalidatePath("/learn/forms");
   revalidatePath("/org/forms");
+  revalidatePath(`/org/forms/library/${encodeURIComponent(assignment.template_code)}`);
   revalidatePath(`/org/staff/${context.userId}`);
   return { ok: true };
 }

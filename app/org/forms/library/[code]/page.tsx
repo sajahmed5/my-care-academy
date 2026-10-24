@@ -4,19 +4,23 @@ import { requireRole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ClipboardPen } from "lucide-react";
 import {
   categoryLabel,
   loadAssignmentsForTemplate,
   loadFormTemplate,
   visibleFormPacks,
 } from "@/lib/form-library";
+import { startOwnFormAction } from "../../library-actions";
 import { AssignForm } from "./assign-form";
 import { AssignmentList } from "./assignment-list";
 
 /**
  * One form, as a manager sees it: what it asks, who has been asked, who has
- * done it, and the button to ask more people.
+ * done it, the button to ask more people — and the button to complete it
+ * themselves (issue #50), for the forms that are the manager's to fill in.
  */
 export default async function OrgFormPage({ params }: { params: Promise<{ code: string }> }) {
   const context = await requireRole("org_admin");
@@ -38,9 +42,9 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
     loadAssignmentsForTemplate(supabase, template.id),
     supabase
       .from("users")
-      .select("id, full_name, email, role")
+      .select("id, full_name, email")
       .eq("status", "active")
-      .in("role", ["learner", "org_admin"])
+      .eq("role", "learner")
       .order("full_name")
       .limit(1000),
   ]);
@@ -48,7 +52,6 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
   const people = (staff ?? []).map((u) => ({
     id: u.id as string,
     name: (u.full_name as string | null) ?? (u.email as string),
-    role: u.role as string,
   }));
 
   return (
@@ -66,9 +69,18 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
           {template.description && <p className="text-sm">{template.description}</p>}
         </div>
 
-        <AssignForm templateId={template.id} people={people} />
+        <div className="flex flex-wrap items-start gap-2">
+          <AssignForm templateId={template.id} people={people} />
+          <form action={startOwnFormAction}>
+            <input type="hidden" name="templateId" value={template.id} />
+            <Button type="submit" variant="outline">
+              <ClipboardPen className="size-4" />
+              Complete it yourself
+            </Button>
+          </form>
+        </div>
 
-        <AssignmentList assignments={assignments} />
+        <AssignmentList assignments={assignments} currentUserId={context.userId} />
 
         <Card>
           <CardContent className="space-y-1 pt-6">

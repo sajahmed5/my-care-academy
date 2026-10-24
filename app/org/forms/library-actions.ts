@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
@@ -23,6 +24,11 @@ export interface AssignState extends SaveState {
  *
  * Someone who already has this form open is skipped rather than asked twice:
  * two open asks for one form is nagging, not evidence.
+ *
+ * Only learners can be asked (issue #50). An admin cannot open the learner
+ * side, so a form assigned to one could never be completed — the same dead
+ * end as training assigned to an admin (#35). A manager who wants a form on
+ * record completes it themselves: startOwnFormAction.
  */
 export async function assignFormAction(
   _prev: AssignState,
@@ -45,7 +51,7 @@ export async function assignFormAction(
 
   const supabase = await createClient();
 
-  let people = supabase.from("users").select("id").eq("status", "active").in("role", ["learner", "org_admin"]);
+  let people = supabase.from("users").select("id").eq("status", "active").eq("role", "learner");
   if (!everyone) people = people.in("id", picked);
   const { data: users } = await people;
   const userIds = (users ?? []).map((u) => u.id as string);
@@ -86,6 +92,56 @@ export async function assignFormAction(
   revalidatePath("/org/forms");
   for (const id of fresh) revalidatePath(`/org/staff/${id}`);
   return { ok: true, count: fresh.length };
+}
+
+/**
+ * A manager completes a form themselves, now (issue #50).
+ *
+ * The record is a self-assignment — asked by me, of me, no date — completed
+ * through the same page and the same action a carer uses, so the response is
+ * the manager's own and sits in the list with everyone else's. One already
+ * open is picked up rather than duplicated; it is where "Continue" goes.
+ */
+export async function startOwnFormAction(formData: FormData): Promise<void> {
+  const context = await requireRole("org_admin");
+  if (!(await hasFeature(context, "forms.builder"))) redirect("/org/forms");
+
+  const templateId = String(formData.get("templateId") ?? "");
+  if (!templateId) redirect("/org/forms");
+
+  const supabase = await createClient();
+  const { data: open } = await supabase
+    .from("form_assignments")
+    .select("id")
+    .eq("template_id", templateId)
+    .eq("user_id", context.userId)
+    .is("completed_at", null)
+    .limit(1)
+    .maybeSingle();
+  if (open) redirect(`/org/forms/complete/${open.id as string}`);
+
+  const { data: created, error } = await supabase
+    .from("form_assignments")
+    .insert({
+      organisation_id: context.organisationId,
+      template_id: templateId,
+      user_id: context.userId,
+      assigned_by: context.userId,
+    })
+    .select("id")
+    .single();
+  if (error || !created) redirect("/org/forms");
+
+  await logAudit({
+    context,
+    action: "form.started_own",
+    entity: "form_assignment",
+    entityId: created.id as string,
+    detail: { templateId },
+  });
+
+  revalidatePath("/org/forms");
+  redirect(`/org/forms/complete/${created.id as string}`);
 }
 
 /** Withdraw an open ask. A completed one is a record and stays. */
