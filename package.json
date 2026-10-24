@@ -1,6 +1,6 @@
 {
   "name": "homecare-training-site",
-  "version": "2.15.8",
+  "version": "2.15.9",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,6 +12,7 @@
     "audit:courses": "node scripts/audit-courses.mjs",
     "audit:courses:prod": "node scripts/audit-courses.mjs --prod",
     "audit:images": "node scripts/audit-images.mjs",
+    "perf:measure": "node scripts/perf/measure.mjs",
     "predeploy": "node scripts/check-clean-tree.mjs && node scripts/audit-courses.mjs",
     "vercel:login": "npx --yes vercel login",
     "vercel:link": "npx --yes vercel link",
