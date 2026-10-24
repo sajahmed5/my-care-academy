@@ -10,7 +10,7 @@ import { deriveNotifications, unreadCount } from "@/lib/notifications";
 import { VERSION_LABEL } from "@/lib/version";
 import { StarBank } from "@/components/star-bank";
 import { ReportWidget } from "@/components/report-widget";
-import { isConsoleRole, type UserContext } from "@/lib/auth";
+import { isConsoleRole, roleLabel, type UserContext } from "@/lib/auth";
 import { enabledMap } from "@/lib/entitlements";
 
 async function learnerBadges(
@@ -60,13 +60,6 @@ async function touchLastSeen(context: UserContext): Promise<void> {
   }
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  platform_admin: "Platform admin",
-  org_admin: "Organisation admin",
-  org_office: "Office worker",
-  learner: "Learner",
-};
-
 export async function DashboardShell({
   title,
   context,
@@ -88,7 +81,7 @@ export async function DashboardShell({
       <AppSidebar
         role={context.role}
         email={context.email}
-        roleLabel={context.role ? ROLE_LABELS[context.role] : "No role"}
+        roleLabel={roleLabel(context.role)}
         badges={badges}
         enabled={addOns}
         version={VERSION_LABEL}

@@ -18,6 +18,7 @@ describe("the office worker is a console role", () => {
   });
 
   it("reads as a manager would say it", () => {
+    expect(roleLabel("platform_admin")).toBe("Platform admin");
     expect(roleLabel("org_admin")).toBe("Manager");
     expect(roleLabel("org_office")).toBe("Office");
     expect(roleLabel("learner")).toBe("Learner");

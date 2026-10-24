@@ -15,7 +15,12 @@ export function isConsoleRole(role: UserRole | null): boolean {
   return role !== null && CONSOLE_ROLES.includes(role);
 }
 
-/** How a role reads in the console. */
+/**
+ * How a role reads in the UI — the only wording for it. The sidebar kept a
+ * second copy that said "Organisation admin" and "Office worker" where this
+ * one says "Manager" and "Office", so the same person was named two ways
+ * depending on which part of the page you read.
+ */
 export function roleLabel(role: UserRole | string | null): string {
   switch (role) {
     case "platform_admin":
