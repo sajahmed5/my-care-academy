@@ -6,14 +6,14 @@ import { NameForm, PasswordChangeForm } from "@/components/account-fields";
 import { sendMyPasswordResetAction, updateMyNameAction } from "./actions";
 
 /**
- * The signed-in manager's own details.
+ * The signed-in user's own details, whatever role they hold.
  *
  * Name and password are theirs to change here, the same two fields a carer
- * gets at /learn/profile. Both were read-only: the name as plain text with no
- * way to correct a typo, the password as ten bullets and a "Reset by email"
- * button — a round trip through an inbox to do what one form does. The email
- * route stays for anyone who would rather have the link, or who is about to
- * be locked out of a session.
+ * gets at /learn/profile. For a manager both were read-only until recently:
+ * the name as plain text with no way to correct a typo, the password as ten
+ * bullets and a "Reset by email" button — a round trip through an inbox to do
+ * what one form does. The email route stays for anyone who would rather have
+ * the link, or who is about to be locked out of a session.
  */
 export function AccountDetails({
   fullName,

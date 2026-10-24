@@ -18,7 +18,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ConsoleUsers, type ConsoleUser } from "./console-users";
-import { AccountDetails } from "./account-details";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -60,7 +59,7 @@ export default async function AccountPage() {
       .maybeSingle(),
     supabase
       .from("users")
-      .select("full_name, email")
+      .select("email")
       .eq("id", context.userId)
       .single(),
     supabase
@@ -208,16 +207,26 @@ export default async function AccountPage() {
           </CardContent>
         </Card>
 
+        {/* The fields themselves moved to /account, which every role can
+            reach — an office worker could never open this page, so their own
+            name and password had nowhere to live. The pointer stays for
+            anyone who learned to look here. */}
         <Card>
           <CardHeader>
             <CardTitle>My account</CardTitle>
             <CardDescription>Your own sign-in details.</CardDescription>
           </CardHeader>
           <CardContent>
-            <AccountDetails
-              fullName={me?.full_name ?? null}
-              email={me?.email ?? context.email ?? null}
-            />
+            <p className="text-sm text-muted-foreground">
+              Your name and password are on{" "}
+              <Link
+                href="/account"
+                className="font-medium text-primary hover:underline"
+              >
+                your account page
+              </Link>
+              , signed in as {me?.email ?? context.email ?? "this account"}.
+            </p>
           </CardContent>
         </Card>
       </div>

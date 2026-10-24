@@ -169,6 +169,25 @@ export async function requireRole(role: UserRole): Promise<UserContext> {
 }
 
 /**
+ * Require any signed-in user, with the gates their own console would apply:
+ * admins still have to be at AAL2, and a deactivated member or a suspended
+ * organisation is still turned away.
+ *
+ * For /account — the one page every role shares, because everyone has a name
+ * and a password of their own. Deliberately not requireUser(): without the
+ * MFA check an admin could change their own password from a session that had
+ * never stepped up.
+ */
+export async function requireActiveUser(): Promise<UserContext> {
+  const context = await requireUser();
+  if (context.role && MFA_REQUIRED_ROLES.includes(context.role)) {
+    await requireAdminMfa();
+  }
+  await assertActiveMember(context);
+  return context;
+}
+
+/**
  * Require a console user — a manager or an office worker. Every org-side
  * page and action takes this; the Account page and the actions that change
  * who has console access keep requireRole("org_admin"). Same MFA and

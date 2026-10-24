@@ -60,6 +60,18 @@ describe("an office worker in the console", () => {
     expect(data?.map((u) => u.id).sort()).toEqual([officeId, learnerId].sort());
   });
 
+  // /account reads the signed-in user's own row with their own client, so this
+  // is the read behind an office worker's name and password page.
+  it("reads their own row, name and all", async () => {
+    const { data } = await office
+      .from("users")
+      .select("id, full_name, email")
+      .eq("id", officeId)
+      .maybeSingle();
+    expect(data?.id).toBe(officeId);
+    expect(data?.email).toBe(email("office"));
+  });
+
   it("cannot change a role directly — only the Account page's service-role action does that", async () => {
     const { data } = await office
       .from("users")

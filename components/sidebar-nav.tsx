@@ -55,6 +55,7 @@ const NAV: Record<string, NavItem[]> = {
     { href: "/platform/reports", label: "Issues", icon: Bug },
     { href: "/platform/billing", label: "Billing", icon: CreditCard },
     { href: "/platform/settings", label: "Automation", icon: Bell },
+    { href: "/account", label: "My account", icon: User },
   ],
   org_admin: [
     { href: "/org", label: "Overview", icon: LayoutDashboard },
@@ -96,6 +97,7 @@ const NAV: Record<string, NavItem[]> = {
     { href: "/org/policies", label: "Policies & documents", icon: BookMarked, feature: "documents.library" },
     { href: "/org/reports", label: "Evidence & exports", icon: FileBarChart },
     { href: "/org/billing", label: "Account", icon: CreditCard },
+    { href: "/account", label: "My account", icon: User },
   ],
   learner: [
     { href: "/learn", label: "Dashboard", icon: LayoutDashboard },
@@ -108,7 +110,9 @@ const NAV: Record<string, NavItem[]> = {
   ],
 };
 // An office worker's console is the manager's without Account (billing, and
-// who has console access): the one page that stays manager-only.
+// who has console access): the one page that stays manager-only. My account
+// is not part of that — it carries the office worker's own name and password,
+// which is why it is a route of its own rather than a card on /org/billing.
 NAV.org_office = NAV.org_admin.filter((i) => i.href !== "/org/billing");
 
 /** Section roots whose parent item only highlights on an exact match. */
