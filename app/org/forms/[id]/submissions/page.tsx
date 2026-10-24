@@ -25,7 +25,9 @@ export default async function SubmissionsPage({
   const supabase = await createClient();
   await requireFeature(context, "forms.builder");
 
-  const [{ data: form }, { data: fields }, { data: submissions }] =
+  // The newest 200 responses, with the true total beside them: each response
+  // carries every answer, so the whole history is not read on every visit.
+  const [{ data: form }, { data: fields }, { data: submissions, count }] =
     await Promise.all([
       supabase.from("forms").select("id, title").eq("id", id).maybeSingle(),
       supabase
@@ -35,9 +37,11 @@ export default async function SubmissionsPage({
         .order("sort_order"),
       supabase
         .from("form_submissions")
-        .select("id, data, created_at")
+        .select("id, data, created_at", { count: "exact" })
+        .eq("organisation_id", context.organisationId!)
         .eq("form_id", id)
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(200),
     ]);
   if (!form) notFound();
 
@@ -50,7 +54,10 @@ export default async function SubmissionsPage({
         <Card>
           <CardHeader>
             <CardTitle>Submissions</CardTitle>
-            <CardDescription>{submissions?.length ?? 0} response(s).</CardDescription>
+            <CardDescription>
+              {count ?? submissions?.length ?? 0} response(s)
+              {count && submissions && count > submissions.length ? ` — the newest ${submissions.length} shown.` : "."}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <SubmissionsTable

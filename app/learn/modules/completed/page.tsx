@@ -1,14 +1,12 @@
 import { requireRole } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { loadLearner } from "@/lib/learner-data";
+import { loadEnrolments } from "@/lib/learner-data";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ModulesTabs } from "../modules-tabs";
 import { CourseCard } from "../course-card";
 
 export default async function CompletedModulesPage() {
   const context = await requireRole("learner");
-  const supabase = await createClient();
-  const { enrolments } = await loadLearner(supabase);
+  const enrolments = await loadEnrolments(context.userId);
   const completed = enrolments.filter((e) => e.status === "completed");
 
   return (

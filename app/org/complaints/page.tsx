@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatTile } from "@/components/learner-ui";
 import { AlertTriangle, Clock, FolderOpen, Settings2 } from "lucide-react";
-import { loadComplaints, loadEntriesFor, loadStages, loadStaffOptions } from "@/lib/complaints/data";
+import { loadComplaintList, loadStages, loadStaffOptions } from "@/lib/complaints/data";
 import { stagesFor } from "@/lib/complaints/stages";
 import { buildSteps, nextStep } from "@/lib/complaints/steps";
 import { NewComplaint } from "./new-complaint";
@@ -29,12 +29,12 @@ export default async function ComplaintsPage({
   const { status, kind } = await searchParams;
 
   const supabase = await createClient();
-  const [complaints, stages, staff] = await Promise.all([
-    loadComplaints(supabase),
-    loadStages(supabase),
-    loadStaffOptions(supabase),
+  const orgId = context.organisationId!;
+  const [{ complaints, entries }, stages, staff] = await Promise.all([
+    loadComplaintList(supabase, orgId),
+    loadStages(supabase, orgId),
+    loadStaffOptions(supabase, orgId),
   ]);
-  const entries = await loadEntriesFor(supabase, complaints.map((c) => c.id));
   const today = new Date().toISOString().slice(0, 10);
 
   const rows = complaints.map((c) => {

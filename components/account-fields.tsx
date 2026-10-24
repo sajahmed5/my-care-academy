@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,6 +77,12 @@ export function NameForm({
 /** Kept in step with the hint under the field and with /auth/set-password. */
 const MIN_LENGTH = 8;
 
+// The browser Supabase client is ~58 KB gzipped and only this form's submit
+// needs it, so it is fetched on demand rather than with the page (it was in
+// /account and /learn/profile's first load). Focusing the form starts the
+// download, so by the time the password is typed it is already there.
+const loadSupabase = () => import("@/lib/supabase/client");
+
 export function PasswordChangeForm() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -100,7 +105,14 @@ export function PasswordChangeForm() {
       return;
     }
     setBusy(true);
-    const { error } = await createClient().auth.updateUser({ password });
+    let error: { message: string } | null;
+    try {
+      const { createClient } = await loadSupabase();
+      ({ error } = await createClient().auth.updateUser({ password }));
+    } catch {
+      // The chunk itself failed to load (signal dropped mid-save).
+      error = { message: "" };
+    }
     setBusy(false);
     if (error) {
       setError(
@@ -117,7 +129,11 @@ export function PasswordChangeForm() {
   }
 
   return (
-    <form onSubmit={save} className="space-y-3">
+    <form
+      onSubmit={save}
+      onFocus={() => void loadSupabase()}
+      className="space-y-3"
+    >
       <div className="space-y-2">
         <Label htmlFor="new-password">New password</Label>
         <PasswordInput

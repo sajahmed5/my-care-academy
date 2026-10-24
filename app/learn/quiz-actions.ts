@@ -42,29 +42,43 @@ export async function startQuizAction(
 ): Promise<StartQuizResult> {
   const context = await requireRole("learner");
 
-  // Confirm the learner is actually enrolled (RLS scopes to their own row).
+  // Confirm the learner is actually enrolled (RLS scopes to their own row;
+  // the user_id filter lets it use the index). The bank's ids are read in the
+  // same breath — just the ids, so a 60-question bank isn't pulled whole.
   const supabase = await createClient();
-  const { data: enrolment } = await supabase
-    .from("enrolments")
-    .select("id, organisation_id")
-    .eq("course_id", courseId)
-    .maybeSingle();
-  if (!enrolment) return { ok: false, error: "You are not enrolled on this course." };
-
   const admin = createAdminClient();
-  const { data: bank } = await admin
-    .from("quiz_questions")
-    .select("id, type, question, options, answer_index, payload")
-    .eq("course_id", courseId);
+  const [{ data: enrolment }, { data: bank }] = await Promise.all([
+    supabase
+      .from("enrolments")
+      .select("id, organisation_id")
+      .eq("user_id", context.userId)
+      .eq("course_id", courseId)
+      .maybeSingle(),
+    admin.from("quiz_questions").select("id").eq("course_id", courseId),
+  ]);
+  if (!enrolment) return { ok: false, error: "You are not enrolled on this course." };
 
   if (!bank || bank.length === 0) {
     return { ok: false, error: "This course has no assessment questions yet." };
   }
 
-  const selected = shuffle(bank as StoredQuestion[]).slice(
-    0,
-    Math.min(QUIZ_TARGET, bank.length),
+  // Then only the questions this attempt serves. No answer key: starting an
+  // attempt needs only what the learner is shown.
+  const pickedIds = shuffle(bank.map((q) => q.id as string)).slice(0, QUIZ_TARGET);
+  const { data: picked } = await admin
+    .from("quiz_questions")
+    .select("id, type, question, options, payload")
+    .in("id", pickedIds);
+  const byId = new Map(
+    (picked ?? []).map((q) => [q.id as string, q as StoredQuestion]),
   );
+  // Keep the shuffled order — `.in()` returns rows in any order.
+  const selected = pickedIds
+    .map((id) => byId.get(id))
+    .filter((q): q is StoredQuestion => Boolean(q));
+  if (selected.length === 0) {
+    return { ok: false, error: "This course has no assessment questions yet." };
+  }
 
   const { data: attempt, error } = await admin
     .from("quiz_attempts")
@@ -123,10 +137,36 @@ export async function submitQuizAction(
   }
 
   const questionIds = attempt.question_ids as string[];
-  const { data: questions } = await admin
-    .from("quiz_questions")
-    .select("id, type, question, options, answer_index, payload")
-    .in("id", questionIds);
+
+  // Everything grading needs, in one parallel round: the served questions
+  // (with their answer keys), prior submitted attempts and this course's
+  // certificate expiries for the star maths, and the enrolment's counters.
+  // Zero-score attempts can never be a best, so they're left out.
+  const [{ data: questions }, { data: prior }, { data: certs }, { data: enrolment }] =
+    await Promise.all([
+      admin
+        .from("quiz_questions")
+        .select("id, type, question, options, answer_index, payload")
+        .in("id", questionIds),
+      admin
+        .from("quiz_attempts")
+        .select("course_id, score, question_ids, submitted_at")
+        .eq("user_id", context.userId)
+        .eq("course_id", attempt.course_id)
+        .not("submitted_at", "is", null)
+        .gt("score", 0),
+      admin
+        .from("certificates")
+        .select("expires_at")
+        .eq("user_id", context.userId)
+        .eq("course_id", attempt.course_id),
+      admin
+        .from("enrolments")
+        .select("id, attempt_count, completion_count")
+        .eq("user_id", context.userId)
+        .eq("course_id", attempt.course_id)
+        .maybeSingle(),
+    ]);
 
   // Grade every question server-side against the stored answer key (per type).
   const byId = new Map<string, StoredQuestion>(
@@ -161,22 +201,9 @@ export async function submitQuizAction(
   // Star bank: this attempt banks only the improvement over the best already
   // earned in the CURRENT compliance cycle (capped at 20). A cycle starts when
   // the previous certificate expired, so re-passing after expiry banks fresh
-  // stars. Query prior SUBMITTED attempts + this course's certificate expiries;
-  // the current attempt isn't submitted yet, so it's excluded. Use the exact
-  // in-memory `correct` for this attempt (no rounding).
-  const [{ data: prior }, { data: certs }] = await Promise.all([
-    admin
-      .from("quiz_attempts")
-      .select("course_id, score, question_ids, submitted_at")
-      .eq("user_id", context.userId)
-      .eq("course_id", attempt.course_id)
-      .not("submitted_at", "is", null),
-    admin
-      .from("certificates")
-      .select("expires_at")
-      .eq("user_id", context.userId)
-      .eq("course_id", attempt.course_id),
-  ]);
+  // stars. Prior SUBMITTED attempts + this course's certificate expiries were
+  // read above; the current attempt wasn't submitted yet, so it's excluded.
+  // Use the exact in-memory `correct` for this attempt (no rounding).
   const boundaries = (certs ?? [])
     .map((c) => (c.expires_at ? Date.parse(c.expires_at) : NaN))
     .filter((n) => !Number.isNaN(n));
@@ -185,34 +212,29 @@ export async function submitQuizAction(
   const nowStars = Math.min(STARS_PER_COURSE, correct);
   const starsAwarded = Math.max(0, nowStars - prevStars);
 
-  await admin
-    .from("quiz_attempts")
-    .update({ answers, score, passed, submitted_at: new Date().toISOString() })
-    .eq("id", attemptId);
-
-  // Update enrolment counters (every attempt counts; a pass completes + renews).
-  const { data: enrolment } = await admin
-    .from("enrolments")
-    .select("id, attempt_count, completion_count")
-    .eq("user_id", context.userId)
-    .eq("course_id", attempt.course_id)
-    .single();
-
-  if (enrolment) {
-    await admin
-      .from("enrolments")
-      .update({
-        attempt_count: (enrolment.attempt_count ?? 0) + 1,
-        ...(passed
-          ? {
-              completion_count: (enrolment.completion_count ?? 0) + 1,
-              status: "completed",
-              progress: 100,
-            }
-          : {}),
-      })
-      .eq("id", enrolment.id);
-  }
+  // Record the attempt and update the enrolment counters together (every
+  // attempt counts; a pass completes + renews).
+  await Promise.all([
+    admin
+      .from("quiz_attempts")
+      .update({ answers, score, passed, submitted_at: new Date().toISOString() })
+      .eq("id", attemptId),
+    enrolment
+      ? admin
+          .from("enrolments")
+          .update({
+            attempt_count: (enrolment.attempt_count ?? 0) + 1,
+            ...(passed
+              ? {
+                  completion_count: (enrolment.completion_count ?? 0) + 1,
+                  status: "completed",
+                  progress: 100,
+                }
+              : {}),
+          })
+          .eq("id", enrolment.id)
+      : null,
+  ]);
 
   let certificateId: string | undefined;
   if (passed) {
@@ -245,11 +267,13 @@ export async function awardContentStarAction({
   const context = await requireRole("learner");
   if (!courseId || !questionKey) return { delta: 0 };
 
-  // Must be enrolled in the course (RLS scopes this select to the learner).
+  // Must be enrolled in the course (RLS scopes this select to the learner;
+  // the user_id filter lets it use the index).
   const supabase = await createClient();
   const { data: enrolment } = await supabase
     .from("enrolments")
     .select("id")
+    .eq("user_id", context.userId)
     .eq("course_id", courseId)
     .maybeSingle();
   if (!enrolment) return { delta: 0 };

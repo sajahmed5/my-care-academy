@@ -1,10 +1,27 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { xlsxToCsv } from "@/lib/xlsx";
 import { Button } from "@/components/ui/button";
+import type { XlsxResult } from "@/lib/xlsx";
 import { parseAssignCsv, type AssignCsvRow } from "@/lib/assign";
 import { bulkAssignTrainingAction, type BulkAssignState } from "../../actions";
+
+/**
+ * lib/xlsx pulls in JSZip (~50 KB), which only an uploaded Excel file needs —
+ * so it is fetched when one is chosen, not with the page.
+ */
+async function xlsxToCsv(data: ArrayBuffer): Promise<XlsxResult> {
+  let xlsx: typeof import("@/lib/xlsx");
+  try {
+    xlsx = await import("@/lib/xlsx");
+  } catch {
+    // The chunk itself failed to download (signal dropped).
+    return {
+      problem: "That file couldn't be read. Check your connection and try again.",
+    };
+  }
+  return xlsx.xlsxToCsv(data);
+}
 
 /**
  * Assign courses to staff in bulk from a spreadsheet (email, course, due

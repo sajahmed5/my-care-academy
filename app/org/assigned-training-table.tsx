@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
 import { isOverdue } from "@/lib/engine-logic";
-import { isLateCompletion } from "@/lib/org-learners";
+import { courseOf, isLateCompletion, loadCourseIndex, loadOrgPeople } from "@/lib/org-learners";
 import { AssignedTrainingRows, type TrainingRow } from "./assigned-training-rows";
 
 export type TrainingStatusFilter =
@@ -32,25 +32,32 @@ export const TRAINING_TABS: { key: TrainingStatusFilter; label: string }[] = [
 export async function AssignedTrainingTable({
   status = "all",
   baseHref,
+  orgId,
 }: {
   status?: TrainingStatusFilter;
   baseHref: string;
+  /** Scopes every read explicitly, so Postgres uses the organisation_id
+   *  index rather than testing RLS on every row. RLS still applies. */
+  orgId?: string | null;
 }) {
   const supabase = await createClient();
-  // Paged — Supabase silently returns at most 1,000 rows.
-  const [enrolments, certs] = await Promise.all([
-    fetchAll((f, t) =>
-      supabase
+  // Paged — Supabase silently returns at most 1,000 rows. Course titles and
+  // names come from one lookup each, not embedded on every enrolment row.
+  const [enrolments, certs, courses, people] = await Promise.all([
+    fetchAll((f, t) => {
+      let q = supabase
         .from("enrolments")
-        .select(
-          "id, user_id, course_id, status, progress, due_date, assigned_at, courses(title), users(full_name, email, role)",
-        )
-        .order("id")
-        .range(f, t),
-    ),
-    fetchAll((f, t) =>
-      supabase.from("certificates").select("id, user_id, course_id, issued_at").order("id").range(f, t),
-    ),
+        .select("id, user_id, course_id, status, progress, due_date, assigned_at");
+      if (orgId) q = q.eq("organisation_id", orgId);
+      return q.order("id").range(f, t);
+    }),
+    fetchAll((f, t) => {
+      let q = supabase.from("certificates").select("id, user_id, course_id, issued_at");
+      if (orgId) q = q.eq("organisation_id", orgId);
+      return q.order("id").range(f, t);
+    }),
+    loadCourseIndex(supabase),
+    loadOrgPeople(supabase, orgId),
   ]);
 
   // Latest certificate per user+course decides "completed late".
@@ -64,18 +71,14 @@ export async function AssignedTrainingTable({
   const now = new Date();
   const rows: TrainingRow[] = (enrolments ?? [])
     .map((e) => {
-      const u = e.users as unknown as {
-        full_name?: string;
-        email?: string;
-        role?: string;
-      } | null;
-      const c = e.courses as unknown as { title?: string } | null;
+      const u = people.get(e.user_id as string);
+      const c = courseOf(courses, e.course_id as string);
       const issuedAt = certIssued.get(`${e.user_id}:${e.course_id}`);
       return {
         userId: e.user_id as string,
         courseId: e.course_id as string,
         learner: u?.full_name || u?.email || "Learner",
-        course: c?.title ?? "Course",
+        course: c.title,
         status: e.status as string,
         progress: e.progress ?? 0,
         assignedAt: e.assigned_at,

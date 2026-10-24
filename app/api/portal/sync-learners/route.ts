@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolvePortalOrg, isOrg } from "@/lib/portal-api";
 import { createInvite } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
+import { fetchAll } from "@/lib/fetch-all";
 
 export const dynamic = "force-dynamic";
 // Invites send emails one by one; give the function room to breathe.
@@ -55,12 +56,19 @@ export async function POST(req: Request) {
   const updateOnly = body.updateOnly === true;
 
   const admin = createAdminClient();
-  const { data: existing } = await admin
-    .from("users")
-    .select("id, email, external_ref, status, full_name")
-    .eq("organisation_id", org.id);
-  const byRef = new Map((existing ?? []).filter((u) => u.external_ref).map((u) => [u.external_ref as string, u]));
-  const byEmail = new Map((existing ?? []).map((u) => [(u.email ?? "").toLowerCase(), u]));
+  // Paged: past 1,000 people the rest were silently missing from this list,
+  // so a carer already on the platform would have been invited a second time.
+  const existing = await fetchAll<{ id: string; email: string | null; external_ref: string | null; status: string; full_name: string | null }>(
+    (f, t) =>
+      admin
+        .from("users")
+        .select("id, email, external_ref, status, full_name")
+        .eq("organisation_id", org.id)
+        .order("id")
+        .range(f, t),
+  );
+  const byRef = new Map(existing.filter((u) => u.external_ref).map((u) => [u.external_ref as string, u]));
+  const byEmail = new Map(existing.map((u) => [(u.email ?? "").toLowerCase(), u]));
 
   const results: { externalRef: string; outcome: string; userId?: string; error?: string }[] = [];
 
@@ -74,7 +82,7 @@ export async function POST(req: Request) {
     }
 
     try {
-      let user = byRef.get(ref) ?? (email ? byEmail.get(email) : undefined);
+      const user = byRef.get(ref) ?? (email ? byEmail.get(email) : undefined);
 
       if (!user) {
         if (!wantActive) {

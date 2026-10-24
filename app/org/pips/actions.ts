@@ -17,7 +17,6 @@ import {
   readSupport,
   weeksFor,
 } from "@/lib/pips/plan";
-import { loadPip } from "@/lib/pips/data";
 
 /**
  * Performance plans. Written through the RLS-scoped client, gated on
@@ -91,10 +90,16 @@ export async function savePlanAction(_prev: SaveState, formData: FormData): Prom
   };
 
   if (pipId) {
-    const { error } = await supabase.from("pips").update(plan).eq("id", pipId);
+    // The update hands back the two ids revalidate needs, rather than a second
+    // read of the whole plan — signatures, weeks and all — to find them.
+    const { data: existing, error } = await supabase
+      .from("pips")
+      .update(plan)
+      .eq("id", pipId)
+      .select("user_id, complaint_id")
+      .maybeSingle();
     if (error) return { ok: false, error: error.message };
-    const existing = await loadPip(supabase, pipId);
-    revalidate(pipId, existing?.userId, existing?.complaintId);
+    revalidate(pipId, existing?.user_id as string | undefined, existing?.complaint_id as string | null | undefined);
     return { ok: true };
   }
 
@@ -143,14 +148,15 @@ export async function signCarerAction(_prev: SaveState, formData: FormData): Pro
     return { ok: false, error: "Sign in the box first." };
   }
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: pip, error } = await supabase
     .from("pips")
     .update({ carer_signature: signature, carer_signed_at: new Date().toISOString(), carer_signed_witnessed_by: witnessedBy })
-    .eq("id", pipId);
+    .eq("id", pipId)
+    .select("user_id, complaint_id")
+    .maybeSingle();
   if (error) return { ok: false, error: error.message };
   await logAudit({ context, action: "pip.carer_signed", entity: "pip", entityId: pipId });
-  const pip = await loadPip(supabase, pipId);
-  revalidate(pipId, pip?.userId, pip?.complaintId);
+  revalidate(pipId, pip?.user_id as string | undefined, pip?.complaint_id as string | null | undefined);
   return { ok: true };
 }
 
@@ -211,11 +217,22 @@ export async function addWeekAction(_prev: SaveState, formData: FormData): Promi
   if (!context) return { ok: false, error: NOT_IN_PLAN };
   const pipId = str(formData, "pipId");
   const supabase = await createClient();
-  const pip = await loadPip(supabase, pipId);
+  // Only the last week is needed to place the next one.
+  const [{ data: pip }, { data: lastRows }] = await Promise.all([
+    supabase.from("pips").select("status, start_date, duration_weeks").eq("id", pipId).maybeSingle(),
+    supabase
+      .from("pip_reviews")
+      .select("week_number, period_end")
+      .eq("pip_id", pipId)
+      .order("week_number", { ascending: false })
+      .limit(1),
+  ]);
   if (!pip) return { ok: false, error: "That plan is no longer there." };
   if (pip.status !== "open") return { ok: false, error: "The plan is not open." };
-  const last = pip.reviews.at(-1);
-  const start = last ? new Date(`${last.periodEnd}T12:00:00Z`) : new Date(`${pip.startDate ?? new Date().toISOString().slice(0, 10)}T12:00:00Z`);
+  const lastRow = lastRows?.[0];
+  const last = lastRow ? { weekNumber: lastRow.week_number as number, periodEnd: lastRow.period_end as string } : undefined;
+  const startDate = (pip.start_date as string | null) ?? null;
+  const start = last ? new Date(`${last.periodEnd}T12:00:00Z`) : new Date(`${startDate ?? new Date().toISOString().slice(0, 10)}T12:00:00Z`);
   if (last) start.setUTCDate(start.getUTCDate() + 1);
   const end = new Date(start);
   end.setUTCDate(start.getUTCDate() + 6);
@@ -228,7 +245,7 @@ export async function addWeekAction(_prev: SaveState, formData: FormData): Promi
     period_end: periodEnd,
   });
   if (error) return { ok: false, error: error.message };
-  await supabase.from("pips").update({ review_until: periodEnd, duration_weeks: Math.min(12, (pip.durationWeeks ?? 0) + 1) }).eq("id", pipId);
+  await supabase.from("pips").update({ review_until: periodEnd, duration_weeks: Math.min(12, ((pip.duration_weeks as number | null) ?? 0) + 1) }).eq("id", pipId);
   revalidate(pipId);
   return { ok: true };
 }
@@ -290,13 +307,21 @@ export async function closePipAction(_prev: SaveState, formData: FormData): Prom
   if (!outcomeNotes) return { ok: false, error: "Say why that is the outcome." };
 
   const supabase = await createClient();
-  const pip = await loadPip(supabase, pipId);
+  // What the gate checks: the signature, and which weeks are not signed off.
+  const { data: pip } = await supabase
+    .from("pips")
+    .select("user_id, complaint_id, carer_signed_at, pip_reviews (week_number, completed_at)")
+    .eq("id", pipId)
+    .maybeSingle();
   if (!pip) return { ok: false, error: "That plan is no longer there." };
-  const unreviewed = pip.reviews.filter((r) => !r.completedAt);
+  const unreviewed = ((pip.pip_reviews as { week_number: number; completed_at: string | null }[] | null) ?? [])
+    .filter((r) => !r.completed_at)
+    .map((r) => r.week_number)
+    .sort((a, b) => a - b);
   if (unreviewed.length) {
-    return { ok: false, error: `Week${unreviewed.length === 1 ? "" : "s"} ${unreviewed.map((r) => r.weekNumber).join(", ")} ${unreviewed.length === 1 ? "has" : "have"} not been reviewed. Review every week, then close.` };
+    return { ok: false, error: `Week${unreviewed.length === 1 ? "" : "s"} ${unreviewed.join(", ")} ${unreviewed.length === 1 ? "has" : "have"} not been reviewed. Review every week, then close.` };
   }
-  if (!pip.carerSignedAt) {
+  if (!pip.carer_signed_at) {
     return { ok: false, error: "The carer has not signed the plan. Get their signature first — a plan they never saw cannot be closed against them." };
   }
   const { error } = await supabase
@@ -312,7 +337,7 @@ export async function closePipAction(_prev: SaveState, formData: FormData): Prom
     .eq("id", pipId);
   if (error) return { ok: false, error: error.message };
   await logAudit({ context, action: "pip.closed", entity: "pip", entityId: pipId, detail: { outcome } });
-  revalidate(pipId, pip.userId, pip.complaintId);
+  revalidate(pipId, pip.user_id as string, pip.complaint_id as string | null);
   return { ok: true };
 }
 
@@ -322,12 +347,13 @@ export async function cancelPipAction(_prev: SaveState, formData: FormData): Pro
   const pipId = str(formData, "pipId");
   const reopen = formData.get("reopen") === "1";
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: pip, error } = await supabase
     .from("pips")
     .update(reopen ? { status: "open", closed_at: null } : { status: "cancelled", closed_at: new Date().toISOString() })
-    .eq("id", pipId);
+    .eq("id", pipId)
+    .select("user_id, complaint_id")
+    .maybeSingle();
   if (error) return { ok: false, error: error.message };
-  const pip = await loadPip(supabase, pipId);
-  revalidate(pipId, pip?.userId, pip?.complaintId);
+  revalidate(pipId, pip?.user_id as string | undefined, pip?.complaint_id as string | null | undefined);
   return { ok: true };
 }

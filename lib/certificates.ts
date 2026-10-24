@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAll } from "@/lib/fetch-all";
 import { daysUntil } from "@/lib/engine-logic";
+import { courseOf, loadCourseIndex, loadOrgPeople } from "@/lib/org-learners";
 
 export type CertState =
   | "expired"
@@ -54,34 +55,37 @@ export function certificateState(
  * warning shows.
  *
  * Deactivated learners are left out — a leaver's lapsed certificate is history,
- * not a job. RLS scopes every read to the caller's organisation.
+ * not a job. RLS scopes every read to the caller's organisation; pass orgId
+ * as well so Postgres walks the organisation_id index instead of testing the
+ * policy on every row.
  */
 export async function loadOrgCertificates(
   supabase: SupabaseClient,
+  orgId?: string | null,
   now: Date = new Date(),
 ): Promise<OrgCertificateRow[]> {
   // Paged (Supabase silently caps a read at 1,000 rows), then put back into
   // newest-first order: the loop below keeps the FIRST certificate it sees per
-  // learner + course as the live one.
-  const data = (
-    await fetchAll((f, t) =>
-      supabase
+  // learner + course as the live one. Names and titles come from one lookup
+  // each rather than embedded on every certificate.
+  const [certs, courses, people] = await Promise.all([
+    fetchAll((f, t) => {
+      let q = supabase
         .from("certificates")
-        .select(
-          "id, certificate_number, user_id, course_id, issued_at, expires_at, users(full_name, email, status), courses(title)",
-        )
-        .order("id")
-        .range(f, t),
-    )
-  ).sort((a, b) => String(b.issued_at).localeCompare(String(a.issued_at)));
+        .select("id, certificate_number, user_id, course_id, issued_at, expires_at");
+      if (orgId) q = q.eq("organisation_id", orgId);
+      return q.order("id").range(f, t);
+    }),
+    loadCourseIndex(supabase),
+    loadOrgPeople(supabase, orgId),
+  ]);
+  const data = certs.sort((a, b) =>
+    String(b.issued_at).localeCompare(String(a.issued_at)),
+  );
 
   const latest = new Map<string, OrgCertificateRow>();
-  for (const c of data ?? []) {
-    const u = c.users as unknown as {
-      full_name?: string;
-      email?: string;
-      status?: string;
-    } | null;
+  for (const c of data) {
+    const u = people.get(c.user_id as string);
     if (u?.status === "deactivated") continue;
 
     // Ordered newest-first, so the first one seen for a pair is the live one.
@@ -95,8 +99,7 @@ export async function loadOrgCertificates(
       userId: c.user_id as string,
       learner: u?.full_name || u?.email || "Learner",
       courseId: c.course_id as string,
-      course:
-        (c.courses as unknown as { title?: string } | null)?.title ?? "Course",
+      course: courseOf(courses, c.course_id as string).title,
       issuedAt: c.issued_at as string,
       expiresAt: c.expires_at as string | null,
       daysLeft,

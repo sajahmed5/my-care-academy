@@ -41,8 +41,8 @@ export default async function OrgCertificatesPage({
 
   const supabase = await createClient();
   const [rows, { data: organisation }] = await Promise.all([
-    loadOrgCertificates(supabase),
-    supabase.from("organisations").select("name").single(),
+    loadOrgCertificates(supabase, context.organisationId),
+    supabase.from("organisations").select("name").eq("id", context.organisationId!).single(),
   ]);
 
   const shown = rows.filter(TABS.find((t) => t.key === tab)!.match);

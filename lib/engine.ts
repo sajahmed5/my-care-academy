@@ -28,10 +28,29 @@ export interface EngineSettings {
   reminderRepeatDays: number;
 }
 
+/** One enrolment, with every column any of the jobs reads. */
+export interface EngineEnrolment {
+  id: string;
+  user_id: string;
+  course_id: string;
+  organisation_id: string;
+  status: string;
+  due_date: string | null;
+  last_reminder_at: string | null;
+}
+
 export interface EngineRefs {
   users: Map<string, { email: string; name: string; org: string | null; role: string; status: string }>;
   courses: Map<string, string>;
   orgs: Map<string, string>;
+  /**
+   * Every enrolment, read once per run. Renewals, reminders and engagement
+   * each used to page through the whole table themselves — three full reads
+   * of the platform's largest working table every morning. Renewals updates
+   * this copy as it expires enrolments, so the jobs after it see what a fresh
+   * read would have shown them.
+   */
+  enrolments: EngineEnrolment[];
 }
 
 export interface RunSummary {
@@ -58,12 +77,12 @@ export async function loadSettings(admin: Admin): Promise<EngineSettings> {
 }
 
 /**
- * Every user, course and organisation — shared by all the jobs in one run.
- * Each job used to load its own copy, so a daily run read the full user list
- * three times over. The cron routes load it once and pass it in.
+ * Every user, course, organisation and enrolment — shared by all the jobs in
+ * one run. Each job used to load its own copy, so a daily run read the full
+ * user list three times over. The cron routes load it once and pass it in.
  */
 export async function loadEngineRefs(admin: Admin): Promise<EngineRefs> {
-  const [users, courses, orgs] = await Promise.all([
+  const [users, courses, orgs, enrolments] = await Promise.all([
     fetchAll((f, t) =>
       admin
         .from("users")
@@ -73,6 +92,13 @@ export async function loadEngineRefs(admin: Admin): Promise<EngineRefs> {
     ),
     fetchAll((f, t) => admin.from("courses").select("id, title").order("id").range(f, t)),
     fetchAll((f, t) => admin.from("organisations").select("id, name").order("id").range(f, t)),
+    fetchAll<EngineEnrolment>((f, t) =>
+      admin
+        .from("enrolments")
+        .select("id, user_id, course_id, organisation_id, status, due_date, last_reminder_at")
+        .order("id")
+        .range(f, t),
+    ),
   ]);
   return {
     users: new Map(
@@ -89,6 +115,7 @@ export async function loadEngineRefs(admin: Admin): Promise<EngineRefs> {
     ),
     courses: new Map(courses.map((c) => [c.id as string, c.title as string])),
     orgs: new Map(orgs.map((o) => [o.id as string, o.name as string])),
+    enrolments,
   };
 }
 
@@ -188,19 +215,19 @@ export async function processRenewals(
   const r = refs ?? (await loadEngineRefs(admin));
   const origin = await siteOrigin();
 
-  const [certs, enrolments] = await Promise.all([
-    fetchAll((f, t) =>
-      admin
-        .from("certificates")
-        .select("id, user_id, course_id, organisation_id, issued_at, expires_at, reminders_sent")
-        .order("id")
-        .range(f, t),
-    ),
-    // One read instead of a lookup per certificate.
-    fetchAll((f, t) =>
-      admin.from("enrolments").select("id, user_id, course_id, status").order("id").range(f, t),
-    ),
-  ]);
+  // Still every certificate ever issued: the newest per learner + course is
+  // the live one, and telling which is newest needs the renewed ones too. A
+  // database function that returns only the live, expiring ones would bound
+  // this (see the performance notes, 24 Oct 2026); until then the columns are
+  // kept to what the decision needs.
+  const certs = await fetchAll((f, t) =>
+    admin
+      .from("certificates")
+      .select("id, user_id, course_id, organisation_id, issued_at, expires_at, reminders_sent")
+      .order("id")
+      .range(f, t),
+  );
+  const enrolments = r.enrolments;
 
   type Cert = (typeof certs)[number];
   const latest = new Map<string, Cert>();
@@ -269,6 +296,10 @@ export async function processRenewals(
 
   if (!dryRun) {
     await updateMany(admin, "enrolments", toExpire, { status: "expired" });
+    // The shared copy follows the database, so reminders and engagement later
+    // in this run see these courses as required again — as a re-read would.
+    const expired = new Set(toExpire);
+    for (const e of enrolments) if (expired.has(e.id)) e.status = "expired";
     // Certificates that reached the same window share an update.
     const byValue = new Map<string, string[]>();
     for (const [id, stages] of stageUpdates) {
@@ -306,16 +337,8 @@ export async function processReminders(
   const r = refs ?? (await loadEngineRefs(admin));
   const origin = await siteOrigin();
 
-  const enrolments = await fetchAll((f, t) =>
-    admin
-      .from("enrolments")
-      .select("id, user_id, course_id, organisation_id, status, due_date, last_reminder_at")
-      .order("id")
-      .range(f, t),
-  );
-
   const items: ReminderItem[] = [];
-  for (const e of enrolments) {
+  for (const e of r.enrolments) {
     const overdue = isOverdue(e.due_date as string | null, e.status as string, now);
     if (!needsReminder(e.status as string)) continue;
     const learner = r.users.get(e.user_id as string);
@@ -363,35 +386,37 @@ export async function processEngagement(
   const admin = createAdminClient();
   const r = refs ?? (await loadEngineRefs(admin));
 
-  const enrolments = await fetchAll((f, t) =>
-    admin.from("enrolments").select("id, organisation_id, status").order("id").range(f, t),
-  );
-
   const byOrg = new Map<string, { total: number; completed: number }>();
-  for (const e of enrolments) {
+  for (const e of r.enrolments) {
     const s = byOrg.get(e.organisation_id as string) ?? { total: 0, completed: 0 };
     s.total += 1;
     if (e.status === "completed") s.completed += 1;
     byOrg.set(e.organisation_id as string, s);
   }
 
+  // Dedup: skip any organisation alerted about in the last 7 days. One read
+  // of the week's alerts, rather than a count query per low organisation
+  // made one after another.
+  const weekAgo = new Date(now.getTime() - 7 * 86_400_000).toISOString();
+  const recent = await fetchAll((f, t) =>
+    admin
+      .from("email_log")
+      .select("id, organisation_id")
+      .eq("type", "engagement_alert")
+      .gte("created_at", weekAgo)
+      .order("id")
+      .range(f, t),
+  );
+  const alertedThisWeek = new Set(recent.map((e) => e.organisation_id as string));
+
   const recipients = platformAdminEmails(r);
   const outbox: Outgoing[] = [];
   let alerts = 0;
-  const weekAgo = new Date(now.getTime() - 7 * 86_400_000).toISOString();
   for (const [orgId, s] of byOrg) {
     if (s.total < 3) continue; // ignore tiny samples
     const rate = engagementRate(s.total, s.completed);
     if (rate >= settings.engagementThreshold) continue;
-
-    // Dedup: skip if we alerted for this org in the last 7 days.
-    const { count } = await admin
-      .from("email_log")
-      .select("id", { count: "exact", head: true })
-      .eq("organisation_id", orgId)
-      .eq("type", "engagement_alert")
-      .gte("created_at", weekAgo);
-    if ((count ?? 0) > 0) continue;
+    if (alertedThisWeek.has(orgId)) continue;
 
     const orgName = r.orgs.get(orgId) ?? "An organisation";
     alerts += 1;
@@ -423,18 +448,17 @@ export async function processWeeklyDigest(
   const r = refs ?? (await loadEngineRefs(admin));
   const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
 
-  const [enrolments, certs] = await Promise.all([
-    fetchAll((f, t) =>
-      admin
-        .from("enrolments")
-        .select("id, organisation_id, user_id, status, due_date")
-        .order("id")
-        .range(f, t),
-    ),
-    fetchAll((f, t) =>
-      admin.from("certificates").select("id, organisation_id, issued_at").order("id").range(f, t),
-    ),
-  ]);
+  const enrolments = r.enrolments;
+  // Only this week's certificates — the digest counts nothing older. It used
+  // to read every certificate ever issued and discard all but a week of them.
+  const certs = await fetchAll((f, t) =>
+    admin
+      .from("certificates")
+      .select("id, organisation_id, issued_at")
+      .gte("issued_at", weekAgo.toISOString())
+      .order("id")
+      .range(f, t),
+  );
 
   // Grouped once, rather than re-scanning every row for every organisation.
   const stats = new Map<string, { overdue: number; notStarted: number; any: boolean; completions: number }>();

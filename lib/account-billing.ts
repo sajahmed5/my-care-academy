@@ -57,6 +57,15 @@ export async function getBillingSummary(org: {
     const stripe = getStripe();
 
     if (org.stripe_subscription_id) {
+      // The upcoming-invoice preview doesn't depend on the subscription read,
+      // so the two Stripe calls go out together rather than one after the
+      // other. A failed preview (e.g. cancelled) settles to null on its own.
+      const previewRead = stripe.invoices
+        .createPreview({
+          customer: org.stripe_customer_id,
+          subscription: org.stripe_subscription_id,
+        })
+        .catch(() => null);
       const sub = await stripe.subscriptions.retrieve(
         org.stripe_subscription_id,
         { expand: ["default_payment_method"] },
@@ -75,19 +84,15 @@ export async function getBillingSummary(org: {
         (sub.default_payment_method as Stripe.PaymentMethod | null) ?? null,
       );
 
-      try {
-        const preview = await stripe.invoices.createPreview({
-          customer: org.stripe_customer_id,
-          subscription: org.stripe_subscription_id,
-        });
+      // No preview (e.g. cancelled) — leave nextPayment null.
+      const preview = await previewRead;
+      if (preview) {
         const ts = preview.next_payment_attempt ?? preview.period_end;
         summary.nextPayment = {
           amount: preview.amount_due,
           currency: preview.currency,
           date: ts ? new Date(ts * 1000).toISOString() : null,
         };
-      } catch {
-        // No preview (e.g. cancelled) — leave nextPayment null.
       }
     }
 

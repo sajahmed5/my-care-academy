@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { exportMyDataAction, deleteMyAccountAction } from "./privacy-actions";
 
@@ -63,7 +62,13 @@ export function PrivacyData() {
     // Sign out client-side and leave. The navigation is hard on purpose: the
     // account is gone, so every bit of client state and cached RSC payload
     // belonging to it has to go with it — a soft router.push would keep them.
-    await createClient().auth.signOut();
+    // The client (~58 KB gz) is fetched only here, on the one click that needs
+    // it. If that download fails the account is already deleted, so a stale
+    // cookie signs nobody in — leave anyway rather than sit on "Deleting…".
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      await createClient().auth.signOut();
+    } catch {}
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign("/login");
   }

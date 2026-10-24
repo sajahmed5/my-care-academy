@@ -28,7 +28,7 @@ export default async function IncidentsPage({
 
   const { status } = await searchParams;
   const supabase = await createClient();
-  const incidents = await loadIncidents(supabase);
+  const incidents = await loadIncidents(supabase, context.organisationId);
 
   const open = incidents.filter((i) => i.status === "open").length;
   const investigating = incidents.filter((i) => i.status === "investigating").length;

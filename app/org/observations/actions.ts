@@ -57,6 +57,17 @@ export async function recordObservationAction(
   }
 
   const supabase = await createClient();
+  // The evidence a new upload replaces, so it can be removed once nothing
+  // points at it rather than sitting in the bucket for good.
+  const { data: previous } = evidencePath
+    ? await supabase
+        .from("care_cert_observations")
+        .select("evidence_path")
+        .eq("organisation_id", context.organisationId)
+        .eq("user_id", userId)
+        .eq("standard_no", standardNo)
+        .maybeSingle()
+    : { data: null };
   const { error } = await supabase.from("care_cert_observations").upsert(
     {
       organisation_id: context.organisationId,
@@ -71,7 +82,14 @@ export async function recordObservationAction(
     },
     { onConflict: "organisation_id,user_id,standard_no" },
   );
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    if (evidencePath) await createAdminClient().storage.from("observation-evidence").remove([evidencePath]);
+    return { ok: false, error: error.message };
+  }
+  const replaced = previous?.evidence_path as string | null | undefined;
+  if (evidencePath && replaced && replaced !== evidencePath) {
+    await createAdminClient().storage.from("observation-evidence").remove([replaced]);
+  }
 
   revalidatePath(`/org/observations/${userId}`);
   revalidatePath("/org/observations");

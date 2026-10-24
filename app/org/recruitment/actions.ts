@@ -116,6 +116,22 @@ export async function uploadDocumentAction(
   await assertRecruitment(context);
 
   const admin = createAdminClient();
+  // The service role is not gated by RLS: the candidate must be this
+  // organisation's before anything is written or replaced.
+  const [{ data: candidate }, { data: previous }] = await Promise.all([
+    admin.from("candidates").select("organisation_id").eq("id", candidateId).maybeSingle(),
+    admin
+      .from("candidate_documents")
+      .select("file_path")
+      .eq("candidate_id", candidateId)
+      .eq("organisation_id", context.organisationId!)
+      .eq("doc_type", docType)
+      .maybeSingle(),
+  ]);
+  if (!candidate || candidate.organisation_id !== context.organisationId) {
+    return { ok: false, error: "Candidate not found." };
+  }
+
   const base64 = file.dataUrl.split(",")[1] ?? "";
   const buffer = Buffer.from(base64, "base64");
   const path = `${context.organisationId}/${candidateId}/${docType}-${crypto.randomUUID()}-${file.name}`;
@@ -129,6 +145,7 @@ export async function uploadDocumentAction(
     .from("candidate_documents")
     .delete()
     .eq("candidate_id", candidateId)
+    .eq("organisation_id", context.organisationId!)
     .eq("doc_type", docType);
   const { error } = await admin.from("candidate_documents").insert({
     candidate_id: candidateId,
@@ -138,7 +155,15 @@ export async function uploadDocumentAction(
     file_name: file.name,
     expires_at: expiresAt || null,
   });
-  if (error) return { ok: false, error: error.message };
+  if (error) {
+    await admin.storage.from("candidate-docs").remove([path]);
+    return { ok: false, error: error.message };
+  }
+  // The file it replaced goes too. Nothing points at it any more, and an old
+  // passport or DBS kept in the bucket for no reason is data we should not hold.
+  if (previous?.file_path && previous.file_path !== path) {
+    await admin.storage.from("candidate-docs").remove([previous.file_path as string]);
+  }
 
   revalidatePath(`/org/recruitment/${candidateId}`);
   revalidatePath("/org/recruitment");

@@ -46,7 +46,7 @@ function Ld({ data }: { data: object }) {
   );
 }
 
-/** Who we are and where — rendered once, in the root layout. */
+/** Who we are and where — rendered in the marketing layout (the pages search engines crawl; the signed-in app does not need it). */
 export function OrganisationLd() {
   return (
     <Ld

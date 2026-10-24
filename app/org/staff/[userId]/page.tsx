@@ -13,7 +13,7 @@ import {
   TopicBadge,
   type StatusVariant,
 } from "@/components/learner-ui";
-import { learnerStats } from "@/lib/learner-data";
+import { learnerStats } from "@/lib/learner-stats";
 import { NudgeButton } from "../../nudge-button";
 import { UnassignButton } from "../../unassign-button";
 import { AssignToPerson } from "./assign-to-person";
@@ -42,10 +42,11 @@ import {
   formatDuration,
   type OrgEnrolment,
 } from "@/lib/org-learner";
+import { formatDate } from "@/lib/dates";
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -94,12 +95,50 @@ export default async function StaffDetailPage({
   // Which part of the file is open. An unknown key falls back to Training
   // rather than 404ing: these links are pasted into emails.
   const section = sectionByKey(sectionParam);
-  const enabled = await enabledMap(context);
-  const state = sectionState(section, enabled);
-
   const supabase = await createClient();
-  const { profile, enrolments, certificates, assessments } =
-    await loadOrgLearnerTraining(supabase, userId);
+
+  // Everything this tab needs, started together. These were one await after
+  // another — entitlements, then the training record, then the library, then
+  // the tab's own records — so each page paid four round trips to Frankfurt
+  // end to end. The tab's records still wait for the entitlement answer
+  // (a locked section must run no query), but not for the training record.
+  const enabledRead = enabledMap(context);
+  const tabRead = enabledRead.then(async (enabled) => {
+    const state = sectionState(section, enabled);
+    // Locked sections run no query — CARER-FILE.md §3. The organisation may
+    // still have rows from before a downgrade, and fetching them to grey them
+    // out would be a way to read what they stopped paying for.
+    const wantsTasks = section.key === "actions" || section.key === "forms";
+    const [supervisions, competencyChecks, actionRows, formAsks] = await Promise.all([
+      section.key === "supervisions" && state === "open"
+        ? loadSupervisions(supabase, userId)
+        : Promise.resolve([]),
+      section.key === "competency" && state === "open"
+        ? loadCompetencyChecks(supabase, userId)
+        : Promise.resolve([]),
+      // The written-down half of the task list, on the tab that shows it. The
+      // derived half comes from the training record.
+      wantsTasks ? loadPersonActions(supabase, userId) : Promise.resolve([]),
+      wantsTasks && enabled["forms.builder"]
+        ? loadAssignmentsForPerson(supabase, userId)
+        : Promise.resolve([]),
+    ]);
+    return { enabled, state, supervisions, competencyChecks, actionRows, formAsks };
+  });
+  const [
+    { profile, enrolments, certificates, assessments },
+    { enabled, state, supervisions, competencyChecks, actionRows, formAsks },
+    { data: libraryRows },
+  ] = await Promise.all([
+    loadOrgLearnerTraining(supabase, userId),
+    tabRead,
+    // Everything in the library, flagged with what they already have, so a
+    // manager can give this carer one more course without leaving the page.
+    // Only the Training section offers it, so the other sections don't pay.
+    section.key === "training"
+      ? supabase.from("courses").select("id, title").order("title")
+      : Promise.resolve({ data: null }),
+  ]);
   if (!profile) notFound();
 
   const now = new Date();
@@ -139,14 +178,6 @@ export default async function StaffDetailPage({
     overdue: "Overdue",
   };
 
-  // Everything in the library, flagged with what they already have, so a
-  // manager can give this carer one more course without leaving the page.
-  // Only the Training section offers it, and it reads the whole course table,
-  // so the other sections do not pay for it.
-  const { data: libraryRows } =
-    section.key === "training"
-      ? await supabase.from("courses").select("id, title").order("title")
-      : { data: null };
   const assignedIds = new Set(enrolments.map((e) => e.course_id));
   const library = (libraryRows ?? []).map((c) => ({
     id: c.id as string,
@@ -154,27 +185,6 @@ export default async function StaffDetailPage({
     already: assignedIds.has(c.id as string),
   }));
 
-  // Locked sections run no query — CARER-FILE.md §3. The organisation may
-  // still have rows from before a downgrade, and fetching them to grey them
-  // out would be a way to read what they stopped paying for.
-  const supervisions =
-    section.key === "supervisions" && state === "open"
-      ? await loadSupervisions(supabase, userId)
-      : [];
-  const competencyChecks =
-    section.key === "competency" && state === "open"
-      ? await loadCompetencyChecks(supabase, userId)
-      : [];
-
-  // The written-down half of the task list, on the tab that shows it. The
-  // derived half is already in hand: enrolments and certificates above.
-  const [actionRows, formAsks] =
-    section.key === "actions" || section.key === "forms"
-      ? await Promise.all([
-          loadPersonActions(supabase, userId),
-          enabled["forms.builder"] ? loadAssignmentsForPerson(supabase, userId) : Promise.resolve([]),
-        ])
-      : [[], []];
   const tasks = buildPersonTasks({
     enrolments,
     certificates,

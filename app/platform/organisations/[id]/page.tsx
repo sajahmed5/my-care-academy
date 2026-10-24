@@ -44,13 +44,11 @@ export default async function OrganisationDetailPage({
     : "overview";
 
   const supabase = await createClient();
-  const [
-    { data: org },
-    { data: staff },
-    learners,
-    { data: overrides },
-    { data: ticks },
-  ] = await Promise.all([
+  // Each section reads only what it shows. All three used to load on every
+  // tab — every learner with their enrolments and certificates (the heaviest
+  // read on the page) even to open the settings form, which needs a count.
+  const showsLearners = section !== "settings";
+  const [{ data: org }, staff, learners, settings, learnerCounts] = await Promise.all([
     supabase
       .from("organisations")
       .select(
@@ -58,23 +56,48 @@ export default async function OrganisationDetailPage({
       )
       .eq("id", id)
       .single(),
-    supabase
-      .from("users")
-      .select("id, full_name, email, role, status, created_at")
-      .eq("organisation_id", id)
-      .order("created_at", { ascending: true }),
-    loadOrgLearners(supabase, id),
-    supabase
-      .from("organisation_features")
-      .select("feature_key, enabled, note")
-      .eq("organisation_id", id),
-    supabase.from("tier_features").select("tier_key, feature_key"),
+    section === "overview"
+      ? supabase
+          .from("users")
+          .select("id, full_name, email, role, status, created_at")
+          .eq("organisation_id", id)
+          .order("created_at", { ascending: true })
+          .then((r) => r.data ?? [])
+      : [],
+    showsLearners ? loadOrgLearners(supabase, id) : [],
+    section === "settings"
+      ? Promise.all([
+          supabase
+            .from("organisation_features")
+            .select("feature_key, enabled, note")
+            .eq("organisation_id", id),
+          supabase.from("tier_features").select("tier_key, feature_key"),
+        ]).then(([o, t]) => ({ overrides: o.data ?? [], ticks: t.data ?? [] }))
+      : { overrides: [], ticks: [] },
+    // The settings tab still shows how many learners there are, and the
+    // form checks the size band against current staff — counted, not loaded.
+    showsLearners
+      ? null
+      : Promise.all([
+          supabase
+            .from("users")
+            .select("id", { count: "exact", head: true })
+            .eq("organisation_id", id)
+            .eq("role", "learner"),
+          supabase
+            .from("users")
+            .select("id", { count: "exact", head: true })
+            .eq("organisation_id", id)
+            .eq("role", "learner")
+            .neq("status", "deactivated"),
+        ]).then(([all, cur]) => ({ all: all.count ?? 0, current: cur.count ?? 0 })),
   ]);
+  const { overrides, ticks } = settings;
 
   if (!org) notFound();
 
   const tierFeatures: Record<string, string[]> = {};
-  for (const t of ticks ?? []) {
+  for (const t of ticks) {
     (tierFeatures[t.tier_key as string] ??= []).push(t.feature_key as string);
   }
 
@@ -82,6 +105,8 @@ export default async function OrganisationDetailPage({
   // Deactivated accounts (leavers) stay in the table for their history, but
   // the headline numbers describe the current workforce only.
   const current = learners.filter((r) => r.status !== "deactivated");
+  const learnerTotal = learnerCounts?.all ?? learners.length;
+  const currentTotal = learnerCounts?.current ?? current.length;
   const assigned = current.reduce((n, r) => n + r.stats.assigned, 0);
   const completed = current.reduce((n, r) => n + r.stats.completed, 0);
   const completionPct = assigned > 0 ? Math.round((completed / assigned) * 100) : 0;
@@ -93,15 +118,15 @@ export default async function OrganisationDetailPage({
   const inactive = current.filter((r) => isInactive30d(r, nowMs)).length;
   const neverActive = current.filter(isNeverActive).length;
 
-  const person = (u: NonNullable<typeof staff>[number]): OrgPerson => ({
+  const person = (u: (typeof staff)[number]): OrgPerson => ({
     id: u.id,
     name: u.full_name || u.email || "Unnamed",
     email: u.email,
     role: u.role,
   });
-  const admins = (staff ?? []).filter((u) => isConsoleRole(u.role as UserRole)).map(person);
+  const admins = staff.filter((u) => isConsoleRole(u.role as UserRole)).map(person);
   // Only active learners can be usefully promoted — a leaver can't log in.
-  const promotable = (staff ?? [])
+  const promotable = staff
     .filter((u) => u.role === "learner" && u.status !== "deactivated")
     .map(person);
 
@@ -132,7 +157,7 @@ export default async function OrganisationDetailPage({
             >
               {s.label}
               {s.key === "learners" && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{learners.length}</span>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{learnerTotal}</span>
               )}
             </Link>
           ))}
@@ -204,8 +229,8 @@ export default async function OrganisationDetailPage({
                   status: org.status,
                   service_type: org.service_type,
                   size_band: org.size_band,
-                  learners: current.length,
-                  overrides: (overrides ?? []).map((o) => ({
+                  learners: currentTotal,
+                  overrides: overrides.map((o) => ({
                     feature: o.feature_key as string,
                     enabled: o.enabled as boolean,
                     note: (o.note as string | null) ?? null,

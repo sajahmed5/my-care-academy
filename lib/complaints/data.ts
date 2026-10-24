@@ -2,6 +2,10 @@
  * Reading a complaint and its process. RLS does the scoping: everything here
  * goes through the request's client, so a page and the PDF route cannot see
  * different things.
+ *
+ * Where a caller has the organisation to hand it passes it too. RLS still
+ * decides what is visible; the explicit filter is what lets Postgres use the
+ * organisation index rather than evaluating the policy row by row.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -22,13 +26,16 @@ export interface StageEntry {
   updatedAt: string;
 }
 
+/**
+ * A file on the record, as the page lists it. No storage path: the browser
+ * opens a file through /org/complaints/<id>/documents/<docId>, which looks the
+ * path up itself, so the bucket layout never needs to leave the server.
+ */
 export interface ComplaintDocument {
   id: string;
   stageId: string | null;
-  filePath: string;
   fileName: string;
   fileSize: number | null;
-  mime: string | null;
   uploadedAt: string;
 }
 
@@ -81,11 +88,10 @@ export interface StaffOption {
 }
 
 /** Every stage the organisation has configured, in order. */
-export async function loadStages(supabase: SupabaseClient): Promise<ComplaintStage[]> {
-  const { data } = await supabase
-    .from("complaint_stages")
-    .select("id, name, kind, applies_to, sort_order, enabled")
-    .order("sort_order");
+export async function loadStages(supabase: SupabaseClient, organisationId?: string | null): Promise<ComplaintStage[]> {
+  let q = supabase.from("complaint_stages").select("id, name, kind, applies_to, sort_order, enabled");
+  if (organisationId) q = q.eq("organisation_id", organisationId);
+  const { data } = await q.order("sort_order");
   return (data ?? []).map((r) => ({
     id: r.id as string,
     name: r.name as string,
@@ -97,13 +103,10 @@ export async function loadStages(supabase: SupabaseClient): Promise<ComplaintSta
 }
 
 /** The organisation's people, for the "who took part" and "staff named" pickers. */
-export async function loadStaffOptions(supabase: SupabaseClient): Promise<StaffOption[]> {
-  const { data } = await supabase
-    .from("users")
-    .select("id, full_name, email, role")
-    .in("role", ["org_admin", "learner"])
-    .order("full_name")
-    .limit(1000);
+export async function loadStaffOptions(supabase: SupabaseClient, organisationId?: string | null): Promise<StaffOption[]> {
+  let q = supabase.from("users").select("id, full_name, email, role").in("role", ["org_admin", "learner"]);
+  if (organisationId) q = q.eq("organisation_id", organisationId);
+  const { data } = await q.order("full_name").limit(1000);
   return (data ?? []).map((u) => ({
     value: u.id as string,
     label: (u.full_name as string | null) || (u.email as string),
@@ -124,15 +127,61 @@ const summary = (r: Record<string, unknown>): ComplaintSummary => ({
   description: r.description as string,
 });
 
-/** Every record in the organisation, newest first. */
-export async function loadComplaints(supabase: SupabaseClient): Promise<ComplaintSummary[]> {
+/**
+ * The answers the list's "what next" line reads, and nothing else. A stage's
+ * form_answers holds the whole narrative of a meeting or a letter; the list
+ * needs four keys out of it (lib/complaints/steps.ts nextStep: Triage's type,
+ * date and attendees, and when the acknowledgement went), so it asks for
+ * those by JSON path instead of shipping every record's answers to the server.
+ */
+const LIST_ENTRY_SELECT =
+  "stage_id, status, updated_at, tri_type:form_answers->tri_type, mm1_date:form_answers->mm1_date, mm1_attendees:form_answers->mm1_attendees, sent_on:form_answers->sentOn";
+
+/**
+ * Every record in the organisation, newest first, with where each has got to.
+ *
+ * One request: the stage entries come embedded rather than as a second
+ * `.in("complaint_id", …)` read, which at 500 records would have passed both
+ * the URL limit and the 1,000-row cap — and a record whose entries were
+ * silently dropped would show the wrong next step.
+ */
+export async function loadComplaintList(
+  supabase: SupabaseClient,
+  organisationId: string,
+): Promise<{ complaints: ComplaintSummary[]; entries: Map<string, StageEntry[]> }> {
   const { data } = await supabase
     .from("complaints")
-    .select("id, reference, kind, status, raised_by_name, about_name, reported_on, complete_by, closed_on, description")
+    .select(
+      `id, reference, kind, status, raised_by_name, about_name, reported_on, complete_by, closed_on, description, complaint_stage_entries (${LIST_ENTRY_SELECT})`,
+    )
+    .eq("organisation_id", organisationId)
     .order("reported_on", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(500);
-  return (data ?? []).map((r) => summary(r as Record<string, unknown>));
+  const complaints: ComplaintSummary[] = [];
+  const entries = new Map<string, StageEntry[]>();
+  for (const r of data ?? []) {
+    complaints.push(summary(r as Record<string, unknown>));
+    const rows = ((r as { complaint_stage_entries?: Record<string, unknown>[] }).complaint_stage_entries ?? []);
+    entries.set(
+      r.id as string,
+      rows.map((e) => {
+        const formAnswers: Record<string, unknown> = {};
+        if (e.tri_type != null) formAnswers.tri_type = e.tri_type;
+        if (e.mm1_date != null) formAnswers.mm1_date = e.mm1_date;
+        if (e.mm1_attendees != null) formAnswers.mm1_attendees = e.mm1_attendees;
+        if (e.sent_on != null) formAnswers.sentOn = e.sent_on;
+        return {
+          stageId: e.stage_id as string,
+          status: e.status as string,
+          notes: null,
+          formAnswers,
+          updatedAt: e.updated_at as string,
+        };
+      }),
+    );
+  }
+  return { complaints, entries };
 }
 
 /** Stage entries for a set of records: the list needs them to say where each is. */
@@ -164,7 +213,9 @@ export async function loadEntriesFor(
 export async function loadComplaint(supabase: SupabaseClient, id: string): Promise<Complaint | null> {
   const { data: row } = await supabase
     .from("complaints")
-    .select("*")
+    .select(
+      "id, reference, kind, status, raised_by_name, raised_by_role, about_name, category, occurred_on, reported_on, complete_by, closed_on, description, desired_outcome, outcome_summary, lessons_learned, created_at",
+    )
     .eq("id", id)
     .maybeSingle();
   if (!row) return null;
@@ -177,7 +228,7 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
       .eq("complaint_id", id),
     supabase
       .from("complaint_documents")
-      .select("id, stage_id, file_path, file_name, file_size, mime, uploaded_at")
+      .select("id, stage_id, file_name, file_size, uploaded_at")
       .eq("complaint_id", id)
       .order("uploaded_at"),
     supabase
@@ -215,10 +266,8 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
     documents: (docs ?? []).map((d) => ({
       id: d.id as string,
       stageId: (d.stage_id as string | null) ?? null,
-      filePath: d.file_path as string,
       fileName: d.file_name as string,
       fileSize: (d.file_size as number | null) ?? null,
-      mime: (d.mime as string | null) ?? null,
       uploadedAt: d.uploaded_at as string,
     })),
     actions: (actions ?? []).map((a) => {
@@ -241,6 +290,55 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
       kind: p.kind as string,
       carerName: nameOf((p as { carer?: unknown }).carer) ?? "a carer",
     })),
+  };
+}
+
+/**
+ * What closing a record checks, and only that: the record's kind, each
+ * stage's status, the actions still open on it and the plans still running.
+ * Closing used to read the whole record — every stage's answers, the files,
+ * the people — to look at a handful of statuses.
+ */
+export async function loadCloseCheck(
+  supabase: SupabaseClient,
+  id: string,
+): Promise<{
+  kind: string;
+  stageEntries: { stageId: string; status: string }[];
+  openActions: string[];
+  openPlans: string[];
+} | null> {
+  const [{ data: row }, { data: actions }, { data: pips }] = await Promise.all([
+    supabase.from("complaints").select("kind, complaint_stage_entries (stage_id, status)").eq("id", id).maybeSingle(),
+    supabase
+      .from("record_actions")
+      .select("title, owner:users!record_actions_user_id_fkey (full_name, email)")
+      .eq("source_type", "complaint")
+      .eq("source_id", id)
+      .is("completed_at", null)
+      .order("created_at"),
+    supabase
+      .from("pips")
+      .select("kind, carer:users!pips_user_id_fkey (full_name, email)")
+      .eq("complaint_id", id)
+      .eq("status", "open"),
+  ]);
+  if (!row) return null;
+  const nameOf = (raw: unknown): string | null => {
+    const p = (Array.isArray(raw) ? raw[0] : raw) as { full_name?: string | null; email?: string | null } | undefined;
+    return p?.full_name ?? p?.email ?? null;
+  };
+  const entries = ((row as { complaint_stage_entries?: Record<string, unknown>[] }).complaint_stage_entries ?? []);
+  return {
+    kind: row.kind as string,
+    stageEntries: entries.map((e) => ({ stageId: e.stage_id as string, status: e.status as string })),
+    openActions: (actions ?? []).map((a) => {
+      const owner = nameOf((a as { owner?: unknown }).owner);
+      return `${a.title as string}${owner ? ` — ${owner}` : ""}`;
+    }),
+    openPlans: (pips ?? []).map(
+      (p) => `${p.kind === "disciplinary" ? "Disciplinary" : "Performance plan"} for ${nameOf((p as { carer?: unknown }).carer) ?? "a carer"}`,
+    ),
   };
 }
 

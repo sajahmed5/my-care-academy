@@ -1,38 +1,7 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { daysUntil, expiryFlag, isOverdue } from "@/lib/engine-logic";
+import { cache } from "react";
+import { createClient } from "@/lib/supabase/server";
+import type { Certificate, Enrolment } from "@/lib/learner-stats";
 import { computeStarTotal } from "@/lib/stars";
-
-export interface Enrolment {
-  id: string;
-  course_id: string;
-  status: string;
-  progress: number;
-  due_date: string | null;
-  assigned_at: string;
-  attempt_count: number;
-  completion_count: number;
-  title: string;
-  topic: string | null;
-}
-
-export interface Certificate {
-  id: string;
-  course_id: string;
-  number: string;
-  issued_at: string;
-  expires_at: string | null;
-  title: string;
-  topic: string | null;
-}
-
-export interface LearnerData {
-  enrolments: Enrolment[];
-  certificates: Certificate[];
-  activityDates: Date[];
-  readAt: string | null;
-  fullName: string | null;
-  email: string | null;
-}
 
 interface JoinedCourse {
   title?: string;
@@ -43,105 +12,145 @@ function pickCourse(row: { courses?: unknown }): JoinedCourse {
   return (row.courses as JoinedCourse) ?? {};
 }
 
-/** Load everything the learner area needs (RLS scopes it to the learner). */
-export async function loadLearner(
-  supabase: SupabaseClient,
-): Promise<LearnerData> {
-  const [
-    { data: enrRaw },
-    { data: certRaw },
-    { data: attemptsRaw },
-    { data: me },
-  ] = await Promise.all([
-    supabase
+/*
+ * The learner's own rows, read once per request.
+ *
+ * React `cache` memoises per render pass, so the shell (badge, star bank) and
+ * the page share one read instead of each running their own. Every read also
+ * filters by user_id explicitly: RLS would scope it anyway, but without the
+ * filter Postgres scans the whole table and runs the policy on every row; with
+ * it, it walks the user_id index. RLS stays the security layer.
+ */
+
+/** Every enrolment, newest-assigned first. */
+export const loadEnrolments = cache(
+  async (userId: string): Promise<Enrolment[]> => {
+    const supabase = await createClient();
+    const { data } = await supabase
       .from("enrolments")
       .select(
         "id, course_id, status, progress, due_date, assigned_at, attempt_count, completion_count, courses(title, topics(title))",
       )
-      .order("assigned_at", { ascending: false }),
-    supabase
+      .eq("user_id", userId)
+      .order("assigned_at", { ascending: false });
+    return (data ?? []).map((e) => {
+      const c = pickCourse(e);
+      return {
+        id: e.id,
+        course_id: e.course_id,
+        status: e.status,
+        progress: e.progress,
+        due_date: e.due_date,
+        assigned_at: e.assigned_at,
+        attempt_count: e.attempt_count ?? 0,
+        completion_count: e.completion_count ?? 0,
+        title: c.title ?? "Course",
+        topic: c.topics?.title ?? null,
+      };
+    });
+  },
+);
+
+/** Every certificate, newest-issued first. */
+export const loadCertificates = cache(
+  async (userId: string): Promise<Certificate[]> => {
+    const supabase = await createClient();
+    const { data } = await supabase
       .from("certificates")
       .select(
         "id, course_id, certificate_number, issued_at, expires_at, courses(title, topics(title))",
       )
-      .order("issued_at", { ascending: false }),
+      .eq("user_id", userId)
+      .order("issued_at", { ascending: false });
+    return (data ?? []).map((c) => {
+      const co = pickCourse(c);
+      return {
+        id: c.id,
+        course_id: c.course_id,
+        number: c.certificate_number,
+        issued_at: c.issued_at,
+        expires_at: c.expires_at,
+        title: co.title ?? "Course",
+        topic: co.topics?.title ?? null,
+      };
+    });
+  },
+);
+
+export interface LearnerProfile {
+  fullName: string | null;
+  email: string | null;
+  readAt: string | null;
+}
+
+/** The learner's own users row — an id lookup, not an RLS scan. */
+export const loadProfile = cache(
+  async (userId: string): Promise<LearnerProfile> => {
+    const supabase = await createClient();
+    const { data: me } = await supabase
+      .from("users")
+      .select("full_name, email, notifications_read_at")
+      .eq("id", userId)
+      .maybeSingle();
+    return {
+      fullName: me?.full_name ?? null,
+      email: me?.email ?? null,
+      readAt: me?.notifications_read_at ?? null,
+    };
+  },
+);
+
+/**
+ * Days with activity, for the dashboard streak: submitted assessments (the
+ * latest 300 — far more than any streak needs) plus certificate issue dates.
+ * Only the dashboard shows a streak, so only the dashboard pays for this.
+ */
+export async function loadActivityDates(userId: string): Promise<Date[]> {
+  const supabase = await createClient();
+  const [{ data: attempts }, certificates] = await Promise.all([
     supabase
       .from("quiz_attempts")
       .select("submitted_at")
+      .eq("user_id", userId)
       .not("submitted_at", "is", null)
       .order("submitted_at", { ascending: false })
       .limit(300),
-    supabase
-      .from("users")
-      .select("full_name, email, notifications_read_at")
-      .single(),
+    loadCertificates(userId),
   ]);
-
-  const enrolments: Enrolment[] = (enrRaw ?? []).map((e) => {
-    const c = pickCourse(e);
-    return {
-      id: e.id,
-      course_id: e.course_id,
-      status: e.status,
-      progress: e.progress,
-      due_date: e.due_date,
-      assigned_at: e.assigned_at,
-      attempt_count: e.attempt_count ?? 0,
-      completion_count: e.completion_count ?? 0,
-      title: c.title ?? "Course",
-      topic: c.topics?.title ?? null,
-    };
-  });
-
-  const certificates: Certificate[] = (certRaw ?? []).map((c) => {
-    const co = pickCourse(c);
-    return {
-      id: c.id,
-      course_id: c.course_id,
-      number: c.certificate_number,
-      issued_at: c.issued_at,
-      expires_at: c.expires_at,
-      title: co.title ?? "Course",
-      topic: co.topics?.title ?? null,
-    };
-  });
-
-  const activityDates = [
-    ...(attemptsRaw ?? []).map((a) => new Date(a.submitted_at)),
+  return [
+    ...(attempts ?? []).map((a) => new Date(a.submitted_at)),
     ...certificates.map((c) => new Date(c.issued_at)),
   ];
-
-  return {
-    enrolments,
-    certificates,
-    activityDates,
-    readAt: me?.notifications_read_at ?? null,
-    fullName: me?.full_name ?? null,
-    email: me?.email ?? null,
-  };
 }
 
 /**
  * The learner's star-bank total: assessment stars (best per course, capped at
  * 20, derived from quiz_attempts) plus in-content stars (one row per earned
- * question in content_question_stars). RLS scopes both reads to the learner.
- * Resilient — any error yields 0 rather than breaking the shell.
+ * question in content_question_stars). Runs on every learner page via the
+ * shell, so it reads only what the maths needs: no zero-score attempts (they
+ * can never be a best), and the certificate expiries come from the shared
+ * per-request certificate read. Resilient — any error yields 0 rather than
+ * breaking the shell.
  */
-export async function loadStarTotal(supabase: SupabaseClient): Promise<number> {
+export async function loadStarTotal(userId: string): Promise<number> {
   try {
-    const [{ data: attempts }, { data: certs }, { count }] = await Promise.all([
+    const supabase = await createClient();
+    const [{ data: attempts }, certs, { count }] = await Promise.all([
       supabase
         .from("quiz_attempts")
         .select("course_id, score, question_ids, submitted_at")
-        .not("submitted_at", "is", null),
+        .eq("user_id", userId)
+        .not("submitted_at", "is", null)
+        .gt("score", 0),
       // Certificate expiries bound the compliance cycles; a renewal after expiry
       // earns a fresh pool of assessment stars.
-      supabase.from("certificates").select("course_id, expires_at"),
+      loadCertificates(userId),
       supabase
         .from("content_question_stars")
-        .select("id", { count: "exact", head: true }),
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId),
     ]);
-    const assessmentStars = computeStarTotal(attempts ?? [], certs ?? []);
+    const assessmentStars = computeStarTotal(attempts ?? [], certs);
     return assessmentStars + (count ?? 0);
   } catch {
     return 0;
@@ -162,104 +171,18 @@ export interface BadgeData {
 }
 
 /**
- * Lightweight load for the sidebar unread-notifications badge. Runs on EVERY
- * learner page (via DashboardShell), so it deliberately skips the 300-row
- * quiz_attempts read, ordering and extra columns that full loadLearner pulls.
+ * The sidebar unread-notifications badge, and the notifications page. Runs on
+ * EVERY learner page (via DashboardShell), built from the shared per-request
+ * reads so a page that also lists enrolments or certificates costs nothing
+ * extra.
  */
-export async function loadBadgeData(
-  supabase: SupabaseClient,
-): Promise<BadgeData> {
-  const [{ data: enrRaw }, { data: certRaw }, { data: me }] = await Promise.all([
-    supabase.from("enrolments").select("course_id, status, assigned_at, courses(title)"),
-    supabase.from("certificates").select("id, course_id, issued_at, expires_at, courses(title)"),
-    supabase.from("users").select("notifications_read_at").single(),
+export async function loadBadgeData(userId: string): Promise<BadgeData> {
+  const [enrolments, certificates, me] = await Promise.all([
+    loadEnrolments(userId),
+    loadCertificates(userId),
+    loadProfile(userId),
   ]);
-  return {
-    enrolments: (enrRaw ?? []).map((e) => ({
-      course_id: e.course_id,
-      status: e.status,
-      assigned_at: e.assigned_at,
-      title: pickCourse(e).title ?? "Course",
-    })),
-    certificates: (certRaw ?? []).map((c) => ({
-      id: c.id,
-      course_id: c.course_id,
-      issued_at: c.issued_at,
-      expires_at: c.expires_at,
-      title: pickCourse(c).title ?? "Course",
-    })),
-    readAt: me?.notifications_read_at ?? null,
-  };
+  return { enrolments, certificates, readAt: me.readAt };
 }
 
-export interface LearnerStats {
-  assigned: number;
-  notStarted: number;
-  inProgress: number;
-  completed: number;
-  expired: number;
-  certificates: number;
-  overdue: number;
-  /** Not completed, has a due date inside 60 days, and not yet overdue —
-   *  the window where chasing still prevents a breach (issue #29). */
-  dueSoon: number;
-  expiring: number;
-  completionPct: number;
-  overallPct: number;
-}
-
-export function learnerStats(
-  enrolments: Enrolment[],
-  certificates: Certificate[],
-  now: Date,
-): LearnerStats {
-  const assigned = enrolments.length;
-  const completed = enrolments.filter((e) => e.status === "completed").length;
-  const overdue = enrolments.filter((e) =>
-    isOverdue(e.due_date, e.status, now),
-  ).length;
-  // Deliberately excludes anything already overdue: that has its own, louder
-  // line, and a name should not appear under both.
-  const dueSoon = enrolments.filter((e) => {
-    if (e.status === "completed" || !e.due_date) return false;
-    if (isOverdue(e.due_date, e.status, now)) return false;
-    return daysUntil(new Date(e.due_date), now) <= 60;
-  }).length;
-
-  // Expiring = latest cert per course flagged amber/red but not yet expired.
-  const latest = new Map<string, Certificate>();
-  for (const c of certificates) if (!latest.has(c.course_id)) latest.set(c.course_id, c);
-  const expiring = [...latest.values()].filter((c) => {
-    const f = expiryFlag(c.expires_at ? new Date(c.expires_at) : null, now);
-    return f === "amber" || f === "red";
-  }).length;
-
-  // Overall progress counts partly-finished courses, not just completed ones,
-  // so a learner mid-way through several courses isn't shown a demoralising
-  // low number. A completed course counts as 100%; others use their content
-  // progress. completionPct (completed / assigned) is kept for anything that
-  // needs the strict "fully done" ratio.
-  const overallPct =
-    assigned > 0
-      ? Math.round(
-          enrolments.reduce(
-            (sum, e) => sum + (e.status === "completed" ? 100 : e.progress),
-            0,
-          ) / assigned,
-        )
-      : 0;
-
-  return {
-    assigned,
-    notStarted: enrolments.filter((e) => e.status === "not_started").length,
-    inProgress: enrolments.filter((e) => e.status === "in_progress").length,
-    completed,
-    expired: enrolments.filter((e) => e.status === "expired").length,
-    certificates: certificates.length,
-    overdue,
-    dueSoon,
-    expiring,
-    completionPct: assigned > 0 ? Math.round((completed / assigned) * 100) : 0,
-    overallPct,
-  };
-}
+export { learnerStats, type Certificate, type Enrolment, type LearnerStats } from "@/lib/learner-stats";

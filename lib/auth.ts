@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -61,20 +62,6 @@ export function dashboardPathForRole(role: UserRole | null): string {
   }
 }
 
-function decodeJwtClaims(token: string): Record<string, unknown> {
-  const payload = token.split(".")[1];
-  if (!payload) return {};
-  try {
-    const json = Buffer.from(
-      payload.replace(/-/g, "+").replace(/_/g, "/"),
-      "base64",
-    ).toString("utf8");
-    return JSON.parse(json) as Record<string, unknown>;
-  } catch {
-    return {};
-  }
-}
-
 function normaliseClaim(value: unknown): string | null {
   if (value === null || value === undefined || value === "null") return null;
   return String(value);
@@ -82,31 +69,27 @@ function normaliseClaim(value: unknown): string | null {
 
 /**
  * Returns the authenticated user plus their role/org claims, or null if not
- * signed in. Auth is validated via getUser(); the custom claims are read from
- * the access token (populated by the JWT hook) — no extra DB round-trip.
+ * signed in. getClaims() checks the access token's signature against the
+ * project's public signing key (ES256, cached for 10 minutes), so this costs
+ * no network call; getUser() asked the auth server every time, and a page ran
+ * it three or four times (layout, page, shell). cache() makes it once per
+ * request on top of that. A deactivated member is still caught by
+ * assertActiveMember, which reads the database.
  */
-export async function getUserContext(): Promise<UserContext | null> {
+export const getUserContext = cache(async (): Promise<UserContext | null> => {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  const claims = session ? decodeJwtClaims(session.access_token) : {};
-  const role = normaliseClaim(claims["user_role"]) as UserRole | null;
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) return null;
 
   return {
-    userId: user.id,
-    email: user.email ?? null,
-    role,
+    userId: claims.sub,
+    email: typeof claims.email === "string" ? claims.email : null,
+    role: normaliseClaim(claims["user_role"]) as UserRole | null,
     organisationId: normaliseClaim(claims["organisation_id"]),
   };
-}
+});
 
 /** Require an authenticated user; redirect to /login otherwise. */
 export async function requireUser(): Promise<UserContext> {
@@ -125,7 +108,7 @@ const MFA_REQUIRED_ROLES: UserRole[] = ["platform_admin", "org_admin", "org_offi
  * Toggle with MFA_ENFORCED: set it to "false" to disable enforcement (the /mfa
  * flow still works for anyone who opts in). Defaults to enforced.
  */
-export async function requireAdminMfa(): Promise<void> {
+export const requireAdminMfa = cache(async (): Promise<void> => {
   if (process.env.MFA_ENFORCED === "false") return;
 
   const supabase = await createClient();
@@ -133,7 +116,7 @@ export async function requireAdminMfa(): Promise<void> {
     await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (error || !data) return;
   if (data.currentLevel !== "aal2") redirect("/mfa");
-}
+});
 
 /**
  * Blocks access for members whose account is deactivated or whose organisation
@@ -142,22 +125,48 @@ export async function requireAdminMfa(): Promise<void> {
  */
 export async function assertActiveMember(context: UserContext): Promise<void> {
   if (context.role === "platform_admin") return;
-  const supabase = await createClient();
-
-  const [{ data: me }, { data: org }] = await Promise.all([
-    supabase.from("users").select("status").eq("id", context.userId).single(),
-    context.organisationId
-      ? supabase
-          .from("organisations")
-          .select("status")
-          .eq("id", context.organisationId)
-          .single()
-      : Promise.resolve({ data: null as { status?: string } | null }),
-  ]);
-
-  if (me?.status === "deactivated") redirect("/suspended");
-  if (org?.status === "suspended") redirect("/suspended");
+  const member = await memberStatus(context.userId, context.organisationId);
+  if (member.status === "deactivated") redirect("/suspended");
+  if (member.orgStatus === "suspended") redirect("/suspended");
 }
+
+export interface MemberStatus {
+  status: string | null;
+  orgStatus: string | null;
+  /** Read alongside status so the shell's "last active" write can skip
+   *  itself when it would be a no-op — see DashboardShell. */
+  lastSeenAt: string | null;
+}
+
+/**
+ * The member's own row and their organisation's status, once per request
+ * (layout, page and shell all gate on it). Degrades gracefully: a missing
+ * row reads as null, which blocks nothing.
+ */
+export const memberStatus = cache(
+  async (userId: string, organisationId: string | null): Promise<MemberStatus> => {
+    const supabase = await createClient();
+    const [{ data: me }, { data: org }] = await Promise.all([
+      supabase
+        .from("users")
+        .select("status, last_seen_at")
+        .eq("id", userId)
+        .maybeSingle(),
+      organisationId
+        ? supabase
+            .from("organisations")
+            .select("status")
+            .eq("id", organisationId)
+            .maybeSingle()
+        : Promise.resolve({ data: null as { status?: string } | null }),
+    ]);
+    return {
+      status: me?.status ?? null,
+      orgStatus: org?.status ?? null,
+      lastSeenAt: me?.last_seen_at ?? null,
+    };
+  },
+);
 
 /**
  * Require a specific role. Authenticated users with the wrong role are sent to

@@ -82,13 +82,26 @@ function shape(r: Record<string, unknown>): Pip {
   };
 }
 
+/**
+ * What the list shows and pipSteps reads — no more. A plan row carries both
+ * signatures as PNG data URLs (up to 400 kB each), the concerns and support
+ * as JSON, and every week's notes and the carer's replies; the list needs a
+ * name, a status, the dates and which weeks are signed off. Everything not
+ * selected comes back from shape() as null or empty, so a list row is a Pip
+ * that is only safe to read for those fields.
+ */
+const LIST_SELECT = `
+  id, user_id, kind, status, complaint_id, reason, start_date, review_until, outcome, carer_signed_at, created_at,
+  carer:users!pips_user_id_fkey (full_name, email),
+  complaint:complaints!pips_complaint_id_fkey (reference),
+  pip_reviews (week_number, period_start, period_end, completed_at)
+`;
+
 /** Every plan in the organisation, open first, newest first. */
-export async function loadPips(supabase: SupabaseClient): Promise<Pip[]> {
-  const { data } = await supabase
-    .from("pips")
-    .select(SELECT)
-    .order("created_at", { ascending: false })
-    .limit(500);
+export async function loadPips(supabase: SupabaseClient, organisationId?: string | null): Promise<Pip[]> {
+  let q = supabase.from("pips").select(LIST_SELECT);
+  if (organisationId) q = q.eq("organisation_id", organisationId);
+  const { data } = await q.order("created_at", { ascending: false }).limit(500);
   return (data ?? []).map((r) => shape(r as Record<string, unknown>));
 }
 

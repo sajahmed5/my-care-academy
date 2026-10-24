@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import {
   bucketOf,
   isActiveLearner,
@@ -26,6 +27,7 @@ import {
   LearnerReminderPicker,
   type ReminderTarget,
 } from "../learner-reminder-picker";
+import { formatDate } from "@/lib/dates";
 
 /** "Today" / "3 days ago" / a date — when they last used the account. */
 function signedInLabel(iso: string): string {
@@ -33,7 +35,7 @@ function signedInLabel(iso: string): string {
   if (days <= 0) return "Today";
   if (days === 1) return "Yesterday";
   if (days < 30) return `${days} days ago`;
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return formatDate(iso, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -70,22 +72,37 @@ export default async function LearnersAdminPage({
   const section: Section = SECTIONS.some((x) => x.key === sectionParam)
     ? (sectionParam as Section)
     : "staff";
+  const orgId = context.organisationId;
   const supabase = await createClient();
-  const [{ data: organisation }, { data: staff }, { data: nudgeLog }, learnerRows] =
+  // Each tab reads only what it shows. The reminder picker needs every
+  // learner's full training rollup (all enrolments and certificates) and the
+  // email log; the Staff and Invite tabs used to pay for both on every visit.
+  // The staff list stays on every tab — its count is the tab badge.
+  const onReminders = section === "reminders";
+  const [{ data: organisation }, staff, { data: nudgeLog }, learnerRows] =
     await Promise.all([
-      supabase.from("organisations").select("name").single(),
-      supabase
-        .from("users")
-        .select("id, full_name, email, role, status, created_at, last_seen_at")
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("email_log")
-        .select("id, to_email, subject, sent, created_at, type")
-        .in("type", NUDGE_TYPES)
-        .order("created_at", { ascending: false })
-        // Was 200, which silently hid 61 of HG Care's 261 (24 Oct 2026).
-        .limit(1000),
-      loadOrgLearners(supabase),
+      supabase.from("organisations").select("name").eq("id", orgId!).single(),
+      // Paged: a large roll would pass Supabase's silent 1,000-row cap.
+      fetchAll((f, t) =>
+        supabase
+          .from("users")
+          .select("id, full_name, email, role, status, created_at, last_seen_at")
+          .eq("organisation_id", orgId!)
+          .order("created_at", { ascending: true })
+          .order("id")
+          .range(f, t),
+      ),
+      onReminders
+        ? supabase
+            .from("email_log")
+            .select("id, to_email, subject, sent, created_at, type")
+            .eq("organisation_id", orgId!)
+            .in("type", NUDGE_TYPES)
+            .order("created_at", { ascending: false })
+            // Was 200, which silently hid 61 of HG Care's 261 (24 Oct 2026).
+            .limit(1000)
+        : Promise.resolve({ data: null }),
+      onReminders ? loadOrgLearners(supabase, orgId) : Promise.resolve([]),
     ]);
 
   const active = learnerRows.filter(isActiveLearner);

@@ -3,14 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { AppSidebar } from "@/components/app-sidebar";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { loadBadgeData, loadStarTotal } from "@/lib/learner-data";
 import { deriveNotifications, unreadCount } from "@/lib/notifications";
 import { VERSION_LABEL } from "@/lib/version";
 import { StarBank } from "@/components/star-bank";
 import { ReportWidget } from "@/components/report-widget";
-import { isConsoleRole, roleLabel, type UserContext } from "@/lib/auth";
+import { isConsoleRole, memberStatus, roleLabel, type UserContext } from "@/lib/auth";
 import { enabledMap } from "@/lib/entitlements";
 
 async function learnerBadges(
@@ -18,8 +17,7 @@ async function learnerBadges(
 ): Promise<Record<string, number>> {
   if (context.role !== "learner") return {};
   try {
-    const supabase = await createClient();
-    const data = await loadBadgeData(supabase);
+    const data = await loadBadgeData(context.userId);
     const notifs = deriveNotifications(data.enrolments, data.certificates, new Date());
     return { "/learn/notifications": unreadCount(notifs, data.readAt) };
   } catch {
@@ -29,8 +27,7 @@ async function learnerBadges(
 
 async function learnerStarTotal(context: UserContext): Promise<number> {
   if (context.role !== "learner") return 0;
-  const supabase = await createClient();
-  return loadStarTotal(supabase);
+  return loadStarTotal(context.userId);
 }
 
 /** Which features this org has — gates the org sidebar's pack items. */
@@ -44,12 +41,18 @@ async function orgAddOns(
 /**
  * Record that this user is active on the site, at most once every 30 minutes.
  * Gives org admins a real "last active" signal (auth.last_sign_in_at barely
- * changes because sessions persist). Service-role, throttled, best-effort — a
- * conditional no-op on most page loads, and never blocks or breaks the render.
+ * changes because sessions persist). Service-role, throttled, best-effort —
+ * never blocks or breaks the render. Org members' last_seen_at was already
+ * read by the active-member gate this request, so a fresh one skips the
+ * write entirely instead of sending an UPDATE that matches nothing.
  */
 async function touchLastSeen(context: UserContext): Promise<void> {
   try {
     const cutoff = new Date(Date.now() - 30 * 60_000).toISOString();
+    if (context.role !== "platform_admin") {
+      const { lastSeenAt } = await memberStatus(context.userId, context.organisationId);
+      if (lastSeenAt && Date.parse(lastSeenAt) >= Date.parse(cutoff)) return;
+    }
     await createAdminClient()
       .from("users")
       .update({ last_seen_at: new Date().toISOString() })

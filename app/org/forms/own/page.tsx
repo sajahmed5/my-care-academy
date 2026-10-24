@@ -23,8 +23,10 @@ export default async function FormsPage() {
 
   const { data: forms } = await supabase
     .from("forms")
-    .select("id, title, status, created_at")
-    .order("created_at", { ascending: false });
+    .select("id, title, status")
+    .eq("organisation_id", context.organisationId!)
+    .order("created_at", { ascending: false })
+    .limit(200);
 
   return (
     <DashboardShell title="Forms" context={context}>

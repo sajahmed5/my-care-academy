@@ -16,7 +16,7 @@ export default async function LearnersStatisticsPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  await requireConsole();
+  const context = await requireConsole();
   const { status } = await searchParams;
   const trainingStatus: TrainingStatusFilter = TRAINING_TABS.some(
     (t) => t.key === status,
@@ -32,6 +32,7 @@ export default async function LearnersStatisticsPage({
       <AssignedTrainingTable
         status={trainingStatus}
         baseHref="/org/learners/statistics"
+        orgId={context.organisationId}
       />
       <StatusKey kind="training" />
     </section>

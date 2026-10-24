@@ -1,5 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAll } from "@/lib/fetch-all";
+import {
+  courseOf,
+  loadCourseIndex,
+  loadOrgPeople,
+  type OrgTraining,
+} from "@/lib/org-learners";
 
 export interface CourseStatsRow {
   id: string;
@@ -50,27 +56,42 @@ const minutesToSeconds = (m: number | null | undefined) =>
  * Per-course rollup for the Courses → Overview table: how many staff are
  * assigned, quiz attempts, in-progress and completion counts, the course's
  * expected duration and the shortest/longest/average time to complete
- * (tracked in-course time of completed enrolments). RLS scopes every read to
- * the caller's organisation.
+ * (tracked in-course time of completed enrolments).
+ *
+ * Pass orgId wherever it is known: RLS still decides what may be read, but the
+ * filter lets Postgres use the organisation_id index rather than testing the
+ * policy on every row. Pass `training` when the page has already read (or is
+ * reading) the organisation's enrolments, so they aren't fetched twice.
  */
 export async function loadCourseStats(
   supabase: SupabaseClient,
+  orgId?: string | null,
+  training?: OrgTraining | Promise<OrgTraining>,
 ): Promise<CourseStatsRow[]> {
   // Paged: enrolments and attempts pass 1,000 rows at one ordinary-sized
   // organisation, and Supabase would silently drop the rest.
   const [{ data: courses }, enrolments, attempts] = await Promise.all([
     supabase.from("courses").select("id, title, estimated_minutes").order("title"),
-    fetchAll((f, t) =>
-      supabase.from("enrolments").select("id, course_id, status, time_spent").order("id").range(f, t),
-    ),
-    fetchAll((f, t) =>
-      supabase
+    training
+      ? Promise.resolve(training).then((t) => t.enrolments)
+      : fetchAll<{ id: string; course_id: string; status: string; time_spent: number | null }>(
+          (f, t) => {
+            let q = supabase.from("enrolments").select("id, course_id, status, time_spent");
+            if (orgId) q = q.eq("organisation_id", orgId);
+            return q.order("id").range(f, t);
+          },
+        ),
+    // Every submitted attempt ever, for one number per course. Only the
+    // course id comes back, but the row count still grows with history — see
+    // the org_course_attempt_counts() proposal in the egress review.
+    fetchAll((f, t) => {
+      let q = supabase
         .from("quiz_attempts")
         .select("id, course_id")
-        .not("submitted_at", "is", null)
-        .order("id")
-        .range(f, t),
-    ),
+        .not("submitted_at", "is", null);
+      if (orgId) q = q.eq("organisation_id", orgId);
+      return q.order("id").range(f, t);
+    }),
   ]);
 
   const attemptCount = new Map<string, number>();
@@ -127,31 +148,43 @@ export async function loadCourseStats(
  * data behind every number in the Overview table. Assigned/in progress/
  * completions are the row counts per status; shortest/longest/average are the
  * min/max/mean of the actual-time column over completed rows.
+ *
+ * `courseId` narrows every read to one course (the `?course=` view), rather
+ * than reading the whole organisation and throwing most of it away. Course
+ * titles and learner names come from one lookup each instead of being
+ * embedded on every enrolment row.
  */
 export async function loadCourseEnrolmentRows(
   supabase: SupabaseClient,
+  orgId?: string | null,
+  courseId?: string | null,
 ): Promise<CourseEnrolmentRow[]> {
-  const [enrolments, attempts, certs] = await Promise.all([
-    fetchAll((f, t) =>
-      supabase
+  const [enrolments, attempts, certs, courses, people] = await Promise.all([
+    fetchAll((f, t) => {
+      let q = supabase
         .from("enrolments")
-        .select(
-          "id, user_id, course_id, status, progress, time_spent, courses(title, estimated_minutes), users(full_name, email)",
-        )
-        .order("id")
-        .range(f, t),
-    ),
-    fetchAll((f, t) =>
-      supabase
+        .select("id, user_id, course_id, status, progress, time_spent");
+      if (orgId) q = q.eq("organisation_id", orgId);
+      if (courseId) q = q.eq("course_id", courseId);
+      return q.order("id").range(f, t);
+    }),
+    fetchAll((f, t) => {
+      let q = supabase
         .from("quiz_attempts")
         .select("id, user_id, course_id")
-        .not("submitted_at", "is", null)
-        .order("id")
-        .range(f, t),
-    ),
-    fetchAll((f, t) =>
-      supabase.from("certificates").select("id, user_id, course_id, issued_at").order("id").range(f, t),
-    ),
+        .not("submitted_at", "is", null);
+      if (orgId) q = q.eq("organisation_id", orgId);
+      if (courseId) q = q.eq("course_id", courseId);
+      return q.order("id").range(f, t);
+    }),
+    fetchAll((f, t) => {
+      let q = supabase.from("certificates").select("id, user_id, course_id, issued_at");
+      if (orgId) q = q.eq("organisation_id", orgId);
+      if (courseId) q = q.eq("course_id", courseId);
+      return q.order("id").range(f, t);
+    }),
+    loadCourseIndex(supabase),
+    loadOrgPeople(supabase, orgId),
   ]);
 
   // Newest certificate per learner + course — that issue date is the
@@ -172,24 +205,18 @@ export async function loadCourseEnrolmentRows(
 
   return (enrolments ?? [])
     .map((e) => {
-      const c = e.courses as unknown as {
-        title?: string;
-        estimated_minutes?: number | null;
-      } | null;
-      const u = e.users as unknown as {
-        full_name?: string;
-        email?: string;
-      } | null;
+      const c = courseOf(courses, e.course_id as string);
+      const u = people.get(e.user_id as string);
       const cert = certByPair.get(`${e.user_id}:${e.course_id}`) ?? null;
       return {
         courseId: e.course_id as string,
-        course: c?.title ?? "Course",
+        course: c.title,
         userId: e.user_id as string,
         learner: u?.full_name || u?.email || "Learner",
         status: e.status as string,
         progress: (e.progress as number) ?? 0,
         attempts: attemptCount.get(`${e.user_id}:${e.course_id}`) ?? 0,
-        expectedSeconds: minutesToSeconds(c?.estimated_minutes),
+        expectedSeconds: minutesToSeconds(c.estimatedMinutes),
         actualSeconds: e.time_spent && e.time_spent > 0 ? e.time_spent : null,
         completedAt: e.status === "completed" ? (cert?.issuedAt ?? null) : null,
         certificateId: e.status === "completed" ? (cert?.id ?? null) : null,

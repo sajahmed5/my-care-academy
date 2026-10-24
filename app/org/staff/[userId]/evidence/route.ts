@@ -15,6 +15,7 @@ import {
 } from "@/lib/incidents";
 import { packContents, since } from "@/lib/evidence-pack";
 import { renderEvidencePack, type PackSectionData } from "@/lib/evidence-pack-pdf";
+import { formatDate } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ const safeName = (s: string) => s.replace(INVALID, "").replace(/\s+/g, " ").trim
 
 function fmt(d: string | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -63,23 +64,34 @@ export async function GET(
   const from = fromParam && /^\d{4}-\d{2}-\d{2}$/.test(fromParam) ? fromParam : null;
 
   const supabase = await createClient();
-  const enabled = await enabledMap(context);
 
-  const { profile, enrolments, certificates } = await loadOrgLearnerTraining(
-    supabase,
-    userId,
-  );
-  if (!profile) return new NextResponse("Not found.", { status: 404 });
-
-  const [{ data: org }, actions, supervisions, checks, incidents] = await Promise.all([
+  // All in one round: these were three sequential steps (entitlements, the
+  // training record, then everything else). The gated sections still wait for
+  // the entitlement answer — an unpaid section runs no query — but nothing
+  // else waits for anything.
+  const enabledRead = enabledMap(context);
+  const [
+    enabled,
+    { profile, enrolments, certificates },
+    { data: org },
+    actions,
+    [supervisions, checks, incidents],
+  ] = await Promise.all([
+    enabledRead,
+    loadOrgLearnerTraining(supabase, userId),
     supabase.from("organisations").select("name").eq("id", context.organisationId).single(),
     loadPersonActions(supabase, userId),
-    enabled["people.supervisions"] ? loadSupervisions(supabase, userId) : Promise.resolve([]),
-    enabled["people.competency"] ? loadCompetencyChecks(supabase, userId) : Promise.resolve([]),
-    enabled["complaints.register"]
-      ? loadIncidentsForPerson(supabase, userId)
-      : Promise.resolve([]),
+    enabledRead.then((on) =>
+      Promise.all([
+        on["people.supervisions"] ? loadSupervisions(supabase, userId) : Promise.resolve([]),
+        on["people.competency"] ? loadCompetencyChecks(supabase, userId) : Promise.resolve([]),
+        on["complaints.register"]
+          ? loadIncidentsForPerson(supabase, userId)
+          : Promise.resolve([]),
+      ]),
+    ),
   ]);
+  if (!profile) return new NextResponse("Not found.", { status: 404 });
 
   // Each record is filtered on its own date, so "since her last supervision"
   // means the same thing in every section.

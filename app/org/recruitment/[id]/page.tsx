@@ -28,7 +28,7 @@ export default async function CandidatePage({
   const [{ data: candidate }, { data: documents }] = await Promise.all([
     supabase
       .from("candidates")
-      .select("id, full_name, email, phone, postcode, gender, is_driver, entry_date, stage, status")
+      .select("id, full_name, email, phone, postcode, is_driver, entry_date, stage, status")
       .eq("id", id)
       .maybeSingle(),
     supabase

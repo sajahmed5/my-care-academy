@@ -58,7 +58,7 @@ export default async function ObservationsPage() {
     );
   }
 
-  const rollup = await loadOrgObservationRollup(supabase);
+  const rollup = await loadOrgObservationRollup(supabase, context.organisationId!);
 
   return (
     <DashboardShell title="Care Certificate assessment" context={context}>

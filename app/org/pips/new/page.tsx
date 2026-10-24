@@ -19,10 +19,13 @@ export default async function NewPipPage({
   await requireFeature(context, "complaints.register");
   const { user, complaint } = await searchParams;
   const supabase = await createClient();
-  const staff = (await loadStaffOptions(supabase)).filter((s) => s.role === "learner");
-  const { data: ref } = complaint
-    ? await supabase.from("complaints").select("reference").eq("id", complaint).maybeSingle()
-    : { data: null };
+  const [allStaff, { data: ref }] = await Promise.all([
+    loadStaffOptions(supabase, context.organisationId),
+    complaint
+      ? supabase.from("complaints").select("reference").eq("id", complaint).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+  const staff = allStaff.filter((s) => s.role === "learner");
 
   return (
     <DashboardShell title="Start a performance plan" context={context}>

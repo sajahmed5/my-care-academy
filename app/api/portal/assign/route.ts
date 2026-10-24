@@ -3,6 +3,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolvePortalOrg, isOrg } from "@/lib/portal-api";
 import { logAudit } from "@/lib/audit";
 import { endOfMonthISO, planPortalAssign } from "@/lib/assign";
+import { chunk } from "@/lib/engine-digest";
+import { fetchAll } from "@/lib/fetch-all";
+
+/**
+ * Ids per `.in()` filter or bulk update. Ids travel in the request URL, which
+ * fails outright somewhere past ~390 of them; this route accepts up to 1,000
+ * refs, so every list is split. Matches IDS_PER_REQUEST in lib/engine.
+ */
+const IDS_PER_REQUEST = 100;
 
 export const dynamic = "force-dynamic";
 // Invites send emails one by one; give the function room to breathe.
@@ -48,23 +57,43 @@ export async function POST(req: Request) {
   const { data: courses } = await admin.from("courses").select("id").in("id", [...courseIds]);
   const validCourseIds = (courses ?? []).map((c) => c.id);
 
-  const { data: users } = await admin
-    .from("users")
-    .select("id, external_ref, status")
-    .eq("organisation_id", org.id)
-    .in("external_ref", refs);
-  const foundRefs = new Set((users ?? []).map((u) => u.external_ref));
+  const users = (
+    await Promise.all(
+      chunk(refs, IDS_PER_REQUEST).map(async (part) => {
+        const { data, error } = await admin
+          .from("users")
+          .select("id, external_ref, status")
+          .eq("organisation_id", org.id)
+          .in("external_ref", part);
+        if (error) throw new Error(error.message);
+        return data ?? [];
+      }),
+    )
+  ).flat();
+  const foundRefs = new Set(users.map((u) => u.external_ref));
   const unknownRefs = refs.filter((r) => !foundRefs.has(r));
-  const activeUsers = (users ?? []).filter((u) => u.status === "active");
+  const activeUsers = users.filter((u) => u.status === "active");
 
   // New enrolments always get a due date; existing ones keep theirs (lib/assign).
   const userIds = activeUsers.map((u) => u.id);
-  const { data: existing } = userIds.length && validCourseIds.length
-    ? await admin.from("enrolments").select("id, user_id, course_id, due_date")
-        .eq("organisation_id", org.id).in("user_id", userIds).in("course_id", validCourseIds)
-    : { data: [] };
+  // Paged as well as split: 100 carers on 16 courses is already past the
+  // 1,000-row read cap, and an enrolment missed here would be inserted again
+  // and fail the whole call on the unique (user, course) key.
+  const existing = validCourseIds.length
+    ? (
+        await Promise.all(
+          chunk(userIds, IDS_PER_REQUEST).map((part) =>
+            fetchAll<{ id: string; user_id: string; course_id: string; due_date: string | null }>((f, t) =>
+              admin.from("enrolments").select("id, user_id, course_id, due_date")
+                .eq("organisation_id", org.id).in("user_id", part).in("course_id", validCourseIds)
+                .order("id").range(f, t),
+            ),
+          ),
+        )
+      ).flat()
+    : [];
   const plan = planPortalAssign({
-    userIds, courseIds: validCourseIds, existing: existing ?? [],
+    userIds, courseIds: validCourseIds, existing,
     dueDateSent: dueDate, defaultDue: endOfMonthISO(), nowIso: new Date().toISOString(),
   });
 
@@ -76,9 +105,19 @@ export async function POST(req: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     assigned = count ?? plan.inserts.length;
   }
+  // One update per due date (in practice there is only one per call), a
+  // URL-safe number of ids at a time — it was one request per enrolment.
+  const idsByDue = new Map<string, string[]>();
   for (const u of plan.dueUpdates) {
-    const { error } = await admin.from("enrolments").update({ due_date: u.due_date }).eq("id", u.id).eq("organisation_id", org.id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const ids = idsByDue.get(u.due_date) ?? [];
+    ids.push(u.id);
+    idsByDue.set(u.due_date, ids);
+  }
+  for (const [due_date, ids] of idsByDue) {
+    for (const part of chunk(ids, IDS_PER_REQUEST)) {
+      const { error } = await admin.from("enrolments").update({ due_date }).in("id", part).eq("organisation_id", org.id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    }
   }
 
   await logAudit({
@@ -90,11 +129,11 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     // Everything now in place for these carers and courses, as before; newlyAssigned is just the new ones.
-    assigned: assigned + (existing ?? []).length,
+    assigned: assigned + existing.length,
     newlyAssigned: assigned,
     learners: activeUsers.length,
     courses: validCourseIds.length,
     unknownRefs,
-    inactiveRefs: (users ?? []).filter((u) => u.status !== "active").map((u) => u.external_ref),
+    inactiveRefs: users.filter((u) => u.status !== "active").map((u) => u.external_ref),
   });
 }

@@ -18,7 +18,7 @@ export default async function StagesPage() {
   const context = await requireConsole();
   await requireFeature(context, "complaints.register");
   const supabase = await createClient();
-  const stages = await loadStages(supabase);
+  const stages = await loadStages(supabase, context.organisationId);
   const steps = buildSteps(stages.filter((s) => s.enabled), [], false);
 
   return (

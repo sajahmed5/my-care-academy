@@ -52,10 +52,12 @@ function Monitor({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-function Shot({ src, alt }: { src: string; alt: string }) {
+function Shot({ src, alt, lazy = false }: { src: string; alt: string; lazy?: boolean }) {
   // Genuine capture from the demo company (fictional people), never a mock.
+  // `lazy` for the ones further down the page: a phone on a data plan only
+  // fetches them if the visitor scrolls that far.
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt={alt} width={800} height={501} className="block w-full" />;
+  return <img src={src} alt={alt} width={800} height={501} loading={lazy ? "lazy" : undefined} decoding="async" className="block w-full" />;
 }
 
 function Point({ tag, title, children }: { tag: string; title: string; children: React.ReactNode }) {
@@ -270,6 +272,7 @@ export default function Home() {
               <Shot
                 src="/training/courses-overview.jpg"
                 alt="The Courses overview: completion, in progress, overdue and the time each course takes"
+                lazy
               />
             </Monitor>
           </div>

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "./fetch-all";
 
 export type ObservationStatus = "pending" | "competent" | "not_yet_competent";
 export const OBSERVATION_STATUSES: ObservationStatus[] = [
@@ -50,38 +51,16 @@ export async function loadLearnerCareCert(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<LearnerCareCert | null> {
-  const { data: user } = await supabase
-    .from("users")
-    .select("id, full_name, email")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!user) return null;
-
-  const { data: pathway } = await supabase
-    .from("pathways")
-    .select("id")
-    .eq("slug", CARE_CERT_SLUG)
-    .maybeSingle();
-  if (!pathway) return null;
-
-  const { data: links } = await supabase
-    .from("pathway_courses")
-    .select("standard_no, label, course:courses(id, title)")
-    .eq("pathway_id", pathway.id)
-    .order("standard_no", { ascending: true });
-
-  const courseIds = (links ?? [])
-    .map((l) => one(l.course as { id?: string } | { id?: string }[])?.id)
-    .filter((id): id is string => Boolean(id));
-  const guard = courseIds.length ? courseIds : ["00000000-0000-0000-0000-000000000000"];
-
-  const [{ data: enrolments }, { data: observations }, { data: signoff }] =
+  // Everything that does not depend on the pathway's courses is read at once;
+  // only the enrolments wait for the course ids. (It was five reads in series.)
+  const [{ data: user }, { data: pathway }, { data: observations }, { data: signoff }] =
     await Promise.all([
+      supabase.from("users").select("id, full_name, email").eq("id", userId).maybeSingle(),
       supabase
-        .from("enrolments")
-        .select("course_id, status")
-        .eq("user_id", userId)
-        .in("course_id", guard),
+        .from("pathways")
+        .select("id, pathway_courses (standard_no, label, course:courses(id, title))")
+        .eq("slug", CARE_CERT_SLUG)
+        .maybeSingle(),
       supabase
         .from("care_cert_observations")
         .select("standard_no, status, observed_at, notes, assessor_kind, evidence_path")
@@ -92,6 +71,23 @@ export async function loadLearnerCareCert(
         .eq("user_id", userId)
         .maybeSingle(),
     ]);
+  if (!user || !pathway) return null;
+
+  type Link = { standard_no: number | null; label: string | null; course: unknown };
+  const links = [...((pathway.pathway_courses as Link[] | null) ?? [])].sort(
+    (a, b) => (a.standard_no ?? 0) - (b.standard_no ?? 0),
+  );
+
+  const courseIds = links
+    .map((l) => one(l.course as { id?: string } | { id?: string }[])?.id)
+    .filter((id): id is string => Boolean(id));
+  const { data: enrolments } = courseIds.length
+    ? await supabase
+        .from("enrolments")
+        .select("course_id, status")
+        .eq("user_id", userId)
+        .in("course_id", courseIds)
+    : { data: [] as { course_id: string; status: string }[] };
 
   const completedCourseIds = new Set(
     (enrolments ?? []).filter((e) => e.status === "completed").map((e) => e.course_id),
@@ -100,7 +96,7 @@ export async function loadLearnerCareCert(
     (observations ?? []).map((o) => [o.standard_no, o]),
   );
 
-  const standards: StandardObservation[] = (links ?? []).map((l) => {
+  const standards: StandardObservation[] = links.map((l) => {
     const course = one(l.course as { id: string; title: string } | { id: string; title: string }[]);
     const obs = obsByStandard.get(l.standard_no);
     return {
@@ -154,28 +150,40 @@ export interface LearnerRollup {
  */
 export async function loadOrgObservationRollup(
   supabase: SupabaseClient,
+  organisationId: string,
   total = 16,
 ): Promise<LearnerRollup[]> {
-  const { data: staff } = await supabase
-    .from("users")
-    .select("id, full_name, email, role, status")
-    .order("full_name", { ascending: true });
-
-  const learners = (staff ?? []).filter((u) => (u.status ?? "active") === "active");
-  const ids = learners.map((u) => u.id);
-  if (!ids.length) return [];
-
-  const [{ data: observations }, { data: signoffs }] = await Promise.all([
+  // All three by organisation, at once. The observations and sign-offs used to
+  // wait for the staff list and then carry every id in the URL, which an
+  // organisation of a few hundred would push past the URL limit.
+  const [{ data: staff }, observations, { data: signoffs }] = await Promise.all([
     supabase
-      .from("care_cert_observations")
-      .select("user_id, status")
-      .in("user_id", ids)
-      .eq("status", "competent"),
-    supabase.from("care_cert_signoffs").select("user_id").in("user_id", ids),
+      .from("users")
+      .select("id, full_name, email, status")
+      .eq("organisation_id", organisationId)
+      .order("full_name", { ascending: true })
+      .limit(1000),
+    fetchAll<{ id: string; user_id: string }>((from, to) =>
+      supabase
+        .from("care_cert_observations")
+        .select("id, user_id")
+        .eq("organisation_id", organisationId)
+        .eq("status", "competent")
+        .order("id")
+        .range(from, to),
+    ),
+    supabase
+      .from("care_cert_signoffs")
+      .select("user_id")
+      .eq("organisation_id", organisationId)
+      .limit(1000),
   ]);
 
+  const learners = (staff ?? []).filter((u) => (u.status ?? "active") === "active");
+  if (!learners.length) return [];
+
   const competentByUser = new Map<string, number>();
-  for (const o of observations ?? []) {
+  for (const o of observations) {
     competentByUser.set(o.user_id, (competentByUser.get(o.user_id) ?? 0) + 1);
   }
   const signedOffUsers = new Set((signoffs ?? []).map((s) => s.user_id));

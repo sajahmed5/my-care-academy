@@ -34,8 +34,8 @@ export default async function ComplaintPage({
   const supabase = await createClient();
   const [complaint, allStages, staff, { data: org }] = await Promise.all([
     loadComplaint(supabase, id),
-    loadStages(supabase),
-    loadStaffOptions(supabase),
+    loadStages(supabase, context.organisationId),
+    loadStaffOptions(supabase, context.organisationId),
     supabase.from("organisations").select("name").eq("id", context.organisationId!).maybeSingle(),
   ]);
   if (!complaint) notFound();

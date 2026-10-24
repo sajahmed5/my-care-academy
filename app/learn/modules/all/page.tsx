@@ -1,6 +1,6 @@
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { loadLearner } from "@/lib/learner-data";
+import { loadCertificates, loadEnrolments } from "@/lib/learner-data";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ModulesTabs } from "../modules-tabs";
 import { AllCourses, type CatalogueCourse } from "./all-courses";
@@ -14,8 +14,10 @@ export default async function AllCoursesPage({
   const { q } = await searchParams;
   const supabase = await createClient();
 
-  const [{ enrolments, certificates }, { data: courses }] = await Promise.all([
-    loadLearner(supabase),
+  // The catalogue list needs no content: title, description and topic only.
+  const [enrolments, certificates, { data: courses }] = await Promise.all([
+    loadEnrolments(context.userId),
+    loadCertificates(context.userId),
     supabase
       .from("courses")
       .select("id, title, description, topics(title)")

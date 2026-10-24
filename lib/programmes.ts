@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { loadCertificates, loadEnrolments } from "@/lib/learner-data";
 
 /** One standard within a programme, with the learner's status for it. */
 export interface ProgrammeStandard {
@@ -37,27 +38,32 @@ export interface Programme {
  * Load a programme (e.g. the Care Certificate) with each standard's course and
  * the current learner's status for it. Single owner of the pathway ->
  * pathway_courses -> courses join, used by both the dashboard card and the
- * programme landing page. All reads go through the caller's RLS-scoped client,
- * so enrolments/certificates resolve to the signed-in learner only.
+ * programme landing page.
+ *
+ * One round trip: the pathway and its standards come back in a single embedded
+ * read, alongside the learner's enrolments and certificates — which are the
+ * per-request shared reads, so on the dashboard (which lists them anyway) they
+ * cost nothing extra.
  *
  * Returns null if the programme slug does not exist (e.g. before seeding).
  */
 export async function loadProgramme(
   supabase: SupabaseClient,
   slug: string,
+  userId: string,
 ): Promise<Programme | null> {
-  const { data: pathway } = await supabase
-    .from("pathways")
-    .select("id, slug, title, summary, compliance_note")
-    .eq("slug", slug)
-    .maybeSingle();
+  const [{ data: pathway }, enrolments, certificates] = await Promise.all([
+    supabase
+      .from("pathways")
+      .select(
+        "id, slug, title, summary, compliance_note, pathway_courses(standard_no, label, course:courses(id, title, topic:topics(title)))",
+      )
+      .eq("slug", slug)
+      .maybeSingle(),
+    loadEnrolments(userId),
+    loadCertificates(userId),
+  ]);
   if (!pathway) return null;
-
-  const { data: links } = await supabase
-    .from("pathway_courses")
-    .select("standard_no, label, course:courses(id, title, topic:topics(title))")
-    .eq("pathway_id", pathway.id)
-    .order("standard_no", { ascending: true });
 
   // PostgREST types a to-one embed as an array; normalise to the first element.
   const one = <T>(v: T | T[] | null | undefined): T | null =>
@@ -73,28 +79,17 @@ export async function loadProgramme(
     label: string | null;
     course: JoinedCourse | JoinedCourse[] | null;
   };
-  const rows = (links ?? []) as unknown as JoinedLink[];
-
-  const courseIds = rows
-    .map((l) => one(l.course)?.id)
-    .filter((id): id is string => Boolean(id));
-
-  // The learner's enrolments and live certificates for these courses only.
-  const [{ data: enrolments }, { data: certificates }] = await Promise.all([
-    supabase
-      .from("enrolments")
-      .select("course_id, status, progress, due_date")
-      .in("course_id", courseIds.length ? courseIds : ["00000000-0000-0000-0000-000000000000"]),
-    supabase
-      .from("certificates")
-      .select("course_id")
-      .in("course_id", courseIds.length ? courseIds : ["00000000-0000-0000-0000-000000000000"]),
-  ]);
-
-  const enrolByCourse = new Map(
-    (enrolments ?? []).map((e) => [e.course_id, e]),
+  // Standard order, unnumbered last — as `order by standard_no` would give.
+  const rows = [
+    ...((pathway.pathway_courses ?? []) as unknown as JoinedLink[]),
+  ].sort(
+    (a, b) =>
+      (a.standard_no ?? Number.POSITIVE_INFINITY) -
+      (b.standard_no ?? Number.POSITIVE_INFINITY),
   );
-  const certCourseIds = new Set((certificates ?? []).map((c) => c.course_id));
+
+  const enrolByCourse = new Map(enrolments.map((e) => [e.course_id, e]));
+  const certCourseIds = new Set(certificates.map((c) => c.course_id));
 
   const standards: ProgrammeStandard[] = rows
     .map((l) => {

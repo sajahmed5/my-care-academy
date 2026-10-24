@@ -40,16 +40,20 @@ export async function GET(
     .select("doc_type, file_path, file_name")
     .eq("candidate_id", id);
 
+  // Fetched together rather than one after another: twelve files in series
+  // was twelve round trips to storage before the ZIP could start.
   const zip = new JSZip();
-  for (const d of docs ?? []) {
-    if (!d.file_path) continue; // a "not needed" row has no file
-    const { data: file } = await admin.storage
-      .from("candidate-docs")
-      .download(d.file_path);
-    if (file) {
-      const ext = (d.file_name ?? "").split(".").pop() ?? "bin";
-      zip.file(`${docLabel(d.doc_type)}.${ext}`, await file.arrayBuffer());
-    }
+  const held = (docs ?? []).filter((d) => d.file_path); // a "not needed" row has no file
+  const files = await Promise.all(
+    held.map(async (d) => {
+      const { data: file } = await admin.storage.from("candidate-docs").download(d.file_path!);
+      return { d, buffer: file ? await file.arrayBuffer() : null };
+    }),
+  );
+  for (const { d, buffer } of files) {
+    if (!buffer) continue;
+    const ext = (d.file_name ?? "").split(".").pop() ?? "bin";
+    zip.file(`${docLabel(d.doc_type)}.${ext}`, buffer);
   }
 
   const buffer = await zip.generateAsync({ type: "nodebuffer" });

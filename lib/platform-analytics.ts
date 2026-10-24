@@ -3,6 +3,7 @@ import { PACKAGE_TIERS, type PackageTier } from "@/lib/organisations";
 import { LIST_PRICE_GBP } from "@/lib/pricing";
 import { FEATURES } from "@/lib/features";
 import { fetchAll } from "@/lib/fetch-all";
+import { formatDate } from "./dates";
 
 export interface Slice {
   label: string;
@@ -40,20 +41,33 @@ export interface PlatformAnalytics {
   };
 }
 
-interface JoinedCourse {
-  title?: string;
-}
+/** An embedded `table(count)` — PostgREST returns it as `[{ count }]`. */
+const embeddedCount = (v: unknown): number =>
+  (v as { count?: number }[] | null)?.[0]?.count ?? 0;
 
-/** Platform-wide analytics for the superadmin (RLS returns all orgs). */
+/**
+ * Platform-wide analytics for the superadmin (RLS returns all orgs).
+ *
+ * Totals are counted by the database, not by downloading the rows: every
+ * enrolment, certificate and submitted attempt on the platform used to come
+ * down just to be counted — and past 1,000 rows each read was silently
+ * truncated, so the tiles would have stopped growing with no error. Only the
+ * six months the chart shows are read as rows now.
+ */
 export async function loadPlatformAnalytics(
   supabase: SupabaseClient,
 ): Promise<PlatformAnalytics> {
+  const MONTHS = 6;
+  const now = new Date();
+  const firstMonth = new Date(now.getFullYear(), now.getMonth() - (MONTHS - 1), 1);
+
   const [
     { data: orgs },
-    { data: learners, count: learnerCount },
-    { data: enrolments },
-    { data: certs },
-    { data: attempts },
+    { count: learnerCount },
+    { count: certCount },
+    recentCerts,
+    { count: submittedCount },
+    { count: passedCount },
     { data: courses },
     { data: ticks },
     exceptions,
@@ -63,15 +77,28 @@ export async function loadPlatformAnalytics(
       .select("id, package_tier, status, subscription_status"),
     supabase
       .from("users")
-      .select("id", { count: "exact" })
+      .select("id", { count: "exact", head: true })
       .eq("role", "learner"),
-    supabase.from("enrolments").select("course_id"),
-    supabase.from("certificates").select("course_id, issued_at"),
+    supabase.from("certificates").select("id", { count: "exact", head: true }),
+    fetchAll<{ issued_at: string }>((from, to) =>
+      supabase
+        .from("certificates")
+        .select("id, issued_at")
+        .gte("issued_at", firstMonth.toISOString())
+        .order("id")
+        .range(from, to),
+    ),
     supabase
       .from("quiz_attempts")
-      .select("passed")
+      .select("id", { count: "exact", head: true })
       .not("submitted_at", "is", null),
-    supabase.from("courses").select("id, title"),
+    supabase
+      .from("quiz_attempts")
+      .select("id", { count: "exact", head: true })
+      .not("submitted_at", "is", null)
+      .eq("passed", true),
+    // Per-course totals counted in the database: one row per course.
+    supabase.from("courses").select("id, title, enrolments(count), certificates(count)"),
     supabase.from("tier_features").select("tier_key, feature_key"),
     // Organisations × features grows past the 1,000-row cap long before the
     // other tables here do.
@@ -127,35 +154,24 @@ export async function loadPlatformAnalytics(
     .sort((a, b) => b.value - a.value);
 
   // Course popularity: enrolments + completions per course, top 10 by enrolments.
-  const titleById = new Map<string, string>();
-  for (const c of courses ?? [])
-    titleById.set(c.id, (c as unknown as JoinedCourse).title ?? "Course");
-  const enrolByCourse = new Map<string, number>();
-  for (const e of enrolments ?? [])
-    enrolByCourse.set(e.course_id, (enrolByCourse.get(e.course_id) ?? 0) + 1);
-  const compByCourse = new Map<string, number>();
-  for (const c of certs ?? [])
-    compByCourse.set(c.course_id, (compByCourse.get(c.course_id) ?? 0) + 1);
-  const coursePopularity: CoursePopularity[] = [...enrolByCourse.entries()]
-    .map(([id, enrolments]) => ({
-      title: titleById.get(id) ?? "Course",
-      enrolments,
-      completions: compByCourse.get(id) ?? 0,
+  const coursePopularity: CoursePopularity[] = (courses ?? [])
+    .map((c) => ({
+      title: (c.title as string | null) ?? "Course",
+      enrolments: embeddedCount(c.enrolments),
+      completions: embeddedCount(c.certificates),
     }))
+    .filter((c) => c.enrolments > 0)
     .sort((a, b) => b.enrolments - a.enrolments)
     .slice(0, 10);
 
   // Growth: completions per month over the last 6 months (oldest → newest).
-  const MONTHS = 6;
-  const now = new Date();
   const buckets = new Array(MONTHS).fill(0);
   const labels: string[] = [];
   for (let i = 0; i < MONTHS; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - (MONTHS - 1 - i), 1);
-    labels.push(d.toLocaleDateString("en-GB", { month: "short" }));
+    labels.push(formatDate(d, { month: "short" }));
   }
-  const firstMonth = new Date(now.getFullYear(), now.getMonth() - (MONTHS - 1), 1);
-  for (const c of certs ?? []) {
+  for (const c of recentCerts) {
     const d = new Date(c.issued_at);
     if (d < firstMonth) continue;
     const idx =
@@ -169,10 +185,9 @@ export async function loadPlatformAnalytics(
   }));
 
   // Assessment pass rate.
-  const submitted = attempts ?? [];
-  const passed = submitted.filter((a) => a.passed).length;
+  const submitted = submittedCount ?? 0;
   const passRate =
-    submitted.length > 0 ? Math.round((passed / submitted.length) * 100) : 0;
+    submitted > 0 ? Math.round(((passedCount ?? 0) / submitted) * 100) : 0;
 
   return {
     tierMix,
@@ -183,9 +198,9 @@ export async function loadPlatformAnalytics(
     completionsByMonth,
     totals: {
       orgs: orgRows.length,
-      learners: learnerCount ?? (learners ?? []).length,
-      certificates: (certs ?? []).length,
-      assessments: submitted.length,
+      learners: learnerCount ?? 0,
+      certificates: certCount ?? 0,
+      assessments: submitted,
       passRate,
     },
   };

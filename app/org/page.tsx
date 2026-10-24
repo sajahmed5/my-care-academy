@@ -23,13 +23,18 @@ export default async function OrgDashboard() {
   const context = await requireConsole();
 
   // All reads go through RLS — an org_admin only ever sees their own org + staff.
+  // The explicit organisation filter is for the planner, not for security: it
+  // lets Postgres use the organisation_id index instead of testing the policy
+  // on every row in the table.
+  const orgId = context.organisationId;
   const supabase = await createClient();
   const [{ data: organisation }, allLearners] = await Promise.all([
     supabase
       .from("organisations")
       .select("name, package_tier")
+      .eq("id", orgId!)
       .single(),
-    loadOrgLearners(supabase),
+    loadOrgLearners(supabase, orgId),
   ]);
 
   // Headline numbers count active staff only; deactivated stay in the matrix.

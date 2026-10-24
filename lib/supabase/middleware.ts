@@ -33,11 +33,12 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // IMPORTANT: getUser() revalidates the token with the auth server — do not
-  // insert logic between createServerClient and getUser (avoids random logouts).
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANT: do not insert logic between createServerClient and getClaims
+  // (avoids random logouts). getClaims() refreshes an expired session and then
+  // checks the token's signature locally against the project's public key —
+  // getUser() made a round trip to the auth server on every request.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ? data.claims : null;
 
   const { pathname } = request.nextUrl;
   const isProtected = PROTECTED_PREFIXES.some(

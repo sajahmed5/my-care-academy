@@ -7,8 +7,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { loadLearner } from "@/lib/learner-data";
+import { loadBadgeData } from "@/lib/learner-data";
 import { deriveNotifications, type NotifType } from "@/lib/notifications";
 import { tint } from "@/lib/topic-theme";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -20,6 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AutoMarkRead } from "./auto-mark-read";
+import { formatDate } from "@/lib/dates";
 
 const STYLE: Record<NotifType, { icon: LucideIcon; color: string }> = {
   assigned: { icon: BookOpen, color: "#0284c7" },
@@ -30,25 +30,10 @@ const STYLE: Record<NotifType, { icon: LucideIcon; color: string }> = {
 
 export default async function NotificationsPage() {
   const context = await requireRole("learner");
-  const supabase = await createClient();
-  const data = await loadLearner(supabase);
+  // The same per-request reads the shell's unread badge uses — one load.
+  const data = await loadBadgeData(context.userId);
 
-  const notifs = deriveNotifications(
-    data.enrolments.map((e) => ({
-      course_id: e.course_id,
-      status: e.status,
-      assigned_at: e.assigned_at,
-      title: e.title,
-    })),
-    data.certificates.map((c) => ({
-      id: c.id,
-      course_id: c.course_id,
-      issued_at: c.issued_at,
-      expires_at: c.expires_at,
-      title: c.title,
-    })),
-    new Date(),
-  );
+  const notifs = deriveNotifications(data.enrolments, data.certificates, new Date());
 
   const readAt = data.readAt ? +new Date(data.readAt) : 0;
 
@@ -98,7 +83,7 @@ export default async function NotificationsPage() {
                           </p>
                         </div>
                         <span className="shrink-0 text-xs text-muted-foreground">
-                          {new Date(n.at).toLocaleDateString("en-GB")}
+                          {formatDate(n.at)}
                         </span>
                       </Link>
                     </li>

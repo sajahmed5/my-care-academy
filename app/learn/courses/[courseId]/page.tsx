@@ -16,19 +16,23 @@ export default async function CoursePage({
 
   const supabase = await createClient();
 
-  // RLS scopes this to the learner's own enrolment; no enrolment => not assigned.
-  const { data: enrolment } = await supabase
-    .from("enrolments")
-    .select("id, current_block")
-    .eq("course_id", courseId)
-    .maybeSingle();
+  // This one course and the learner's own enrolment on it, side by side; no
+  // enrolment => not assigned. The user_id filter hits the (user_id,
+  // course_id) unique index; RLS still decides what the learner may see.
+  const [{ data: enrolment }, { data: course }] = await Promise.all([
+    supabase
+      .from("enrolments")
+      .select("id, current_block")
+      .eq("user_id", context.userId)
+      .eq("course_id", courseId)
+      .maybeSingle(),
+    supabase
+      .from("courses")
+      .select("title, description, summary, content_blocks, estimated_minutes")
+      .eq("id", courseId)
+      .maybeSingle(),
+  ]);
   if (!enrolment) notFound();
-
-  const { data: course } = await supabase
-    .from("courses")
-    .select("title, description, summary, content_blocks, estimated_minutes")
-    .eq("id", courseId)
-    .maybeSingle();
   if (!course) notFound();
 
   const blocks = parseBlocks(course.content_blocks);

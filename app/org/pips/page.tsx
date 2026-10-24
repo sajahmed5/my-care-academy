@@ -23,7 +23,7 @@ export default async function PipsPage() {
   const context = await requireConsole();
   await requireFeature(context, "complaints.register");
   const supabase = await createClient();
-  const pips = await loadPips(supabase);
+  const pips = await loadPips(supabase, context.organisationId);
   const today = new Date().toISOString().slice(0, 10);
 
   const rows = pips.map((p) => ({ pip: p, ...pipSteps(p, today) }));

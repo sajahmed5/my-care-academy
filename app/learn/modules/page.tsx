@@ -1,6 +1,5 @@
 import { requireRole } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { loadLearner, type Enrolment } from "@/lib/learner-data";
+import { loadEnrolments, type Enrolment } from "@/lib/learner-data";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ModulesTabs } from "./modules-tabs";
 import { CourseCard } from "./course-card";
@@ -33,8 +32,7 @@ function Section({ title, items }: { title: string; items: Enrolment[] }) {
 
 export default async function AssignedModulesPage() {
   const context = await requireRole("learner");
-  const supabase = await createClient();
-  const { enrolments } = await loadLearner(supabase);
+  const enrolments = await loadEnrolments(context.userId);
 
   const expired = enrolments.filter((e) => e.status === "expired");
   const inProgress = enrolments.filter((e) => e.status === "in_progress");

@@ -11,6 +11,8 @@ const safeName = (s: string) => s.replace(INVALID, "").replace(/\s+/g, " ").trim
 
 /** Don't zip the whole history by accident, and don't time out trying. */
 const MAX = 400;
+/** Storage downloads in flight at once. */
+const PARALLEL = 8;
 
 /**
  * Every certificate for one carer, or for one course, as a single ZIP.
@@ -53,13 +55,27 @@ export async function GET(req: NextRequest) {
     return new NextResponse("No certificates to download.", { status: 404 });
   }
 
+  // Downloaded a few at a time rather than strictly one after another: a
+  // course held by 260 carers was 260 sequential storage round trips, which
+  // is most of the 60-second function limit. Files are added to the ZIP in
+  // the original order, so names and renewal suffixes come out the same.
+  const wanted = rows.slice(0, MAX);
+  const files: (Blob | null)[] = new Array(wanted.length).fill(null);
+  for (let i = 0; i < wanted.length; i += PARALLEL) {
+    const batch = wanted.slice(i, i + PARALLEL);
+    const got = await Promise.all(
+      batch.map((r) =>
+        admin.storage.from("certificates").download(r.pdf_path as string),
+      ),
+    );
+    got.forEach(({ data }, j) => (files[i + j] = data ?? null));
+  }
+
   const zip = new JSZip();
   const used = new Set<string>();
   let packed = 0;
-  for (const r of rows.slice(0, MAX)) {
-    const { data: file } = await admin.storage
-      .from("certificates")
-      .download(r.pdf_path as string);
+  for (const [i, r] of wanted.entries()) {
+    const file = files[i];
     if (!file) continue;
     const course = (r.courses as { title?: string } | null)?.title ?? "Course";
     const u = r.users as { full_name?: string; email?: string } | null;

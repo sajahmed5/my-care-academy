@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { categoryLabel, loadFormLibrary } from "@/lib/form-library";
+import { fetchAll } from "@/lib/fetch-all";
 
 /**
  * The forms an organisation can ask its staff to complete.
@@ -19,22 +20,30 @@ export default async function OrgFormsPage() {
   await requireFeature(context, "forms.builder");
 
   const supabase = await createClient();
-  const [enabled, { data: org }] = await Promise.all([
+  const orgId = context.organisationId!;
+  // The open asks do not depend on the library, so they are read alongside
+  // it — by organisation, on the (organisation_id, completed_at) index, and
+  // paged: "everyone" on a few forms passes the 1,000-row cap quickly.
+  const [enabled, { data: org }, open] = await Promise.all([
     enabledMap(context),
-    supabase.from("organisations").select("service_type").eq("id", context.organisationId!).single(),
+    supabase.from("organisations").select("service_type").eq("id", orgId).single(),
+    fetchAll<{ id: string; template_id: string }>((from, to) =>
+      supabase
+        .from("form_assignments")
+        .select("id, template_id")
+        .eq("organisation_id", orgId)
+        .is("completed_at", null)
+        .order("id")
+        .range(from, to),
+    ),
   ]);
   const templates = await loadFormLibrary(supabase, {
     enabled,
     serviceType: (org?.service_type as string | null) ?? null,
   });
 
-  const { data: open } = await supabase
-    .from("form_assignments")
-    .select("template_id")
-    .is("completed_at", null)
-    .limit(2000);
   const openCount = new Map<string, number>();
-  for (const a of open ?? []) {
+  for (const a of open) {
     openCount.set(a.template_id as string, (openCount.get(a.template_id as string) ?? 0) + 1);
   }
 
@@ -84,7 +93,7 @@ export default async function OrgFormsPage() {
                             {t.title}
                           </Link>
                           <p className="text-xs text-muted-foreground">
-                            {t.description ?? `${t.fieldCount} questions`}
+                            {t.description ?? categoryLabel(t.category)}
                           </p>
                         </div>
                       </div>

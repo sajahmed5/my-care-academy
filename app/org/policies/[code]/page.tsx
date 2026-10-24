@@ -62,7 +62,7 @@ export default async function PolicyPage({
   // for policies: a form is printed, not accepted.
   const acceptance =
     doc.kind === "policy"
-      ? await loadAcceptance(supabase, doc.id, version0)
+      ? await loadAcceptance(supabase, doc.id, version0, context.organisationId)
       : { accepted: [], outstanding: [], total: 0 };
   const toComplete = blocks.filter((b) => b.type === "guidance").length;
   const version = doc.version ?? 1;

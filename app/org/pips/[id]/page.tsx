@@ -18,7 +18,7 @@ export default async function PipPage({ params }: { params: Promise<{ id: string
   await requireFeature(context, "complaints.register");
   const { id } = await params;
   const supabase = await createClient();
-  const [pip, staff] = await Promise.all([loadPip(supabase, id), loadStaffOptions(supabase)]);
+  const [pip, staff] = await Promise.all([loadPip(supabase, id), loadStaffOptions(supabase, context.organisationId)]);
   if (!pip) notFound();
   const today = new Date().toISOString().slice(0, 10);
   const { steps, next } = pipSteps(pip, today);

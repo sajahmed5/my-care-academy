@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { IntentLink } from "@/components/intent-link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -124,6 +124,10 @@ function isActive(pathname: string, href: string, exact = false): boolean {
   return pathname.startsWith(href);
 }
 
+/**
+ * Links prefetch on hover/touch rather than on sight (see IntentLink): this
+ * nav is on every console and learner page, and every target is dynamic.
+ */
 export function SidebarNav({
   role,
   orientation = "vertical",
@@ -167,7 +171,7 @@ export function SidebarNav({
             key={item.href}
             className={orientation === "vertical" ? "" : "flex shrink-0 gap-1"}
           >
-            <Link
+            <IntentLink
               href={item.href}
               title={collapsed ? item.label : undefined}
               className={cn(
@@ -190,7 +194,7 @@ export function SidebarNav({
                   {badge}
                 </span>
               )}
-            </Link>
+            </IntentLink>
             {children.length > 0 && (
               <div className="ml-5 mt-0.5 flex flex-col gap-0.5 border-l border-sidebar-foreground/15 pl-3">
                 {children.map((c) => {
@@ -200,7 +204,7 @@ export function SidebarNav({
                     c.href === item.href,
                   );
                   return (
-                    <Link
+                    <IntentLink
                       key={`${c.href}-${c.label}`}
                       href={c.href}
                       className={cn(
@@ -211,7 +215,7 @@ export function SidebarNav({
                       )}
                     >
                       {c.label}
-                    </Link>
+                    </IntentLink>
                   );
                 })}
               </div>
@@ -220,7 +224,7 @@ export function SidebarNav({
             {orientation === "horizontal" &&
               active &&
               (item.children ?? []).map((c) => (
-                <Link
+                <IntentLink
                   key={`${c.href}-${c.label}`}
                   href={c.href}
                   className={cn(
@@ -231,7 +235,7 @@ export function SidebarNav({
                   )}
                 >
                   {c.label}
-                </Link>
+                </IntentLink>
               ))}
           </div>
         );

@@ -86,14 +86,22 @@ export function describe(row: AuditRow, subject: string | null): string {
   }
 }
 
-/** The most recent things people did in this organisation. */
+/**
+ * The most recent things people did in this organisation. Pass orgId: RLS
+ * already confines the read, but with the filter Postgres reads the newest
+ * rows for one organisation off its index rather than walking the whole
+ * table's history newest-first and testing the policy on each row.
+ */
 export async function loadRecentActivity(
   supabase: SupabaseClient,
   limit = 30,
+  orgId?: string | null,
 ): Promise<ActivityItem[]> {
-  const { data: rows } = await supabase
+  let query = supabase
     .from("audit_logs")
-    .select("id, action, entity, entity_id, actor_id, actor_email, detail, created_at")
+    .select("id, action, entity, entity_id, actor_id, actor_email, detail, created_at");
+  if (orgId) query = query.eq("organisation_id", orgId);
+  const { data: rows } = await query
     .order("created_at", { ascending: false })
     .limit(limit);
   const audit = (rows ?? []) as AuditRow[];

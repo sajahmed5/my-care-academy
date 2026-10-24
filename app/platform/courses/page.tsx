@@ -15,18 +15,16 @@ export default async function CoursesAdminPage() {
   const context = await requireRole("platform_admin");
 
   const supabase = await createClient();
-  const [{ data: courses }, { data: questions }] = await Promise.all([
-    supabase
-      .from("courses")
-      .select("id, title, topics(title)")
-      .order("sort_order"),
-    supabase.from("quiz_questions").select("course_id"),
-  ]);
-
-  const counts = new Map<string, number>();
-  for (const q of questions ?? []) {
-    counts.set(q.course_id, (counts.get(q.course_id) ?? 0) + 1);
-  }
+  // Question counts are counted by the database, one per course. This used to
+  // download every question's course id and tally them here — and the bank
+  // passed the 1,000-row read cap long ago (2,719 questions, Oct 2026), so
+  // most courses showed a short or zero count.
+  const { data: courses } = await supabase
+    .from("courses")
+    .select("id, title, topics(title), quiz_questions(count)")
+    .order("sort_order");
+  const questionCount = (c: { quiz_questions?: unknown }) =>
+    (c.quiz_questions as { count?: number }[] | null)?.[0]?.count ?? 0;
 
   return (
     <DashboardShell title="Courses & question banks" context={context}>
@@ -61,7 +59,7 @@ export default async function CoursesAdminPage() {
                       <tr key={c.id} className="border-b last:border-0">
                         <td className="py-2 font-medium">{c.title}</td>
                         <td className="py-2 text-muted-foreground">{topic}</td>
-                        <td className="py-2">{counts.get(c.id) ?? 0}</td>
+                        <td className="py-2">{questionCount(c)}</td>
                         <td className="py-2 text-right">
                           <Link
                             href={`/platform/courses/${c.id}`}

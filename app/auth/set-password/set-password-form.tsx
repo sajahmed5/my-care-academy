@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -10,6 +9,11 @@ import { PasswordInput } from "@/components/ui/password-input";
 
 /** Kept in step with the hint under the field and with the learner profile. */
 const MIN_LENGTH = 8;
+
+// The browser Supabase client is ~58 KB gzipped and only the submit needs it,
+// so it is fetched on demand rather than with the page. The field is
+// autofocused, so the download starts as soon as the form is on screen.
+const loadSupabase = () => import("@/lib/supabase/client");
 
 export function SetPasswordForm() {
   const router = useRouter();
@@ -35,8 +39,14 @@ export function SetPasswordForm() {
     }
 
     setLoading(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ password });
+    let error: { message: string } | null;
+    try {
+      const { createClient } = await loadSupabase();
+      ({ error } = await createClient().auth.updateUser({ password }));
+    } catch {
+      // The chunk itself failed to load (signal dropped mid-save).
+      error = { message: "" };
+    }
     if (error) {
       setError(
         friendlyAuthError(
@@ -53,7 +63,12 @@ export function SetPasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      onFocus={() => void loadSupabase()}
+      onInput={() => void loadSupabase()}
+      className="space-y-4"
+    >
       <div className="space-y-2">
         <Label htmlFor="password">New password</Label>
         <PasswordInput

@@ -24,16 +24,15 @@ export default async function LearnerPolicyPage({
   const { code } = await params;
 
   const supabase = await createClient();
-  const [enabled, { data: org }] = await Promise.all([
+  const [enabled, { data: org }, doc] = await Promise.all([
     enabledMap(context),
     supabase
       .from("organisations")
       .select("name")
       .eq("id", context.organisationId!)
       .single(),
+    loadPolicy(supabase, decodeURIComponent(code), context.userId),
   ]);
-
-  const doc = await loadPolicy(supabase, decodeURIComponent(code), context.userId);
   // Carers read policies. The forms are the manager's, and a pack the
   // organisation has not bought is nobody's.
   if (!doc || doc.kind !== "policy") notFound();

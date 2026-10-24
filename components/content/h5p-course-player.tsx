@@ -12,6 +12,11 @@ import { groupSections, type H5PBlock } from "@/lib/content";
 // Isolate the impure clock read from the component/hook bodies.
 const nowMs = () => Date.now();
 
+// A hidden-tab save with nothing new to say is skipped — every app switch on a
+// phone fires one — unless this much time-on-course has built up unsaved, so
+// a carer who then closes the app loses at most this much of it.
+const HIDDEN_SAVE_MIN_SECONDS = 60;
+
 interface XapiEvent {
   getVerb?: () => string | undefined;
   data?: {
@@ -97,19 +102,44 @@ export function H5PCoursePlayer({
   // an earlier page (index < reached) never blocks navigation.
   const gated = requiredQuestions > 0 && index >= reached && answeredCount < requiredQuestions;
 
+  // What the server last confirmed (it keeps the highest progress it has
+  // seen), so a hidden-tab save can tell whether it has anything to add.
+  const savedRef = useRef({
+    block: startIndex,
+    progress: Math.round((startIndex / total) * 100),
+  });
+
   // Persist current position + progress (fire-and-forget; RLS scopes it).
+  // `onlyIfChanged` skips the call when the position and progress match the
+  // last successful save; the unsaved time carries over to the next one.
   const persist = useCallback(
-    (pageIndex: number, done = false) => {
+    (pageIndex: number, done = false, onlyIfChanged = false) => {
       const newReached = Math.max(reached, pageIndex);
       setReached(newReached);
       const delta = Math.round((nowMs() - startRef.current) / 1000);
-      startRef.current = nowMs();
       const pct = done ? 100 : Math.round((newReached / total) * 100);
+      const saved = savedRef.current;
+      if (
+        onlyIfChanged &&
+        pageIndex === saved.block &&
+        pct <= saved.progress &&
+        delta < HIDDEN_SAVE_MIN_SECONDS
+      ) {
+        return;
+      }
+      startRef.current = nowMs();
       void saveProgressAction({
         enrolmentId,
         currentBlock: pageIndex,
         progress: pct,
         timeSpentDelta: delta,
+      }).then((res) => {
+        if (res.ok) {
+          savedRef.current = {
+            block: pageIndex,
+            progress: Math.max(savedRef.current.progress, pct),
+          };
+        }
       });
     },
     [enrolmentId, total, reached],
@@ -181,19 +211,21 @@ export function H5PCoursePlayer({
 
     // Each page mounts a fresh H5P (often inside a new iframe), so hook the
     // xAPI dispatcher on both the parent and this page's iframe, retrying while
-    // the iframe's H5P initialises.
+    // the iframe's H5P initialises. The retry stops once both are hooked (or,
+    // for content mounted without an iframe, once it has loaded): nothing new
+    // turns up on this page after that, and the next page re-runs this effect.
+    let loaded = false;
     const attach = () => {
       const iframe = el.querySelector("iframe") as HTMLIFrameElement | null;
-      const dispatchers = [
-        window.H5P?.externalDispatcher,
-        iframe?.contentWindow?.H5P?.externalDispatcher,
-      ];
-      for (const d of dispatchers) {
+      const outer = window.H5P?.externalDispatcher;
+      const inner = iframe?.contentWindow?.H5P?.externalDispatcher;
+      for (const d of [outer, inner]) {
         if (d && !attachedRef.current.has(d)) {
           attachedRef.current.add(d);
           d.on("xAPI", onXapi);
         }
       }
+      if (loaded && outer && (!iframe || inner)) clearInterval(attachTimer);
     };
     const attachTimer = setInterval(attach, 200);
 
@@ -209,11 +241,16 @@ export function H5PCoursePlayer({
         });
         if (!disposed) {
           setLoading(false);
+          loaded = true;
           attach();
         }
       } catch (err) {
         console.error("H5P load failed", err);
-        if (!disposed) setLoading(false);
+        if (!disposed) {
+          setLoading(false);
+          loaded = true;
+          attach();
+        }
       }
     })();
     return () => {
@@ -226,10 +263,11 @@ export function H5PCoursePlayer({
     };
   }, [index, pages, onXapi, stage]);
 
-  // Best-effort save if the learner leaves mid-page.
+  // Best-effort save if the learner leaves mid-page — skipped when nothing has
+  // moved since the last save, as every app switch on a phone lands here.
   useEffect(() => {
     const onHide = () => {
-      if (document.visibilityState === "hidden") persist(index);
+      if (document.visibilityState === "hidden") persist(index, false, true);
     };
     document.addEventListener("visibilitychange", onHide);
     return () => document.removeEventListener("visibilitychange", onHide);

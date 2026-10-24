@@ -55,7 +55,7 @@ export default async function PoliciesPage({
   // and the one an inspector asks about.
   const { counts, staff } =
     active === "policies"
-      ? await loadAcceptanceCounts(supabase, policies)
+      ? await loadAcceptanceCounts(supabase, policies, context.organisationId)
       : { counts: new Map<string, number>(), staff: 0 };
 
   return (

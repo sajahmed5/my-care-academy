@@ -131,6 +131,14 @@ export function suggestionsFor({
     }));
 }
 
+/**
+ * An incident with its people, in one request. The people come embedded, so
+ * there is no second `.in("incident_id", …)` read to keep under the URL
+ * limit or the 1,000-row cap.
+ */
+const INCIDENT_SELECT =
+  "id, kind, category, occurred_on, summary, outcome, status, closed_on, incident_people (user_id, involvement, person:users!incident_people_user_id_fkey (full_name, email))";
+
 /** Incidents one person is named in, newest first. */
 export async function loadIncidentsForPerson(
   supabase: SupabaseClient,
@@ -143,55 +151,46 @@ export async function loadIncidentsForPerson(
     .limit(200);
   const ids = (links ?? []).map((l) => l.incident_id as string);
   if (ids.length === 0) return [];
-  return loadIncidentsByIds(supabase, ids);
+  // At most 100 ids to a request: past a few hundred the URL is refused.
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += 100) chunks.push(ids.slice(i, i + 100));
+  const pages = await Promise.all(
+    chunks.map((chunk) => supabase.from("incidents").select(INCIDENT_SELECT).in("id", chunk)),
+  );
+  return pages
+    .flatMap((p) => p.data ?? [])
+    .map((r) => shapeIncident(r as Record<string, unknown>))
+    .sort((a, b) => b.occurred_on.localeCompare(a.occurred_on));
 }
 
-/** Every incident in the organisation, newest first. RLS does the scoping. */
+/**
+ * Every incident in the organisation, newest first. RLS does the scoping;
+ * the organisation filter is there so the (organisation_id, occurred_on)
+ * index serves the read.
+ */
 export async function loadIncidents(
   supabase: SupabaseClient,
+  organisationId?: string | null,
 ): Promise<Incident[]> {
-  const { data } = await supabase
-    .from("incidents")
-    .select("id")
-    .order("occurred_on", { ascending: false })
-    .limit(200);
-  const ids = (data ?? []).map((r) => r.id as string);
-  if (ids.length === 0) return [];
-  return loadIncidentsByIds(supabase, ids);
+  let q = supabase.from("incidents").select(INCIDENT_SELECT);
+  if (organisationId) q = q.eq("organisation_id", organisationId);
+  const { data } = await q.order("occurred_on", { ascending: false }).limit(200);
+  return (data ?? []).map((r) => shapeIncident(r as Record<string, unknown>));
 }
 
-async function loadIncidentsByIds(
-  supabase: SupabaseClient,
-  ids: string[],
-): Promise<Incident[]> {
-  const [{ data: rows }, { data: people }] = await Promise.all([
-    supabase
-      .from("incidents")
-      .select("id, kind, category, occurred_on, summary, outcome, status, closed_on")
-      .in("id", ids)
-      .order("occurred_on", { ascending: false }),
-    supabase
-      .from("incident_people")
-      .select("incident_id, user_id, involvement, person:users!incident_people_user_id_fkey (full_name, email)")
-      .in("incident_id", ids),
-  ]);
-
-  const byIncident = new Map<string, IncidentPerson[]>();
-  for (const row of people ?? []) {
-    const raw = (row as { person?: unknown }).person;
+function shapeIncident(row: Record<string, unknown>): Incident {
+  const people = ((row.incident_people as Record<string, unknown>[] | null) ?? []).map((p) => {
+    const raw = p.person;
     const person = (Array.isArray(raw) ? raw[0] : raw) as
       | { full_name?: string | null; email?: string | null }
       | undefined;
-    const list = byIncident.get(row.incident_id as string) ?? [];
-    list.push({
-      user_id: row.user_id as string,
+    return {
+      user_id: p.user_id as string,
       name: person?.full_name ?? person?.email ?? null,
-      involvement: row.involvement as string,
-    });
-    byIncident.set(row.incident_id as string, list);
-  }
-
-  return (rows ?? []).map((row) => ({
+      involvement: p.involvement as string,
+    };
+  });
+  return {
     id: row.id as string,
     kind: row.kind as string,
     category: row.category as string,
@@ -200,8 +199,8 @@ async function loadIncidentsByIds(
     outcome: (row.outcome as string | null) ?? null,
     status: row.status as string,
     closed_on: (row.closed_on as string | null) ?? null,
-    people: byIncident.get(row.id as string) ?? [],
-  }));
+    people,
+  };
 }
 
 /** Courses already assigned off an incident for one person: course_id → reason. */

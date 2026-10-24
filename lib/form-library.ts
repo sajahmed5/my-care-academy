@@ -43,7 +43,8 @@ export interface FormTemplateSummary {
   service_types: string[] | null;
   version: number;
   status: string;
-  fieldCount: number;
+  /** Null when the template was read for a list, without its fields. */
+  fieldCount: number | null;
 }
 
 export interface FormTemplateRecord extends FormTemplateSummary {
@@ -88,11 +89,15 @@ function toSummary(r: Record<string, unknown>): FormTemplateSummary {
     service_types: (r.service_types as string[] | null) ?? null,
     version: (r.version as number) ?? 1,
     status: (r.status as string) ?? "draft",
-    fieldCount: Array.isArray(r.fields) ? (r.fields as unknown[]).length : 0,
+    fieldCount: Array.isArray(r.fields) ? (r.fields as unknown[]).length : null,
   };
 }
 
-/** The published forms this organisation can assign. RLS already hides drafts. */
+/**
+ * The published forms this organisation can assign. RLS already hides drafts.
+ * Without the fields: the list shows a title and a description, and a
+ * template's questions are read when one is opened (loadFormTemplate).
+ */
 export async function loadFormLibrary(
   supabase: SupabaseClient,
   { enabled, serviceType }: { enabled: Record<string, boolean>; serviceType: string | null },
@@ -101,7 +106,7 @@ export async function loadFormLibrary(
   if (packs.length === 0) return [];
   const { data } = await supabase
     .from("form_templates")
-    .select("id, code, title, description, category, pack, collection, service_types, version, status, fields")
+    .select("id, code, title, description, category, pack, collection, service_types, version, status")
     .in("pack", packs)
     .order("category")
     .order("sort_order")

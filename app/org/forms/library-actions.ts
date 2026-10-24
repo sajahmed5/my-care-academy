@@ -50,19 +50,31 @@ export async function assignFormAction(
   }
 
   const supabase = await createClient();
+  const orgId = context.organisationId!;
 
-  let people = supabase.from("users").select("id").eq("status", "active").eq("role", "learner");
-  if (!everyone) people = people.in("id", picked);
-  const { data: users } = await people;
-  const userIds = (users ?? []).map((u) => u.id as string);
+  // The organisation's active learners, and who already has this form open —
+  // both read by organisation rather than by a list of ids in the URL, which
+  // "everyone" in a large organisation would push past the URL limit.
+  const [{ data: users }, { data: open }] = await Promise.all([
+    supabase
+      .from("users")
+      .select("id")
+      .eq("organisation_id", orgId)
+      .eq("status", "active")
+      .eq("role", "learner")
+      .limit(1000),
+    supabase
+      .from("form_assignments")
+      .select("user_id")
+      .eq("organisation_id", orgId)
+      .eq("template_id", templateId)
+      .is("completed_at", null)
+      .limit(1000),
+  ]);
+  const wanted = everyone ? null : new Set(picked);
+  const userIds = (users ?? []).map((u) => u.id as string).filter((id) => !wanted || wanted.has(id));
   if (userIds.length === 0) return { ok: false, error: "Nobody matched." };
 
-  const { data: open } = await supabase
-    .from("form_assignments")
-    .select("user_id")
-    .eq("template_id", templateId)
-    .is("completed_at", null)
-    .in("user_id", userIds);
   const alreadyOpen = new Set((open ?? []).map((r) => r.user_id as string));
   const fresh = userIds.filter((id) => !alreadyOpen.has(id));
   if (fresh.length === 0) {

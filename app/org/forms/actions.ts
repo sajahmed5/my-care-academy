@@ -52,20 +52,21 @@ export async function createFormAction(
       .insert(rows)
       .select("id, label");
     const byLabel = new Map((inserted ?? []).map((r) => [r.label, r.id]));
-    for (const f of template.fields) {
-      if (f.conditionalOn) {
+    // Independent rows: written together, not one round trip after another.
+    await Promise.all(
+      template.fields.map((f) => {
+        if (!f.conditionalOn) return null;
         const fid = byLabel.get(f.label);
         const whenId = byLabel.get(f.conditionalOn.label);
-        if (fid && whenId) {
-          await supabase
-            .from("form_fields")
-            .update({
-              conditional: { whenFieldId: whenId, equals: f.conditionalOn.equals },
-            })
-            .eq("id", fid);
-        }
-      }
-    }
+        if (!fid || !whenId) return null;
+        return supabase
+          .from("form_fields")
+          .update({
+            conditional: { whenFieldId: whenId, equals: f.conditionalOn.equals },
+          })
+          .eq("id", fid);
+      }),
+    );
   }
 
   redirect(`/org/forms/${form.id}`);

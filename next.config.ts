@@ -61,6 +61,14 @@ const nextConfig: NextConfig = {
         source: "/training/:path*.(jpg|jpeg|png|svg|webp|gif)",
         headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }],
       },
+      // The logo, drawn on every page via next/image. Without this the
+      // optimiser's copy expires after its 4-hour default (Next takes the
+      // larger of minimumCacheTTL and this header), so each device re-fetches
+      // it several times a day. Not `immutable`: a rebrand keeps the filename.
+      {
+        source: "/logo.png",
+        headers: [{ key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" }],
+      },
       // Quiz hotspot scene images.
       {
         source: "/quiz/:path*",

@@ -5,7 +5,7 @@ import { siteOrigin } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
 import { createSetPasswordLink } from "@/lib/invites";
-import { bucketOf, isActiveLearner, isNeverActive, loadOrgLearners } from "@/lib/org-learners";
+import { bucketOf, isActiveLearner, loadOrgLearners } from "@/lib/org-learners";
 import type { NudgeGroup } from "./nudge-types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -323,10 +323,22 @@ export async function nudgeGroupAction(
     : nudgeBucket(admin, context.organisationId, group, force);
 }
 
-/** Everyone in the org who has never signed in — how many the group holds. */
+/**
+ * Everyone in the org who has never signed in — how many the group holds.
+ *
+ * A count, so the database counts: this used to build the whole learner
+ * rollup (every enrolment and certificate in the organisation) to read one
+ * number off it. Same test as isActiveLearner + isNeverActive.
+ */
 export async function neverSignedInCount(): Promise<number> {
   const context = await requireConsole();
   if (!context.organisationId) return 0;
-  const rows = await loadOrgLearners(createAdminClient(), context.organisationId);
-  return rows.filter(isActiveLearner).filter(isNeverActive).length;
+  const { count } = await createAdminClient()
+    .from("users")
+    .select("id", { count: "exact", head: true })
+    .eq("organisation_id", context.organisationId)
+    .eq("role", "learner")
+    .neq("status", "deactivated")
+    .is("last_seen_at", null);
+  return count ?? 0;
 }

@@ -20,31 +20,24 @@ export default async function RecruitmentPage() {
   const supabase = await createClient();
   await requireFeature(context, "recruitment.tracker");
 
-  const [{ data: candidates }, { data: docs }] = await Promise.all([
-    supabase
-      .from("candidates")
-      .select("id, full_name, postcode, email, is_driver, entry_date, stage, status")
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("candidate_documents")
-      .select(
-        "id, candidate_id, doc_type, file_name, file_path, expires_at, not_required, not_required_reason",
-      ),
-  ]);
-
   // The whole row, not just a tick: a cell in the tracker opens the same
   // controls as the candidate page, so it needs the file and the reason.
-  const docsByCandidate = new Map<string, Record<string, Doc>>();
-  for (const d of docs ?? []) {
-    const byType = docsByCandidate.get(d.candidate_id) ?? {};
-    byType[d.doc_type] = d as Doc;
-    docsByCandidate.set(d.candidate_id, byType);
-  }
+  // Embedded rather than read separately: twelve checklist rows a candidate
+  // passes the 1,000-row cap at 84 candidates, and the cap drops rows
+  // silently — a held DBS would show as missing.
+  const { data: candidates } = await supabase
+    .from("candidates")
+    .select(
+      "id, full_name, postcode, email, is_driver, entry_date, stage, status, candidate_documents (id, doc_type, file_name, file_path, expires_at, not_required, not_required_reason)",
+    )
+    .eq("organisation_id", context.organisationId!)
+    .order("created_at", { ascending: false });
 
-  const rows: CandidateRow[] = (candidates ?? []).map((c) => ({
-    ...c,
-    docs: docsByCandidate.get(c.id) ?? {},
-  }));
+  const rows: CandidateRow[] = (candidates ?? []).map(({ candidate_documents, ...c }) => {
+    const docs: Record<string, Doc> = {};
+    for (const d of (candidate_documents ?? []) as Doc[]) docs[d.doc_type] = d;
+    return { ...c, docs };
+  });
 
   return (
     <DashboardShell title="Recruitment" context={context}>

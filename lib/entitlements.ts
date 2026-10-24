@@ -66,13 +66,23 @@ export async function requireFeature(
   if (!(await hasFeature(context, key))) redirect(redirectTo);
 }
 
-/** Every catalogue feature as on/off, for the nav and dashboard panels. */
+/**
+ * Every catalogue feature as on/off, for the nav and dashboard panels.
+ *
+ * One read of the cached set, not one await per feature: the answer is the
+ * same either way (the shell, the page and this all share loadEntitlements'
+ * single my_entitlements call), but there is no reason to queue thirteen
+ * microtask hops behind each other to build it.
+ */
 export async function enabledMap(
   context: UserContext,
 ): Promise<Record<FeatureKey, boolean>> {
+  const all = context.role === "platform_admin";
+  const set =
+    all || !context.organisationId ? NONE : await loadEntitlements();
   const map = {} as Record<FeatureKey, boolean>;
   for (const feature of FEATURES) {
-    map[feature.key] = await hasFeature(context, feature.key);
+    map[feature.key] = all || set.has(feature.key);
   }
   return map;
 }

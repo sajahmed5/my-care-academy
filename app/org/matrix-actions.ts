@@ -3,6 +3,8 @@
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { cellText } from "@/lib/matrix";
+import { fetchAll } from "@/lib/fetch-all";
+import { courseOf, loadCourseIndex } from "@/lib/org-learners";
 
 export interface MatrixCourse {
   id: string;
@@ -25,60 +27,67 @@ export interface TrainingMatrix {
   rows: MatrixRow[];
 }
 
-interface JoinedCourse {
-  title?: string;
-  topics?: { title?: string } | null;
-}
-function pickCourse(row: { courses?: unknown }): JoinedCourse {
-  return (row.courses as JoinedCourse) ?? {};
-}
-
 /**
  * Build the org's training matrix: every staff member as a row, every course
  * used in the org as a column, each cell showing the completion → expiry dates
  * from the learner's newest certificate for that course. RLS scopes all reads
- * to the caller's own organisation.
+ * to the caller's own organisation; the explicit organisation filter is for
+ * the planner (index, not a per-row policy test).
  */
 export async function exportTrainingMatrixAction(
   options: { includeLeavers?: boolean } = {},
 ): Promise<TrainingMatrix> {
-  await requireConsole();
+  const context = await requireConsole();
+  const orgId = context.organisationId;
   const supabase = await createClient();
 
-  const [{ data: users }, { data: enrolments }, { data: certs }] =
-    await Promise.all([
-      supabase
+  // Paged. These were plain reads, so past 1,000 enrolments (about 62 carers
+  // on 16 courses) the matrix silently came out with blanks — on the one
+  // document inspectors actually ask for. Course names come from one lookup
+  // rather than being embedded on every enrolment and certificate.
+  const [usersAll, enrolments, certsAll, catalogue] = await Promise.all([
+    fetchAll((f, t) => {
+      let q = supabase
         .from("users")
         .select("id, full_name, email, status")
-        .eq("role", "learner")
-        .order("full_name", { ascending: true }),
-      supabase
-        .from("enrolments")
-        .select("user_id, course_id, status, courses(title, topics(title))"),
-      supabase
+        .eq("role", "learner");
+      if (orgId) q = q.eq("organisation_id", orgId);
+      return q.order("id").range(f, t);
+    }),
+    fetchAll((f, t) => {
+      let q = supabase.from("enrolments").select("id, user_id, course_id, status");
+      if (orgId) q = q.eq("organisation_id", orgId);
+      return q.order("id").range(f, t);
+    }),
+    fetchAll((f, t) => {
+      let q = supabase
         .from("certificates")
-        .select(
-          "user_id, course_id, issued_at, expires_at, courses(title, topics(title))",
-        )
-        .order("issued_at", { ascending: false }),
-    ]);
+        .select("id, user_id, course_id, issued_at, expires_at");
+      if (orgId) q = q.eq("organisation_id", orgId);
+      return q.order("id").range(f, t);
+    }),
+    loadCourseIndex(supabase),
+  ]);
+  // Name order as before (blank names last, as Postgres put them); newest
+  // certificate first, which the newestCert loop below relies on.
+  const users = [...usersAll].sort((a, b) =>
+    a.full_name == null
+      ? b.full_name == null ? 0 : 1
+      : b.full_name == null ? -1 : String(a.full_name).localeCompare(String(b.full_name)),
+  );
+  const certs = [...certsAll].sort((a, b) =>
+    String(b.issued_at).localeCompare(String(a.issued_at)),
+  );
 
   // Column set = every course the org actually uses (assigned or certified).
   const courseMap = new Map<string, MatrixCourse>();
-  const noteCourse = (
-    id: string,
-    row: { courses?: unknown },
-  ) => {
+  const noteCourse = (id: string) => {
     if (courseMap.has(id)) return;
-    const c = pickCourse(row);
-    courseMap.set(id, {
-      id,
-      title: c.title ?? "Course",
-      topic: c.topics?.title ?? null,
-    });
+    const c = courseOf(catalogue, id);
+    courseMap.set(id, { id, title: c.title, topic: c.topic });
   };
-  for (const e of enrolments ?? []) noteCourse(e.course_id, e);
-  for (const c of certs ?? []) noteCourse(c.course_id, c);
+  for (const e of enrolments) noteCourse(e.course_id);
+  for (const c of certs) noteCourse(c.course_id);
 
   const courses = [...courseMap.values()].sort(
     (a, b) =>

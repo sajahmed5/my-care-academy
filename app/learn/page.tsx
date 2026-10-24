@@ -14,7 +14,13 @@ import {
 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { loadLearner, learnerStats } from "@/lib/learner-data";
+import {
+  learnerStats,
+  loadActivityDates,
+  loadCertificates,
+  loadEnrolments,
+  loadProfile,
+} from "@/lib/learner-data";
 import { loadProgramme } from "@/lib/programmes";
 import { computeBadges, computeStreak } from "@/lib/gamification";
 import { topicTheme, tint } from "@/lib/topic-theme";
@@ -34,6 +40,7 @@ import {
   BadgeChip,
 } from "@/components/learner-ui";
 import { CourseCard } from "./modules/course-card";
+import { formatDate } from "@/lib/dates";
 
 const nowMs = () => Date.now();
 
@@ -49,12 +56,20 @@ export default async function LearnerDashboard() {
   const now = new Date(nowMs());
   const supabase = await createClient();
 
-  const data = await loadLearner(supabase);
-  const stats = learnerStats(data.enrolments, data.certificates, now);
-
+  // All in parallel. The enrolment and certificate reads are shared per
+  // request, so the programme card and the shell's badge reuse them.
   // The Care Certificate programme (16 standards) drives both the dashboard
   // card and the "Care Certificate" badge.
-  const programme = await loadProgramme(supabase, "care-certificate");
+  const [enrolments, certificates, me, activityDates, programme] =
+    await Promise.all([
+      loadEnrolments(context.userId),
+      loadCertificates(context.userId),
+      loadProfile(context.userId),
+      loadActivityDates(context.userId),
+      loadProgramme(supabase, "care-certificate", context.userId),
+    ]);
+  const data = { enrolments, certificates, fullName: me.fullName };
+  const stats = learnerStats(enrolments, certificates, now);
 
   const badges = computeBadges({
     assigned: stats.assigned,
@@ -64,7 +79,7 @@ export default async function LearnerDashboard() {
     inductionTotal: programme?.total ?? 0,
     inductionCompleted: programme?.completedCount ?? 0,
   });
-  const streak = computeStreak(data.activityDates, now);
+  const streak = computeStreak(activityDates, now);
 
   // Progress grouped by topic.
   const byTopic = new Map<string, { completed: number; total: number }>();
@@ -294,7 +309,7 @@ export default async function LearnerDashboard() {
                         </span>
                         <span className="truncate">{c.title}</span>
                         <span className="ml-auto text-xs text-muted-foreground">
-                          {new Date(c.issued_at).toLocaleDateString("en-GB")}
+                          {formatDate(c.issued_at)}
                         </span>
                       </li>
                     ))}

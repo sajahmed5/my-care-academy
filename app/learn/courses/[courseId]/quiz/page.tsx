@@ -13,19 +13,18 @@ export default async function QuizPage({
   const { courseId } = await params;
 
   const supabase = await createClient();
-  // Must be enrolled (RLS scopes to own enrolment).
-  const { data: enrolment } = await supabase
-    .from("enrolments")
-    .select("id")
-    .eq("course_id", courseId)
-    .maybeSingle();
+  // Must be enrolled. Both reads at once; the user_id filter uses the
+  // (user_id, course_id) index, RLS still scopes it.
+  const [{ data: enrolment }, { data: course }] = await Promise.all([
+    supabase
+      .from("enrolments")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("course_id", courseId)
+      .maybeSingle(),
+    supabase.from("courses").select("title").eq("id", courseId).maybeSingle(),
+  ]);
   if (!enrolment) notFound();
-
-  const { data: course } = await supabase
-    .from("courses")
-    .select("title")
-    .eq("id", courseId)
-    .maybeSingle();
   if (!course) notFound();
 
   return (

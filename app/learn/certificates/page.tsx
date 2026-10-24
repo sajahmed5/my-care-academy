@@ -1,7 +1,6 @@
 import { Download } from "lucide-react";
 import { requireRole } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { loadLearner } from "@/lib/learner-data";
+import { loadCertificates } from "@/lib/learner-data";
 import { expiryFlag } from "@/lib/engine-logic";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { buttonVariants } from "@/components/ui/button";
@@ -10,8 +9,7 @@ import { CertWallet, type WalletCert } from "./cert-wallet";
 export default async function CertificatesPage() {
   const context = await requireRole("learner");
   const now = new Date();
-  const supabase = await createClient();
-  const { certificates } = await loadLearner(supabase);
+  const certificates = await loadCertificates(context.userId);
 
   const certs: WalletCert[] = certificates.map((c) => ({
     id: c.id,

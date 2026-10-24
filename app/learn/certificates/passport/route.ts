@@ -13,12 +13,19 @@ export async function GET() {
   }
 
   const supabase = await createClient();
+  // Filtered to this learner explicitly so both reads use an index; RLS still
+  // scopes them.
   const [{ data: certs }, { data: me }] = await Promise.all([
     supabase
       .from("certificates")
       .select("certificate_number, issued_at, expires_at, courses(title)")
+      .eq("user_id", context.userId)
       .order("issued_at", { ascending: false }),
-    supabase.from("users").select("full_name, email").single(),
+    supabase
+      .from("users")
+      .select("full_name, email")
+      .eq("id", context.userId)
+      .maybeSingle(),
   ]);
 
   const now = new Date();

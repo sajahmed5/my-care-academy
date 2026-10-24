@@ -1,5 +1,6 @@
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { endOfMonthISO } from "@/lib/assign";
 import {
   Card,
@@ -13,24 +14,29 @@ import { BulkAssign } from "./bulk-assign";
 
 /** Courses → Admin: assign training, one by one or in bulk. */
 export default async function CoursesAdminPage() {
-  await requireConsole();
+  const context = await requireConsole();
   const supabase = await createClient();
-  const [{ data: courses }, { data: pathways }, { data: staff }] =
+  // Learners only. An admin cannot open /learn at all, so a course assigned
+  // to one can never be started, never be completed, and — until now — never
+  // be removed (issues #35, #36). Filtered in the query rather than after it,
+  // so deactivated staff and managers aren't downloaded only to be dropped,
+  // and paged, since a plain read stops silently at 1,000 people.
+  const [{ data: courses }, { data: pathways }, activeStaff] =
     await Promise.all([
       supabase.from("courses").select("id, title").order("title"),
       supabase.from("pathways").select("id, title").order("title"),
-      supabase
-        .from("users")
-        .select("id, full_name, email, role, status")
-        .order("full_name", { ascending: true }),
+      fetchAll((f, t) =>
+        supabase
+          .from("users")
+          .select("id, full_name, email")
+          .eq("organisation_id", context.organisationId!)
+          .eq("role", "learner")
+          .eq("status", "active")
+          .order("full_name", { ascending: true })
+          .order("id")
+          .range(f, t),
+      ),
     ]);
-
-  // Learners only. An admin cannot open /learn at all, so a course assigned
-  // to one can never be started, never be completed, and — until now — never
-  // be removed (issues #35, #36).
-  const activeStaff = (staff ?? []).filter(
-    (u) => (u.status ?? "active") === "active" && u.role === "learner",
-  );
 
   return (
     <div className="space-y-6">

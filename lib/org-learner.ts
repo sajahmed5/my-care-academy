@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Enrolment, Certificate } from "@/lib/learner-data";
+import type { Enrolment, Certificate } from "@/lib/learner-stats";
 
 /** An enrolment plus the time the learner has spent in the course content. */
 export interface OrgEnrolment extends Enrolment {

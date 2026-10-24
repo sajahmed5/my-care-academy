@@ -17,7 +17,7 @@ import {
   kindOf,
   stagesFor,
 } from "@/lib/complaints/stages";
-import { loadComplaint, loadStages, nextReference } from "@/lib/complaints/data";
+import { loadCloseCheck, loadStages, nextReference } from "@/lib/complaints/data";
 import { computeStageStatus, isTriageStage, holdsFindings } from "@/lib/complaints/compute";
 import { cleanConcernFindings, CONCERN_FINDINGS_KEY, type ConcernFinding } from "@/lib/complaints/findings";
 import {
@@ -113,8 +113,11 @@ export async function seedStagesAction(): Promise<SaveState> {
   const context = await requireComplaints();
   if (!context) return { ok: false, error: NOT_IN_PLAN };
   const supabase = await createClient();
-  const existing = await loadStages(supabase);
-  if (existing.length > 0) return { ok: true };
+  const { count: existing } = await supabase
+    .from("complaint_stages")
+    .select("id", { count: "exact", head: true })
+    .eq("organisation_id", context.organisationId!);
+  if ((existing ?? 0) > 0) return { ok: true };
   const { error } = await supabase.from("complaint_stages").insert(
     DEFAULT_STAGES.map((s, i) => ({
       organisation_id: context.organisationId,
@@ -204,10 +207,13 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
   }
 
   const supabase = await createClient();
-  const stages = stagesFor(await loadStages(supabase), kind);
+  const [allStages, reference] = await Promise.all([
+    loadStages(supabase, context.organisationId),
+    nextReference(supabase, kind, reportedOn),
+  ]);
+  const stages = stagesFor(allStages, kind);
   if (stages.length === 0) return { ok: false, error: "Set up the process first: the organisation has no stages yet." };
 
-  const reference = await nextReference(supabase, kind, reportedOn);
   const { data: row, error } = await supabase
     .from("complaints")
     .insert({
@@ -301,7 +307,10 @@ export async function closeComplaintAction(_prev: SaveState, formData: FormData)
   if (!outcomeSummary) return { ok: false, error: "Say what came of it before closing." };
 
   const supabase = await createClient();
-  const [complaint, allStages] = await Promise.all([loadComplaint(supabase, id), loadStages(supabase)]);
+  const [complaint, allStages] = await Promise.all([
+    loadCloseCheck(supabase, id),
+    loadStages(supabase, context.organisationId),
+  ]);
   if (!complaint) return { ok: false, error: "That record is no longer there." };
   const stages = stagesFor(allStages, complaint.kind);
 
@@ -309,12 +318,8 @@ export async function closeComplaintAction(_prev: SaveState, formData: FormData)
   const triage = stages.find(isTriageStage);
   const triaged = !triage || complaint.stageEntries.some((e) => e.stageId === triage.id && e.status !== "pending");
   const message = closeGapsMessage(gaps, !triaged, {
-    openActions: complaint.actions
-      .filter((a) => !a.completedAt)
-      .map((a) => `${a.title}${a.ownerName ? ` — ${a.ownerName}` : ""}`),
-    openPlans: complaint.pips
-      .filter((p) => p.status === "open")
-      .map((p) => `${p.kind === "disciplinary" ? "Disciplinary" : "Performance plan"} for ${p.carerName}`),
+    openActions: complaint.openActions,
+    openPlans: complaint.openPlans,
   });
   if (message) return { ok: false, error: message };
 
@@ -403,10 +408,12 @@ export async function saveStageFormAction(_prev: SaveState, formData: FormData):
   }
 
   const supabase = await createClient();
-  const stage = await stageById(supabase, stageId);
+  const [stage, existing] = await Promise.all([
+    stageById(supabase, stageId),
+    entryAnswers(supabase, complaintId, stageId),
+  ]);
   if (!stage) return { ok: false, error: "That stage is no longer there." };
   // Keep what the form does not own: the findings list, the not-needed marks.
-  const existing = await entryAnswers(supabase, complaintId, stageId);
   const kept: Record<string, unknown> = {};
   for (const k of [CONCERN_FINDINGS_KEY, TRIAGE_NA_KEY, FINDINGS_NA_KEY, "sentOn", "subject", "body", "sentTo"]) {
     if (k in existing && !(k in answers)) kept[k] = existing[k];
@@ -432,9 +439,11 @@ export async function saveLetterAction(_prev: SaveState, formData: FormData): Pr
   if (sentOn && !/^\d{4}-\d{2}-\d{2}$/.test(sentOn)) return { ok: false, error: "Say when it was sent." };
 
   const supabase = await createClient();
-  const stage = await stageById(supabase, stageId);
+  const [stage, existing] = await Promise.all([
+    stageById(supabase, stageId),
+    entryAnswers(supabase, complaintId, stageId),
+  ]);
   if (!stage) return { ok: false, error: "That stage is no longer there." };
-  const existing = await entryAnswers(supabase, complaintId, stageId);
   const err = await recompute(
     supabase,
     complaintId,
@@ -479,9 +488,11 @@ export async function saveFindingsAction(_prev: SaveState, formData: FormData): 
     return { ok: false, error: "The findings could not be read." };
   }
   const supabase = await createClient();
-  const stage = await stageById(supabase, stageId);
+  const [stage, existing] = await Promise.all([
+    stageById(supabase, stageId),
+    entryAnswers(supabase, complaintId, stageId),
+  ]);
   if (!stage || !holdsFindings(stage)) return { ok: false, error: "Findings live on the Findings stage or an action plan." };
-  const existing = await entryAnswers(supabase, complaintId, stageId);
   const err = await recompute(supabase, complaintId, stage, { ...existing, [CONCERN_FINDINGS_KEY]: list }, context.userId);
   if (err) return { ok: false, error: err };
   revalidatePath(`/org/complaints/${complaintId}`);
@@ -576,14 +587,16 @@ export async function markNotNeededAction(_prev: SaveState, formData: FormData):
   if (!clear && !why) return { ok: false, error: "Say why it is not needed." };
 
   const supabase = await createClient();
-  const stage = await stageById(supabase, stageId);
+  const [stage, existing] = await Promise.all([
+    stageById(supabase, stageId),
+    entryAnswers(supabase, complaintId, stageId),
+  ]);
   if (!stage) return { ok: false, error: "That stage is no longer there." };
   const triage = isTriageStage(stage);
   const check = triage ? triageCheckNamed(name) : findingsActionNamed(name);
   if (!check) return { ok: false, error: "That is not one of the standing checks." };
   const key = triage ? TRIAGE_NA_KEY : FINDINGS_NA_KEY;
 
-  const existing = await entryAnswers(supabase, complaintId, stageId);
   const na = { ...((existing[key] as Record<string, string> | undefined) ?? {}) };
   if (clear) delete na[check];
   else na[check] = why;

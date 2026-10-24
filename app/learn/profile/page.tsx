@@ -1,6 +1,6 @@
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { loadLearner } from "@/lib/learner-data";
+import { loadProfile } from "@/lib/learner-data";
 import { DashboardShell } from "@/components/dashboard-shell";
 import {
   Card,
@@ -16,15 +16,16 @@ import { PrivacyData } from "../privacy-data";
 export default async function ProfilePage() {
   const context = await requireRole("learner");
   const supabase = await createClient();
-  const { fullName } = await loadLearner(supabase);
-
-  const { data: org } = context.organisationId
-    ? await supabase
-        .from("organisations")
-        .select("name")
-        .eq("id", context.organisationId)
-        .maybeSingle()
-    : { data: null };
+  const [{ fullName }, { data: org }] = await Promise.all([
+    loadProfile(context.userId),
+    context.organisationId
+      ? supabase
+          .from("organisations")
+          .select("name")
+          .eq("id", context.organisationId)
+          .maybeSingle()
+      : Promise.resolve({ data: null as { name?: string } | null }),
+  ]);
 
   return (
     <DashboardShell title="Profile" context={context}>

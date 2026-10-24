@@ -18,15 +18,22 @@ export default async function CourseStatisticsPage({
 }: {
   searchParams: Promise<{ course?: string }>;
 }) {
-  await requireConsole();
+  const context = await requireConsole();
+  const orgId = context.organisationId;
   const { course } = await searchParams;
   const supabase = await createClient();
-  const [allRows, { data: organisation }] = await Promise.all([
-    loadCourseEnrolmentRows(supabase),
-    supabase.from("organisations").select("name").single(),
+  // One course asks the database for one course, rather than reading every
+  // enrolment in the organisation and filtering here. A mangled id (these
+  // links get pasted) matches nothing, as the old in-memory filter did,
+  // instead of failing the uuid cast.
+  const badCourse = !!course && !/^[0-9a-f-]{36}$/i.test(course);
+  const [rows, { data: organisation }] = await Promise.all([
+    badCourse
+      ? Promise.resolve([])
+      : loadCourseEnrolmentRows(supabase, orgId, course || null),
+    supabase.from("organisations").select("name").eq("id", orgId!).single(),
   ]);
 
-  const rows = course ? allRows.filter((r) => r.courseId === course) : allRows;
   const courseName = course ? (rows[0]?.course ?? "this course") : null;
   const org = organisation?.name ?? "org";
 

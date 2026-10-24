@@ -9,7 +9,7 @@ import {
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { StatTile } from "@/components/learner-ui";
-import { isActiveLearner, loadOrgLearners } from "@/lib/org-learners";
+import { buildOrgLearners, isActiveLearner, loadOrgTraining } from "@/lib/org-learners";
 import { loadCourseStats } from "@/lib/course-stats";
 import { CourseStatsTable } from "./course-stats-table";
 
@@ -19,14 +19,18 @@ import { CourseStatsTable } from "./course-stats-table";
  * headline number and the courses behind it are one page apart.
  */
 export default async function CoursesOverviewPage() {
-  await requireConsole();
+  const context = await requireConsole();
+  const orgId = context.organisationId;
   const supabase = await createClient();
-  const [learnerRows, rows, { data: organisation }] = await Promise.all([
-    loadOrgLearners(supabase),
-    loadCourseStats(supabase),
-    supabase.from("organisations").select("name").single(),
+  // One read of the organisation's enrolments feeds both the tiles (per
+  // learner) and the table (per course); they used to be read twice.
+  const trainingRead = loadOrgTraining(supabase, orgId);
+  const [training, rows, { data: organisation }] = await Promise.all([
+    trainingRead,
+    loadCourseStats(supabase, orgId, trainingRead),
+    supabase.from("organisations").select("name").eq("id", orgId!).single(),
   ]);
-  const learners = learnerRows.filter(isActiveLearner);
+  const learners = buildOrgLearners(training).filter(isActiveLearner);
 
   const totals = learners.reduce(
     (t, r) => ({

@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/server";
 import { loadRecentActivity } from "@/lib/activity";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { MatrixExport } from "../matrix-export";
+import { formatDateTime } from "@/lib/dates";
 
 /**
  * Evidence & exports.
@@ -64,9 +65,9 @@ export default async function OrgReportsPage() {
   const context = await requireConsole();
   const today = new Date().toISOString().slice(0, 10);
   const supabase = await createClient();
-  const activity = await loadRecentActivity(supabase, 30);
+  const activity = await loadRecentActivity(supabase, 30, context.organisationId);
   const when = (iso: string) =>
-    new Date(iso).toLocaleString("en-GB", {
+    formatDateTime(iso, {
       day: "numeric",
       month: "short",
       hour: "2-digit",

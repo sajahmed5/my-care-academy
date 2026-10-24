@@ -6,6 +6,7 @@ import { loadProgramme } from "@/lib/programmes";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ProgressRing } from "@/components/learner-ui";
 import { StandardGrid } from "./standard-grid";
+import { formatDate } from "@/lib/dates";
 
 export default async function ProgrammePage({
   params,
@@ -16,16 +17,24 @@ export default async function ProgrammePage({
   const { slug } = await params;
 
   const supabase = await createClient();
-  const programme = await loadProgramme(supabase, slug);
-  if (!programme) notFound();
-
   // Workplace observation status for the learner, if the org has the add-on.
   // Tolerant of the 2B tables not existing yet (query error → no observations),
   // so this page is safe to deploy before the observations migration is applied.
-  const [obsRes, signoffRes] = await Promise.all([
-    supabase.from("care_cert_observations").select("standard_no, status"),
-    supabase.from("care_cert_signoffs").select("signed_at").maybeSingle(),
+  // Read alongside the programme, filtered to this learner so the user_id
+  // index is used rather than an RLS check on every row.
+  const [programme, obsRes, signoffRes] = await Promise.all([
+    loadProgramme(supabase, slug, context.userId),
+    supabase
+      .from("care_cert_observations")
+      .select("standard_no, status")
+      .eq("user_id", context.userId),
+    supabase
+      .from("care_cert_signoffs")
+      .select("signed_at")
+      .eq("user_id", context.userId)
+      .maybeSingle(),
   ]);
+  if (!programme) notFound();
   const obsByStandard = new Map(
     (obsRes.data ?? []).map((o) => [o.standard_no, o.status]),
   );
@@ -87,7 +96,7 @@ export default async function ProgrammePage({
             <Award className="size-5 shrink-0 text-emerald-600" />
             <p>
               Your employer awarded your Care Certificate on{" "}
-              {new Date(signedOffAt).toLocaleDateString("en-GB")}. Well done!
+              {formatDate(signedOffAt)}. Well done!
             </p>
           </div>
         )}

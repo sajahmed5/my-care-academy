@@ -1,8 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Caveat, Inter, JetBrains_Mono, Outfit } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { CookieConsent } from "@/components/cookie-consent";
-import { OrganisationLd } from "@/components/structured-data";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -10,26 +9,19 @@ const inter = Inter({
   display: "swap",
 });
 
-// Display face for the marketing pages only (headlines); the app keeps Inter.
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  display: "swap",
-});
+// Outfit and Caveat (marketing headlines and handwritten asides) live in
+// app/(marketing)/layout.tsx: a font declared here is preloaded on EVERY
+// route, and they cost a carer's phone ~83 KB of woff2 on pages that never
+// use them.
 
-// Handwritten asides on the marketing home page only.
-const caveat = Caveat({
-  variable: "--font-caveat",
-  subsets: ["latin"],
-  weight: ["600"],
-  display: "swap",
-});
-
+// Monospace appears on a handful of console tables (references, timestamps)
+// and the marketing mock-ups — never on a learner page — so it is not
+// preloaded: the browser fetches it (~40 KB) only when such text renders.
 const mono = JetBrains_Mono({
   variable: "--font-mono-src",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
 });
 
 // Absolute base for canonical + Open Graph URLs, so shared links preview
@@ -76,10 +68,9 @@ export default function RootLayout({
   return (
     <html
       lang="en-GB"
-      className={`${inter.variable} ${mono.variable} ${outfit.variable} ${caveat.variable} h-full antialiased`}
+      className={`${inter.variable} ${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <OrganisationLd />
         {children}
         <CookieConsent />
       </body>

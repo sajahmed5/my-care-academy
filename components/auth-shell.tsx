@@ -33,7 +33,7 @@ export function AuthShell({
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-6 py-12 sm:py-16">
       <Link href="/" className="mb-8" aria-label="My Care Academy home">
-        <Logo width={180} />
+        <Logo width={180} eager />
       </Link>
       <Card className="w-full max-w-sm shadow-sm">
         <CardHeader>

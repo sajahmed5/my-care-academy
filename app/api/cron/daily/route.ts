@@ -25,8 +25,8 @@ export async function GET(req: NextRequest) {
   const now = new Date();
 
   const admin = createAdminClient();
-  // Every user, course and organisation, loaded once and shared by all three
-  // jobs — each used to read its own copy.
+  // Every user, course, organisation and enrolment, loaded once and shared by
+  // all three jobs — each used to read its own copy.
   const [settings, refs] = await Promise.all([
     loadSettings(admin),
     loadEngineRefs(admin),

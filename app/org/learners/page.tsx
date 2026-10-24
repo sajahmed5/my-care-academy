@@ -46,7 +46,8 @@ export default async function LearnersOverviewPage({
 }: {
   searchParams: Promise<{ filter?: string }>;
 }) {
-  await requireConsole();
+  const context = await requireConsole();
+  const orgId = context.organisationId;
   const { filter } = await searchParams;
   const initialFilter: Filter = FILTERS.includes(filter as Filter)
     ? (filter as Filter)
@@ -54,8 +55,8 @@ export default async function LearnersOverviewPage({
 
   const supabase = await createClient();
   const [allRows, { data: organisation }] = await Promise.all([
-    loadOrgLearners(supabase),
-    supabase.from("organisations").select("name").single(),
+    loadOrgLearners(supabase, orgId),
+    supabase.from("organisations").select("name").eq("id", orgId!).single(),
   ]);
 
   // The tiles count active staff only; the table keeps deactivated accounts

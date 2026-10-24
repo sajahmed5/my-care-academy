@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createInvite } from "@/lib/invites";
 import { anonymiseUserRecords, purgeUserFiles } from "@/lib/user-erasure";
 import { logAudit } from "@/lib/audit";
+import { fetchAll } from "@/lib/fetch-all";
 import { endOfMonthISO, type AssignCsvRow } from "@/lib/assign";
 import type { InviteState, SaveState } from "@/app/platform/actions";
 import type { UserRole } from "@/lib/auth";
@@ -378,12 +379,20 @@ export async function assignTrainingAction(
   // (RLS scopes the read to the caller's org).
   let userIds: string[];
   if (allCarers) {
-    const { data } = await supabase
-      .from("users")
-      .select("id")
-      .eq("role", "learner")
-      .eq("status", "active");
-    userIds = (data ?? []).map((u) => u.id as string);
+    // Paged: an organisation past 1,000 carers would otherwise be silently
+    // half-assigned. The organisation filter lets Postgres use its index
+    // instead of testing RLS on every user row.
+    const data = await fetchAll((f, t) =>
+      supabase
+        .from("users")
+        .select("id")
+        .eq("organisation_id", context.organisationId!)
+        .eq("role", "learner")
+        .eq("status", "active")
+        .order("id")
+        .range(f, t),
+    );
+    userIds = data.map((u) => u.id as string);
   } else {
     if (selectedUserIds.length === 0) {
       return { ok: false, error: "Select at least one carer, or tick 'all carers'." };
@@ -391,13 +400,19 @@ export async function assignTrainingAction(
     // Same role guard as the "all carers" branch above. Without it the picker
     // was the only thing stopping an admin being enrolled, and a filtered
     // <select> is not a permission check (issues #35, #36).
-    const { data: orgUsers } = await supabase
-      .from("users")
-      .select("id")
-      .in("id", selectedUserIds)
-      .eq("role", "learner")
-      .eq("status", "active");
-    userIds = (orgUsers ?? []).map((u) => u.id as string);
+    // Checked a hundred at a time: the ids travel in the URL, and a long
+    // enough list is refused outright.
+    userIds = [];
+    for (const chunk of chunks(selectedUserIds)) {
+      const { data: orgUsers } = await supabase
+        .from("users")
+        .select("id")
+        .eq("organisation_id", context.organisationId)
+        .in("id", chunk)
+        .eq("role", "learner")
+        .eq("status", "active");
+      userIds.push(...(orgUsers ?? []).map((u) => u.id as string));
+    }
   }
   if (userIds.length === 0) {
     return { ok: false, error: "No valid carers selected." };
@@ -434,8 +449,9 @@ export async function assignTrainingAction(
   });
 
   revalidatePath("/learn");
-  // Assigning from a carer's own page: refresh that page too.
-  for (const uid of userIds) revalidatePath(`/org/staff/${uid}`);
+  // Assigning from a carer's own page: refresh that page too. One pattern
+  // call — "all carers" used to make one per person in the organisation.
+  revalidatePath("/org/staff/[userId]", "page");
   return {
     ok: true,
     count: rows.length,
@@ -478,7 +494,15 @@ export async function bulkAssignTrainingAction(
 
   const supabase = await createClient();
   const [{ data: users }, { data: courses }] = await Promise.all([
-    supabase.from("users").select("id, email").eq("role", "learner"),
+    fetchAll((f, t) =>
+      supabase
+        .from("users")
+        .select("id, email")
+        .eq("organisation_id", context.organisationId!)
+        .eq("role", "learner")
+        .order("id")
+        .range(f, t),
+    ).then((data) => ({ data })),
     supabase.from("courses").select("id, title"),
   ]);
   const userByEmail = new Map(
@@ -634,6 +658,54 @@ function pairsFrom(formData: FormData): { userId: string; courseId: string }[] {
     .filter((p) => p.userId && p.courseId);
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** PostgREST puts `.in()` lists in the URL; past ~390 ids it is refused. */
+const IN_CHUNK = 100;
+const chunks = <T,>(xs: T[]): T[][] => {
+  const out: T[][] = [];
+  for (let i = 0; i < xs.length; i += IN_CHUNK) out.push(xs.slice(i, i + IN_CHUNK));
+  return out;
+};
+
+/**
+ * The enrolments behind a set of "user:course" pairs, in this organisation
+ * only, keyed by pair. The bulk actions used to read (and then write) one
+ * enrolment per round trip — two hundred ticked rows were four hundred
+ * sequential requests. A pair that isn't found here is either not enrolled or
+ * belongs to another organisation; both are refused. Service-role reads: the
+ * organisation_id filter is what keeps organisations apart.
+ */
+async function enrolmentsForPairs(
+  admin: ReturnType<typeof createAdminClient>,
+  organisationId: string,
+  pairs: { userId: string; courseId: string }[],
+): Promise<Map<string, { id: string; status: string }>> {
+  const valid = pairs.filter((p) => UUID.test(p.userId) && UUID.test(p.courseId));
+  const userIds = [...new Set(valid.map((p) => p.userId))];
+  const courseIds = [...new Set(valid.map((p) => p.courseId))];
+  const wanted = new Set(valid.map((p) => `${p.userId}:${p.courseId}`));
+  const found = new Map<string, { id: string; status: string }>();
+  for (const users of chunks(userIds)) {
+    for (const courses of chunks(courseIds)) {
+      const rows = await fetchAll((f, t) =>
+        admin
+          .from("enrolments")
+          .select("id, user_id, course_id, status")
+          .eq("organisation_id", organisationId)
+          .in("user_id", users)
+          .in("course_id", courses)
+          .order("id")
+          .range(f, t),
+      );
+      for (const r of rows) {
+        const key = `${r.user_id}:${r.course_id}`;
+        if (wanted.has(key)) found.set(key, { id: r.id as string, status: r.status as string });
+      }
+    }
+  }
+  return found;
+}
+
 /**
  * Unassign several courses at once.
  *
@@ -655,28 +727,27 @@ export async function bulkUnassignAction(
   if (pairs.length === 0) return { ok: false, error: "Nothing selected." };
 
   const admin = createAdminClient();
+  const found = await enrolmentsForPairs(admin, context.organisationId, pairs);
+  const keys = new Set(pairs.map((p) => `${p.userId}:${p.courseId}`));
+  const ids = [...keys]
+    .map((k) => found.get(k))
+    .filter((e): e is { id: string; status: string } => !!e && UNASSIGNABLE.includes(e.status))
+    .map((e) => e.id);
   let changed = 0;
-  let refused = 0;
-  for (const { userId, courseId } of pairs) {
-    const { data: enrolment } = await admin
+  // One delete per hundred rows, not one per row. The status test is repeated
+  // in the delete so a course completed since the read above is left alone;
+  // what comes back is what actually went.
+  for (const chunk of chunks(ids)) {
+    const { data } = await admin
       .from("enrolments")
-      .select("id, status, organisation_id")
-      .eq("user_id", userId)
-      .eq("course_id", courseId)
-      .maybeSingle();
-    // Service-role reads: this check is what keeps organisations apart.
-    if (!enrolment || enrolment.organisation_id !== context.organisationId) {
-      refused += 1;
-      continue;
-    }
-    if (!UNASSIGNABLE.includes(enrolment.status as string)) {
-      refused += 1;
-      continue;
-    }
-    const { error } = await admin.from("enrolments").delete().eq("id", enrolment.id);
-    if (error) refused += 1;
-    else changed += 1;
+      .delete()
+      .eq("organisation_id", context.organisationId)
+      .in("id", chunk)
+      .in("status", UNASSIGNABLE)
+      .select("id");
+    changed += data?.length ?? 0;
   }
+  const refused = keys.size - changed;
 
   await logAudit({
     context,
@@ -689,7 +760,8 @@ export async function bulkUnassignAction(
   revalidatePath("/org/learners");
   revalidatePath("/org/learners/statistics");
   revalidatePath("/learn");
-  for (const { userId } of pairs) revalidatePath(`/org/staff/${userId}`);
+  // Every carer page at once, rather than one call per ticked row.
+  revalidatePath("/org/staff/[userId]", "page");
   return { ok: true, changed, refused };
 }
 
@@ -714,30 +786,26 @@ export async function bulkDueDateAction(
   if (pairs.length === 0) return { ok: false, error: "Nothing selected." };
 
   const admin = createAdminClient();
+  const found = await enrolmentsForPairs(admin, context.organisationId, pairs);
+  const keys = new Set(pairs.map((p) => `${p.userId}:${p.courseId}`));
+  const ids = [...keys]
+    .map((k) => found.get(k))
+    .filter((e): e is { id: string; status: string } => !!e && e.status !== "completed")
+    .map((e) => e.id);
   let changed = 0;
-  let refused = 0;
-  for (const { userId, courseId } of pairs) {
-    const { data: enrolment } = await admin
-      .from("enrolments")
-      .select("id, status, organisation_id")
-      .eq("user_id", userId)
-      .eq("course_id", courseId)
-      .maybeSingle();
-    if (!enrolment || enrolment.organisation_id !== context.organisationId) {
-      refused += 1;
-      continue;
-    }
-    if (enrolment.status === "completed") {
-      refused += 1;
-      continue;
-    }
-    const { error } = await admin
+  // Batched, as in bulkUnassignAction; completed rows are excluded in the
+  // write as well as the read.
+  for (const chunk of chunks(ids)) {
+    const { data } = await admin
       .from("enrolments")
       .update({ due_date: dueDate })
-      .eq("id", enrolment.id);
-    if (error) refused += 1;
-    else changed += 1;
+      .eq("organisation_id", context.organisationId)
+      .in("id", chunk)
+      .neq("status", "completed")
+      .select("id");
+    changed += data?.length ?? 0;
   }
+  const refused = keys.size - changed;
 
   await logAudit({
     context,
@@ -750,6 +818,7 @@ export async function bulkDueDateAction(
   revalidatePath("/org/learners");
   revalidatePath("/org/learners/statistics");
   revalidatePath("/learn");
-  for (const { userId } of pairs) revalidatePath(`/org/staff/${userId}`);
+  // Every carer page at once, rather than one call per ticked row.
+  revalidatePath("/org/staff/[userId]", "page");
   return { ok: true, changed, refused };
 }

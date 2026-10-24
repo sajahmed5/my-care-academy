@@ -3,12 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+
+// The browser Supabase client is ~58 KB gzipped and only the submit needs it,
+// so it stays out of the login page's first load (a carer's first screen on a
+// phone). Focusing or typing in the form starts the download, so it is there
+// before the password is.
+const loadSupabase = () => import("@/lib/supabase/client");
 
 export function LoginForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
@@ -23,14 +28,20 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    // Trimmed and lower-cased before it leaves the page: a pasted address or a
-    // phone keyboard's capitalised first letter is a typo we can absorb, not
-    // one to answer with "that email and password don't match".
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
+    let error: { message: string } | null;
+    try {
+      const { createClient } = await loadSupabase();
+      // Trimmed and lower-cased before it leaves the page: a pasted address or
+      // a phone keyboard's capitalised first letter is a typo we can absorb,
+      // not one to answer with "that email and password don't match".
+      ({ error } = await createClient().auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      }));
+    } catch {
+      // The chunk itself failed to load (signal dropped) — say so as one.
+      error = { message: "network" };
+    }
 
     if (error) {
       setError(friendlyAuthError(error.message));
@@ -44,7 +55,12 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      onFocus={() => void loadSupabase()}
+      onInput={() => void loadSupabase()}
+      className="space-y-4"
+    >
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <Input

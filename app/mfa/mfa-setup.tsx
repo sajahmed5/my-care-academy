@@ -1,15 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { friendlyAuthError } from "@/lib/auth-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type Mode = "enroll" | "challenge";
+
+// The browser Supabase client is ~58 KB gzipped and nothing needs it until a
+// button is pressed, so it is fetched after the page is up rather than with it.
+const loadSupabase = () => import("@/lib/supabase/client");
+
+/** The client, or null when its chunk failed to download (signal dropped). */
+async function getClient() {
+  try {
+    return (await loadSupabase()).createClient();
+  } catch {
+    return null;
+  }
+}
 
 export function MfaSetup({
   mode,
@@ -19,7 +31,11 @@ export function MfaSetup({
   factorId?: string;
 }) {
   const router = useRouter();
-  const supabase = createClient();
+
+  // Warm the chunk once the page is interactive, so neither button waits on it.
+  useEffect(() => {
+    void loadSupabase().catch(() => {});
+  }, []);
 
   const [factorId, setFactorId] = useState<string | undefined>(initialFactorId);
   const [qr, setQr] = useState<string | null>(null);
@@ -32,6 +48,13 @@ export function MfaSetup({
   async function startEnroll() {
     setError(null);
     setLoading(true);
+
+    const supabase = await getClient();
+    if (!supabase) {
+      setError(friendlyAuthError("network"));
+      setLoading(false);
+      return;
+    }
 
     // Clear any half-finished (unverified) TOTP factors first.
     const { data: factors } = await supabase.auth.mfa.listFactors();
@@ -66,6 +89,13 @@ export function MfaSetup({
     if (!factorId) return;
     setError(null);
     setLoading(true);
+
+    const supabase = await getClient();
+    if (!supabase) {
+      setError(friendlyAuthError("network"));
+      setLoading(false);
+      return;
+    }
 
     const { data: challenge, error: challengeError } =
       await supabase.auth.mfa.challenge({ factorId });

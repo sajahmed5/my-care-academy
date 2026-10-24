@@ -11,6 +11,11 @@ import { saveProgressAction } from "@/app/learn/actions";
 // Isolated so the impure clock read stays out of the component/hook bodies.
 const nowMs = () => Date.now();
 
+// A hidden-tab save with nothing new to say is skipped — every app switch on a
+// phone fires one — unless this much time-on-course has built up unsaved, so
+// a carer who then closes the app loses at most this much of it.
+const HIDDEN_SAVE_MIN_SECONDS = 60;
+
 export function CoursePlayer({
   enrolmentId,
   courseId,
@@ -31,29 +36,54 @@ export function CoursePlayer({
   );
   const [finished, setFinished] = useState(false);
   const startRef = useRef(nowMs());
+  // What the server last confirmed (it keeps the highest progress it has
+  // seen), so a hidden-tab save can tell whether it has anything to add.
+  const savedRef = useRef({
+    block: index,
+    progress: total > 0 ? Math.round((index / total) * 100) : 0,
+  });
 
+  // `onlyIfChanged` skips the call when the position and progress match the
+  // last successful save; the unsaved time carries over to the next one.
   const persist = useCallback(
-    (nextIndex: number, done = false) => {
+    (nextIndex: number, done = false, onlyIfChanged = false) => {
       const delta = Math.round((nowMs() - startRef.current) / 1000);
-      startRef.current = nowMs();
       // Progress = pages completed (moved past), so being on page 1 reads 0%.
       const reached = Math.max(nextIndex, index);
       const pct = done ? 100 : Math.round((reached / total) * 100);
+      const saved = savedRef.current;
+      if (
+        onlyIfChanged &&
+        nextIndex === saved.block &&
+        pct <= saved.progress &&
+        delta < HIDDEN_SAVE_MIN_SECONDS
+      ) {
+        return;
+      }
+      startRef.current = nowMs();
       // Fire-and-forget; RLS ensures it only touches this learner's row.
       void saveProgressAction({
         enrolmentId,
         currentBlock: nextIndex,
         progress: pct,
         timeSpentDelta: delta,
+      }).then((res) => {
+        if (res.ok) {
+          savedRef.current = {
+            block: nextIndex,
+            progress: Math.max(savedRef.current.progress, pct),
+          };
+        }
       });
     },
     [enrolmentId, index, total],
   );
 
-  // Best-effort save if the tab is hidden/closed mid-course.
+  // Best-effort save if the tab is hidden/closed mid-course — skipped when
+  // nothing has moved since the last save, as every app switch lands here.
   useEffect(() => {
     const handler = () => {
-      if (document.visibilityState === "hidden") persist(index);
+      if (document.visibilityState === "hidden") persist(index, false, true);
     };
     document.addEventListener("visibilitychange", handler);
     return () => document.removeEventListener("visibilitychange", handler);

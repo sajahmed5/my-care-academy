@@ -1,8 +1,28 @@
 import Link from "next/link";
+import { Caveat, Outfit } from "next/font/google";
 import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { OrganisationLd } from "@/components/structured-data";
 import { VERSION_LABEL } from "@/lib/version";
 import "./marketing.css";
+
+// Declared here rather than in the root layout so they are preloaded only on
+// the marketing pages that use them, not on every page of the app.
+// Display face for the marketing headlines (.font-display); the app keeps Inter.
+const outfit = Outfit({
+  variable: "--font-outfit",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  display: "swap",
+});
+
+// Handwritten asides on the marketing home page (.mca-hand).
+const caveat = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin"],
+  weight: ["600"],
+  display: "swap",
+});
 
 // Training only (Saj, 7 Oct 2026) — rostering is a separate product on its
 // own domain now and is not mentioned here.
@@ -17,12 +37,13 @@ export default function MarketingLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <div className="flex flex-1 flex-col bg-white text-[#0f2f3c]">
+    <div className={`${outfit.variable} ${caveat.variable} flex flex-1 flex-col bg-white text-[#0f2f3c]`}>
+      <OrganisationLd />
       {/* White pill bar floating over each page's gradient opener. */}
       <header className="sticky top-0 z-40 px-4 pt-4">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 rounded-full bg-white/95 px-5 py-2.5 shadow-lg shadow-[#134f63]/10 ring-1 ring-[#134f63]/8 backdrop-blur sm:px-6">
           <Link href="/" aria-label="My Care Academy home" className="shrink-0">
-            <Logo width={140} />
+            <Logo width={140} eager />
           </Link>
           <nav className="flex items-center gap-1 sm:gap-2">
             {NAV.map((item) => (
