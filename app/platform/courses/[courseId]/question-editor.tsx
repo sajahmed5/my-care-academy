@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import type { QuestionType } from "@/lib/quiz";
 import {
   addQuestionAction,
   updateQuestionAction,
@@ -12,10 +14,21 @@ import {
 
 export interface Question {
   id: string;
+  type: QuestionType;
   question: string;
   options: string[];
   answerIndex: number;
+  /** The correct answer as text, for the read-only (non-MCQ) rows. */
+  correct: string;
 }
+
+const TYPE_LABEL: Record<QuestionType, string> = {
+  mcq: "Multiple choice",
+  multi: "Select all that apply",
+  true_false: "True / false",
+  fill_blank: "Fill the gap",
+  hotspot: "Click the image",
+};
 
 function pad(options: string[]): string[] {
   const o = [...options];
@@ -102,6 +115,37 @@ function QuestionRow({
   );
 }
 
+/**
+ * Non-MCQ questions keep their answer in `payload`, which this MCQ form can't
+ * represent — saving one here would overwrite it — so they are display-only.
+ */
+function ReadOnlyQuestionRow({ q }: { q: Question }) {
+  return (
+    <div className="space-y-2 rounded-lg border bg-muted/30 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <p className="font-medium">{q.question}</p>
+        <Badge variant="secondary" className="shrink-0">
+          {TYPE_LABEL[q.type]}
+        </Badge>
+      </div>
+      {q.options.length > 0 && (
+        <ul className="list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
+          {q.options.map((opt, i) => (
+            <li key={i}>{opt}</li>
+          ))}
+        </ul>
+      )}
+      <p className="text-sm">
+        <span className="text-muted-foreground">Correct answer: </span>
+        {q.correct || "—"}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Read-only — only multiple-choice questions can be edited here.
+      </p>
+    </div>
+  );
+}
+
 export function QuestionEditor({
   courseId,
   initialQuestions,
@@ -130,7 +174,14 @@ export function QuestionEditor({
       return;
     }
     setQuestions((prev) => [
-      { id: res.id!, question: nq, options: nopts, answerIndex: ncorrect },
+      {
+        id: res.id!,
+        type: "mcq",
+        question: nq,
+        options: nopts,
+        answerIndex: ncorrect,
+        correct: nopts[ncorrect],
+      },
       ...prev,
     ]);
     setNq("");
@@ -180,16 +231,20 @@ export function QuestionEditor({
         <p className="text-sm text-muted-foreground">
           {questions.length} question(s) in this bank.
         </p>
-        {questions.map((q) => (
-          <QuestionRow
-            key={q.id}
-            courseId={courseId}
-            q={q}
-            onDeleted={(id) =>
-              setQuestions((prev) => prev.filter((x) => x.id !== id))
-            }
-          />
-        ))}
+        {questions.map((q) =>
+          q.type === "mcq" ? (
+            <QuestionRow
+              key={q.id}
+              courseId={courseId}
+              q={q}
+              onDeleted={(id) =>
+                setQuestions((prev) => prev.filter((x) => x.id !== id))
+              }
+            />
+          ) : (
+            <ReadOnlyQuestionRow key={q.id} q={q} />
+          ),
+        )}
       </div>
     </div>
   );

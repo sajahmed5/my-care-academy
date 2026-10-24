@@ -55,16 +55,22 @@ export async function updateQuestionAction(
   const err = validate(input);
   if (err) return { ok: false, error: err };
 
+  // MCQ only: the other types keep their answer in `payload`, and writing
+  // options/answer_index over them would corrupt the question.
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("quiz_questions")
     .update({
       question: input.question.trim(),
       options: input.options.map((o) => o.trim()),
       answer_index: input.answerIndex,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("type", "mcq")
+    .select("id");
   if (error) return { ok: false, error: error.message };
+  if (!data?.length)
+    return { ok: false, error: "Only multiple-choice questions can be edited here." };
 
   revalidatePath(`/platform/courses/${courseId}`);
   return { ok: true };
