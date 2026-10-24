@@ -17,6 +17,7 @@
  */
 
 import type { FeatureKey } from "./features";
+import { formatDate } from "./dates";
 
 export interface PackSectionDef {
   key: string;
@@ -107,13 +108,13 @@ export function since<T>(
 
 /** "1 April 2026 to 23 October 2026", or "everything on file". */
 export function rangeLabel(from: string | null, to: Date): string {
-  const end = to.toLocaleDateString("en-GB", {
+  const end = formatDate(to, {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
   if (!from) return `Everything on file, up to ${end}`;
-  const start = new Date(from).toLocaleDateString("en-GB", {
+  const start = formatDate(from, {
     day: "numeric",
     month: "long",
     year: "numeric",

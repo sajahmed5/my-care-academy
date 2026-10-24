@@ -7,6 +7,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadAssignment } from "@/lib/form-library";
 import { FormComplete } from "@/app/learn/forms/[assignmentId]/form-complete";
+import { formatDate } from "@/lib/dates";
 
 /**
  * A manager completing a library form themselves (issue #50) — the org-side
@@ -48,7 +49,7 @@ export default async function OrgCompleteFormPage({
           <Card>
             <CardContent className="py-8 text-center text-sm text-muted-foreground">
               You completed this on{" "}
-              {new Date(assignment.completed_at).toLocaleDateString("en-GB", {
+              {formatDate(assignment.completed_at, {
                 day: "numeric",
                 month: "long",
                 year: "numeric",

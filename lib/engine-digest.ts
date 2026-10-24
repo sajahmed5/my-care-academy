@@ -11,6 +11,7 @@
  */
 
 import { daysSince } from "@/lib/engine-logic";
+import { formatDate } from "./dates";
 
 /** Split an array into runs of at most `size`. */
 export function chunk<T>(items: T[], size: number): T[][] {
@@ -29,7 +30,7 @@ export function esc(text: string): string {
 }
 
 const fmtDate = (d: string | Date) =>
-  new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  formatDate(d, { day: "numeric", month: "long", year: "numeric" });
 
 const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
 

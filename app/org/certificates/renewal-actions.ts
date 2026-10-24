@@ -5,6 +5,7 @@ import { siteOrigin } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
 import { certificateState } from "@/lib/certificates";
+import { formatDate } from "@/lib/dates";
 
 export interface RenewalResult {
   ok: boolean;
@@ -60,7 +61,7 @@ export async function remindRenewalAction(
   }
 
   const expiresOn = cert.expires_at
-    ? new Date(cert.expires_at).toLocaleDateString("en-GB", {
+    ? formatDate(cert.expires_at, {
         day: "numeric",
         month: "long",
         year: "numeric",

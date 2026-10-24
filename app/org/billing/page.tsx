@@ -18,10 +18,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ConsoleUsers, type ConsoleUser } from "./console-users";
+import { formatDate } from "@/lib/dates";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return formatDate(iso, {
     day: "numeric",
     month: "long",
     year: "numeric",

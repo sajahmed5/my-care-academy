@@ -12,6 +12,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
+import { formatDate } from "@/lib/dates";
 
 export const metadata: Metadata = {
   title: "Verify a care training certificate — My Care Academy",
@@ -31,7 +32,7 @@ interface VerifyRow {
 }
 
 function fmt(d: string): string {
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "long",
     year: "numeric",

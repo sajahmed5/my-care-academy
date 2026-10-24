@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { STATUS_LABELS, statusPillClass } from "../status";
 import { StatusForm } from "./status-form";
+import { formatDateTime } from "@/lib/dates";
 
 interface ReportDetail {
   id: string;
@@ -30,7 +31,7 @@ interface ReportDetail {
 }
 
 function fmt(d: string): string {
-  return new Date(d).toLocaleString("en-GB", {
+  return formatDateTime(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

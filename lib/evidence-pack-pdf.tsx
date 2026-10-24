@@ -7,6 +7,7 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { omissionLabel, rangeLabel, type PackContents } from "./evidence-pack";
+import { formatDateTime } from "./dates";
 
 /**
  * The evidence pack: one carer, one period, one PDF.
@@ -84,7 +85,7 @@ const styles = StyleSheet.create({
 });
 
 function fmtDateTime(d: Date): string {
-  return d.toLocaleString("en-GB", {
+  return formatDateTime(d, {
     day: "numeric",
     month: "long",
     year: "numeric",

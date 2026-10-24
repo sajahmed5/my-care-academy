@@ -2,11 +2,12 @@ import { requireAdminMfa, requireUser, assertActiveMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { STATUS_LABELS, statusPillClass } from "@/app/platform/reports/status";
+import { formatDate } from "@/lib/dates";
 
 export const metadata = { title: "My reports" };
 
 function fmt(d: string): string {
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

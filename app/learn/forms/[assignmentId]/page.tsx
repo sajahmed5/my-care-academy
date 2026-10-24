@@ -6,6 +6,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadAssignment } from "@/lib/form-library";
 import { FormComplete } from "./form-complete";
+import { formatDate } from "@/lib/dates";
 
 /** One form to complete. RLS makes sure it is this carer's. */
 export default async function LearnerFormPage({
@@ -37,7 +38,7 @@ export default async function LearnerFormPage({
           <Card>
             <CardContent className="py-8 text-center text-sm text-muted-foreground">
               You completed this on{" "}
-              {new Date(assignment.completed_at).toLocaleDateString("en-GB", {
+              {formatDate(assignment.completed_at, {
                 day: "numeric",
                 month: "long",
                 year: "numeric",

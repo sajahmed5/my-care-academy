@@ -7,6 +7,7 @@ import {
   type StatusVariant,
 } from "@/components/learner-ui";
 import { topicTheme } from "@/lib/topic-theme";
+import { formatDate } from "@/lib/dates";
 
 const nowMs = () => Date.now();
 
@@ -76,7 +77,7 @@ export function CourseCard({ c }: { c: CourseCardData }) {
       {c.dueDate && status !== "completed" && (
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
           <Eye className="size-3.5" />
-          Due {new Date(c.dueDate).toLocaleDateString("en-GB")}
+          Due {formatDate(c.dueDate)}
         </p>
       )}
 

@@ -6,6 +6,7 @@ import {
   StyleSheet,
   renderToBuffer,
 } from "@react-pdf/renderer";
+import { formatDate } from "./dates";
 
 export interface CertificateData {
   learnerName: string;
@@ -51,7 +52,7 @@ const styles = StyleSheet.create({
 });
 
 function fmt(date: Date): string {
-  return date.toLocaleDateString("en-GB", {
+  return formatDate(date, {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -124,7 +125,7 @@ const recStyles = StyleSheet.create({
 
 function fmtD(d: Date | null): string {
   return d
-    ? d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+    ? formatDate(d, { day: "numeric", month: "short", year: "numeric" })
     : "—";
 }
 

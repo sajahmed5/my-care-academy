@@ -1,3 +1,4 @@
+import { formatDate } from "./dates";
 /**
  * Training matrix cell wording.
  *
@@ -7,7 +8,7 @@
  */
 
 function ddmmyyyy(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return formatDate(iso, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

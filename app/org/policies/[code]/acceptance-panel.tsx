@@ -1,9 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
 import type { AcceptanceSummary } from "@/lib/policy-library";
+import { formatDate } from "@/lib/dates";
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

@@ -5,10 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadAssignmentsForPerson } from "@/lib/form-library";
+import { formatDate } from "@/lib/dates";
 
 function fmtDate(d: string | null): string {
   if (!d) return "no date";
-  return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  return formatDate(d, { day: "numeric", month: "short", year: "numeric" });
 }
 
 /**

@@ -1,5 +1,6 @@
 import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { PIP_OUTCOMES, PIP_SUPPORT_TYPES, PIP_WEEK_RATINGS, label, type Pip } from "./plan";
+import { formatDate } from "../dates";
 
 /**
  * The plan as the document that gets filed: why, the concerns and standards,
@@ -35,8 +36,10 @@ const styles = StyleSheet.create({
   footer: { position: "absolute", bottom: 24, left: 40, right: 40, fontSize: 8, color: "#9ca3af", flexDirection: "row", justifyContent: "space-between" },
 });
 
+// A plain date ("2026-10-23") is pinned to noon so no timezone can shift it;
+// a timestamp is a real instant, and formatDate reads it in UK time.
 const ukDate = (iso?: string | null) =>
-  iso ? new Date(iso.length === 10 ? `${iso}T12:00:00Z` : iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }) : "—";
+  iso ? formatDate(iso.length === 10 ? `${iso}T12:00:00Z` : iso, { day: "numeric", month: "long", year: "numeric" }) : "—";
 
 function Meta({ label: l, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null;

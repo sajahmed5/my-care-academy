@@ -4,6 +4,7 @@ import { getUserContext } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { anonymiseUserRecords, purgeUserFiles } from "@/lib/user-erasure";
 import { logAudit } from "@/lib/audit";
+import { formatDate } from "@/lib/dates";
 
 /** One row of a learner's training record — one completed (certificated) course. */
 export interface TrainingRecordRow {
@@ -16,7 +17,7 @@ export interface TrainingRecordRow {
 
 function ddmmyyyy(iso: string | null): string {
   if (!iso) return "";
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return formatDate(iso, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

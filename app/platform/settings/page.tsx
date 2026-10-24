@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { SettingsForm } from "./settings-form";
+import { formatDateTime } from "@/lib/dates";
 
 export default async function SettingsPage() {
   const context = await requireRole("platform_admin");
@@ -84,7 +85,7 @@ export default async function SettingsPage() {
                       </span>
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(a.created_at).toLocaleString("en-GB")}
+                      {formatDateTime(a.created_at)}
                     </span>
                   </li>
                 ))}
@@ -114,7 +115,7 @@ export default async function SettingsPage() {
                       </span>
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(l.created_at).toLocaleString("en-GB")}
+                      {formatDateTime(l.created_at)}
                       {l.sent ? "" : " · not sent"}
                     </span>
                   </li>
