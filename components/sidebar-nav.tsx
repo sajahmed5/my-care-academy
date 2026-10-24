@@ -82,7 +82,17 @@ const NAV: Record<string, NavItem[]> = {
     { href: "/org/forms", label: "Forms", icon: FileText, feature: "forms.builder" },
     { href: "/org/recruitment", label: "Recruitment", icon: Briefcase, feature: "recruitment.tracker" },
     { href: "/org/observations", label: "Care Certificate", icon: ClipboardCheck, feature: "training.observations" },
-    { href: "/org/incidents", label: "Complaints", icon: MessageSquareWarning, feature: "complaints.register" },
+    {
+      href: "/org/complaints",
+      label: "Complaints",
+      icon: MessageSquareWarning,
+      feature: "complaints.register",
+      children: [
+        { href: "/org/complaints", label: "Complaints", feature: "complaints.register" },
+        { href: "/org/pips", label: "Performance plans", feature: "complaints.register" },
+        { href: "/org/incidents", label: "Incidents & accidents", feature: "complaints.register" },
+      ],
+    },
     { href: "/org/policies", label: "Policies & documents", icon: BookMarked, feature: "documents.library" },
     { href: "/org/reports", label: "Evidence & exports", icon: FileBarChart },
     { href: "/org/billing", label: "Account", icon: CreditCard },
