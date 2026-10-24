@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -19,7 +19,7 @@ export default async function FillFormPage({
   params: Promise<{ id: string }>;
 }) {
   // org_admin previews/fills. (Learner-facing fill is a natural extension.)
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const { id } = await params;
 
   const supabase = await createClient();

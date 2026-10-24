@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -15,7 +15,7 @@ export default async function NewPipPage({
 }: {
   searchParams: Promise<{ user?: string; complaint?: string }>;
 }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await requireFeature(context, "complaints.register");
   const { user, complaint } = await searchParams;
   const supabase = await createClient();

@@ -160,7 +160,7 @@ export function CsvImport() {
 
   const invalid = rows.filter(
     (r) =>
-      !EMAIL_RE.test(r.email) || !["learner", "org_admin"].includes(r.role),
+      !EMAIL_RE.test(r.email) || r.role !== "learner",
   );
 
   function downloadTemplate() {
@@ -218,7 +218,7 @@ export function CsvImport() {
               {rows.map((r, i) => {
                 const bad =
                   !EMAIL_RE.test(r.email) ||
-                  !["learner", "org_admin"].includes(r.role);
+                  r.role !== "learner";
                 return (
                   <tr
                     key={`${r.email}-${i}`}

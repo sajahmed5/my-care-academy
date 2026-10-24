@@ -8,7 +8,7 @@ import {
   Award,
   UserRoundX,
 } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { StatTile } from "@/components/learner-ui";
 import {
@@ -46,7 +46,7 @@ export default async function LearnersOverviewPage({
 }: {
   searchParams: Promise<{ filter?: string }>;
 }) {
-  await requireRole("org_admin");
+  await requireConsole();
   const { filter } = await searchParams;
   const initialFilter: Filter = FILTERS.includes(filter as Filter)
     ? (filter as Filter)

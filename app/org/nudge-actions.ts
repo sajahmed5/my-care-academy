@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { siteOrigin } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
@@ -93,7 +93,7 @@ async function nudgeOne(
  * one named person (issue #9).
  */
 export async function nudgeLearnerAction(userId: string): Promise<NudgeResult> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId) return { ok: false, error: "No organisation." };
 
   const admin = createAdminClient();
@@ -313,7 +313,7 @@ export async function nudgeGroupAction(
   group: NudgeGroup,
   force = false,
 ): Promise<BulkNudgeResult> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId)
     return { ok: false, error: "No organisation.", reminded: 0, skipped: 0 };
 
@@ -325,7 +325,7 @@ export async function nudgeGroupAction(
 
 /** Everyone in the org who has never signed in — how many the group holds. */
 export async function neverSignedInCount(): Promise<number> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId) return 0;
   const rows = await loadOrgLearners(createAdminClient(), context.organisationId);
   return rows.filter(isActiveLearner).filter(isNeverActive).length;

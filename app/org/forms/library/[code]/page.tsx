@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -23,7 +23,7 @@ import { AssignmentList } from "./assignment-list";
  * themselves (issue #50), for the forms that are the manager's to fill in.
  */
 export default async function OrgFormPage({ params }: { params: Promise<{ code: string }> }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await requireFeature(context, "forms.builder");
   const { code } = await params;
 

@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireRole, type UserContext } from "@/lib/auth";
+import { type UserContext, requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createInvite } from "@/lib/invites";
@@ -40,7 +40,7 @@ export async function addCandidateAction(
   _prev: { error?: string },
   formData: FormData,
 ): Promise<{ error?: string }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertRecruitment(context);
 
   const full_name = String(formData.get("full_name") ?? "").trim();
@@ -74,7 +74,7 @@ export async function updateCandidateAction(
   id: string,
   patch: Record<string, unknown>,
 ): Promise<{ ok: boolean; error?: string }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertRecruitment(context);
   const supabase = await createClient();
 
@@ -99,7 +99,7 @@ export async function updateCandidateAction(
 }
 
 export async function deleteCandidateAction(id: string): Promise<void> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertRecruitment(context);
   const supabase = await createClient();
   await supabase.from("candidates").delete().eq("id", id);
@@ -112,7 +112,7 @@ export async function uploadDocumentAction(
   file: { name: string; dataUrl: string },
   expiresAt: string | null,
 ): Promise<{ ok: boolean; error?: string }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertRecruitment(context);
 
   const admin = createAdminClient();
@@ -157,7 +157,7 @@ export async function markDocumentNotRequiredAction(
   docType: string,
   reason: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertRecruitment(context);
   if (!REQUIRED_DOCS.some((d) => d.key === docType)) {
     return { ok: false, error: "Unknown document." };
@@ -217,7 +217,7 @@ export async function deleteDocumentAction(
   docId: string,
   candidateId: string,
 ): Promise<{ ok: boolean }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertRecruitment(context);
   const admin = createAdminClient();
   const { data: doc } = await admin
@@ -237,7 +237,7 @@ export async function deleteDocumentAction(
 export async function getDocUrlAction(
   path: string,
 ): Promise<{ url?: string }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!path.startsWith(`${context.organisationId}/`)) return {};
   const admin = createAdminClient();
   const { data } = await admin.storage
@@ -255,7 +255,7 @@ export async function hireCandidateAction(
   candidateId: string,
   createLearner: boolean,
 ): Promise<{ ok: boolean; invited?: boolean; error?: string }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertRecruitment(context);
 
   const admin = createAdminClient();

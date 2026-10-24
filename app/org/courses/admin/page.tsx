@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { endOfMonthISO } from "@/lib/assign";
 import {
@@ -13,7 +13,7 @@ import { BulkAssign } from "./bulk-assign";
 
 /** Courses → Admin: assign training, one by one or in bulk. */
 export default async function CoursesAdminPage() {
-  await requireRole("org_admin");
+  await requireConsole();
   const supabase = await createClient();
   const [{ data: courses }, { data: pathways }, { data: staff }] =
     await Promise.all([

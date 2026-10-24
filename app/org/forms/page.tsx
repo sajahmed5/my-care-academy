@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -15,7 +15,7 @@ import { categoryLabel, loadFormLibrary } from "@/lib/form-library";
  * still reachable under "your own forms" for anything bespoke.
  */
 export default async function OrgFormsPage() {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await requireFeature(context, "forms.builder");
 
   const supabase = await createClient();

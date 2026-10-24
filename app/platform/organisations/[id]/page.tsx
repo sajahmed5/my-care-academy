@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Users, CheckCircle2, AlertTriangle, MoonStar, UserRoundX } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireRole, isConsoleRole, type UserRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import {
@@ -99,7 +99,7 @@ export default async function OrganisationDetailPage({
     email: u.email,
     role: u.role,
   });
-  const admins = (staff ?? []).filter((u) => u.role === "org_admin").map(person);
+  const admins = (staff ?? []).filter((u) => isConsoleRole(u.role as UserRole)).map(person);
   // Only active learners can be usefully promoted — a leaver can't log in.
   const promotable = (staff ?? [])
     .filter((u) => u.role === "learner" && u.status !== "deactivated")

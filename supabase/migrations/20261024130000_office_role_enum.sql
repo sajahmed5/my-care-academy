@@ -1,0 +1,13 @@
+-- ============================================================================
+-- A second console role: the office worker (Saj, 24 Oct 2026).
+-- ============================================================================
+-- An organisation is run by more than its registered manager: coordinators
+-- and office staff do the day-to-day — chasing training, uploading recruitment
+-- documents, logging complaints — without being the person who holds the
+-- account. org_office is that person: everything in the console except the
+-- Account page (billing, and who else gets console access). That carve-out is
+-- the app's; in the database the two roles are one, see the next migration.
+--
+-- On its own because a new enum value cannot be used in the transaction that
+-- adds it.
+alter type public.user_role add value if not exists 'org_office';

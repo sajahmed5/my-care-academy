@@ -107,6 +107,9 @@ const NAV: Record<string, NavItem[]> = {
     { href: "/learn/profile", label: "Profile", icon: User },
   ],
 };
+// An office worker's console is the manager's without Account (billing, and
+// who has console access): the one page that stays manager-only.
+NAV.org_office = NAV.org_admin.filter((i) => i.href !== "/org/billing");
 
 /** Section roots whose parent item only highlights on an exact match. */
 const SECTION_ROOTS = ["/platform", "/org", "/learn"];

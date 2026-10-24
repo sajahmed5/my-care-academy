@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
@@ -35,7 +35,7 @@ const json = (fd: FormData, key: string): unknown => {
 };
 
 async function requirePips() {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!(await hasFeature(context, "complaints.register"))) return null;
   return context;
 }

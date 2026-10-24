@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createInvite } from "@/lib/invites";
@@ -11,18 +11,27 @@ import { endOfMonthISO, type AssignCsvRow } from "@/lib/assign";
 import type { InviteState, SaveState } from "@/app/platform/actions";
 import type { UserRole } from "@/lib/auth";
 
-const INVITABLE_ROLES: UserRole[] = ["learner", "org_admin"];
+const INVITABLE_ROLES: UserRole[] = ["learner", "org_admin", "org_office"];
 const ROLE_LABELS: Record<string, string> = {
   learner: "learner",
-  org_admin: "organisation administrator",
+  org_admin: "manager",
+  org_office: "office worker",
 };
 
-/** org_admin invites a learner or another org_admin into their own organisation. */
+/** A console role is given from the Account page, by a manager. */
+function canGrant(role: UserRole, context: { role: UserRole | null }): boolean {
+  return role === "learner" || context.role === "org_admin";
+}
+
+/**
+ * Invite a learner — or, from the Account page, a manager or office worker —
+ * into the caller's own organisation.
+ */
 export async function inviteStaffAction(
   _prev: InviteState,
   formData: FormData,
 ): Promise<InviteState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
 
   const email = String(formData.get("email") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
@@ -31,6 +40,9 @@ export async function inviteStaffAction(
   if (!email) return { ok: false, error: "Email is required." };
   if (!INVITABLE_ROLES.includes(role)) {
     return { ok: false, error: "Invalid role." };
+  }
+  if (!canGrant(role, context)) {
+    return { ok: false, error: "Only a manager can add console users — from the Account page." };
   }
   if (!context.organisationId) {
     return { ok: false, error: "Your account has no organisation." };
@@ -67,12 +79,39 @@ export async function inviteStaffAction(
   }
 }
 
+/**
+ * Why a console user cannot be deactivated or deleted by this caller, or null.
+ * Only a manager may act on a manager or office worker, and the organisation
+ * always keeps one active manager — nobody else can add another.
+ */
+async function consoleTargetBlock(
+  admin: ReturnType<typeof createAdminClient>,
+  context: { role: UserRole | null; organisationId: string | null },
+  targetRole: UserRole,
+  removing: boolean,
+): Promise<string | null> {
+  if (targetRole === "learner") return null;
+  if (context.role !== "org_admin") {
+    return "Only a manager can change another console user — from the Account page.";
+  }
+  if (removing && targetRole === "org_admin") {
+    const { count } = await admin
+      .from("users")
+      .select("id", { count: "exact", head: true })
+      .eq("organisation_id", context.organisationId!)
+      .eq("role", "org_admin")
+      .eq("status", "active");
+    if ((count ?? 0) <= 1) return "This is your organisation's only manager — make someone else a manager first.";
+  }
+  return null;
+}
+
 /** Deactivate or reactivate a staff member within the caller's organisation. */
 export async function setStaffStatusAction(
   _prev: SaveState,
   formData: FormData,
 ): Promise<SaveState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
 
   const userId = String(formData.get("userId") ?? "");
   const status = String(formData.get("status") ?? "");
@@ -88,12 +127,14 @@ export async function setStaffStatusAction(
   // Scope check: the target must belong to the caller's organisation.
   const { data: target } = await admin
     .from("users")
-    .select("organisation_id")
+    .select("organisation_id, role")
     .eq("id", userId)
     .single();
   if (!target || target.organisation_id !== context.organisationId) {
     return { ok: false, error: "Staff member not found in your organisation." };
   }
+  const blocked = await consoleTargetBlock(admin, context, target.role as UserRole, status === "deactivated");
+  if (blocked) return { ok: false, error: blocked };
 
   const { error } = await admin
     .from("users")
@@ -124,7 +165,7 @@ export async function deleteStaffAction(
   _prev: SaveState,
   formData: FormData,
 ): Promise<SaveState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
 
   const userId = String(formData.get("userId") ?? "");
   if (!userId) return { ok: false, error: "Missing staff member." };
@@ -143,6 +184,8 @@ export async function deleteStaffAction(
   if (!target || target.organisation_id !== context.organisationId) {
     return { ok: false, error: "Staff member not found in your organisation." };
   }
+  const blocked = await consoleTargetBlock(admin, context, target.role as UserRole, true);
+  if (blocked) return { ok: false, error: blocked };
 
   // Stored files first: the rows naming their paths cascade away with the
   // account, so after the delete there is nothing left pointing at them and
@@ -193,7 +236,7 @@ export async function bulkInviteStaffAction(
   _prev: BulkState,
   formData: FormData,
 ): Promise<BulkState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId) {
     return { ok: false, error: "Your account has no organisation." };
   }
@@ -223,8 +266,8 @@ export async function bulkInviteStaffAction(
       failures.push({ email, error: "Not a valid email address" });
       continue;
     }
-    if (!INVITABLE_ROLES.includes(role)) {
-      failures.push({ email, error: `Invalid role "${role}"` });
+    if (role !== "learner") {
+      failures.push({ email, error: "Console users are added from the Account page" });
       continue;
     }
     try {
@@ -303,7 +346,7 @@ export async function assignTrainingAction(
   _prev: AssignState,
   formData: FormData,
 ): Promise<AssignState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId) {
     return { ok: false, error: "Your account has no organisation." };
   }
@@ -418,7 +461,7 @@ export async function bulkAssignTrainingAction(
   _prev: BulkAssignState,
   formData: FormData,
 ): Promise<BulkAssignState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId) {
     return { ok: false, error: "Your account has no organisation." };
   }
@@ -512,7 +555,7 @@ export async function unassignTrainingAction(
   _prev: SaveState,
   formData: FormData,
 ): Promise<SaveState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId) {
     return { ok: false, error: "Your account has no organisation." };
   }
@@ -604,7 +647,7 @@ export async function bulkUnassignAction(
   _prev: BulkEnrolmentState,
   formData: FormData,
 ): Promise<BulkEnrolmentState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId) {
     return { ok: false, error: "Your account has no organisation." };
   }
@@ -659,7 +702,7 @@ export async function bulkDueDateAction(
   _prev: BulkEnrolmentState,
   formData: FormData,
 ): Promise<BulkEnrolmentState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId) {
     return { ok: false, error: "Your account has no organisation." };
   }

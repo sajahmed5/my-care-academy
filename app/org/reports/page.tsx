@@ -7,7 +7,7 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { loadRecentActivity } from "@/lib/activity";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -61,7 +61,7 @@ const EXPORTS: {
 ];
 
 export default async function OrgReportsPage() {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const today = new Date().toISOString().slice(0, 10);
   const supabase = await createClient();
   const activity = await loadRecentActivity(supabase, 30);

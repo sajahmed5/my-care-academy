@@ -16,7 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { AddAdminForm } from "./add-admin-form";
+import { ConsoleUsers, type ConsoleUser } from "./console-users";
 import { AccountDetails } from "./account-details";
 
 function fmtDate(iso: string | null): string {
@@ -49,7 +49,7 @@ export default async function AccountPage() {
   const context = await requireRole("org_admin");
 
   const supabase = await createClient();
-  const [{ data: org }, { data: me }] = await Promise.all([
+  const [{ data: org }, { data: me }, { data: consoleRows }] = await Promise.all([
     supabase
       .from("organisations")
       .select(
@@ -62,7 +62,22 @@ export default async function AccountPage() {
       .select("full_name, email")
       .eq("id", context.userId)
       .single(),
+    supabase
+      .from("users")
+      .select("id, full_name, email, role, status, last_seen_at")
+      .eq("organisation_id", context.organisationId!)
+      .in("role", ["org_admin", "org_office"])
+      .order("role")
+      .order("full_name"),
   ]);
+  const consoleUsers: ConsoleUser[] = (consoleRows ?? []).map((u) => ({
+    id: u.id as string,
+    name: (u.full_name as string | null) || (u.email as string) || "Unnamed",
+    email: u.email as string | null,
+    role: u.role as ConsoleUser["role"],
+    status: (u.status as string | null) ?? "active",
+    lastSeen: (u.last_seen_at as string | null) ?? null,
+  }));
 
   const tier = (org?.package_tier ?? "core") as PackageTier;
   const details = TIER_DETAILS[tier];
@@ -162,16 +177,17 @@ export default async function AccountPage() {
           </CardContent>
         </Card>
 
-        {/* Admin */}
+        {/* Who can open the console */}
         <Card>
           <CardHeader>
-            <CardTitle>Add an admin</CardTitle>
+            <CardTitle>Console users</CardTitle>
             <CardDescription>
-              Invite another organisation admin with the same access as you.
+              Managers see everything, this page included. Office workers see
+              everything except this page. Carers are added under Learners.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <AddAdminForm />
+            <ConsoleUsers users={consoleUsers} meId={context.userId} />
           </CardContent>
         </Card>
 

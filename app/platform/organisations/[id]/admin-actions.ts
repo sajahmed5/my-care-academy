@@ -85,7 +85,7 @@ export async function inviteOrgAdminAction(
   }
 }
 
-/** Promote a learner to org admin, or demote an admin back to learner. */
+/** Move a person between learner, office worker and manager. */
 export async function setOrgUserRoleAction(
   _prev: SaveState,
   formData: FormData,
@@ -94,7 +94,7 @@ export async function setOrgUserRoleAction(
   const orgId = String(formData.get("orgId") ?? "");
   const userId = String(formData.get("userId") ?? "");
   const role = String(formData.get("role") ?? "");
-  if (role !== "org_admin" && role !== "learner") {
+  if (role !== "org_admin" && role !== "org_office" && role !== "learner") {
     return { ok: false, error: "Invalid role." };
   }
 
@@ -105,8 +105,9 @@ export async function setOrgUserRoleAction(
     return { ok: false, error: "Platform admins can't be changed from here." };
   }
 
-  // Don't strip an organisation of its last way in.
-  if (role === "learner" && target.role === "org_admin") {
+  // Don't strip an organisation of its last way in: an office worker cannot
+  // open Account, so a manager is the only one who can add another.
+  if (role !== "org_admin" && target.role === "org_admin") {
     const { count } = await admin
       .from("users")
       .select("id", { count: "exact", head: true })
@@ -115,7 +116,7 @@ export async function setOrgUserRoleAction(
     if ((count ?? 0) <= 1) {
       return {
         ok: false,
-        error: "This is the organisation's only admin — promote someone else first.",
+        error: "This is the organisation's only manager — make someone else a manager first.",
       };
     }
   }

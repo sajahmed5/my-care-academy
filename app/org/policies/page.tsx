@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FileText, ShieldCheck, Table2 } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -25,7 +25,7 @@ export default async function PoliciesPage({
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await requireFeature(context, "documents.library");
 
   const { tab } = await searchParams;

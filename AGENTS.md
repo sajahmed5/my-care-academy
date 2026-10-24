@@ -22,3 +22,14 @@ Grant `select, insert, update, delete` to `service_role` (the
 the UI needs to `authenticated`, and nothing to `anon` — RLS gates rows, but
 the grant is the outer gate. Public reads go through a `security definer`
 function instead, as `verify_certificate()` does.
+
+# Console roles
+
+Two roles open the organisation console: `org_admin` (manager) and
+`org_office` (office worker). In the database they are one: every org-side
+RLS policy calls `public.is_console_user()`, never
+`current_user_role() = 'org_admin'` (a migration rewrote the old form; new
+policies use the function directly). The manager-only parts — the Account
+page, billing, and changing who has console access — are enforced in the app
+with `requireRole("org_admin")`; everything else org-side uses
+`requireConsole()` from `lib/auth.ts`.

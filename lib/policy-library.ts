@@ -237,7 +237,7 @@ export async function loadAcceptance(
     supabase
       .from("users")
       .select("id, full_name, email, role, status")
-      .in("role", ["learner", "org_admin"])
+      .in("role", ["learner", "org_admin", "org_office"])
       .eq("status", "active")
       .order("full_name")
       .limit(1000),
@@ -288,7 +288,7 @@ export async function loadAcceptanceCounts(
     supabase
       .from("users")
       .select("id", { count: "exact", head: true })
-      .in("role", ["learner", "org_admin"])
+      .in("role", ["learner", "org_admin", "org_office"])
       .eq("status", "active"),
     supabase
       .from("policy_acknowledgements")

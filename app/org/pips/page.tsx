@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -20,7 +20,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 /** Every plan, with where it has got to and what is owed next. */
 export default async function PipsPage() {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await requireFeature(context, "complaints.register");
   const supabase = await createClient();
   const pips = await loadPips(supabase);

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import {
   bucketOf,
@@ -62,7 +62,7 @@ export default async function LearnersAdminPage({
 }: {
   searchParams: Promise<{ section?: string }>;
 }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const { section: sectionParam } = await searchParams;
   // The staff table, the reminder picker, the reminder log, the invite form
   // and the CSV import sat on one page; on a 260-person organisation the

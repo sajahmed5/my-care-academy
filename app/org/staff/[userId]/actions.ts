@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
@@ -35,7 +35,7 @@ export async function addPersonActionAction(
   _prev: SaveState,
   formData: FormData,
 ): Promise<SaveState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
 
   const userId = String(formData.get("userId") ?? "");
   const title = String(formData.get("title") ?? "").trim();
@@ -96,7 +96,7 @@ export async function setPersonActionDoneAction(
   _prev: SaveState,
   formData: FormData,
 ): Promise<SaveState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
 
   const actionId = String(formData.get("actionId") ?? "");
   const userId = String(formData.get("userId") ?? "");
@@ -146,7 +146,7 @@ export async function addSupervisionAction(
   _prev: SupervisionState,
   formData: FormData,
 ): Promise<SupervisionState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
 
   const userId = String(formData.get("userId") ?? "");
   const kind = String(formData.get("kind") ?? "supervision");
@@ -242,7 +242,7 @@ export async function addCompetencyCheckAction(
   _prev: SupervisionState,
   formData: FormData,
 ): Promise<SupervisionState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
 
   const userId = String(formData.get("userId") ?? "");
   const area = String(formData.get("area") ?? "").trim();

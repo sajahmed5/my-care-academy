@@ -1,5 +1,5 @@
 import { StatusKey } from "../../status-key";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import {
   AssignedTrainingTable,
   TRAINING_TABS,
@@ -16,7 +16,7 @@ export default async function LearnersStatisticsPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  await requireRole("org_admin");
+  await requireConsole();
   const { status } = await searchParams;
   const trainingStatus: TrainingStatusFilter = TRAINING_TABS.some(
     (t) => t.key === status,

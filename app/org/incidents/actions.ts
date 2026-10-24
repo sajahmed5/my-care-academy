@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
@@ -22,7 +22,7 @@ import type { SaveState } from "@/app/platform/actions";
  */
 
 async function requireRegister() {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!(await hasFeature(context, "complaints.register"))) return null;
   return context;
 }

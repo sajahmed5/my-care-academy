@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -15,7 +15,7 @@ import type { Doc } from "./doc-controls";
 import { RecruitmentTable, type CandidateRow } from "./recruitment-table";
 
 export default async function RecruitmentPage() {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
 
   const supabase = await createClient();
   await requireFeature(context, "recruitment.tracker");

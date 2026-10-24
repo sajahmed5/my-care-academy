@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { cellText } from "@/lib/matrix";
 
@@ -42,7 +42,7 @@ function pickCourse(row: { courses?: unknown }): JoinedCourse {
 export async function exportTrainingMatrixAction(
   options: { includeLeavers?: boolean } = {},
 ): Promise<TrainingMatrix> {
-  await requireRole("org_admin");
+  await requireConsole();
   const supabase = await createClient();
 
   const [{ data: users }, { data: enrolments }, { data: certs }] =

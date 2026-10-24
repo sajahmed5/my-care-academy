@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { buttonVariants } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { FORM_TEMPLATES } from "@/lib/forms";
 import { NewFormForm } from "./new-form";
 
 export default async function FormsPage() {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
 
   const supabase = await createClient();
   await requireFeature(context, "forms.builder");

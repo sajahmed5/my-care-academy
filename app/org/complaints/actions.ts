@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
@@ -40,7 +40,7 @@ const BUCKET = "complaint-documents";
 const today = () => new Date().toISOString().slice(0, 10);
 
 async function requireComplaints() {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!(await hasFeature(context, "complaints.register"))) return null;
   return context;
 }

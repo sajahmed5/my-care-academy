@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import JSZip from "jszip";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAll } from "@/lib/fetch-all";
 
@@ -26,7 +26,7 @@ const MAX = 400;
  *   /org/certificates/pack?course=…   one course, every carer
  */
 export async function GET(req: NextRequest) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId) {
     return new NextResponse("Not found.", { status: 404 });
   }

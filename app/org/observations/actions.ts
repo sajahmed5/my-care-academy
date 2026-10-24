@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { loadLearnerCareCert, OBSERVATION_STATUSES } from "@/lib/observations";
@@ -21,7 +21,7 @@ export async function recordObservationAction(
   _prev: ObsState,
   formData: FormData,
 ): Promise<ObsState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId) {
     return { ok: false, error: "Your account has no organisation." };
   }
@@ -87,7 +87,7 @@ export async function awardCareCertificateAction(
   _prev: ObsState,
   formData: FormData,
 ): Promise<ObsState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId) {
     return { ok: false, error: "Your account has no organisation." };
   }

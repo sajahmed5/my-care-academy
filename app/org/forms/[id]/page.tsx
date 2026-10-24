@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { buttonVariants } from "@/components/ui/button";
@@ -20,7 +20,7 @@ export default async function FormBuilderPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const { id } = await params;
 
   const supabase = await createClient();

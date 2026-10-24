@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -19,7 +19,7 @@ export default async function SubmissionsPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const { id } = await params;
 
   const supabase = await createClient();

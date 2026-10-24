@@ -6,7 +6,7 @@ import {
   CircleDashed,
   Clock,
 } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { StatTile } from "@/components/learner-ui";
 import { isActiveLearner, loadOrgLearners } from "@/lib/org-learners";
@@ -19,7 +19,7 @@ import { CourseStatsTable } from "./course-stats-table";
  * headline number and the courses behind it are one page apart.
  */
 export default async function CoursesOverviewPage() {
-  await requireRole("org_admin");
+  await requireConsole();
   const supabase = await createClient();
   const [learnerRows, rows, { data: organisation }] = await Promise.all([
     loadOrgLearners(supabase),

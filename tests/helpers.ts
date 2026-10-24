@@ -15,7 +15,7 @@ if (!SUPABASE_URL || !ANON_KEY || !SERVICE_ROLE_KEY) {
   );
 }
 
-export type UserRole = "platform_admin" | "org_admin" | "learner";
+export type UserRole = "platform_admin" | "org_admin" | "org_office" | "learner";
 
 /** Service-role client — bypasses RLS. For seeding/cleanup only. */
 export function adminClient(): SupabaseClient {

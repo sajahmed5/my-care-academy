@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { loadComplaint, loadStaffOptions, loadStages } from "@/lib/complaints/data";
@@ -15,7 +15,7 @@ const safeName = (s: string) => s.replace(/[\\/:*?"<>|]/g, "").replace(/\s+/g, "
  *   /org/complaints/<id>/pdf?stage=<id>  one stage's form
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const { id } = await params;
   if (!context.organisationId) return new NextResponse("Not found.", { status: 404 });
   const stageId = req.nextUrl.searchParams.get("stage");

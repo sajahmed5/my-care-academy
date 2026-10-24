@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { loadCourseEnrolmentRows } from "@/lib/course-stats";
 import { CourseEnrolmentsTable } from "./course-enrolments-table";
@@ -18,7 +18,7 @@ export default async function CourseStatisticsPage({
 }: {
   searchParams: Promise<{ course?: string }>;
 }) {
-  await requireRole("org_admin");
+  await requireConsole();
   const { course } = await searchParams;
   const supabase = await createClient();
   const [allRows, { data: organisation }] = await Promise.all([

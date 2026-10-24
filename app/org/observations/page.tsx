@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ClipboardCheck, ArrowRight, Lock } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { hasFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { loadOrgObservationRollup } from "@/lib/observations";
@@ -15,7 +15,7 @@ import {
 import { StatusPill } from "@/components/learner-ui";
 
 export default async function ObservationsPage() {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const supabase = await createClient();
 
   // Upsell when the add-on is off — a sales surface, not a dead end.

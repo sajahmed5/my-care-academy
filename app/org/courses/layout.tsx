@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { DashboardShell } from "@/components/dashboard-shell";
 
 /**
@@ -11,7 +11,7 @@ export default async function CoursesLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   return (
     <DashboardShell title="Courses" context={context}>
       <div className="mx-auto max-w-6xl space-y-6">{children}</div>

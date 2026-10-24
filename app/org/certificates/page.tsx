@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import {
@@ -35,7 +35,7 @@ export default async function OrgCertificatesPage({
 }: {
   searchParams: Promise<{ filter?: string }>;
 }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const { filter } = await searchParams;
   const tab: Tab = TABS.some((t) => t.key === filter) ? (filter as Tab) : "attention";
 

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import JSZip from "jszip";
-import { getUserContext } from "@/lib/auth";
+import { getUserContext, isConsoleRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { docLabel } from "@/lib/recruitment";
 import { hasFeatureForOrg } from "@/lib/entitlements";
@@ -13,7 +13,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const context = await getUserContext();
-  if (!context || context.role !== "org_admin" || !context.organisationId) {
+  if (!context || !isConsoleRole(context.role) || !context.organisationId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { id } = await params;

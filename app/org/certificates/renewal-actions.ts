@@ -1,6 +1,6 @@
 "use server";
 
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { siteOrigin } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
@@ -29,7 +29,7 @@ export interface RenewalResult {
 export async function remindRenewalAction(
   certificateId: string,
 ): Promise<RenewalResult> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!context.organisationId) return { ok: false, error: "No organisation." };
 
   const admin = createAdminClient();

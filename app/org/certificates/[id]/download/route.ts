@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const INVALID = /[\\/:*?"<>|]/g;
@@ -23,7 +23,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const { id } = await params;
   if (!context.organisationId) {
     return new Response("Certificate not found.", { status: 404 });

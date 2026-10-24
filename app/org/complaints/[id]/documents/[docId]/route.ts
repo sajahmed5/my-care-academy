@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
  * short-lived signed URL minted with the service role.
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string; docId: string }> }) {
-  await requireRole("org_admin");
+  await requireConsole();
   const { id, docId } = await params;
   const supabase = await createClient();
   const { data: doc } = await supabase

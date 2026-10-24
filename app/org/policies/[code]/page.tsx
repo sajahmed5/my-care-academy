@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -30,7 +30,7 @@ export default async function PolicyPage({
 }: {
   params: Promise<{ code: string }>;
 }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await requireFeature(context, "documents.library");
   const { code } = await params;
 

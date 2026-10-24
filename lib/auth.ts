@@ -1,7 +1,35 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export type UserRole = "platform_admin" | "org_admin" | "learner";
+export type UserRole = "platform_admin" | "org_admin" | "org_office" | "learner";
+
+/**
+ * The two roles that open the organisation console. org_admin is the manager:
+ * the whole console plus the Account page (billing, and who else has console
+ * access). org_office is the office worker: everything except Account. The
+ * database treats them as one (is_console_user()); the split is here.
+ */
+export const CONSOLE_ROLES: readonly UserRole[] = ["org_admin", "org_office"];
+
+export function isConsoleRole(role: UserRole | null): boolean {
+  return role !== null && CONSOLE_ROLES.includes(role);
+}
+
+/** How a role reads in the console. */
+export function roleLabel(role: UserRole | string | null): string {
+  switch (role) {
+    case "platform_admin":
+      return "Platform admin";
+    case "org_admin":
+      return "Manager";
+    case "org_office":
+      return "Office";
+    case "learner":
+      return "Learner";
+    default:
+      return "No role";
+  }
+}
 
 export interface UserContext {
   userId: string;
@@ -18,6 +46,7 @@ export function dashboardPathForRole(role: UserRole | null): string {
     case "platform_admin":
       return "/platform";
     case "org_admin":
+    case "org_office":
       return "/org";
     case "learner":
       return "/learn";
@@ -82,7 +111,7 @@ export async function requireUser(): Promise<UserContext> {
 }
 
 /** Roles that must complete MFA (AAL2) to use their console. */
-const MFA_REQUIRED_ROLES: UserRole[] = ["platform_admin", "org_admin"];
+const MFA_REQUIRED_ROLES: UserRole[] = ["platform_admin", "org_admin", "org_office"];
 
 /**
  * Admins must be at AAL2. If they aren't (no factor enrolled, or enrolled but
@@ -136,5 +165,19 @@ export async function requireRole(role: UserRole): Promise<UserContext> {
   if (context.role !== role) redirect(dashboardPathForRole(context.role));
   if (MFA_REQUIRED_ROLES.includes(role)) await requireAdminMfa();
   if (role !== "platform_admin") await assertActiveMember(context);
+  return context;
+}
+
+/**
+ * Require a console user — a manager or an office worker. Every org-side
+ * page and action takes this; the Account page and the actions that change
+ * who has console access keep requireRole("org_admin"). Same MFA and
+ * active-member checks as requireRole.
+ */
+export async function requireConsole(): Promise<UserContext> {
+  const context = await requireUser();
+  if (!isConsoleRole(context.role)) redirect(dashboardPathForRole(context.role));
+  await requireAdminMfa();
+  await assertActiveMember(context);
   return context;
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { loadLearnerCareCert } from "@/lib/observations";
@@ -14,7 +14,7 @@ export default async function LearnerAssessmentPage({
 }: {
   params: Promise<{ userId: string }>;
 }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const { userId } = await params;
   const supabase = await createClient();
 

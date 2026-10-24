@@ -38,7 +38,6 @@ export function InviteStaffForm() {
             className={selectClass}
           >
             <option value="learner">Learner</option>
-            <option value="org_admin">Organisation admin</option>
           </select>
         </div>
       </div>

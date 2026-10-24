@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
@@ -34,7 +34,7 @@ export async function assignFormAction(
   _prev: AssignState,
   formData: FormData,
 ): Promise<AssignState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!(await hasFeature(context, "forms.builder"))) {
     return { ok: false, error: "The forms library is not included in your plan." };
   }
@@ -103,7 +103,7 @@ export async function assignFormAction(
  * open is picked up rather than duplicated; it is where "Continue" goes.
  */
 export async function startOwnFormAction(formData: FormData): Promise<void> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!(await hasFeature(context, "forms.builder"))) redirect("/org/forms");
 
   const templateId = String(formData.get("templateId") ?? "");
@@ -149,7 +149,7 @@ export async function unassignFormAction(
   _prev: SaveState,
   formData: FormData,
 ): Promise<SaveState> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const id = String(formData.get("assignmentId") ?? "");
   if (!id) return { ok: false, error: "No assignment given." };
 

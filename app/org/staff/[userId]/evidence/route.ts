@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { enabledMap } from "@/lib/entitlements";
 import { logAudit } from "@/lib/audit";
@@ -51,7 +51,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ userId: string }> },
 ) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const { userId } = await params;
   if (!context.organisationId) {
     return new NextResponse("Not found.", { status: 404 });

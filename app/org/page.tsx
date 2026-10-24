@@ -11,7 +11,7 @@ import {
   UserRoundX,
   Users,
 } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { tierLabel } from "@/lib/organisations";
 import { StatTile } from "@/components/learner-ui";
@@ -20,7 +20,7 @@ import { bucketOf, isActiveLearner, isInactive30d, isNeverActive, loadOrgLearner
 import { ChooseWhoLink } from "./choose-who-link";
 
 export default async function OrgDashboard() {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
 
   // All reads go through RLS — an org_admin only ever sees their own org + staff.
   const supabase = await createClient();

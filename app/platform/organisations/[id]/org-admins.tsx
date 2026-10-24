@@ -34,7 +34,7 @@ function RoleButton({
 }: {
   orgId: string;
   person: OrgPerson;
-  to: "org_admin" | "learner";
+  to: "org_admin" | "org_office" | "learner";
 }) {
   const [state, formAction, pending] = useActionState(
     setOrgUserRoleAction,
@@ -43,6 +43,7 @@ function RoleButton({
   useAlertOnError(state);
   const demoting = to === "learner";
   const Icon = demoting ? ShieldMinus : ShieldPlus;
+  const label = to === "learner" ? "Make learner" : to === "org_office" ? "Make office" : "Make manager";
 
   return (
     <form action={formAction} className="inline">
@@ -52,11 +53,11 @@ function RoleButton({
       <button
         type="submit"
         disabled={pending}
-        title={demoting ? `Make ${person.name} a learner` : `Make ${person.name} an admin`}
+        title={`${label}: ${person.name}`}
         className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors hover:bg-accent disabled:opacity-50"
       >
         <Icon className="size-3.5" />
-        {pending ? "Saving…" : demoting ? "Make learner" : "Make admin"}
+        {pending ? "Saving…" : label}
       </button>
     </form>
   );
@@ -134,9 +135,17 @@ export function OrgAdmins({
             >
               <span className="min-w-0">
                 <span className="font-medium">{a.name}</span>{" "}
-                <span className="text-muted-foreground">{a.email}</span>
+                <span className="text-muted-foreground">{a.email}</span>{" "}
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                  {a.role === "org_office" ? "Office" : "Manager"}
+                </span>
               </span>
               <span className="flex items-center gap-2">
+                {a.role === "org_office" ? (
+                  <RoleButton orgId={orgId} person={a} to="org_admin" />
+                ) : (
+                  <RoleButton orgId={orgId} person={a} to="org_office" />
+                )}
                 <RoleButton orgId={orgId} person={a} to="learner" />
                 <RemoveButton orgId={orgId} person={a} />
               </span>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookOpen, Clock, CheckCircle2, AlertTriangle, Download, FileArchive } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireConsole, roleLabel } from "@/lib/auth";
 import { enabledMap } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -86,7 +86,7 @@ export default async function StaffDetailPage({
   params: Promise<{ userId: string }>;
   searchParams: Promise<{ show?: string; section?: string }>;
 }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const { userId } = await params;
   const { show: showParam, section: sectionParam } = await searchParams;
   const show: Show = SHOWS.includes(showParam as Show) ? (showParam as Show) : "all";
@@ -241,7 +241,7 @@ export default async function StaffDetailPage({
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-semibold">{name}</h2>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs capitalize text-muted-foreground">
-                  {profile.role === "org_admin" ? "Admin" : "Learner"}
+                  {roleLabel(profile.role)}
                 </span>
                 {profile.status === "deactivated" && (
                   <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-700">

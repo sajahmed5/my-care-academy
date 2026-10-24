@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { loadPip } from "@/lib/pips/data";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 const safeName = (s: string) => s.replace(/[\\/:*?"<>|]/g, "").replace(/\s+/g, " ").trim();
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   const { id } = await params;
   if (!context.organisationId) return new NextResponse("Not found.", { status: 404 });
   const supabase = await createClient();

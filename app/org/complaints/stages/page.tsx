@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -15,7 +15,7 @@ import { StageEditor } from "./stage-editor";
  * stage can be seen landing in the right place.
  */
 export default async function StagesPage() {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await requireFeature(context, "complaints.register");
   const supabase = await createClient();
   const stages = await loadStages(supabase);

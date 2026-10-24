@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireRole, getUserContext, type UserContext } from "@/lib/auth";
+import { getUserContext, type UserContext, requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
@@ -18,7 +18,7 @@ export async function createFormAction(
   _prev: { error?: string },
   formData: FormData,
 ): Promise<{ error?: string }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertForms(context);
 
   const title = String(formData.get("title") ?? "").trim();
@@ -75,7 +75,7 @@ export async function updateFormAction(
   formId: string,
   patch: { title?: string; status?: string },
 ): Promise<{ ok: boolean; error?: string }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertForms(context);
   const supabase = await createClient();
   const { error } = await supabase.from("forms").update(patch).eq("id", formId);
@@ -86,7 +86,7 @@ export async function updateFormAction(
 }
 
 export async function deleteFormAction(formId: string): Promise<void> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertForms(context);
   const supabase = await createClient();
   await supabase.from("forms").delete().eq("id", formId);
@@ -105,7 +105,7 @@ export async function addFieldAction(
   formId: string,
   input: FieldInput,
 ): Promise<{ ok: boolean; id?: string; error?: string }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertForms(context);
   if (!input.label.trim()) return { ok: false, error: "Label is required." };
 
@@ -139,7 +139,7 @@ export async function updateFieldAction(
   formId: string,
   input: FieldInput,
 ): Promise<{ ok: boolean; error?: string }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertForms(context);
   const supabase = await createClient();
   const { error } = await supabase
@@ -161,7 +161,7 @@ export async function deleteFieldAction(
   fieldId: string,
   formId: string,
 ): Promise<{ ok: boolean }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   await assertForms(context);
   const supabase = await createClient();
   await supabase.from("form_fields").delete().eq("id", fieldId);
@@ -247,7 +247,7 @@ export async function submitFormAction(
 export async function getSubmissionFileUrlAction(
   path: string,
 ): Promise<{ url?: string }> {
-  const context = await requireRole("org_admin");
+  const context = await requireConsole();
   if (!path.startsWith(`${context.organisationId}/`)) return {};
   const admin = createAdminClient();
   const { data } = await admin.storage
