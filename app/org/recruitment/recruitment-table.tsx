@@ -2,9 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { REQUIRED_DOCS, type DocState } from "@/lib/recruitment";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { REQUIRED_DOCS, docState, type DocState } from "@/lib/recruitment";
+import { DocControls, DocStatus, type Doc } from "./doc-controls";
 
 export interface CandidateRow {
   id: string;
@@ -15,8 +19,8 @@ export interface CandidateRow {
   entry_date: string;
   stage: string;
   status: string;
-  /** Checklist state by document key; a key that is absent is missing. */
-  docs: Record<string, DocState>;
+  /** Checklist rows by document key; a key that is absent is missing. */
+  docs: Record<string, Doc>;
 }
 
 const statusVariant: Record<string, "secondary" | "destructive"> = {
@@ -26,29 +30,29 @@ const statusVariant: Record<string, "secondary" | "destructive"> = {
 };
 
 /** One cell of the checklist: held, not needed, expired, or nothing yet. */
-function DocMark({ state }: { state: DocState | undefined }) {
+function DocMark({ state }: { state: DocState }) {
   switch (state) {
     case "held":
       return <span className="text-green-600">✓</span>;
     case "not_required":
-      return (
-        <span className="text-xs text-muted-foreground" title="Not needed">
-          N/A
-        </span>
-      );
+      return <span className="text-xs text-muted-foreground">N/A</span>;
     case "expired":
-      return (
-        <span className="text-destructive" title="Expired">
-          ✗
-        </span>
-      );
+      return <span className="text-destructive">✗</span>;
     default:
       return <span className="text-muted-foreground">–</span>;
   }
 }
 
+/** The cell a manager has clicked: which candidate, which document. */
+interface OpenCell {
+  candidateId: string;
+  docKey: string;
+}
+
 export function RecruitmentTable({ candidates }: { candidates: CandidateRow[] }) {
+  const router = useRouter();
   const [q, setQ] = useState("");
+  const [open, setOpen] = useState<OpenCell | null>(null);
 
   const filtered = candidates.filter((c) => {
     const t = q.trim().toLowerCase();
@@ -60,6 +64,13 @@ export function RecruitmentTable({ candidates }: { candidates: CandidateRow[] })
     );
   });
 
+  // A tick, a dash or an N/A is also a button: click it and the controls for
+  // that one document appear above the table, so a manager can upload or mark
+  // "not needed" without opening the candidate (Saj, 24 Oct 2026). The panel
+  // sits outside the table because the table scrolls sideways.
+  const openCandidate = open ? candidates.find((c) => c.id === open.candidateId) : undefined;
+  const openDoc = open ? REQUIRED_DOCS.find((d) => d.key === open.docKey) : undefined;
+
   return (
     <div className="space-y-4">
       <Input
@@ -68,6 +79,33 @@ export function RecruitmentTable({ candidates }: { candidates: CandidateRow[] })
         placeholder="Search by name, postcode or email…"
         className="max-w-sm"
       />
+
+      {openCandidate && openDoc && (
+        <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border bg-muted/30 p-3">
+          <div className="min-w-40">
+            <p className="text-sm font-medium">
+              <Link href={`/org/recruitment/${openCandidate.id}`} className="hover:underline">
+                {openCandidate.full_name}
+              </Link>
+              {" · "}
+              {openDoc.label}
+            </p>
+            <DocStatus existing={openCandidate.docs[openDoc.key]} />
+          </div>
+          <div className="flex flex-wrap items-start gap-2">
+            <DocControls
+              key={`${openCandidate.id}:${openDoc.key}`}
+              candidateId={openCandidate.id}
+              doc={openDoc}
+              existing={openCandidate.docs[openDoc.key]}
+              onChange={() => router.refresh()}
+            />
+            <Button size="xs" variant="ghost" onClick={() => setOpen(null)}>
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">No candidates.</p>
@@ -95,7 +133,7 @@ export function RecruitmentTable({ candidates }: { candidates: CandidateRow[] })
             <tbody>
               {filtered.map((c) => {
                 const done = REQUIRED_DOCS.filter((d) => {
-                  const s = c.docs[d.key];
+                  const s = docState(c.docs[d.key]);
                   return s === "held" || s === "not_required";
                 }).length;
                 return (
@@ -121,11 +159,26 @@ export function RecruitmentTable({ candidates }: { candidates: CandidateRow[] })
                     <td className="py-2 pr-4 whitespace-nowrap text-muted-foreground">
                       {done}/{REQUIRED_DOCS.length}
                     </td>
-                    {REQUIRED_DOCS.map((d) => (
-                      <td key={d.key} className="py-2 pr-3 text-center">
-                        <DocMark state={c.docs[d.key]} />
-                      </td>
-                    ))}
+                    {REQUIRED_DOCS.map((d) => {
+                      const isOpen = open?.candidateId === c.id && open.docKey === d.key;
+                      return (
+                        <td key={d.key} className="py-2 pr-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => setOpen(isOpen ? null : { candidateId: c.id, docKey: d.key })}
+                            title={`${c.full_name} · ${d.label}`}
+                            aria-label={`${c.full_name}: ${d.label}`}
+                            aria-expanded={isOpen}
+                            className={cn(
+                              "min-w-8 rounded px-1.5 py-0.5 hover:bg-muted",
+                              isOpen && "bg-muted ring-2 ring-primary",
+                            )}
+                          >
+                            <DocMark state={docState(c.docs[d.key])} />
+                          </button>
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })}

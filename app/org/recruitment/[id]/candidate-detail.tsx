@@ -3,24 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   REQUIRED_DOCS,
   CANDIDATE_STAGES,
   CANDIDATE_STATUSES,
-  docState,
   outstandingDocs,
+  type RequiredDoc,
 } from "@/lib/recruitment";
-import {
-  updateCandidateAction,
-  uploadDocumentAction,
-  deleteDocumentAction,
-  deleteCandidateAction,
-  hireCandidateAction,
-  getDocUrlAction,
-  markDocumentNotRequiredAction,
-} from "../actions";
+import { updateCandidateAction, deleteCandidateAction, hireCandidateAction } from "../actions";
+import { DocControls, DocStatus, type Doc } from "../doc-controls";
 
 const selectClass =
   "flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm";
@@ -32,182 +24,27 @@ export interface Candidate {
   stage: string;
   status: string;
 }
-export interface Doc {
-  id: string;
-  doc_type: string;
-  file_name: string | null;
-  file_path: string | null;
-  expires_at: string | null;
-  not_required: boolean;
-  not_required_reason: string | null;
-}
+export type { Doc };
 
-function readFile(file: File): Promise<{ name: string; dataUrl: string }> {
-  return new Promise((resolve) => {
-    const r = new FileReader();
-    r.onload = () => resolve({ name: file.name, dataUrl: String(r.result) });
-    r.readAsDataURL(file);
-  });
-}
-
-/**
- * One checklist item. Three states: a file we hold (view / remove), "not
- * needed" with its reason (undo), or nothing yet — upload, or say it does not
- * apply (issue #52).
- */
+/** One checklist item: its name and status, with the shared controls beside. */
 function DocRow({
   candidateId,
-  docKey,
-  label,
-  tracksExpiry,
+  doc,
   existing,
   onChange,
 }: {
   candidateId: string;
-  docKey: string;
-  label: string;
-  tracksExpiry?: boolean;
+  doc: RequiredDoc;
   existing?: Doc;
   onChange: () => void;
 }) {
-  const [file, setFile] = useState<File | null>(null);
-  const [expires, setExpires] = useState(existing?.expires_at ?? "");
-  const [waiving, setWaiving] = useState(false);
-  const [reason, setReason] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const state = docState(existing);
-
-  async function upload() {
-    if (!file) return;
-    setBusy(true);
-    setError(null);
-    const payload = await readFile(file);
-    const r = await uploadDocumentAction(candidateId, docKey, payload, expires || null);
-    setBusy(false);
-    if (!r.ok) {
-      setError(r.error ?? "Could not upload.");
-      return;
-    }
-    setFile(null);
-    onChange();
-  }
-
-  async function markNotRequired() {
-    setBusy(true);
-    setError(null);
-    const r = await markDocumentNotRequiredAction(candidateId, docKey, reason);
-    setBusy(false);
-    if (!r.ok) {
-      setError(r.error ?? "Could not save.");
-      return;
-    }
-    setWaiving(false);
-    setReason("");
-    onChange();
-  }
-
-  async function remove() {
-    if (!existing) return;
-    setBusy(true);
-    await deleteDocumentAction(existing.id, candidateId);
-    setBusy(false);
-    onChange();
-  }
-
   return (
-    <div className="space-y-2 rounded-lg border p-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-40">
-          <p className="text-sm font-medium">{label}</p>
-          {state === "not_required" ? (
-            <p className="text-xs text-muted-foreground">
-              Not needed
-              {existing?.not_required_reason ? ` · ${existing.not_required_reason}` : ""}
-            </p>
-          ) : existing ? (
-            <p className="text-xs text-muted-foreground">
-              {existing.file_name}
-              {existing.expires_at && (
-                <span className={state === "expired" ? "text-destructive" : ""}>
-                  {" "}
-                  · {state === "expired" ? "expired" : "expires"}{" "}
-                  {new Date(existing.expires_at).toLocaleDateString("en-GB")}
-                </span>
-              )}
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground">Not uploaded</p>
-          )}
-        </div>
-
-        {state === "not_required" ? (
-          <Button size="xs" variant="outline" disabled={busy} onClick={remove}>
-            Undo
-          </Button>
-        ) : existing ? (
-          <div className="flex gap-2">
-            <Button
-              size="xs"
-              variant="outline"
-              onClick={async () => {
-                if (!existing.file_path) return;
-                const { url } = await getDocUrlAction(existing.file_path);
-                if (url) window.open(url, "_blank");
-              }}
-            >
-              View
-            </Button>
-            <Button size="xs" variant="destructive" disabled={busy} onClick={remove}>
-              Remove
-            </Button>
-          </div>
-        ) : waiving ? null : (
-          <div className="flex flex-wrap items-center gap-2">
-            {tracksExpiry && (
-              <Input
-                type="date"
-                value={expires}
-                onChange={(e) => setExpires(e.target.value)}
-                className="h-8 w-36"
-                title="Expiry date"
-              />
-            )}
-            <Input
-              type="file"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="h-8 w-48 text-xs"
-            />
-            <Button size="xs" onClick={upload} disabled={busy || !file}>
-              Upload
-            </Button>
-            <Button size="xs" variant="ghost" disabled={busy} onClick={() => setWaiving(true)}>
-              Not needed
-            </Button>
-          </div>
-        )}
+    <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border p-3">
+      <div className="min-w-40">
+        <p className="text-sm font-medium">{doc.label}</p>
+        <DocStatus existing={existing} />
       </div>
-
-      {waiving && state === "missing" && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            maxLength={200}
-            placeholder="Why it is not needed (optional)"
-            className="h-8 flex-1 min-w-48"
-          />
-          <Button size="xs" onClick={markNotRequired} disabled={busy}>
-            Mark not needed
-          </Button>
-          <Button size="xs" variant="ghost" disabled={busy} onClick={() => setWaiving(false)}>
-            Cancel
-          </Button>
-        </div>
-      )}
-
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      <DocControls candidateId={candidateId} doc={doc} existing={existing} onChange={onChange} />
     </div>
   );
 }
@@ -312,9 +149,7 @@ export function CandidateDetail({
             <DocRow
               key={d.key}
               candidateId={candidate.id}
-              docKey={d.key}
-              label={d.label}
-              tracksExpiry={d.tracksExpiry}
+              doc={d}
               existing={byType.get(d.key)}
               onChange={() => router.refresh()}
             />
