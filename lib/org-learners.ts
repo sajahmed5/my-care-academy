@@ -232,32 +232,120 @@ export async function loadOrgTraining(
 }
 
 /**
- * Aggregate every learner in the org for the Learners overview. One row per
- * learner with their full training rollup, latest completed course, when they
- * were last assigned training, and when they were last active on the site.
- * Pass orgId (see loadOrgTraining); without it RLS alone scopes the reads.
+ * The positional row public.org_learner_rollup() returns, in its order — the
+ * function sends arrays rather than objects so 21 field names aren't repeated
+ * on every learner (see the migration). Change both together.
+ */
+type RollupRow = [
+  id: string,
+  fullName: string | null,
+  email: string | null,
+  status: string | null,
+  lastSeenAt: string | null,
+  assigned: number,
+  notStarted: number,
+  inProgress: number,
+  completed: number,
+  expired: number,
+  overdue: number,
+  dueSoon: number,
+  progressSum: number,
+  certificates: number,
+  expiring: number,
+  lateCompletions: number,
+  lastAssignedAt: string | null,
+  lastRemindedAt: string | null,
+  timeSpent: number,
+  latestTitle: string | null,
+  latestIssuedAt: string | null,
+];
+
+/**
+ * Every learner in the org with their training rollup, latest completed
+ * course, when they were last assigned training, and when they were last
+ * active on the site — for the dashboard, Learners overview, reminders and
+ * bulk nudges.
+ *
+ * The counting happens in Postgres (org_learner_rollup, which mirrors
+ * learnerStats rule for rule): one row per learner comes back instead of every
+ * enrolment and certificate the organisation has ever had — ~260 rows rather
+ * than ~8,000 on a fully assigned organisation. The two percentages are worked
+ * out here so they round exactly as learnerStats does. RLS still applies, so a
+ * console user only ever gets their own organisation.
  */
 export async function loadOrgLearners(
   supabase: SupabaseClient,
   orgId?: string | null,
 ): Promise<OrgLearnerRow[]> {
-  return buildOrgLearners(await loadOrgTraining(supabase, orgId));
+  if (!orgId) return [];
+  const { data, error } = await supabase.rpc("org_learner_rollup", { p_org: orgId });
+  if (error) throw new Error(`Learner rollup failed: ${error.message}`);
+  const rows = ((data ?? []) as RollupRow[]).map(
+    ([id, full_name, ...rest]) => ({ id, full_name, rest }),
+  );
+  return sortLearners(rows).map(({ id, full_name, rest }) => {
+    const [
+      email, status, lastSeenAt, assigned, notStarted, inProgress, completed,
+      expired, overdue, dueSoon, progressSum, certificates, expiring,
+      lateCompletions, lastAssignedAt, lastRemindedAt, timeSpent, latestTitle,
+      latestIssuedAt,
+    ] = rest;
+    return {
+      id,
+      name: full_name ?? email ?? "Learner",
+      email: email ?? null,
+      status: status ?? "active",
+      stats: {
+        assigned,
+        notStarted,
+        inProgress,
+        completed,
+        expired,
+        certificates,
+        overdue,
+        dueSoon,
+        expiring,
+        completionPct: assigned > 0 ? Math.round((completed / assigned) * 100) : 0,
+        overallPct: assigned > 0 ? Math.round(progressSum / assigned) : 0,
+      },
+      latestCompleted:
+        latestIssuedAt != null
+          ? { title: latestTitle ?? "Course", date: latestIssuedAt }
+          : null,
+      lastAssignedAt,
+      lastSeenAt,
+      lastRemindedAt,
+      timeSpentSeconds: timeSpent,
+      lateCompletions,
+    };
+  });
 }
 
-/** The per-learner rollup, from reads already in hand. */
-export function buildOrgLearners(data: OrgTraining): OrgLearnerRow[] {
-  const { courses } = data;
-  // Learners alphabetically; certificates newest first — "first seen is the
-  // newest" below depends on it.
-  // Blank names last, as Postgres's ascending order put them. Two people can
-  // share a name (HG Care has two "Sharjeel Ahmed"s); the old query left their
-  // order to chance, so it's settled by id here to keep lists stable.
-  const users = [...data.users].sort((a, b) =>
+/**
+ * Learners alphabetically, blank names last, as Postgres's ascending order put
+ * them. Two people can share a name (HG Care has two "Sharjeel Ahmed"s); the
+ * old query left their order to chance, so it's settled by id to keep lists
+ * stable.
+ */
+function sortLearners<T extends { id: string; full_name: string | null }>(rows: T[]): T[] {
+  return [...rows].sort((a, b) =>
     (a.full_name == null
       ? b.full_name == null ? 0 : 1
       : b.full_name == null ? -1 : String(a.full_name).localeCompare(String(b.full_name))) ||
     String(a.id).localeCompare(String(b.id)),
   );
+}
+
+/**
+ * The per-learner rollup, from reads already in hand — for Courses →
+ * Overview, which needs the raw enrolments for its per-course table anyway.
+ * Everywhere else uses loadOrgLearners, which gets the same rows counted by
+ * Postgres; the two must stay in step.
+ */
+export function buildOrgLearners(data: OrgTraining): OrgLearnerRow[] {
+  const { courses } = data;
+  // Certificates newest first — "first seen is the newest" below depends on it.
+  const users = sortLearners(data.users);
   const certRaw = [...data.certificates].sort((a, b) =>
     String(b.issued_at).localeCompare(String(a.issued_at)),
   );
