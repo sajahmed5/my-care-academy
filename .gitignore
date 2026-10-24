@@ -47,3 +47,6 @@ vercel-env.txt
 
 # Derived quiz-authoring context packs (regenerate: node scripts/build-quiz-context.mjs)
 scripts/quiz-banks/.context/
+
+# Personal Claude Code settings (permissions etc.) — not shared
+.claude/settings.local.json
