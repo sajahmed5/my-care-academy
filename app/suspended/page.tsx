@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getUserContext } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -21,9 +22,13 @@ export default async function SuspendedPage() {
           <CardDescription>
             Your account or your organisation&apos;s access to My Care Academy
             is currently unavailable. This can happen if your account was
-            deactivated or your organisation was suspended. Please contact your
-            administrator or My Care Academy support if you believe this is a
-            mistake.
+            deactivated or your organisation was suspended. Speak to your
+            manager first — they can turn an account back on. If you think
+            this is a mistake,{" "}
+            <Link href="/contact" className="text-primary hover:underline">
+              let us know
+            </Link>
+            .
           </CardDescription>
         </CardHeader>
         <CardContent>

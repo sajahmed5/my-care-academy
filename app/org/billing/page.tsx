@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -117,9 +118,18 @@ export default async function AccountPage() {
                 </li>
               ))}
             </ul>
+            {/* "Get in touch" with nothing to touch: both of these told a
+                manager to contact us and left them to work out how. */}
             <p className="mt-4 text-xs text-muted-foreground">
               Want to change your package? Plan changes are handled by My Care
-              Academy — get in touch and we&apos;ll sort it.
+              Academy —{" "}
+              <Link
+                href="/contact?topic=pricing"
+                className="font-medium text-primary hover:underline"
+              >
+                get in touch
+              </Link>{" "}
+              and we&apos;ll sort it.
             </p>
           </CardContent>
         </Card>
@@ -172,7 +182,14 @@ export default async function AccountPage() {
               </div>
             </dl>
             <p className="mt-4 text-xs text-muted-foreground">
-              To change your payment details, contact My Care Academy.
+              To change your payment details,{" "}
+              <Link
+                href="/contact?topic=billing"
+                className="font-medium text-primary hover:underline"
+              >
+                contact My Care Academy
+              </Link>
+              .
             </p>
           </CardContent>
         </Card>

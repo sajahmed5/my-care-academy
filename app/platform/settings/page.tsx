@@ -45,9 +45,15 @@ export default async function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Reminders &amp; renewals</CardTitle>
+            {/* Said in the words of what it does. Naming the file the
+                schedule lives in told a reader where it is not, without ever
+                telling them when anything runs. */}
             <CardDescription>
-              Thresholds for the automated engine. Schedules are configured in
-              vercel.json (daily + weekly).
+              How far ahead renewals are chased, how often a reminder repeats,
+              and the engagement level below which an organisation is flagged.
+              The checks themselves run every morning at 7am, with a manager
+              digest on Monday at 8am; those times are set in the deploy
+              configuration, not here.
             </CardDescription>
           </CardHeader>
           <CardContent>

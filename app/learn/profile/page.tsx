@@ -9,8 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { NameForm, PasswordChangeForm } from "@/components/account-fields";
+import { updateProfileNameAction } from "@/app/learn/actions";
 import { PrivacyData } from "../privacy-data";
-import { NameForm, PasswordForm } from "./profile-forms";
 
 export default async function ProfilePage() {
   const context = await requireRole("learner");
@@ -40,7 +41,10 @@ export default async function ProfilePage() {
               <span className="text-muted-foreground">Role</span>
               <span>Learner</span>
             </div>
-            <NameForm initial={fullName ?? ""} />
+            <NameForm
+              initial={fullName ?? ""}
+              action={updateProfileNameAction}
+            />
           </CardContent>
         </Card>
 
@@ -50,7 +54,7 @@ export default async function ProfilePage() {
             <CardDescription>Change your password.</CardDescription>
           </CardHeader>
           <CardContent>
-            <PasswordForm />
+            <PasswordChangeForm />
           </CardContent>
         </Card>
 

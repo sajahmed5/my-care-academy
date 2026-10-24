@@ -10,6 +10,10 @@ export const TOPICS = {
   demo: "Book a demo",
   access: "Get started / request access",
   pricing: "Pricing and plans",
+  // Reached from the Account page, where a manager is told that plan changes
+  // and payment details are handled by us — so the link has to land on
+  // something truer than "Book a demo", which is where an unknown topic goes.
+  billing: "Billing and payment details",
   "mock-inspection": "Mock CQC inspection",
   "care-certificate": "Care Certificate",
   "management-support": "Management support",
