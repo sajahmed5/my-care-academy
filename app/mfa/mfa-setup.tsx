@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyAuthError } from "@/lib/auth-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,7 +46,12 @@ export function MfaSetup({
       friendlyName: `authenticator-${Date.now()}`,
     });
     if (error) {
-      setError(error.message);
+      setError(
+        friendlyAuthError(
+          error.message,
+          "We couldn't start the setup. Please try again.",
+        ),
+      );
       setLoading(false);
       return;
     }
@@ -64,7 +70,12 @@ export function MfaSetup({
     const { data: challenge, error: challengeError } =
       await supabase.auth.mfa.challenge({ factorId });
     if (challengeError) {
-      setError(challengeError.message);
+      setError(
+        friendlyAuthError(
+          challengeError.message,
+          "We couldn't check that code. Please try again.",
+        ),
+      );
       setLoading(false);
       return;
     }
@@ -75,7 +86,13 @@ export function MfaSetup({
       code: code.trim(),
     });
     if (verifyError) {
-      setError(verifyError.message);
+      setError(
+        friendlyAuthError(
+          verifyError.message,
+          "That code wasn't right. Check your authenticator app and enter the current 6-digit code.",
+        ),
+      );
+      setCode("");
       setLoading(false);
       return;
     }
@@ -88,12 +105,26 @@ export function MfaSetup({
   if (!started) {
     return (
       <div className="space-y-4">
+        {/* "Admin accounts" is the wrong name for two of the three roles that
+            land here — an office worker and a manager are not admins — and it
+            told them what to do without saying why. */}
         <p className="text-sm text-muted-foreground">
-          Admin accounts must be protected with two-factor authentication.
-          You&apos;ll need an authenticator app (Google Authenticator, 1Password,
-          Authy, etc.).
+          Your account can see other people&apos;s training records, so it&apos;s
+          protected with a second step at sign-in. You&apos;ll need an
+          authenticator app on your phone — Google Authenticator, Microsoft
+          Authenticator, 1Password or Authy all work.
         </p>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        <p className="text-sm text-muted-foreground">
+          It takes about a minute, and you only do it once.
+        </p>
+        {error && (
+          <p
+            role="alert"
+            className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            {error}
+          </p>
+        )}
         <Button onClick={startEnroll} disabled={loading}>
           {loading ? "Preparing…" : "Set up two-factor authentication"}
         </Button>
@@ -140,13 +171,17 @@ export function MfaSetup({
           pattern="[0-9]*"
           maxLength={6}
           required
+          autoFocus
           value={code}
           onChange={(e) => setCode(e.target.value)}
         />
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p
+          role="alert"
+          className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {error}
         </p>
       )}

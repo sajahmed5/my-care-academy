@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +24,10 @@ export function ForgotPasswordForm() {
           name="email"
           type="email"
           autoComplete="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          autoFocus
           required
         />
       </div>
@@ -34,15 +39,33 @@ export function ForgotPasswordForm() {
       {state.message && (
         <p
           role="status"
-          className={`text-sm ${state.ok ? "text-muted-foreground" : "text-destructive"}`}
+          className={
+            state.ok
+              ? "rounded-lg bg-muted/60 px-3 py-2 text-sm text-muted-foreground"
+              : "rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          }
         >
           {state.message}
         </p>
       )}
 
+      {/* Someone who can't get in can't be told to "email us from the address
+          you can't reach" and nothing else — the contact page takes a message
+          without a mail client. */}
+      {state.ok && (
+        <p className="text-xs text-muted-foreground">
+          Still stuck? Ask your manager to re-send your invitation, or{" "}
+          <Link href="/contact" className="text-primary hover:underline">
+            get in touch with us
+          </Link>
+          .
+        </p>
+      )}
+
       {state.link && (
         <p className="break-all rounded-md border bg-muted/40 p-2 text-xs text-muted-foreground">
-          Email isn&apos;t configured yet — use this link to reset:{" "}
+          Development only — email isn&apos;t configured, so use this link to
+          reset:{" "}
           <a href={state.link} className="text-primary underline">
             {state.link}
           </a>

@@ -4,15 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyAuthError } from "@/lib/auth-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export function LoginForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [capsLock, setCapsLock] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -21,13 +24,16 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
     setError(null);
 
     const supabase = createClient();
+    // Trimmed and lower-cased before it leaves the page: a pasted address or a
+    // phone keyboard's capitalised first letter is a typo we can absorb, not
+    // one to answer with "that email and password don't match".
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: email.trim().toLowerCase(),
       password,
     });
 
     if (error) {
-      setError(error.message);
+      setError(friendlyAuthError(error.message));
       setLoading(false);
       return;
     }
@@ -45,6 +51,10 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
           id="email"
           type="email"
           autoComplete="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          autoFocus
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -53,18 +63,28 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
 
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete="current-password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          // Caps Lock is the quiet cause of a lot of failed sign-ins, and the
+          // field hides the evidence.
+          onKeyUp={(e) => setCapsLock(e.getModifierState?.("CapsLock") ?? false)}
         />
+        {capsLock && (
+          <p className="text-xs text-muted-foreground">
+            Caps Lock is on.
+          </p>
+        )}
       </div>
 
       {error && (
-        <p role="alert" className="text-sm text-destructive">
+        <p
+          role="alert"
+          className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {error}
         </p>
       )}
