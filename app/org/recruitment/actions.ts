@@ -8,10 +8,32 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createInvite } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
 import { requireFeature } from "@/lib/entitlements";
+import {
+  REQUIRED_DOCS,
+  notReadyMessage,
+  outstandingDocs,
+  type CandidateDocRecord,
+  type ChecklistItem,
+} from "@/lib/recruitment";
 
 /** Recruitment is a paid add-on; block if the org isn't entitled. */
 async function assertRecruitment(context: UserContext): Promise<void> {
   await requireFeature(context, "recruitment.tracker");
+}
+
+/**
+ * The checklist items a candidate still owes (issue #51). Read as the service
+ * role: every caller has already checked the candidate is this organisation's.
+ */
+async function outstandingFor(
+  admin: ReturnType<typeof createAdminClient>,
+  candidateId: string,
+): Promise<ChecklistItem[]> {
+  const { data } = await admin
+    .from("candidate_documents")
+    .select("doc_type, file_path, expires_at, not_required")
+    .eq("candidate_id", candidateId);
+  return outstandingDocs((data ?? []) as CandidateDocRecord[]);
 }
 
 export async function addCandidateAction(
@@ -43,6 +65,11 @@ export async function addCandidateAction(
   redirect(`/org/recruitment/${data.id}`);
 }
 
+/**
+ * Save stage and status. Setting status to "hired" here is the same door as
+ * Mark hired, so it waits for the same checklist — otherwise the dropdown
+ * would be a way round the gate.
+ */
 export async function updateCandidateAction(
   id: string,
   patch: Record<string, unknown>,
@@ -50,6 +77,20 @@ export async function updateCandidateAction(
   const context = await requireRole("org_admin");
   await assertRecruitment(context);
   const supabase = await createClient();
+
+  if (patch.status === "hired") {
+    const { data: current } = await supabase
+      .from("candidates")
+      .select("status")
+      .eq("id", id)
+      .maybeSingle();
+    if (!current) return { ok: false, error: "Candidate not found." };
+    if (current.status !== "hired") {
+      const outstanding = await outstandingFor(createAdminClient(), id);
+      if (outstanding.length > 0) return { ok: false, error: notReadyMessage(outstanding) };
+    }
+  }
+
   const { error } = await supabase.from("candidates").update(patch).eq("id", id);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/org/recruitment/${id}`);
@@ -83,7 +124,7 @@ export async function uploadDocumentAction(
     .upload(path, buffer, { upsert: true });
   if (upErr) return { ok: false, error: upErr.message };
 
-  // Replace any existing doc of this type.
+  // Replace any existing row of this type — a file or a "not needed".
   await admin
     .from("candidate_documents")
     .delete()
@@ -104,6 +145,74 @@ export async function uploadDocumentAction(
   return { ok: true };
 }
 
+/**
+ * Record that a checklist item does not apply to this candidate (issue #52) —
+ * Right to Work for someone already checked, a literacy test for a transfer.
+ * It counts as done for the hire gate, so it is attributed in the audit trail
+ * with the reason given. A file already held has to be removed first: the two
+ * states are exclusive, and silently discarding a DBS is not a tidy-up.
+ */
+export async function markDocumentNotRequiredAction(
+  candidateId: string,
+  docType: string,
+  reason: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireRole("org_admin");
+  await assertRecruitment(context);
+  if (!REQUIRED_DOCS.some((d) => d.key === docType)) {
+    return { ok: false, error: "Unknown document." };
+  }
+
+  const admin = createAdminClient();
+  const { data: candidate } = await admin
+    .from("candidates")
+    .select("organisation_id")
+    .eq("id", candidateId)
+    .maybeSingle();
+  if (!candidate || candidate.organisation_id !== context.organisationId) {
+    return { ok: false, error: "Candidate not found." };
+  }
+
+  const { data: existing } = await admin
+    .from("candidate_documents")
+    .select("file_path")
+    .eq("candidate_id", candidateId)
+    .eq("doc_type", docType)
+    .maybeSingle();
+  if (existing?.file_path) {
+    return { ok: false, error: "A file is already held for this — remove it first." };
+  }
+
+  const trimmed = reason.trim();
+  const { error } = await admin.from("candidate_documents").upsert(
+    {
+      candidate_id: candidateId,
+      organisation_id: context.organisationId,
+      doc_type: docType,
+      file_path: null,
+      file_name: null,
+      expires_at: null,
+      not_required: true,
+      not_required_reason: trimmed || null,
+    },
+    { onConflict: "candidate_id,doc_type" },
+  );
+  if (error) return { ok: false, error: error.message };
+
+  await logAudit({
+    context,
+    action: "candidate.document_not_required",
+    entity: "candidate",
+    entityId: candidateId,
+    detail: { doc_type: docType, reason: trimmed || null },
+  });
+
+  revalidatePath(`/org/recruitment/${candidateId}`);
+  revalidatePath("/org/recruitment");
+  return { ok: true };
+}
+
+/** Remove a checklist row: the file it points at, or a "not needed". */
 export async function deleteDocumentAction(
   docId: string,
   candidateId: string,
@@ -117,10 +226,11 @@ export async function deleteDocumentAction(
     .eq("id", docId)
     .maybeSingle();
   if (doc && doc.organisation_id === context.organisationId) {
-    await admin.storage.from("candidate-docs").remove([doc.file_path]);
+    if (doc.file_path) await admin.storage.from("candidate-docs").remove([doc.file_path]);
     await admin.from("candidate_documents").delete().eq("id", docId);
   }
   revalidatePath(`/org/recruitment/${candidateId}`);
+  revalidatePath("/org/recruitment");
   return { ok: true };
 }
 
@@ -136,7 +246,11 @@ export async function getDocUrlAction(
   return { url: data?.signedUrl };
 }
 
-/** Mark hired; optionally create the candidate as a learner (no auto-enrolment). */
+/**
+ * Mark hired; optionally create the candidate as a learner (no auto-enrolment).
+ * Refused while any checklist item is missing or expired (issue #51): the
+ * button is disabled for the same reason, but the button is not the gate.
+ */
 export async function hireCandidateAction(
   candidateId: string,
   createLearner: boolean,
@@ -153,6 +267,9 @@ export async function hireCandidateAction(
   if (!candidate || candidate.organisation_id !== context.organisationId) {
     return { ok: false, error: "Candidate not found." };
   }
+
+  const outstanding = await outstandingFor(admin, candidateId);
+  if (outstanding.length > 0) return { ok: false, error: notReadyMessage(outstanding) };
 
   await admin.from("candidates").update({ status: "hired" }).eq("id", candidateId);
 

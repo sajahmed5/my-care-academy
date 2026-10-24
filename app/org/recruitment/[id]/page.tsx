@@ -33,7 +33,7 @@ export default async function CandidatePage({
       .maybeSingle(),
     supabase
       .from("candidate_documents")
-      .select("id, doc_type, file_name, file_path, expires_at")
+      .select("id, doc_type, file_name, file_path, expires_at, not_required, not_required_reason")
       .eq("candidate_id", id),
   ]);
   if (!candidate) notFound();

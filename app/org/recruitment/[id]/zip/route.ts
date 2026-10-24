@@ -42,6 +42,7 @@ export async function GET(
 
   const zip = new JSZip();
   for (const d of docs ?? []) {
+    if (!d.file_path) continue; // a "not needed" row has no file
     const { data: file } = await admin.storage
       .from("candidate-docs")
       .download(d.file_path);

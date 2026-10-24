@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { docState, type CandidateDocRecord, type DocState } from "@/lib/recruitment";
 import { AddCandidateForm } from "./add-candidate-form";
 import { RecruitmentTable, type CandidateRow } from "./recruitment-table";
 
@@ -24,19 +25,23 @@ export default async function RecruitmentPage() {
       .from("candidates")
       .select("id, full_name, postcode, email, is_driver, entry_date, stage, status")
       .order("created_at", { ascending: false }),
-    supabase.from("candidate_documents").select("candidate_id, doc_type"),
+    supabase
+      .from("candidate_documents")
+      .select("candidate_id, doc_type, file_path, expires_at, not_required"),
   ]);
 
-  const docsByCandidate = new Map<string, string[]>();
+  // Each row is a checklist item's state, so the tracker can tell a held
+  // document from one that is not needed or has expired.
+  const docsByCandidate = new Map<string, Record<string, DocState>>();
   for (const d of docs ?? []) {
-    const arr = docsByCandidate.get(d.candidate_id) ?? [];
-    arr.push(d.doc_type);
-    docsByCandidate.set(d.candidate_id, arr);
+    const states = docsByCandidate.get(d.candidate_id) ?? {};
+    states[d.doc_type] = docState(d as CandidateDocRecord);
+    docsByCandidate.set(d.candidate_id, states);
   }
 
   const rows: CandidateRow[] = (candidates ?? []).map((c) => ({
     ...c,
-    docs: docsByCandidate.get(c.id) ?? [],
+    docs: docsByCandidate.get(c.id) ?? {},
   }));
 
   return (

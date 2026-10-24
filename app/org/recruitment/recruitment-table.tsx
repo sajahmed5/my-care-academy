@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { REQUIRED_DOCS } from "@/lib/recruitment";
+import { REQUIRED_DOCS, type DocState } from "@/lib/recruitment";
 
 export interface CandidateRow {
   id: string;
@@ -15,7 +15,8 @@ export interface CandidateRow {
   entry_date: string;
   stage: string;
   status: string;
-  docs: string[];
+  /** Checklist state by document key; a key that is absent is missing. */
+  docs: Record<string, DocState>;
 }
 
 const statusVariant: Record<string, "secondary" | "destructive"> = {
@@ -23,6 +24,28 @@ const statusVariant: Record<string, "secondary" | "destructive"> = {
   rejected: "destructive",
   candidate: "secondary",
 };
+
+/** One cell of the checklist: held, not needed, expired, or nothing yet. */
+function DocMark({ state }: { state: DocState | undefined }) {
+  switch (state) {
+    case "held":
+      return <span className="text-green-600">✓</span>;
+    case "not_required":
+      return (
+        <span className="text-xs text-muted-foreground" title="Not needed">
+          N/A
+        </span>
+      );
+    case "expired":
+      return (
+        <span className="text-destructive" title="Expired">
+          ✗
+        </span>
+      );
+    default:
+      return <span className="text-muted-foreground">–</span>;
+  }
+}
 
 export function RecruitmentTable({ candidates }: { candidates: CandidateRow[] }) {
   const [q, setQ] = useState("");
@@ -71,7 +94,10 @@ export function RecruitmentTable({ candidates }: { candidates: CandidateRow[] })
             </thead>
             <tbody>
               {filtered.map((c) => {
-                const have = new Set(c.docs);
+                const done = REQUIRED_DOCS.filter((d) => {
+                  const s = c.docs[d.key];
+                  return s === "held" || s === "not_required";
+                }).length;
                 return (
                   <tr key={c.id} className="border-b last:border-0">
                     <td className="sticky left-0 bg-background py-2 pr-4">
@@ -93,15 +119,11 @@ export function RecruitmentTable({ candidates }: { candidates: CandidateRow[] })
                     </td>
                     <td className="py-2 pr-4 whitespace-nowrap">{c.stage}</td>
                     <td className="py-2 pr-4 whitespace-nowrap text-muted-foreground">
-                      {have.size}/{REQUIRED_DOCS.length}
+                      {done}/{REQUIRED_DOCS.length}
                     </td>
                     {REQUIRED_DOCS.map((d) => (
                       <td key={d.key} className="py-2 pr-3 text-center">
-                        {have.has(d.key) ? (
-                          <span className="text-green-600">✓</span>
-                        ) : (
-                          <span className="text-muted-foreground">–</span>
-                        )}
+                        <DocMark state={c.docs[d.key]} />
                       </td>
                     ))}
                   </tr>
