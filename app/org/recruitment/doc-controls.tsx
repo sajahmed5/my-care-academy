@@ -10,6 +10,7 @@ import {
   getDocUrlAction,
   markDocumentNotRequiredAction,
 } from "./actions";
+import { formatDate } from "@/lib/dates";
 
 /** One checklist row as the page receives it. */
 export interface Doc {
@@ -49,7 +50,7 @@ export function DocStatus({ existing }: { existing?: Doc }) {
         <span className={state === "expired" ? "text-destructive" : ""}>
           {" "}
           · {state === "expired" ? "expired" : "expires"}{" "}
-          {new Date(existing.expires_at).toLocaleDateString("en-GB")}
+          {formatDate(existing.expires_at)}
         </span>
       )}
     </p>

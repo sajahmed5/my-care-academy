@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import type { ActionRow, PersonTask, TaskUrgency } from "@/lib/person-tasks";
 import { addPersonActionAction, setPersonActionDoneAction } from "./actions";
 import type { SaveState } from "@/app/platform/actions";
+import { formatDate } from "@/lib/dates";
 
 const URGENCY_STYLE: Record<TaskUrgency, string> = {
   overdue: "bg-rose-100 text-rose-700",
@@ -24,7 +25,7 @@ const URGENCY_LABEL: Record<TaskUrgency, string> = {
 
 function fmtDate(d: string | null): string {
   if (!d) return "No date";
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

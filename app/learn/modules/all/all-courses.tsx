@@ -9,6 +9,7 @@ import { CourseThumb } from "@/components/learner-ui";
 import { cn } from "@/lib/utils";
 import { topicTheme, tint } from "@/lib/topic-theme";
 import { selfEnrolAction } from "@/app/learn/actions";
+import { formatDate } from "@/lib/dates";
 
 export interface CatalogueCourse {
   id: string;
@@ -19,7 +20,7 @@ export interface CatalogueCourse {
 
 /** "22 Jul 2026" — compact enough to sit in a pill beside the topic label. */
 function shortDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
+  return formatDate(iso, {
     day: "numeric",
     month: "short",
     year: "numeric",

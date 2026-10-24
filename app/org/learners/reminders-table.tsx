@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { formatDateTime } from "@/lib/dates";
 
 export interface ReminderRow {
   id: string;
@@ -14,7 +15,7 @@ export interface ReminderRow {
 }
 
 function fmt(d: string): string {
-  return new Date(d).toLocaleString("en-GB", {
+  return formatDateTime(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { assignTrainingAction, type AssignState } from "./actions";
+import { formatDate } from "@/lib/dates";
 
 const selectClass =
   "flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm";
@@ -196,7 +197,7 @@ export function AssignForm({
             Assigned {state.courses} {state.courses === 1 ? "course" : "courses"} to{" "}
             {state.learners} {state.learners === 1 ? "carer" : "carers"}
             {state.dueDate
-              ? `, due ${new Date(state.dueDate).toLocaleDateString("en-GB", {
+              ? `, due ${formatDate(state.dueDate, {
                   day: "numeric",
                   month: "long",
                 })}`

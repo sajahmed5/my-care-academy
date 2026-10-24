@@ -39,6 +39,7 @@ import { selectClass, textareaClass } from "../new-complaint";
 import { fmtDate } from "../complaint-row";
 import { StageForm } from "./stage-form";
 import type { SaveState } from "@/app/platform/actions";
+import { formatDate, formatDateTime } from "@/lib/dates";
 
 interface PanelProps {
   complaint: Complaint;
@@ -95,7 +96,7 @@ function StatusLine({ entry }: { entry: StageEntry | undefined }) {
   return (
     <p className="text-xs text-muted-foreground">
       {st === "done" ? "Done" : st === "na" ? `Not needed${entry?.notes ? ` — ${entry.notes}` : ""}` : "Not finished"}
-      {entry ? ` · last saved ${new Date(entry.updatedAt).toLocaleString("en-GB")}` : ""}
+      {entry ? ` · last saved ${formatDateTime(entry.updatedAt)}` : ""}
     </p>
   );
 }
@@ -496,7 +497,7 @@ function DocumentsBox({ complaint, stage, disabled }: PanelProps) {
           <FileText className="size-4 text-muted-foreground" />
           <a href={`/org/complaints/${complaint.id}/documents/${d.id}`} className="hover:underline" target="_blank" rel="noreferrer">{d.fileName}</a>
           <span className="text-xs text-muted-foreground">
-            {d.fileSize ? `${Math.max(1, Math.round(d.fileSize / 1024))} KB · ` : ""}{new Date(d.uploadedAt).toLocaleDateString("en-GB")}
+            {d.fileSize ? `${Math.max(1, Math.round(d.fileSize / 1024))} KB · ` : ""}{formatDate(d.uploadedAt)}
           </span>
           {!disabled && (
             <form action={del} className="ml-auto">

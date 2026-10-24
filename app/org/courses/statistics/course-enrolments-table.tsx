@@ -12,6 +12,7 @@ import {
   type SortColumn,
 } from "@/lib/table-sort";
 import { SortHeader, useTableSort } from "@/components/sort-header";
+import { formatDate } from "@/lib/dates";
 
 const csvCell = (v: string) =>
   /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
@@ -22,7 +23,7 @@ function fmtTime(seconds: number | null): string {
 
 function fmtDate(d: string | null): string {
   if (!d) return "";
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

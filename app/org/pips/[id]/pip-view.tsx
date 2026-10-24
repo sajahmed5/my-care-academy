@@ -25,6 +25,7 @@ import {
   signManagerAction,
 } from "../actions";
 import type { SaveState } from "@/app/platform/actions";
+import { formatDate, formatDateTime } from "@/lib/dates";
 
 const STATE_STYLE: Record<PipStep["state"], string> = {
   done: "border-green-200 bg-green-50",
@@ -172,7 +173,7 @@ function Signature({ title, signature, signedAt, by, action, pipId, disabled, wi
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={signature} alt="Signature" className="h-20 rounded border bg-white" />
-          <p className="text-xs text-muted-foreground">Signed {signedAt ? new Date(signedAt).toLocaleString("en-GB") : ""}{by ? ` · ${by}` : ""}</p>
+          <p className="text-xs text-muted-foreground">Signed {signedAt ? formatDateTime(signedAt) : ""}{by ? ` · ${by}` : ""}</p>
         </>
       ) : disabled ? (
         <p className="text-xs text-muted-foreground">Not signed.</p>
@@ -341,7 +342,7 @@ function Outcome({ pip }: { pip: Pip }) {
           {pip.outcomeNotes && <p className="whitespace-pre-line text-sm">{pip.outcomeNotes}</p>}
           {pip.outcomeNextStep && <p className="text-sm"><span className="font-medium">What follows:</span> {pip.outcomeNextStep}</p>}
           {pip.completionSummary && <Section title="Completion summary"><p className="whitespace-pre-line text-sm">{pip.completionSummary}</p></Section>}
-          <p className="text-xs text-muted-foreground">{pip.closedAt ? `Closed ${new Date(pip.closedAt).toLocaleDateString("en-GB")}.` : ""}</p>
+          <p className="text-xs text-muted-foreground">{pip.closedAt ? `Closed ${formatDate(pip.closedAt)}.` : ""}</p>
           <form action={cancel}>
             <input type="hidden" name="pipId" value={pip.id} />
             <input type="hidden" name="reopen" value="1" />

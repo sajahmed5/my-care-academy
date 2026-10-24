@@ -13,6 +13,7 @@ import {
 } from "@/lib/incidents";
 import { setIncidentStatusAction } from "./actions";
 import type { SaveState } from "@/app/platform/actions";
+import { formatDate } from "@/lib/dates";
 
 const selectClass =
   "flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm";
@@ -27,7 +28,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

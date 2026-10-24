@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import type { FormField } from "@/lib/forms";
 import { getSubmissionFileUrlAction } from "../../actions";
+import { formatDateTime } from "@/lib/dates";
 
 interface Submission {
   id: string;
@@ -33,7 +34,7 @@ export function SubmissionsTable({
   function exportCsv() {
     const header = ["Submitted", ...fields.map((f) => f.label)];
     const lines = submissions.map((s) => [
-      new Date(s.created_at).toLocaleString("en-GB"),
+      formatDateTime(s.created_at),
       ...fields.map((f) => cellText(f, s.data[f.id])),
     ]);
     const csv = [header, ...lines]
@@ -82,7 +83,7 @@ export function SubmissionsTable({
               {submissions.map((s) => (
                 <tr key={s.id} className="border-b last:border-0 align-top">
                   <td className="py-2 pr-4 whitespace-nowrap text-muted-foreground">
-                    {new Date(s.created_at).toLocaleString("en-GB")}
+                    {formatDateTime(s.created_at)}
                   </td>
                   {fields.map((f) => (
                     <td key={f.id} className="py-2 pr-4">

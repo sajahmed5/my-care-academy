@@ -13,6 +13,7 @@ import {
 import { useActionState, useState } from "react";
 import { SortHeader, useTableSort } from "@/components/sort-header";
 import { bulkDueDateAction, bulkUnassignAction, type BulkEnrolmentState } from "./actions";
+import { formatDate } from "@/lib/dates";
 
 export interface TrainingRow {
   userId: string;
@@ -31,7 +32,7 @@ export interface TrainingRow {
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

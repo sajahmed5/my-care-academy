@@ -8,6 +8,7 @@ import { InviteResult } from "@/components/invite-result";
 import type { InviteState, SaveState } from "@/app/platform/actions";
 import { inviteStaffAction } from "../actions";
 import { setConsoleRoleAction } from "./console-actions";
+import { formatDate } from "@/lib/dates";
 
 export interface ConsoleUser {
   id: string;
@@ -23,7 +24,7 @@ const selectClass =
 
 function fmtSeen(iso: string | null): string {
   if (!iso) return "Never signed in";
-  return `Last active ${new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
+  return `Last active ${formatDate(iso, { day: "numeric", month: "short", year: "numeric" })}`;
 }
 
 /** Surfaces the error from a role action without swallowing it. */

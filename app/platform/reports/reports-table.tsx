@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { REPORT_STATUSES, STATUS_LABELS, statusPillClass } from "./status";
+import { formatDate } from "@/lib/dates";
 
 export interface ReportRow {
   id: string;
@@ -25,7 +26,7 @@ const FILTERS: { key: Filter; label: string }[] = [
 ];
 
 function fmt(d: string): string {
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

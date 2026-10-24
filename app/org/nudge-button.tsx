@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { nudgeLearnerAction } from "./nudge-actions";
+import { formatDate } from "@/lib/dates";
 
 const DAY = 86_400_000;
 
@@ -14,7 +15,7 @@ function ago(d: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
-  return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return formatDate(d, { day: "numeric", month: "short" });
 }
 
 export function NudgeButton({

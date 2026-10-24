@@ -16,6 +16,7 @@ import {
 import { assignSuggestedTrainingAction } from "@/app/org/incidents/actions";
 import { RecordIncident } from "@/app/org/incidents/record-incident";
 import type { SaveState } from "@/app/platform/actions";
+import { formatDate } from "@/lib/dates";
 
 const STATUS_STYLE: Record<string, string> = {
   open: "bg-rose-100 text-rose-700",
@@ -25,7 +26,7 @@ const STATUS_STYLE: Record<string, string> = {
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

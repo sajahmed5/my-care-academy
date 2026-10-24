@@ -5,13 +5,14 @@ import Link from "next/link";
 import { Download } from "lucide-react";
 import { needsAttention, type CertState, type OrgCertificateRow } from "@/lib/certificates";
 import { RenewButton } from "./renew-button";
+import { formatDate } from "@/lib/dates";
 
 const csvCell = (v: string) =>
   /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

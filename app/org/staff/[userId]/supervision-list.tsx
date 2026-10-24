@@ -14,6 +14,7 @@ import {
   type Supervision,
 } from "@/lib/supervisions";
 import { addSupervisionAction, type SupervisionState } from "./actions";
+import { formatDate } from "@/lib/dates";
 
 const selectClass =
   "flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm";
@@ -29,7 +30,7 @@ const DUE_STYLE: Record<DueStatus, string> = {
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

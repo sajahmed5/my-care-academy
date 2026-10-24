@@ -3,6 +3,7 @@
 import { Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { topicTheme, tint } from "@/lib/topic-theme";
+import { formatDate } from "@/lib/dates";
 
 export interface WalletCert {
   id: string;
@@ -62,9 +63,9 @@ export function CertWallet({ certs }: { certs: WalletCert[] }) {
               <p className="text-xs text-muted-foreground">{c.number}</p>
             </div>
             <p className="text-xs text-muted-foreground">
-              Issued {new Date(c.issued).toLocaleDateString("en-GB")}
+              Issued {formatDate(c.issued)}
               {c.expires
-                ? ` · expires ${new Date(c.expires).toLocaleDateString("en-GB")}`
+                ? ` · expires ${formatDate(c.expires)}`
                 : ""}
             </p>
             <Button size="sm" variant="outline" onClick={() => download(c.id)}>

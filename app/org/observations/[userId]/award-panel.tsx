@@ -7,6 +7,7 @@ import {
   awardCareCertificateAction,
   type ObsState,
 } from "@/app/org/observations/actions";
+import { formatDate } from "@/lib/dates";
 
 /**
  * The employer's award step. Only shown to the org_admin. The button is
@@ -33,7 +34,7 @@ export function AwardPanel({
         <Award className="size-5 shrink-0 text-emerald-600" />
         <p>
           Care Certificate awarded on{" "}
-          {new Date(signedOffAt).toLocaleDateString("en-GB")}.
+          {formatDate(signedOffAt)}.
         </p>
       </div>
     );

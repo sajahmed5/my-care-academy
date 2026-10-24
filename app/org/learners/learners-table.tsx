@@ -11,12 +11,13 @@ import {
   isNeverActive,
   type OrgLearnerRow,
 } from "@/lib/org-learners";
+import { formatDate } from "@/lib/dates";
 
 const DAY = 86_400_000;
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-GB", {
+  return formatDate(d, {
     day: "numeric",
     month: "short",
     year: "numeric",

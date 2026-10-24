@@ -7,10 +7,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { Assignment } from "@/lib/form-library";
 import { unassignFormAction } from "../../library-actions";
 import type { SaveState } from "@/app/platform/actions";
+import { formatDate } from "@/lib/dates";
 
 function fmtDate(d: string | null): string {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  return formatDate(d, { day: "numeric", month: "short", year: "numeric" });
 }
 
 /**
