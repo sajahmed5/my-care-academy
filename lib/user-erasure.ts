@@ -26,6 +26,8 @@ export interface PurgeResult {
  */
 const SOURCES: { table: string; column: string; bucket: string }[] = [
   { table: "certificates", column: "pdf_path", bucket: "certificates" },
+  // A current staff member's right to work, DBS, references and insurance.
+  { table: "staff_documents", column: "file_path", bucket: "staff-docs" },
   {
     table: "care_cert_observations",
     column: "evidence_path",

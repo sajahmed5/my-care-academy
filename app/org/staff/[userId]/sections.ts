@@ -79,7 +79,7 @@ export const SECTIONS: SectionDef[] = [
     key: "recruitment",
     label: "Recruitment & right to work",
     blurb:
-      "DBS, right to work, references and documents, with their expiry dates. Today the tracker covers candidates; current staff are next.",
+      "Right to work, DBS, references and insurance for current staff, with their expiry dates, and what was collected when they applied.",
     feature: "recruitment.tracker",
     built: true,
     href: "/org/recruitment",

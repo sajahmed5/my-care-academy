@@ -18,6 +18,7 @@
  * without a database.
  */
 
+import type { StaffDocTask } from "./staff-documents";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Certificate, Enrolment } from "./learner-data";
 import { daysUntil, expiryFlag, isExpired, isOverdue } from "./engine-logic";
@@ -25,7 +26,7 @@ import { daysUntil, expiryFlag, isExpired, isOverdue } from "./engine-logic";
 /** Inside this many days, a dated thing is "soon" rather than merely pending. */
 export const DUE_SOON_DAYS = 30;
 
-export type TaskKind = "training" | "certificate" | "action" | "form";
+export type TaskKind = "training" | "certificate" | "action" | "form" | "document";
 
 export type TaskUrgency = "overdue" | "due_soon" | "open";
 
@@ -106,12 +107,15 @@ export function buildPersonTasks({
   certificates,
   actions,
   forms = [],
+  documents = [],
   now,
 }: {
   enrolments: Enrolment[];
   certificates: Certificate[];
   actions: ActionRow[];
   forms?: FormAsk[];
+  /** Compliance documents expired, expiring or missing (lib/staff-documents). */
+  documents?: StaffDocTask[];
   now: Date;
 }): PersonTask[] {
   const tasks: PersonTask[] = [];
@@ -189,6 +193,21 @@ export function buildPersonTasks({
       urgency: urgencyOf(f.due_date, now),
       actionId: null,
       source: "Form",
+    });
+  }
+
+  // Right to work, DBS, references, insurance: renewed or added by uploading
+  // on their file, so no tick here either.
+  for (const d of documents) {
+    tasks.push({
+      key: d.key,
+      kind: "document",
+      title: d.title,
+      detail: d.detail,
+      dueDate: d.dueDate,
+      urgency: d.urgency,
+      actionId: null,
+      source: "Staff documents",
     });
   }
 

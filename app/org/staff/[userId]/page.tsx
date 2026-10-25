@@ -34,6 +34,9 @@ import { CompetencyList } from "./competency-list";
 import { EvidencePackButton } from "./evidence-pack-button";
 import { IncidentList } from "./incident-list";
 import { SupervisionList } from "./supervision-list";
+import { StaffDocuments, type ApplicationDoc } from "./staff-documents";
+import { staffDocTasks, type StaffDoc } from "@/lib/staff-documents";
+import { docLabel } from "@/lib/recruitment";
 import { TaskList } from "./task-list";
 import { endOfMonthISO } from "@/lib/assign";
 import { isOverdue, isAssessmentDue, expiryFlag } from "@/lib/engine-logic";
@@ -68,6 +71,7 @@ function statusVariant(e: OrgEnrolment, now: Date): StatusVariant {
 /** Sections this page renders itself; the rest get a panel. */
 const INLINE_SECTIONS = new Set([
   "training",
+  "recruitment",
   "certificates",
   "actions",
   "supervisions",
@@ -109,7 +113,11 @@ export default async function StaffDetailPage({
     // still have rows from before a downgrade, and fetching them to grey them
     // out would be a way to read what they stopped paying for.
     const wantsTasks = section.key === "actions" || section.key === "forms";
-    const [supervisions, competencyChecks, actionRows, formAsks] = await Promise.all([
+    const recruitmentOpen = section.key === "recruitment" && state === "open";
+    // Their compliance documents feed the task list as well as their own
+    // section, so the Actions tab reads them too (ROADMAP §3).
+    const wantsStaffDocs = recruitmentOpen || (wantsTasks && enabled["recruitment.tracker"]);
+    const [supervisions, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs] = await Promise.all([
       section.key === "supervisions" && state === "open"
         ? loadSupervisions(supabase, userId)
         : Promise.resolve([]),
@@ -122,12 +130,20 @@ export default async function StaffDetailPage({
       wantsTasks && enabled["forms.builder"]
         ? loadAssignmentsForPerson(supabase, userId)
         : Promise.resolve([]),
+      wantsStaffDocs
+        ? supabase
+            .from("staff_documents")
+            .select("id, doc_type, file_name, file_path, expires_at, not_required, not_required_reason")
+            .eq("user_id", userId)
+            .then((r) => (r.data ?? []) as StaffDoc[])
+        : Promise.resolve([] as StaffDoc[]),
+      recruitmentOpen ? loadApplicationDocs(supabase, userId) : Promise.resolve([] as ApplicationDoc[]),
     ]);
-    return { enabled, state, supervisions, competencyChecks, actionRows, formAsks };
+    return { enabled, state, supervisions, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs };
   });
   const [
     { profile, enrolments, certificates, assessments },
-    { enabled, state, supervisions, competencyChecks, actionRows, formAsks },
+    { enabled, state, supervisions, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs },
     { data: libraryRows },
   ] = await Promise.all([
     loadOrgLearnerTraining(supabase, userId),
@@ -195,6 +211,7 @@ export default async function StaffDetailPage({
       due_date: a.due_date,
       completed_at: a.completed_at,
     })),
+    documents: staffDocTasks(staffDocs, now),
     now,
   });
   const doneActions = actionRows.filter((a) => a.completed_at);
@@ -593,6 +610,10 @@ export default async function StaffDetailPage({
           </div>
         )}
 
+        {section.key === "recruitment" && state === "open" && (
+          <StaffDocuments userId={userId} docs={staffDocs} applicationDocs={applicationDocs} />
+        )}
+
         {section.key === "supervisions" && state === "open" && (
           <div id="supervisions" className="scroll-mt-24 space-y-2">
             <SupervisionList userId={userId} carerName={name} supervisions={supervisions} />
@@ -689,4 +710,34 @@ export default async function StaffDetailPage({
       </div>
     </DashboardShell>
   );
+}
+
+/**
+ * The documents collected when this person applied: the recruitment record
+ * they were hired from, matched by email within the organisation (hiring
+ * creates the account from the candidate's email). Read under RLS.
+ */
+async function loadApplicationDocs(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<ApplicationDoc[]> {
+  const { data: person } = await supabase.from("users").select("email, organisation_id").eq("id", userId).maybeSingle();
+  if (!person?.email) return [];
+  const { data: cands } = await supabase
+    .from("candidates")
+    .select("id")
+    .eq("organisation_id", person.organisation_id as string)
+    .ilike("email", person.email as string);
+  const ids = (cands ?? []).map((c) => c.id as string);
+  if (ids.length === 0) return [];
+  const { data: docs } = await supabase
+    .from("candidate_documents")
+    .select("doc_type, file_path, expires_at")
+    .in("candidate_id", ids)
+    .not("file_path", "is", null);
+  return (docs ?? []).map((d) => ({
+    label: docLabel(d.doc_type as string),
+    file_path: d.file_path as string,
+    expires_at: (d.expires_at as string | null) ?? null,
+  }));
 }

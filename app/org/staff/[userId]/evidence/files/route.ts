@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeatureForOrg } from "@/lib/entitlements";
 import { logAudit } from "@/lib/audit";
 import { docLabel } from "@/lib/recruitment";
+import { staffDocLabel } from "@/lib/staff-documents";
 import { entryNamer, extOf, safeEntry } from "@/lib/evidence-files";
 import { formatDate } from "@/lib/dates";
 
@@ -18,8 +19,10 @@ export const maxDuration = 60;
  * four years' standing.
  *
  *   Certificates/              every certificate PDF issued to them
- *   Recruitment documents/     their right to work, DBS, references… from the
- *                              candidate record they were hired from
+ *   Staff documents/           their current right to work, DBS, references
+ *                              and insurance, from their file
+ *   Recruitment documents/     what was collected from the candidate record
+ *                              they were hired from
  *   Care Certificate/          observation evidence and the signed award
  *
  * Read as the service role, so each folder is gated with hasFeatureForOrg()
@@ -69,6 +72,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
       base: `${course?.title ?? "Certificate"} - ${formatDate(c.issued_at as string, { day: "numeric", month: "short", year: "numeric" })}`,
       ext: "pdf",
     });
+  }
+
+  if (recruitment) {
+    const { data: staffDocs } = await admin
+      .from("staff_documents")
+      .select("doc_type, file_path, file_name, updated_at")
+      .eq("user_id", userId)
+      .eq("organisation_id", orgId)
+      .not("file_path", "is", null);
+    for (const d of staffDocs ?? []) {
+      if (!onOrAfter(d.updated_at as string)) continue;
+      wanted.push({
+        bucket: "staff-docs",
+        path: d.file_path as string,
+        folder: "Staff documents",
+        base: staffDocLabel(d.doc_type as string),
+        ext: extOf((d.file_name as string | null) ?? (d.file_path as string)),
+      });
+    }
   }
 
   // The candidate record they were hired from, matched by email within the
@@ -163,7 +185,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
     "",
     `${got.length - missing} file(s) included.`,
     missing ? `${missing} file(s) are recorded but could not be read from storage.` : "",
-    recruitment ? "" : "Recruitment documents are not included: recruitment is not in your package.",
+    recruitment ? "" : "Staff and recruitment documents are not included: recruitment is not in your package.",
     observations ? "" : "Care Certificate evidence is not included: observations are not in your package.",
   ]
     .filter((l, i) => l !== "" || i === 3)
