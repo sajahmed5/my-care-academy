@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { COMPLAINT_KINDS, RAISED_BY_ROLES } from "@/lib/complaints/stages";
+import { COMPLAINT_NATURES } from "@/lib/complaints/forms";
 import { createComplaintAction } from "./actions";
 import type { SaveState } from "@/app/platform/actions";
 
@@ -51,7 +52,8 @@ export function NewComplaint() {
     <Card>
       <CardContent className="pt-6">
         {/* Labels and rows as Norwood asked (#61): type alone, then the two
-            dates, then who raised it and their role, then the service user.
+            dates, then who raised it and their role, then the service user
+            and what it is about.
             Staff are named from the record itself, under "Staff named". */}
         <form action={formAction} className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -93,6 +95,17 @@ export function NewComplaint() {
             <div className="space-y-1">
               <Label htmlFor="nc-about">Service user</Label>
               <Input id="nc-about" name="aboutName" placeholder="The person receiving care" />
+            </div>
+            {/* The Complaint Form needs it, and choosing a member of staff used
+                to answer it; asked here so the first stage is done on arrival. */}
+            <div className="space-y-1">
+              <Label htmlFor="nc-nature">What it is about</Label>
+              <select id="nc-nature" name="nature" className={selectClass} required defaultValue="">
+                <option value="" disabled>Choose…</option>
+                {COMPLAINT_NATURES.map((n) => (
+                  <option key={n.value} value={n.value}>{n.label}</option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="space-y-1">

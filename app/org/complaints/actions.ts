@@ -29,6 +29,7 @@ import {
 } from "@/lib/complaints/stage-status";
 import { closeGaps, closeGapsMessage } from "@/lib/complaints/close";
 import { emailAssignees } from "@/lib/assignment-email";
+import { COMPLAINT_NATURES } from "@/lib/complaints/forms";
 import { siteOrigin } from "@/lib/site-url";
 
 /**
@@ -200,8 +201,10 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
   const occurredOn = str(formData, "occurredOn");
   const description = str(formData, "description");
   const desiredOutcome = str(formData, "desiredOutcome");
+  const nature = str(formData, "nature");
   const staff = formData.getAll("staff").map(String).filter(Boolean);
 
+  if (!COMPLAINT_NATURES.some((n) => n.value === nature)) return { ok: false, error: "Say what it is about." };
   if (!description) return { ok: false, error: "Say what was raised." };
   if (description.length > 10000) return { ok: false, error: "Keep it under 10,000 characters." };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(reportedOn)) return { ok: false, error: "Say when it reached you." };
@@ -252,11 +255,12 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
   const form = stages.find((s) => s.kind === "complaint_form");
   if (form) {
     const answers: Record<string, unknown> = {
-      cf_date: occurredOn || reportedOn,
+      // "Date raised" on the stage is when it reached us, as on Record one.
+      cf_date: reportedOn,
       cf_complainant: raisedByName,
       cf_relationship: raisedByRole || undefined,
       cf_about: aboutName || undefined,
-      cf_nature: staff.length ? "carer" : undefined,
+      cf_nature: nature,
       cf_details: description,
       cf_staff: staff,
       cf_desired: desiredOutcome || undefined,

@@ -22,6 +22,14 @@
 
 import type { StageForm } from "./schema";
 
+/** "What it is about": asked on Record one and kept on the Complaint Form. */
+export const COMPLAINT_NATURES = [
+  { value: "carer", label: "A member of care staff" },
+  { value: "office", label: "The office or a manager" },
+  { value: "service", label: "The service as a whole" },
+  { value: "other", label: "Something else" },
+];
+
 export const complaintFormSchema: StageForm = {
   sections: [
     {
@@ -49,12 +57,7 @@ export const complaintFormSchema: StageForm = {
           text: "What it is about",
           type: "select",
           required: true,
-          options: [
-            { value: "carer", label: "A member of care staff" },
-            { value: "office", label: "The office or a manager" },
-            { value: "service", label: "The service as a whole" },
-            { value: "other", label: "Something else" },
-          ],
+          options: COMPLAINT_NATURES,
         },
         { id: "cf_details", text: "Detailed description", type: "long_text", required: true },
         {
