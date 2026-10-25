@@ -136,8 +136,18 @@ export function PipView({ pip, steps, next, staff, today }: { pip: Pip; steps: P
             {open && <AddWeek pipId={pip.id} />}
           </div>
           {pip.reviews.length === 0 && <p className="text-sm text-muted-foreground">No weeks yet.</p>}
+          {/* Only the earliest week still to review opens by default. With every
+              running week open, one week's Save sat directly above the next
+              week's fields, as if it saved them too (#67). */}
           {pip.reviews.map((r) => (
-            <ReviewRow key={r.id} pip={pip} review={r} today={today} disabled={!open} />
+            <ReviewRow
+              key={r.id}
+              pip={pip}
+              review={r}
+              today={today}
+              disabled={!open}
+              startOpen={r.id === pip.reviews.find((x) => !x.completedAt && x.periodStart <= today)?.id}
+            />
           ))}
         </CardContent>
       </Card>
@@ -203,8 +213,20 @@ function AddWeek({ pipId }: { pipId: string }) {
   );
 }
 
-function ReviewRow({ pip, review: r, today, disabled }: { pip: Pip; review: PipReview; today: string; disabled: boolean }) {
-  const [open, setOpen] = useState(!r.completedAt && r.periodStart <= today);
+function ReviewRow({
+  pip,
+  review: r,
+  today,
+  disabled,
+  startOpen,
+}: {
+  pip: Pip;
+  review: PipReview;
+  today: string;
+  disabled: boolean;
+  startOpen: boolean;
+}) {
+  const [open, setOpen] = useState(startOpen);
   const [state, act, pending] = useActionState<SaveState, FormData>(saveReviewAction, {});
   const late = !r.completedAt && r.periodEnd < today;
   const sessions = pip.training.filter((t) => t.reviewId === r.id);

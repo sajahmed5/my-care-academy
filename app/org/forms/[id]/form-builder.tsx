@@ -124,44 +124,34 @@ function FieldControls({
   );
 }
 
+/**
+ * One field already on the form. Its edits are held by the builder and saved
+ * by the one Save at the bottom of the page (#67) — a Save per field beside a
+ * "Save form" at the top meant edits were lost to whichever was pressed.
+ */
 function ExistingField({
   formId,
   field,
+  draft,
+  setDraft,
+  dirty,
   others,
   onDeleted,
 }: {
   formId: string;
   field: FormField;
+  draft: Draft;
+  setDraft: (d: Draft) => void;
+  dirty: boolean;
   others: { id: string; label: string }[];
   onDeleted: (id: string) => void;
 }) {
-  const [draft, setDraft] = useState<Draft>({
-    label: field.label,
-    type: field.type,
-    optionsText: (field.options ?? []).join(", "),
-    required: field.required,
-    whenFieldId: field.conditional?.whenFieldId ?? "",
-    equals: field.conditional?.equals ?? "",
-  });
-  const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   return (
-    <div className="space-y-3 rounded-lg border p-4">
+    <div className={`space-y-3 rounded-lg border p-4 ${dirty ? "border-amber-300" : ""}`}>
       <FieldControls draft={draft} set={setDraft} others={others} />
       <div className="flex items-center gap-3">
-        <Button
-          size="sm"
-          disabled={busy}
-          onClick={async () => {
-            setBusy(true);
-            const r = await updateFieldAction(field.id, formId, toInput(draft));
-            setBusy(false);
-            setMsg(r.ok ? "Saved" : (r.error ?? "Error"));
-          }}
-        >
-          Save
-        </Button>
         <Button
           size="sm"
           variant="destructive"
@@ -175,11 +165,24 @@ function ExistingField({
         >
           Delete
         </Button>
-        {msg && <span className="text-xs text-muted-foreground">{msg}</span>}
+        {dirty && <span className="text-xs text-amber-700">Not saved yet</span>}
       </div>
     </div>
   );
 }
+
+function draftOf(field: FormField): Draft {
+  return {
+    label: field.label,
+    type: field.type,
+    optionsText: (field.options ?? []).join(", "),
+    required: field.required,
+    whenFieldId: field.conditional?.whenFieldId ?? "",
+    equals: field.conditional?.equals ?? "",
+  };
+}
+
+const sameDraft = (a: Draft, b: Draft) => JSON.stringify(a) === JSON.stringify(b);
 
 const emptyDraft: Draft = {
   label: "",
@@ -208,15 +211,37 @@ export function FormBuilder({
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [busy, setBusy] = useState(false);
 
-  const others = fields.map((f) => ({ id: f.id, label: f.label }));
+  // Every field's edits, against what was last saved, so the one Save at the
+  // bottom knows exactly what to write.
+  const [drafts, setDrafts] = useState<Record<string, Draft>>(() =>
+    Object.fromEntries(initialFields.map((f) => [f.id, draftOf(f)])),
+  );
+  const [saved, setSaved] = useState<Record<string, Draft>>(drafts);
+  const [savedDetails, setSavedDetails] = useState({ title, published: status === "published" });
+  const [msg, setMsg] = useState<string | null>(null);
 
-  async function saveForm() {
+  const others = fields.map((f) => ({ id: f.id, label: f.label }));
+  const dirtyIds = fields.map((f) => f.id).filter((id) => drafts[id] && saved[id] && !sameDraft(drafts[id], saved[id]));
+  const detailsDirty = formTitle !== savedDetails.title || published !== savedDetails.published;
+  const unsaved = detailsDirty || dirtyIds.length > 0;
+
+  async function saveAll() {
     setBusy(true);
-    await updateFormAction(formId, {
-      title: formTitle,
-      status: published ? "published" : "draft",
-    });
+    setMsg(null);
+    const errors: string[] = [];
+    if (detailsDirty) {
+      await updateFormAction(formId, { title: formTitle, status: published ? "published" : "draft" });
+      setSavedDetails({ title: formTitle, published });
+    }
+    const nowSaved = { ...saved };
+    for (const id of dirtyIds) {
+      const r = await updateFieldAction(id, formId, toInput(drafts[id]));
+      if (r.ok) nowSaved[id] = drafts[id];
+      else errors.push(`${drafts[id].label || "A field"}: ${r.error ?? "could not save"}`);
+    }
+    setSaved(nowSaved);
     setBusy(false);
+    setMsg(errors.length ? errors.join(" · ") : "Saved.");
     router.refresh();
   }
 
@@ -242,6 +267,8 @@ export function FormBuilder({
           sort_order: prev.length,
         },
       ]);
+      setDrafts((prev) => ({ ...prev, [r.id!]: draft }));
+      setSaved((prev) => ({ ...prev, [r.id!]: draft }));
       setDraft(emptyDraft);
     }
   }
@@ -261,9 +288,6 @@ export function FormBuilder({
           <Switch checked={published} onCheckedChange={setPublished} />
           Published
         </label>
-        <Button onClick={saveForm} disabled={busy}>
-          Save form
-        </Button>
       </div>
 
       <div className="space-y-4">
@@ -273,6 +297,9 @@ export function FormBuilder({
             key={f.id}
             formId={formId}
             field={f}
+            draft={drafts[f.id] ?? draftOf(f)}
+            setDraft={(d) => setDrafts((prev) => ({ ...prev, [f.id]: d }))}
+            dirty={dirtyIds.includes(f.id)}
             others={others.filter((o) => o.id !== f.id)}
             onDeleted={(id) =>
               setFields((prev) => prev.filter((x) => x.id !== id))
@@ -287,6 +314,20 @@ export function FormBuilder({
         <Button onClick={addField} disabled={busy || !draft.label.trim()}>
           Add field
         </Button>
+      </div>
+
+      {/* The one Save, at the bottom (#67): the title, published, and every
+          field edited above. */}
+      <div className="flex flex-wrap items-center gap-3 border-t pt-4">
+        <Button onClick={saveAll} disabled={busy || !unsaved}>
+          {busy ? "Saving…" : "Save changes"}
+        </Button>
+        {unsaved && !busy && (
+          <span className="text-xs text-amber-700">
+            Unsaved changes{dirtyIds.length ? ` to ${dirtyIds.length} field${dirtyIds.length === 1 ? "" : "s"}` : ""}.
+          </span>
+        )}
+        {msg && !unsaved && <span className="text-xs text-muted-foreground">{msg}</span>}
       </div>
     </div>
   );
