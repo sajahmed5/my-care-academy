@@ -29,7 +29,6 @@ import {
   deleteActionAction,
   deleteDocumentAction,
   markNotNeededAction,
-  saveFindingsAction,
   saveLetterAction,
   setActionDoneAction,
   setStageStatusAction,
@@ -72,12 +71,17 @@ export function StagePanel(props: PanelProps) {
           initial={answers}
           staff={props.staff}
           disabled={props.disabled}
-        />
-        {holdsFindings(stage) && <FindingsEditor {...props} />}
-        {(stage.kind === "meeting_minutes" || stage.kind === "action_plan") && (
-          <ActionsEditor {...props} tag={tag} />
-        )}
-        <DocumentsBox {...props} />
+        >
+          {(formId) => (
+            <>
+              {holdsFindings(stage) && <FindingsEditor {...props} formId={formId} />}
+              {(stage.kind === "meeting_minutes" || stage.kind === "action_plan") && (
+                <ActionsEditor {...props} tag={tag} />
+              )}
+              <DocumentsBox {...props} />
+            </>
+          )}
+        </StageForm>
         {/* The Complaint Form is filled in when the record is made, so "not
             needed" there only raised the question of what it meant (#61). */}
         {stage.kind !== "complaint_form" && <NotNeeded {...props} />}
@@ -253,20 +257,18 @@ function LetterPanel({ complaint, stage, entry, organisationName, senderName, to
 // Findings: one per concern
 // ---------------------------------------------------------------------------
 
-function FindingsEditor({ complaint, stage, entry, disabled }: PanelProps) {
+/** Saved by the stage's own Save, below: its list rides along as form={formId}. */
+function FindingsEditor({ entry, disabled, formId }: PanelProps & { formId: string }) {
   const [list, setList] = useState<ConcernFinding[]>(() => {
     const saved = readConcernFindings(entry?.formAnswers ?? null);
     return saved.length ? saved : [{ id: crypto.randomUUID(), concern: "", why: "" }];
   });
-  const [state, action, pending] = useActionState<SaveState, FormData>(saveFindingsAction, {});
   const outstanding = findingsOutstanding(list.filter((r) => r.concern.trim()));
   const update = (id: string, patch: Partial<ConcernFinding>) => setList((l) => l.map((r) => (r.id === id ? { ...r, ...patch } : r)));
 
   return (
-    <form action={action} className="space-y-3 border-t pt-4">
-      <input type="hidden" name="complaintId" value={complaint.id} />
-      <input type="hidden" name="stageId" value={stage.id} />
-      <input type="hidden" name="findings" value={JSON.stringify(list)} />
+    <div className="space-y-3 border-t pt-4">
+      <input type="hidden" name="findings" form={formId} value={JSON.stringify(list)} />
       <div>
         <p className="text-sm font-semibold">Our finding on each concern</p>
         <p className="text-xs text-muted-foreground">Each thing that was raised, in their words; what we found; and why. The response is written from these.</p>
@@ -303,10 +305,7 @@ function FindingsEditor({ complaint, stage, entry, disabled }: PanelProps) {
         </Button>
       )}
       {outstanding.length > 0 && <p className="text-xs text-amber-700">{outstanding.join("; ")}.</p>}
-      {state.error && <p className="text-sm text-rose-600">{state.error}</p>}
-      {state.ok && !state.error && <p className="text-sm text-teal-700">Saved.</p>}
-      {!disabled && <Button type="submit" size="sm" disabled={pending}>{pending ? "Saving…" : "Save findings"}</Button>}
-    </form>
+    </div>
   );
 }
 

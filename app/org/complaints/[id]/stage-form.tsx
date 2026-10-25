@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useState } from "react";
+import { startTransition, useActionState, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,12 @@ import type { SaveState } from "@/app/platform/actions";
  * A stage's form, rendered from its schema. Hidden questions are not drawn;
  * what is missing is said at the bottom, from the same rule that decides
  * whether the stage is done.
+ *
+ * Save sits at the very bottom of the panel (#67), under whatever else the
+ * stage holds — findings, actions, documents. Those carry forms of their own
+ * and forms cannot nest, so they are drawn between the questions' <form> and
+ * the Save, which submits it by id. A child that has answers to send with it
+ * renders its inputs with form={formId}.
  */
 export function StageForm({
   complaintId,
@@ -38,9 +44,10 @@ export function StageForm({
   initial: AnswerMap;
   staff: StaffOption[];
   disabled: boolean;
-  /** Anything that sits under the questions and above the save button. */
-  children?: React.ReactNode;
+  /** Anything that sits under the questions and above the save button; given the form's id. */
+  children?: (formId: string) => React.ReactNode;
 }) {
+  const formId = useId();
   const [answers, setAnswers] = useState<AnswerMap>(initial);
   const [state, action, pending] = useActionState<SaveState, FormData>(saveStageFormAction, {});
   // Anyone already chosen stays on screen even if they have since left.
@@ -54,46 +61,51 @@ export function StageForm({
   for (const s of form.sections) for (const q of s.questions) if (q.id in answers) owned[q.id] = answers[q.id];
 
   return (
-    <form
-      // Submitted through a transition rather than <form action>: React resets
-      // a form after a successful action, and a reset puts every <select> back
-      // to the option it showed when the page loaded — the save lands, but the
-      // dropdown snaps back on screen (#64).
-      onSubmit={(e) => {
-        e.preventDefault();
-        const data = new FormData(e.currentTarget);
-        startTransition(() => action(data));
-      }}
-      className="space-y-5"
-    >
-      <input type="hidden" name="complaintId" value={complaintId} />
-      <input type="hidden" name="stageId" value={stageId} />
-      <input type="hidden" name="answers" value={JSON.stringify(owned)} />
-      {[...form.sections]
-        .sort((a, b) => a.order - b.order)
-        .map((section) => (
-          <fieldset key={section.id} className="space-y-3">
-            <legend className="text-sm font-semibold">{section.title}</legend>
-            {section.description && <p className="text-xs text-muted-foreground">{section.description}</p>}
-            {visibleQuestions(section, answers).map((q) => (
-              <QuestionField key={q.id} q={q} value={answers[q.id]} onChange={(v) => set(q.id, v)} disabled={disabled} />
-            ))}
-          </fieldset>
-        ))}
-      {children}
-      {missing.length > 0 && (
-        <p className="text-xs text-amber-700">
-          Still needed: {missing.join("; ")}.
-        </p>
-      )}
-      {state.error && <p className="text-sm text-rose-600">{state.error}</p>}
-      {state.ok && !state.error && <p className="text-sm text-teal-700">Saved.</p>}
-      {!disabled && (
-        <Button type="submit" size="sm" disabled={pending}>
-          {pending ? "Saving…" : "Save"}
-        </Button>
-      )}
-    </form>
+    <>
+      <form
+        id={formId}
+        // Submitted through a transition rather than <form action>: React resets
+        // a form after a successful action, and a reset puts every <select> back
+        // to the option it showed when the page loaded — the save lands, but the
+        // dropdown snaps back on screen (#64).
+        onSubmit={(e) => {
+          e.preventDefault();
+          const data = new FormData(e.currentTarget);
+          startTransition(() => action(data));
+        }}
+        className="space-y-5"
+      >
+        <input type="hidden" name="complaintId" value={complaintId} />
+        <input type="hidden" name="stageId" value={stageId} />
+        <input type="hidden" name="answers" value={JSON.stringify(owned)} />
+        {[...form.sections]
+          .sort((a, b) => a.order - b.order)
+          .map((section) => (
+            <fieldset key={section.id} className="space-y-3">
+              <legend className="text-sm font-semibold">{section.title}</legend>
+              {section.description && <p className="text-xs text-muted-foreground">{section.description}</p>}
+              {visibleQuestions(section, answers).map((q) => (
+                <QuestionField key={q.id} q={q} value={answers[q.id]} onChange={(v) => set(q.id, v)} disabled={disabled} />
+              ))}
+            </fieldset>
+          ))}
+      </form>
+      {children?.(formId)}
+      <div className="space-y-2 border-t pt-4">
+        {missing.length > 0 && (
+          <p className="text-xs text-amber-700">
+            Still needed: {missing.join("; ")}.
+          </p>
+        )}
+        {state.error && <p className="text-sm text-rose-600">{state.error}</p>}
+        {state.ok && !state.error && <p className="text-sm text-teal-700">Saved.</p>}
+        {!disabled && (
+          <Button type="submit" form={formId} size="sm" disabled={pending}>
+            {pending ? "Saving…" : "Save"}
+          </Button>
+        )}
+      </div>
+    </>
   );
 }
 

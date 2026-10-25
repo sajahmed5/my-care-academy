@@ -416,6 +416,14 @@ export async function saveStageFormAction(_prev: SaveState, formData: FormData):
     entryAnswers(supabase, complaintId, stageId),
   ]);
   if (!stage) return { ok: false, error: "That stage is no longer there." };
+  // The findings on each concern come with the answers, on the stages that
+  // hold them: one Save for the whole panel, at the bottom of it (#67).
+  const findingsRaw = formData.get("findings");
+  if (findingsRaw !== null && holdsFindings(stage)) {
+    const list = parseFindings(String(findingsRaw));
+    if (!list) return { ok: false, error: "The findings could not be read." };
+    answers[CONCERN_FINDINGS_KEY] = list;
+  }
   // Keep what the form does not own: the findings list, the not-needed marks.
   const kept: Record<string, unknown> = {};
   for (const k of [CONCERN_FINDINGS_KEY, TRIAGE_NA_KEY, FINDINGS_NA_KEY, "sentOn", "subject", "body", "sentTo"]) {
@@ -467,18 +475,17 @@ export async function saveLetterAction(_prev: SaveState, formData: FormData): Pr
   return { ok: true };
 }
 
-/** The finding on each concern, kept on the Findings stage beside its answers. */
-export async function saveFindingsAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
-  const context = await requireComplaints();
-  if (!context) return { ok: false, error: NOT_IN_PLAN };
-  const complaintId = str(formData, "complaintId");
-  const stageId = str(formData, "stageId");
-  let list: ConcernFinding[];
+/**
+ * The finding on each concern, as the Findings editor sends it, cleaned; null
+ * when it cannot be read. It is saved with the rest of the stage, by the one
+ * Save at the bottom of the panel (#67).
+ */
+function parseFindings(raw: string): ConcernFinding[] | null {
   try {
-    const raw = JSON.parse(str(formData, "findings") || "[]");
-    if (!Array.isArray(raw)) throw new Error();
-    list = cleanConcernFindings(
-      raw.map((r: Record<string, unknown>, i: number) => ({
+    const list = JSON.parse(raw || "[]");
+    if (!Array.isArray(list)) return null;
+    return cleanConcernFindings(
+      list.map((r: Record<string, unknown>, i: number) => ({
         id: typeof r.id === "string" && r.id ? r.id : `c${i + 1}`,
         concern: String(r.concern ?? ""),
         finding: ["upheld", "partly_upheld", "not_upheld", "undetermined"].includes(String(r.finding))
@@ -488,18 +495,8 @@ export async function saveFindingsAction(_prev: SaveState, formData: FormData): 
       })),
     );
   } catch {
-    return { ok: false, error: "The findings could not be read." };
+    return null;
   }
-  const supabase = await createClient();
-  const [stage, existing] = await Promise.all([
-    stageById(supabase, stageId),
-    entryAnswers(supabase, complaintId, stageId),
-  ]);
-  if (!stage || !holdsFindings(stage)) return { ok: false, error: "Findings live on the Findings stage or an action plan." };
-  const err = await recompute(supabase, complaintId, stage, { ...existing, [CONCERN_FINDINGS_KEY]: list }, context.userId);
-  if (err) return { ok: false, error: err };
-  revalidatePath(`/org/complaints/${complaintId}`);
-  return { ok: true };
 }
 
 /**
