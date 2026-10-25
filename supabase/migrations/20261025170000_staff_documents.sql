@@ -43,7 +43,11 @@ create trigger staff_documents_set_updated_at
 
 -- Grants (AGENTS.md): every write goes through the service role; console
 -- users read their own organisation's rows under RLS; nothing to anon.
+-- Supabase still adds its automatic grant to a new table (see
+-- 20261024150000), so what is not wanted is revoked explicitly.
 grant select, insert, update, delete on public.staff_documents to service_role;
+revoke all on public.staff_documents from anon;
+revoke insert, update, delete, truncate, references, trigger on public.staff_documents from authenticated;
 grant select on public.staff_documents to authenticated;
 
 alter table public.staff_documents enable row level security;
