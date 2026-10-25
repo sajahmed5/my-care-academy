@@ -595,7 +595,7 @@ export default async function StaffDetailPage({
 
         {section.key === "supervisions" && state === "open" && (
           <div id="supervisions" className="scroll-mt-24 space-y-2">
-            <SupervisionList userId={userId} supervisions={supervisions} />
+            <SupervisionList userId={userId} carerName={name} supervisions={supervisions} />
           </div>
         )}
 

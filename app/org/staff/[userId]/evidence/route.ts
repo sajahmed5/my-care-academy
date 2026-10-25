@@ -136,7 +136,17 @@ export async function GET(
     supervisions: supervisionRows.map((s) => ({
       when: fmt(s.held_on),
       what: `${kindLabel(s.kind)}${s.supervisor_name ? ` — held by ${s.supervisor_name}` : ""}`,
-      detail: s.summary,
+      // Whether the carer signed it at the time, or why not (CARER-FILE.md §9).
+      detail: [
+        s.summary,
+        s.carer_signed_name
+          ? `Signed by ${s.carer_signed_name}${s.carer_signed_at ? ` on ${fmt(s.carer_signed_at)}` : ""}.`
+          : s.carer_unsigned_reason
+            ? `Not signed by the carer: ${s.carer_unsigned_reason}.`
+            : null,
+      ]
+        .filter(Boolean)
+        .join("\n") || null,
       status: s.next_due ? `Next ${fmt(s.next_due)}` : null,
     })),
     competency: checkRows.map((c) => ({

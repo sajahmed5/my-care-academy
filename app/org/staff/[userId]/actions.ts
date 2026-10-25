@@ -7,7 +7,7 @@ import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
 import { parseAgreedActions } from "@/lib/records";
 import { COMPETENCY_AREAS, COMPETENCY_OUTCOMES } from "@/lib/competency";
-import { SUPERVISION_KINDS } from "@/lib/supervisions";
+import { SUPERVISION_KINDS, carerSignature } from "@/lib/supervisions";
 import type { SaveState } from "@/app/platform/actions";
 
 /** A save that can also say how many agreed actions it created. */
@@ -155,6 +155,14 @@ export async function addSupervisionAction(
   const nextDue = String(formData.get("nextDue") ?? "").trim();
   const agreed = parseAgreedActions(String(formData.get("agreed") ?? ""));
   const actionsDue = String(formData.get("actionsDue") ?? "").trim();
+  // Signed on the manager's screen at the time (CARER-FILE.md §9), or a
+  // reason it could not be.
+  const signed = carerSignature({
+    signature: String(formData.get("carerSignature") ?? ""),
+    name: String(formData.get("carerSignedName") ?? ""),
+    unsignedReason: formData.get("carerCannotSign") === "1" ? String(formData.get("carerUnsignedReason") ?? "") : "",
+    now: new Date(),
+  });
 
   if (!heldOn) return { ok: false, error: "Say when it was held." };
   if (!SUPERVISION_KINDS.some((k) => k.value === kind)) {
@@ -163,6 +171,10 @@ export async function addSupervisionAction(
   if (summary.length > 5000) {
     return { ok: false, error: "Keep the summary under 5000 characters." };
   }
+  if (formData.get("carerCannotSign") === "1" && !String(formData.get("carerUnsignedReason") ?? "").trim()) {
+    return { ok: false, error: "Say why they cannot sign now." };
+  }
+  if (!signed.ok) return { ok: false, error: signed.error };
 
   // Said plainly, rather than leaving RLS to refuse the insert and reporting
   // "new row violates row-level security policy" to a care manager.
@@ -190,6 +202,7 @@ export async function addSupervisionAction(
       summary: summary || null,
       next_due: nextDue || null,
       created_by: context.userId,
+      ...signed.fields,
     })
     .select("id")
     .single();
@@ -220,7 +233,7 @@ export async function addSupervisionAction(
     action: "supervision.recorded",
     entity: "user",
     entityId: userId,
-    detail: { kind, heldOn, actions: agreed.length },
+    detail: { kind, heldOn, actions: agreed.length, signedByCarer: !!signed.fields.carer_signature },
   });
 
   revalidatePath(`/org/staff/${userId}`);

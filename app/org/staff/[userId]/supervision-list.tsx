@@ -14,6 +14,7 @@ import {
   type Supervision,
 } from "@/lib/supervisions";
 import { addSupervisionAction, type SupervisionState } from "./actions";
+import { SignaturePad } from "@/app/org/forms/[id]/fill/signature-pad";
 import { formatDate } from "@/lib/dates";
 
 const selectClass =
@@ -50,9 +51,11 @@ function todayISO(): string {
  */
 export function SupervisionList({
   userId,
+  carerName,
   supervisions,
 }: {
   userId: string;
+  carerName: string;
   supervisions: Supervision[];
 }) {
   const now = new Date();
@@ -70,7 +73,7 @@ export function SupervisionList({
             ? "No next supervision scheduled"
             : `Next due ${fmtDate(next)}`}
         </span>
-        <RecordSupervision userId={userId} />
+        <RecordSupervision userId={userId} carerName={carerName} />
       </div>
 
       {supervisions.length === 0 ? (
@@ -103,6 +106,7 @@ export function SupervisionList({
                 <p className="text-xs text-muted-foreground">
                   {s.next_due ? `Next due ${fmtDate(s.next_due)}` : "No next date set"}
                 </p>
+                <CarerSigned s={s} />
               </CardContent>
             </Card>
           ))}
@@ -112,7 +116,28 @@ export function SupervisionList({
   );
 }
 
-function RecordSupervision({ userId }: { userId: string }) {
+/** The carer's signature on a record, or why there is none. */
+function CarerSigned({ s }: { s: Supervision }) {
+  if (s.carer_signature) {
+    return (
+      <div className="flex flex-wrap items-center gap-3 border-t pt-2">
+        {/* A data URL drawn on the pad, a few KB; nothing for next/image to do. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={s.carer_signature} alt={`Signature of ${s.carer_signed_name ?? "the carer"}`} className="h-10 rounded border bg-white" />
+        <span className="text-xs text-muted-foreground">
+          Signed by {s.carer_signed_name}
+          {s.carer_signed_at ? ` on ${fmtDate(s.carer_signed_at)}` : ""}
+        </span>
+      </div>
+    );
+  }
+  if (s.carer_unsigned_reason) {
+    return <p className="border-t pt-2 text-xs text-amber-700">Not signed by the carer — {s.carer_unsigned_reason}</p>;
+  }
+  return <p className="border-t pt-2 text-xs text-muted-foreground">Recorded before carers signed supervisions.</p>;
+}
+
+function RecordSupervision({ userId, carerName }: { userId: string; carerName: string }) {
   const [open, setOpen] = useState(false);
   // The next-due date follows the date it was held, on the organisation's
   // default interval, until somebody sets it themselves — after which it is
@@ -120,8 +145,21 @@ function RecordSupervision({ userId }: { userId: string }) {
   const [on, setOn] = useState(todayISO);
   const [nextDue, setNextDue] = useState(() => defaultNextDue(todayISO(), "supervision"));
   const [ownNextDue, setOwnNextDue] = useState(false);
+  // The carer signs on this screen, at the time (CARER-FILE.md §9).
+  const [signature, setSignature] = useState<string | null>(null);
+  const [cannotSign, setCannotSign] = useState(false);
+  const [padKey, setPadKey] = useState(0);
   const [state, formAction, pending] = useActionState<SupervisionState, FormData>(
-    addSupervisionAction,
+    async (prev, fd) => {
+      const r = await addSupervisionAction(prev, fd);
+      // A saved record clears the pad, so the next one starts unsigned.
+      if (r.ok) {
+        setSignature(null);
+        setCannotSign(false);
+        setPadKey((k) => k + 1);
+      }
+      return r;
+    },
     {},
   );
 
@@ -213,6 +251,38 @@ function RecordSupervision({ userId }: { userId: string }) {
               <Input id="sv-actions-due" name="actionsDue" type="date" />
             </div>
           </div>
+
+          <fieldset className="space-y-2 rounded-lg border p-3">
+            <legend className="px-1 text-sm font-medium">
+              {carerName}&apos;s signature<span className="text-rose-600"> *</span>
+            </legend>
+            <p className="text-xs text-muted-foreground">
+              Pass them the screen to sign that this is a fair record of the conversation.
+            </p>
+            <input type="hidden" name="carerSignature" value={cannotSign ? "" : (signature ?? "")} />
+            {!cannotSign && (
+              <>
+                <SignaturePad key={padKey} onChange={setSignature} />
+                <div className="space-y-1">
+                  <Label htmlFor="sv-signed-name">Their name, typed by them</Label>
+                  <Input id="sv-signed-name" name="carerSignedName" key={`n${padKey}`} defaultValue="" placeholder={carerName} />
+                </div>
+              </>
+            )}
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="carerCannotSign"
+                value="1"
+                checked={cannotSign}
+                onChange={(e) => setCannotSign(e.target.checked)}
+              />
+              They cannot sign now
+            </label>
+            {cannotSign && (
+              <Input name="carerUnsignedReason" maxLength={500} required placeholder="Why — e.g. held by phone" />
+            )}
+          </fieldset>
 
           {state.error && <p className="text-sm text-rose-600">{state.error}</p>}
           {state.ok && !state.error && (
