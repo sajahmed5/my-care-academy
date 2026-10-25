@@ -49,6 +49,16 @@ describe("the email", () => {
     expect(html).toContain("Speak to Ammara");
     expect(html).not.toContain("href=");
   });
+  it("says training when it is training", () => {
+    const { subject, html } = assignmentEmail(
+      "training_assigned",
+      { userId: "u1", title: "Fire Safety", dueDate: "2026-11-30", href: "/learn/modules" },
+      ctx,
+    );
+    expect(subject).toBe("Training to complete: Fire Safety");
+    expect(html).toContain("training to complete");
+    expect(html).toContain("/learn/modules");
+  });
   it("escapes what people typed", () => {
     const { html } = assignmentEmail(
       "action_assigned",

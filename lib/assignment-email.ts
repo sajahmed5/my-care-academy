@@ -1,8 +1,8 @@
 /**
  * Telling someone they have been given something to do (#66, #72).
  *
- * Assigning a form or making someone the owner of a complaint action used to
- * happen silently: it showed in their list, if they had one and looked. Now
+ * Assigning a form or training, or making someone the owner of a complaint
+ * action, used to happen silently: it showed in their list, if they had one and looked. Now
  * each person gets one short email, logged in email_log like every other send.
  *
  * Who is skipped, and why:
@@ -21,7 +21,7 @@ import { sendEmailBatch } from "./email";
 import { esc } from "./engine-digest";
 import { formatDate } from "./dates";
 
-export type AssignmentKind = "form_assigned" | "action_assigned";
+export type AssignmentKind = "form_assigned" | "action_assigned" | "training_assigned";
 
 export interface AssignmentNotice {
   userId: string;
@@ -53,8 +53,13 @@ export function assignmentEmail(
   notice: AssignmentNotice,
   ctx: { name: string | null; assignedByName: string; orgName: string; origin: string },
 ): { subject: string; html: string } {
-  const what = kind === "form_assigned" ? "a form to complete" : "an action";
-  const subject = kind === "form_assigned" ? `Form to complete: ${notice.title}` : `Action assigned to you: ${notice.title}`;
+  const what = kind === "form_assigned" ? "a form to complete" : kind === "training_assigned" ? "training to complete" : "an action";
+  const subject =
+    kind === "form_assigned"
+      ? `Form to complete: ${notice.title}`
+      : kind === "training_assigned"
+        ? `Training to complete: ${notice.title}`
+        : `Action assigned to you: ${notice.title}`;
   const due = notice.dueDate
     ? `<p>Please have it done by <strong>${formatDate(notice.dueDate, { day: "numeric", month: "long", year: "numeric" })}</strong>.</p>`
     : "";
@@ -84,16 +89,23 @@ export async function emailAssignees(
 ): Promise<number> {
   try {
     if (notices.length === 0) return 0;
-    const [{ data: people }, { data: org }, { data: by }] = await Promise.all([
-      admin
-        .from("users")
-        .select("id, full_name, email, status, last_seen_at")
-        .eq("organisation_id", ctx.organisationId)
-        .in("id", [...new Set(notices.map((n) => n.userId))]),
+    // A hundred ids at a time: they travel in the URL, and "everyone" in a
+    // large organisation is past what one request can carry.
+    const ids = [...new Set(notices.map((n) => n.userId))];
+    const [people, { data: org }, { data: by }] = await Promise.all([
+      Promise.all(
+        Array.from({ length: Math.ceil(ids.length / 100) }, (_, i) =>
+          admin
+            .from("users")
+            .select("id, full_name, email, status, last_seen_at")
+            .eq("organisation_id", ctx.organisationId)
+            .in("id", ids.slice(i * 100, i * 100 + 100)),
+        ),
+      ).then((pages) => pages.flatMap((p) => (p.data ?? []) as Recipient[])),
       admin.from("organisations").select("name").eq("id", ctx.organisationId).maybeSingle(),
       admin.from("users").select("full_name, email").eq("id", ctx.assignedBy).maybeSingle(),
     ]);
-    const byId = new Map(((people ?? []) as Recipient[]).map((p) => [p.id, p]));
+    const byId = new Map(people.map((p) => [p.id, p]));
     const assignedByName = (by?.full_name as string | null) || (by?.email as string | null) || "Your manager";
     const orgName = (org?.name as string | null) ?? "your organisation";
 

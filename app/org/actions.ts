@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -9,6 +10,8 @@ import { anonymiseUserRecords, purgeUserFiles } from "@/lib/user-erasure";
 import { logAudit } from "@/lib/audit";
 import { fetchAll } from "@/lib/fetch-all";
 import { endOfMonthISO, type AssignCsvRow } from "@/lib/assign";
+import { emailAssignees } from "@/lib/assignment-email";
+import { siteOrigin } from "@/lib/site-url";
 import type { InviteState, SaveState } from "@/app/platform/actions";
 import type { UserRole } from "@/lib/auth";
 
@@ -446,6 +449,26 @@ export async function assignTrainingAction(
     action: "training.assigned",
     entity: "enrolment",
     detail: { courses: courseIds.length, learners: userIds.length, dueDate },
+  });
+
+  // One email per carer naming what they were given, after the response so a
+  // large assign is not held up by the mail provider.
+  const origin = await siteOrigin();
+  const organisationId = context.organisationId;
+  after(async () => {
+    const admin = createAdminClient();
+    const { data: courses } = await admin.from("courses").select("title").in("id", courseIds.slice(0, 100));
+    const titles = (courses ?? []).map((c) => c.title as string);
+    const title =
+      titles.length === 1
+        ? titles[0]
+        : `${courseIds.length} courses${titles.length ? ` (${titles.slice(0, 5).join(", ")}${courseIds.length > 5 ? ", …" : ""})` : ""}`;
+    await emailAssignees(
+      admin,
+      "training_assigned",
+      userIds.map((userId) => ({ userId, title, dueDate, href: "/learn/modules" })),
+      { organisationId, assignedBy: context.userId, origin },
+    );
   });
 
   revalidatePath("/learn");
