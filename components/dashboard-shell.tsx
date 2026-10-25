@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/logo";
+import { BrandMark } from "@/components/brand-mark";
+import { orgBranding } from "@/lib/branding";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { AppSidebar } from "@/components/app-sidebar";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -72,11 +73,13 @@ export async function DashboardShell({
   context: UserContext;
   children?: React.ReactNode;
 }) {
-  const [badges, starTotal, addOns] = await Promise.all([
+  const [badges, starTotal, addOns, , branding] = await Promise.all([
     learnerBadges(context),
     learnerStarTotal(context),
     orgAddOns(context),
     touchLastSeen(context),
+    // The organisation's own logo in place of ours, with white-label.
+    context.role === "platform_admin" ? null : orgBranding(context.organisationId),
   ]);
   return (
     <div className="flex min-h-svh w-full">
@@ -88,6 +91,8 @@ export async function DashboardShell({
         badges={badges}
         enabled={addOns}
         version={VERSION_LABEL}
+        brandLogo={branding?.logoUrl}
+        brandName={branding?.name}
       />
 
       {/* Main column */}
@@ -95,7 +100,7 @@ export async function DashboardShell({
         <header data-print="hide" className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b bg-card/85 px-4 py-3 backdrop-blur sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <div className="inline-flex rounded bg-white px-2 py-1 shadow-sm md:hidden">
-              <Logo width={104} />
+              <BrandMark logoUrl={branding?.logoUrl} orgName={branding?.name} width={104} />
             </div>
             <h1 className="truncate text-lg font-semibold tracking-tight">
               {title}

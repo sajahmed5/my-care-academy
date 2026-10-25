@@ -14,6 +14,7 @@ import {
   visiblePacks,
 } from "@/lib/policy-library";
 import { PolicyBody } from "@/components/policy-body";
+import { orgBranding } from "@/lib/branding";
 import { PolicyAcceptButton } from "@/components/policy-accept-button";
 import { AcceptancePanel } from "./acceptance-panel";
 
@@ -67,6 +68,8 @@ export default async function PolicyPage({
   const toComplete = blocks.filter((b) => b.type === "guidance").length;
   const version = doc.version ?? 1;
 
+  const branding = await orgBranding(context.organisationId);
+
   return (
     <DashboardShell title={doc.title} context={context}>
       <div className="mx-auto max-w-3xl space-y-6">
@@ -78,6 +81,11 @@ export default async function PolicyPage({
         </Link>
 
         <div className="space-y-1">
+          {/* Their copy of the policy carries their logo, with white-label. */}
+          {branding?.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={branding.logoUrl} alt={`${branding.name} logo`} className="mb-3 max-h-12 max-w-48 object-contain" />
+          )}
           <h2 className="text-xl font-semibold">{doc.title}</h2>
           <p className="text-sm text-muted-foreground">
             {PACK_LABEL[doc.pack]}

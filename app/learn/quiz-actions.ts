@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateCertificatePdf } from "@/lib/certificate";
+import { orgBranding } from "@/lib/branding";
 import {
   QUIZ_TARGET,
   PASS_PERCENT,
@@ -335,7 +336,10 @@ async function issueCertificate({
   if (error || !cert) return undefined;
 
   try {
+    const branding = await orgBranding(organisationId);
     const pdf = await generateCertificatePdf({
+      orgLogoUrl: branding?.logoUrl ?? null,
+      orgName: branding?.name ?? null,
       learnerName: learner?.full_name || learner?.email || "Learner",
       courseTitle: course.title as string,
       certificateNumber: cert.certificate_number as string,

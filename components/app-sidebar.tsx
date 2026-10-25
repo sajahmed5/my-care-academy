@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { PanelLeftClose, PanelLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Logo } from "@/components/logo";
+import { BrandMark } from "@/components/brand-mark";
 import { SidebarNav } from "@/components/sidebar-nav";
 import type { UserRole } from "@/lib/auth";
 
@@ -16,7 +16,11 @@ export function AppSidebar({
   badges,
   enabled,
   version,
+  brandLogo,
+  brandName,
 }: {
+  brandLogo?: string | null;
+  brandName?: string | null;
   role: UserRole | null;
   email: string | null;
   roleLabel: string;
@@ -52,7 +56,7 @@ export function AppSidebar({
       >
         {!collapsed && (
           <div className="inline-flex rounded-lg bg-white px-3 py-2 shadow-sm">
-            <Logo width={124} />
+            <BrandMark logoUrl={brandLogo} orgName={brandName} width={124} />
           </div>
         )}
         <button

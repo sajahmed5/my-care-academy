@@ -1,5 +1,6 @@
 import {
   Document,
+  Image,
   Page,
   Text,
   View,
@@ -16,6 +17,13 @@ export interface CertificateData {
   expiresAt: Date | null;
   /** Optional footer line, e.g. the Care Certificate knowledge-only statement. */
   note?: string | null;
+  /**
+   * The organisation's own logo and name, with white-label (ROADMAP §2). The
+   * certificate then leads with them; My Care Academy stays in the footer,
+   * where the certificate is verified.
+   */
+  orgLogoUrl?: string | null;
+  orgName?: string | null;
 }
 
 const styles = StyleSheet.create({
@@ -34,6 +42,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   brand: { fontSize: 14, letterSpacing: 2, color: "#6366f1", marginBottom: 8 },
+  orgLogo: { maxHeight: 56, maxWidth: 220, objectFit: "contain", marginBottom: 12 },
   heading: { fontSize: 26, fontFamily: "Helvetica-Bold", marginBottom: 24 },
   label: { fontSize: 11, color: "#6b7280", marginBottom: 4 },
   name: { fontSize: 22, fontFamily: "Helvetica-Bold", marginBottom: 16 },
@@ -64,7 +73,13 @@ function CertificateDoc({ data }: { data: CertificateData }) {
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
         <View style={styles.border}>
-          <Text style={styles.brand}>MY CARE ACADEMY</Text>
+          {data.orgLogoUrl && (
+            // eslint-disable-next-line jsx-a11y/alt-text -- a PDF image has no alt
+            <Image src={data.orgLogoUrl} style={styles.orgLogo} />
+          )}
+          <Text style={styles.brand}>
+            {data.orgLogoUrl && data.orgName ? data.orgName.toUpperCase() : "MY CARE ACADEMY"}
+          </Text>
           <Text style={styles.heading}>Certificate of Completion</Text>
           <Text style={styles.label}>This certifies that</Text>
           <Text style={styles.name}>{data.learnerName}</Text>
@@ -88,6 +103,7 @@ function CertificateDoc({ data }: { data: CertificateData }) {
 
           <Text style={styles.number}>
             Certificate no. {data.certificateNumber} · verify at /verify
+            {data.orgLogoUrl ? " · issued through My Care Academy" : ""}
           </Text>
           {data.note && <Text style={styles.note}>{data.note}</Text>}
         </View>
