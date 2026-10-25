@@ -83,7 +83,7 @@ export const FEATURES = [
   {
     key: "documents.library",
     category: "documents",
-    label: "Policies & procedures (basic)",
+    label: "Policies & procedures library (CQC basics)",
     isCore: false,
   },
   {
