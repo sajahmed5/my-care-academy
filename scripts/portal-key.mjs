@@ -2,6 +2,9 @@
 /**
  * Mint an integration API key for one organisation's rostering portal.
  *
+ * Superseded: platform admins now issue, replace and revoke keys from the
+ * organisation's page, Integration tab. Kept for a key minted outside the app.
+ *
  * Prints the key ONCE (give it to the portal's server config) and the SQL to
  * store its hash. The key is never stored anywhere on this side — only the
  * hash — so run the SQL, hand the key over, and forget it.

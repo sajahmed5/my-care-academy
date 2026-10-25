@@ -17,12 +17,17 @@ import { LearnersTable } from "@/app/org/learners/learners-table";
 import { EditOrgForm } from "./edit-org-form";
 import { OrgAdmins, type OrgPerson } from "./org-admins";
 import { OrgNudgeButton } from "../../org-nudge-button";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { hasFeatureForOrg } from "@/lib/entitlements";
+import { siteOrigin } from "@/lib/site-url";
+import { IntegrationPanel } from "./integration-panel";
 
-/** The page in three parts: what is going on, who is in it, how it is set up. */
+/** The page in parts: what is going on, who is in it, how it is set up, how it connects. */
 const SECTIONS = [
   { key: "overview", label: "Overview" },
   { key: "learners", label: "Learners" },
   { key: "settings", label: "Settings" },
+  { key: "integration", label: "Integration" },
 ] as const;
 type Section = (typeof SECTIONS)[number]["key"];
 
@@ -47,7 +52,7 @@ export default async function OrganisationDetailPage({
   // Each section reads only what it shows. All three used to load on every
   // tab — every learner with their enrolments and certificates (the heaviest
   // read on the page) even to open the settings form, which needs a count.
-  const showsLearners = section !== "settings";
+  const showsLearners = section === "overview" || section === "learners";
   const [{ data: org }, staff, learners, settings, learnerCounts] = await Promise.all([
     supabase
       .from("organisations")
@@ -95,6 +100,38 @@ export default async function OrganisationDetailPage({
   const { overrides, ticks } = settings;
 
   if (!org) notFound();
+
+  // The rostering integration (myroster.care): the key's dates, whether the
+  // package lets it be used, and how many carers it has linked. The key
+  // columns are read as the service role, as the API reads them.
+  const integration =
+    section === "integration"
+      ? await (async () => {
+          const admin = createAdminClient();
+          const [{ data: keyRow }, enabled, { count: linked }, origin] = await Promise.all([
+            admin
+              .from("organisations")
+              .select("integration_key_hash, integration_key_created_at, integration_key_last_used_at")
+              .eq("id", id)
+              .maybeSingle(),
+            hasFeatureForOrg(admin, id, "platform.portal_api"),
+            admin
+              .from("users")
+              .select("id", { count: "exact", head: true })
+              .eq("organisation_id", id)
+              .not("external_ref", "is", null),
+            siteOrigin(),
+          ]);
+          return {
+            hasKey: !!keyRow?.integration_key_hash,
+            createdAt: (keyRow?.integration_key_created_at as string | null) ?? null,
+            lastUsedAt: (keyRow?.integration_key_last_used_at as string | null) ?? null,
+            enabled,
+            linked: linked ?? 0,
+            origin,
+          };
+        })()
+      : null;
 
   const tierFeatures: Record<string, string[]> = {};
   for (const t of ticks) {
@@ -238,6 +275,38 @@ export default async function OrganisationDetailPage({
                 }}
                 tierFeatures={tierFeatures}
               />
+            </CardContent>
+          </Card>
+        )}
+
+        {section === "integration" && integration && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Rostering integration</CardTitle>
+              <CardDescription>
+                Lets the organisation&apos;s myroster.care account send its carers in as learners,
+                assign their training, and read back their records.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className={`rounded-lg p-3 text-sm ${integration.enabled ? "bg-green-50 text-green-900" : "bg-amber-50 text-amber-900"}`}>
+                {integration.enabled
+                  ? "Included for this organisation, so a valid key works."
+                  : "Not included in this organisation's package, so even a valid key is refused. Switch on Rostering portal integration under Settings first."}
+              </p>
+              <IntegrationPanel
+                orgId={org.id}
+                orgName={org.name}
+                hasKey={integration.hasKey}
+                createdAt={integration.createdAt}
+                lastUsedAt={integration.lastUsedAt}
+                origin={integration.origin}
+              />
+              <p className="text-sm text-muted-foreground">
+                {integration.linked > 0
+                  ? `${integration.linked} learner${integration.linked === 1 ? "" : "s"} linked to the portal.`
+                  : "No learners linked to the portal yet."}
+              </p>
             </CardContent>
           </Card>
         )}

@@ -69,3 +69,12 @@ export async function resolvePortalOrg(req: Request): Promise<PortalOrg | NextRe
 }
 
 export const isOrg = (v: PortalOrg | NextResponse): v is PortalOrg => !(v instanceof NextResponse);
+
+/**
+ * A new integration key and the hash that is stored for it. The key is shown
+ * once, to the platform admin who issued it, and never stored on this side.
+ */
+export function newIntegrationKey(): { key: string; hash: string } {
+  const key = "mca_" + crypto.randomBytes(32).toString("base64url");
+  return { key, hash: crypto.createHash("sha256").update(key).digest("hex") };
+}
