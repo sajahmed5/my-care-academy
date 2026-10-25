@@ -77,6 +77,7 @@ export async function GET(
     { data: org },
     actions,
     [supervisions, checks, incidents, formResponses],
+    { data: classroomRows },
   ] = await Promise.all([
     enabledRead,
     loadOrgLearnerTraining(supabase, userId),
@@ -101,12 +102,28 @@ export async function GET(
           : Promise.resolve([]),
       ]),
     ),
+    // Face-to-face sessions they attended, printed with the training record.
+    supabase
+      .from("classroom_attendance")
+      .select("certificate_id, session:classroom_sessions (title, held_on, trainer_name, duration_minutes)")
+      .eq("user_id", userId)
+      .limit(200),
   ]);
   if (!profile) return new NextResponse("Not found.", { status: 404 });
 
   // Each record is filtered on its own date, so "since her last supervision"
   // means the same thing in every section.
   const trainingRows = since(enrolments, (e) => e.assigned_at, from);
+  const classroomSessions = since(
+    (classroomRows ?? []).flatMap((r) => {
+      const s = (Array.isArray(r.session) ? r.session[0] : r.session) as
+        | { title: string; held_on: string; trainer_name: string | null; duration_minutes: number | null }
+        | null;
+      return s ? [{ ...s, certified: !!r.certificate_id }] : [];
+    }),
+    (s) => s.held_on,
+    from,
+  );
   const certificateRows = since(certificates, (c) => c.issued_at, from);
   const actionRows = since(actions, (a) => a.due_date ?? a.completed_at, from);
   const supervisionRows = since(supervisions, (s) => s.held_on, from);
@@ -117,7 +134,7 @@ export async function GET(
   const contents = packContents({
     enabled,
     counts: {
-      training: trainingRows.length,
+      training: trainingRows.length + classroomSessions.length,
       certificates: certificateRows.length,
       actions: actionRows.length,
       supervisions: supervisionRows.length,
@@ -128,12 +145,22 @@ export async function GET(
   });
 
   const bySection: Record<string, PackSectionData["rows"]> = {
-    training: trainingRows.map((e) => ({
-      when: fmt(e.assigned_at),
-      what: e.title,
-      detail: e.due_date ? `Due ${fmt(e.due_date)}` : null,
-      status: e.status === "completed" ? "Completed" : e.status.replace("_", " "),
-    })),
+    training: [
+      ...trainingRows.map((e) => ({
+        when: fmt(e.assigned_at),
+        what: e.title,
+        detail: e.due_date ? `Due ${fmt(e.due_date)}` : null,
+        status: e.status === "completed" ? "Completed" : e.status.replace("_", " "),
+      })),
+      ...classroomSessions.map((c) => ({
+        when: fmt(c.held_on),
+        what: `Classroom: ${c.title}`,
+        detail: [c.trainer_name ? `Trainer: ${c.trainer_name}` : null, c.duration_minutes ? `${c.duration_minutes} minutes` : null]
+          .filter(Boolean)
+          .join(" · ") || null,
+        status: c.certified ? "Attended · certificate issued" : "Attended",
+      })),
+    ],
     certificates: certificateRows.map((c) => ({
       when: fmt(c.issued_at),
       what: c.title,

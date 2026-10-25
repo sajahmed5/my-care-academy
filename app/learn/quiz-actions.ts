@@ -4,13 +4,10 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateCertificatePdf } from "@/lib/certificate";
-import { orgBranding } from "@/lib/branding";
+import { issueCertificate } from "@/lib/issue-certificate";
 import {
   QUIZ_TARGET,
   PASS_PERCENT,
-  makeCertificateNumber,
-  computeExpiry,
   gradeAnswer,
   toPublicQuestion,
   learnerAnswerText,
@@ -295,68 +292,6 @@ export async function awardContentStarAction({
   if (error) return { delta: 0 };
   // ignoreDuplicates → an existing row yields no returned rows (delta 0).
   return { delta: data && data.length > 0 ? 1 : 0 };
-}
-
-async function issueCertificate({
-  admin,
-  userId,
-  organisationId,
-  courseId,
-}: {
-  admin: ReturnType<typeof createAdminClient>;
-  userId: string;
-  organisationId: string;
-  courseId: string;
-}): Promise<string | undefined> {
-  const [{ data: learner }, { data: course }] = await Promise.all([
-    admin.from("users").select("full_name, email").eq("id", userId).single(),
-    admin
-      .from("courses")
-      .select("title, expiry_months, certificate_note")
-      .eq("id", courseId)
-      .single(),
-  ]);
-  if (!course) return undefined;
-
-  const issuedAt = new Date();
-  const expiresAt = computeExpiry(issuedAt, course.expiry_months ?? 0);
-
-  const { data: cert, error } = await admin
-    .from("certificates")
-    .insert({
-      certificate_number: makeCertificateNumber(crypto.randomUUID()),
-      organisation_id: organisationId,
-      user_id: userId,
-      course_id: courseId,
-      issued_at: issuedAt.toISOString(),
-      expires_at: expiresAt ? expiresAt.toISOString() : null,
-    })
-    .select("id, certificate_number")
-    .single();
-  if (error || !cert) return undefined;
-
-  try {
-    const branding = await orgBranding(organisationId);
-    const pdf = await generateCertificatePdf({
-      orgLogoUrl: branding?.logoUrl ?? null,
-      orgName: branding?.name ?? null,
-      learnerName: learner?.full_name || learner?.email || "Learner",
-      courseTitle: course.title as string,
-      certificateNumber: cert.certificate_number as string,
-      issuedAt,
-      expiresAt,
-      note: (course.certificate_note as string | null) ?? null,
-    });
-    const path = `${userId}/${cert.id}.pdf`;
-    await admin.storage
-      .from("certificates")
-      .upload(path, pdf, { contentType: "application/pdf", upsert: true });
-    await admin.from("certificates").update({ pdf_path: path }).eq("id", cert.id);
-  } catch (e) {
-    console.error("Certificate PDF generation failed:", e);
-  }
-
-  return cert.id;
 }
 
 /** Signed URL to download a certificate PDF (learner must own it). */

@@ -79,6 +79,7 @@ const NAV: Record<string, NavItem[]> = {
         { href: "/org/courses", label: "Overview" },
         { href: "/org/courses/statistics", label: "Time taken" },
         { href: "/org/courses/admin", label: "Assign training" },
+        { href: "/org/classroom", label: "Classroom sessions" },
       ],
     },
     { href: "/org/certificates", label: "Certificates", icon: Award },

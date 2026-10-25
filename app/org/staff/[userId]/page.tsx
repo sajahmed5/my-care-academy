@@ -145,6 +145,7 @@ export default async function StaffDetailPage({
     { profile, enrolments, certificates, assessments },
     { enabled, state, supervisions, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs },
     { data: libraryRows },
+    { data: classroomRows },
   ] = await Promise.all([
     loadOrgLearnerTraining(supabase, userId),
     tabRead,
@@ -154,8 +155,25 @@ export default async function StaffDetailPage({
     section.key === "training"
       ? supabase.from("courses").select("id, title").order("title")
       : Promise.resolve({ data: null }),
+    // Face-to-face sessions they attended (ROADMAP §4), on the Training tab.
+    section.key === "training"
+      ? supabase
+          .from("classroom_attendance")
+          .select("certificate_id, session:classroom_sessions (title, held_on, trainer_name, duration_minutes)")
+          .eq("user_id", userId)
+          .limit(200)
+      : Promise.resolve({ data: null }),
   ]);
   if (!profile) notFound();
+  const classroom = (classroomRows ?? [])
+    .map((r) => {
+      const s = (Array.isArray(r.session) ? r.session[0] : r.session) as
+        | { title: string; held_on: string; trainer_name: string | null; duration_minutes: number | null }
+        | null;
+      return s ? { ...s, certified: !!r.certificate_id } : null;
+    })
+    .filter((s): s is NonNullable<typeof s> => !!s)
+    .sort((a, b) => b.held_on.localeCompare(a.held_on));
 
   const now = new Date();
   const stats = learnerStats(enrolments, certificates, now);
@@ -524,6 +542,29 @@ export default async function StaffDetailPage({
                 </div>
               )}
             </div>
+            {classroom.length > 0 && (
+              <Card>
+                <CardContent className="space-y-2 pt-6">
+                  <p className="text-sm font-semibold">Classroom sessions</p>
+                  <ul className="divide-y text-sm">
+                    {classroom.map((c, n) => (
+                      <li key={n} className="flex flex-wrap items-center justify-between gap-2 py-1.5">
+                        <span>
+                          {c.title}
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            {[c.trainer_name, c.duration_minutes ? `${c.duration_minutes} min` : null].filter(Boolean).join(" · ")}
+                          </span>
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {fmtDate(c.held_on)}
+                          {c.certified ? " · certificate issued" : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
 
