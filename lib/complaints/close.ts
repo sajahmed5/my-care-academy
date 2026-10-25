@@ -49,7 +49,11 @@ export function closeGapsMessage(gaps: CloseGap[], untriaged = false, work: Clos
   }
   const parts: string[] = [];
   if (gaps.length) parts.push(`Still to do, or to mark as not needed: ${some(gaps.map((g) => g.name), 6)}.`);
-  if (work.openActions.length) parts.push(`Actions not yet done: ${some(work.openActions, 5)}.`);
+  // Said plainly as actions, not stages: "Carry out a spot check" read as the
+  // Spot Checks stage, and marking that stage not needed cleared nothing (#68).
+  if (work.openActions.length) {
+    parts.push(`These actions are not ticked off yet: ${some(work.openActions, 5)}. Tick each one once it is done — they are listed below, and on the stage where each was agreed.`);
+  }
   if (work.openPlans.length) parts.push(`Still running: ${some(work.openPlans, 4)}. A plan is finished from inside it, with its outcome.`);
   return parts.length ? `This cannot be closed yet. ${parts.join(" ")}` : "";
 }

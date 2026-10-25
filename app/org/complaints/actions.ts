@@ -18,7 +18,7 @@ import {
   stagesFor,
 } from "@/lib/complaints/stages";
 import { loadCloseCheck, loadStages, nextReference } from "@/lib/complaints/data";
-import { computeStageStatus, isTriageStage, holdsFindings } from "@/lib/complaints/compute";
+import { actionTagFor, computeStageStatus, isTriageStage, holdsFindings } from "@/lib/complaints/compute";
 import { cleanConcernFindings, CONCERN_FINDINGS_KEY, type ConcernFinding } from "@/lib/complaints/findings";
 import {
   FINDINGS_NA_KEY,
@@ -519,7 +519,7 @@ export async function addActionAction(_prev: SaveState, formData: FormData): Pro
   const supabase = await createClient();
   const stage = await stageById(supabase, stageId);
   if (!stage) return { ok: false, error: "That stage is no longer there." };
-  const tag = stage.kind === "action_plan" ? "plan" : isTriageStage(stage) ? "meeting:1" : holdsFindings(stage) ? "meeting:2" : "meeting:3";
+  const tag = actionTagFor(stage);
 
   const { error } = await supabase.from("record_actions").insert({
     organisation_id: context.organisationId,

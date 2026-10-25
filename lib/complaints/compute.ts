@@ -28,6 +28,15 @@ export function holdsFindings(stage: { name: string; kind: string }): boolean {
 }
 
 /**
+ * The tag an action agreed at this stage carries at the front of its detail,
+ * which is how an action knows where it was agreed: "meeting:1" is Triage,
+ * "meeting:2" Findings, "plan" the action plan.
+ */
+export function actionTagFor(stage: { name: string; kind: string }): string {
+  return stage.kind === "action_plan" ? "plan" : isTriageStage(stage) ? "meeting:1" : holdsFindings(stage) ? "meeting:2" : "meeting:3";
+}
+
+/**
  * What a stage's status should be, given its answers. Returns null for a
  * document stage, whose status is set by hand and not derived.
  */

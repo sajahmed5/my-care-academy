@@ -5,9 +5,12 @@ import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import type { Complaint, StaffOption } from "@/lib/complaints/data";
-import { closeComplaintAction, setComplaintStatusAction, setPeopleAction } from "../actions";
+import type { Complaint, ComplaintAction, StaffOption } from "@/lib/complaints/data";
+import type { ComplaintStage } from "@/lib/complaints/stages";
+import { actionTagFor } from "@/lib/complaints/compute";
+import { closeComplaintAction, setActionDoneAction, setComplaintStatusAction, setPeopleAction } from "../actions";
 import { selectClass, textareaClass } from "../new-complaint";
+import { fmtDate } from "../complaint-row";
 import type { SaveState } from "@/app/platform/actions";
 
 /** The staff named in the record, and a way to add or remove one. */
@@ -71,10 +74,24 @@ export function PeopleNamed({ complaint, staff, disabled }: { complaint: Complai
  * typed into a form that cannot be saved. Withdrawing or cancelling is a
  * different thing and is never held up.
  */
-export function CloseRecord({ complaint, closeMessage }: { complaint: Complaint; closeMessage: string }) {
+export function CloseRecord({
+  complaint,
+  stages,
+  closeMessage,
+  onOpenStage,
+}: {
+  complaint: Complaint;
+  stages: ComplaintStage[];
+  closeMessage: string;
+  onOpenStage: (stageId: string) => void;
+}) {
   const [state, action, pending] = useActionState<SaveState, FormData>(closeComplaintAction, {});
   const [stState, stAction, stPending] = useActionState<SaveState, FormData>(setComplaintStatusAction, {});
   const closed = complaint.status !== "open";
+  const openActions = complaint.actions.filter((a) => !a.completedAt);
+  // Where each action was agreed, so the list can say so and open that stage.
+  const agreedAt = (a: ComplaintAction) =>
+    stages.find((s) => (s.kind === "meeting_minutes" || s.kind === "action_plan") && actionTagFor(s) === a.stageTag) ?? null;
 
   return (
     <Card>
@@ -97,6 +114,14 @@ export function CloseRecord({ complaint, closeMessage }: { complaint: Complaint;
               <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{closeMessage}</p>
             ) : (
               <p className="rounded-lg bg-green-50 p-3 text-sm text-green-900">Every stage is in. Say what came of it, and close.</p>
+            )}
+            {openActions.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold">Actions still open</p>
+                {openActions.map((a) => (
+                  <OpenAction key={a.id} action={a} complaintId={complaint.id} stage={agreedAt(a)} onOpenStage={onOpenStage} />
+                ))}
+              </div>
             )}
             <form action={action} className="space-y-3">
               <input type="hidden" name="complaintId" value={complaint.id} />
@@ -139,5 +164,41 @@ export function CloseRecord({ complaint, closeMessage }: { complaint: Complaint;
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/** An action still to tick off, with where it was agreed. */
+function OpenAction({
+  action: a,
+  complaintId,
+  stage,
+  onOpenStage,
+}: {
+  action: ComplaintAction;
+  complaintId: string;
+  stage: ComplaintStage | null;
+  onOpenStage: (stageId: string) => void;
+}) {
+  const [state, doneAction, pending] = useActionState<SaveState, FormData>(setActionDoneAction, {});
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border p-2 text-sm">
+      <form action={doneAction}>
+        <input type="hidden" name="complaintId" value={complaintId} />
+        <input type="hidden" name="actionId" value={a.id} />
+        <input type="hidden" name="done" value="1" />
+        <button type="submit" disabled={pending} className="size-5 rounded border bg-background" aria-label="Mark done" />
+      </form>
+      <span>{a.title}</span>
+      <span className="text-xs text-muted-foreground">
+        {a.ownerName ?? "—"}
+        {a.dueDate ? ` · by ${fmtDate(a.dueDate)}` : ""}
+      </span>
+      {stage && (
+        <button type="button" onClick={() => onOpenStage(stage.id)} className="ml-auto text-xs text-indigo-700 hover:underline">
+          agreed at {stage.name}
+        </button>
+      )}
+      {state.error && <p className="w-full text-xs text-rose-600">{state.error}</p>}
+    </div>
   );
 }

@@ -33,7 +33,7 @@ describe("what stands between a complaint and being closed", () => {
 describe("work that must finish first", () => {
   it("holds a record open for a running plan and for actions not done", () => {
     const msg = closeGapsMessage([], false, { openPlans: ["Performance plan for Jane Smith"], openActions: ["Review ECM data — Sam Ilyas"] });
-    expect(msg).toContain("Actions not yet done: Review ECM data — Sam Ilyas.");
+    expect(msg).toContain("These actions are not ticked off yet: Review ECM data — Sam Ilyas.");
     expect(msg).toContain("Still running: Performance plan for Jane Smith.");
   });
   it("says nothing when the stages, the actions and the plans are all finished", () => {

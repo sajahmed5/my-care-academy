@@ -9,7 +9,7 @@ import type { Complaint, ComplaintAction, StageEntry, StaffOption } from "@/lib/
 import type { ComplaintStage } from "@/lib/complaints/stages";
 import { formForStage } from "@/lib/complaints/forms";
 import type { AnswerMap } from "@/lib/complaints/schema";
-import { LETTER_KINDS, holdsFindings, isTriageStage } from "@/lib/complaints/compute";
+import { LETTER_KINDS, actionTagFor, holdsFindings, isTriageStage } from "@/lib/complaints/compute";
 import { acknowledgementLetter, acknowledgementState } from "@/lib/complaints/acknowledgement";
 import {
   FINDINGS_ACTIONS,
@@ -61,7 +61,7 @@ export function StagePanel(props: PanelProps) {
   if (LETTER_KINDS.has(stage.kind)) return <LetterPanel {...props} />;
 
   if (form) {
-    const tag = stage.kind === "action_plan" ? "plan" : isTriageStage(stage) ? "meeting:1" : holdsFindings(stage) ? "meeting:2" : "meeting:3";
+    const tag = actionTagFor(stage);
     return (
       <div className="space-y-5">
         <StatusLine entry={entry} />

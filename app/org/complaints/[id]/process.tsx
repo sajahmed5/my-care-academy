@@ -166,7 +166,7 @@ export function ComplaintProcess({
 
         <div>
           {openId === "__close" ? (
-            <CloseRecord complaint={complaint} closeMessage={closeMessage} />
+            <CloseRecord complaint={complaint} stages={stages} closeMessage={closeMessage} onOpenStage={setOpenId} />
           ) : openStage ? (
             <Card>
               <CardContent className="space-y-4 pt-6">
