@@ -14,6 +14,7 @@ import {
   statusLabel,
 } from "@/lib/incidents";
 import { packContents, since } from "@/lib/evidence-pack";
+import { responseRows, type FormTemplateRecord } from "@/lib/form-library";
 import { renderEvidencePack, type PackSectionData } from "@/lib/evidence-pack-pdf";
 import { formatDate } from "@/lib/dates";
 
@@ -75,7 +76,7 @@ export async function GET(
     { profile, enrolments, certificates },
     { data: org },
     actions,
-    [supervisions, checks, incidents],
+    [supervisions, checks, incidents, formResponses],
   ] = await Promise.all([
     enabledRead,
     loadOrgLearnerTraining(supabase, userId),
@@ -87,6 +88,16 @@ export async function GET(
         on["people.competency"] ? loadCompetencyChecks(supabase, userId) : Promise.resolve([]),
         on["complaints.register"]
           ? loadIncidentsForPerson(supabase, userId)
+          : Promise.resolve([]),
+        // Their completed library forms, with the questions to read them by.
+        on["forms.builder"]
+          ? supabase
+              .from("form_responses")
+              .select("answers, signed_name, submitted_at, template:form_templates (title, fields)")
+              .eq("user_id", userId)
+              .order("submitted_at", { ascending: false })
+              .limit(200)
+              .then((r) => r.data ?? [])
           : Promise.resolve([]),
       ]),
     ),
@@ -101,6 +112,7 @@ export async function GET(
   const supervisionRows = since(supervisions, (s) => s.held_on, from);
   const checkRows = since(checks, (c) => c.checked_on, from);
   const incidentRows = since(incidents, (i) => i.occurred_on, from);
+  const formRows = since(formResponses, (f) => f.submitted_at as string, from);
 
   const contents = packContents({
     enabled,
@@ -111,6 +123,7 @@ export async function GET(
       supervisions: supervisionRows.length,
       competency: checkRows.length,
       complaints: incidentRows.length,
+      forms: formRows.length,
     },
   });
 
@@ -161,6 +174,19 @@ export async function GET(
       detail: i.outcome ? `${i.summary}\nOutcome: ${i.outcome}` : i.summary,
       status: statusLabel(i.status),
     })),
+    forms: formRows.map((f) => {
+      const t = (Array.isArray(f.template) ? f.template[0] : f.template) as Pick<FormTemplateRecord, "title" | "fields"> | null;
+      const answers = (f.answers as Record<string, unknown> | null) ?? {};
+      return {
+        when: fmt(f.submitted_at as string),
+        what: t?.title ?? "Form",
+        detail:
+          responseRows(t?.fields ?? [], answers)
+            .map((r) => `${r.label}: ${r.value || "—"}`)
+            .join("\n") || null,
+        status: f.signed_name ? `Signed: ${f.signed_name}` : "Completed",
+      };
+    }),
   };
 
   const sections: PackSectionData[] = contents.included.map((s) => ({

@@ -11,9 +11,10 @@ const ALL_ON = {
   "people.supervisions": true,
   "people.competency": true,
   "complaints.register": true,
+  "forms.builder": true,
 };
 
-const SOME = { training: 3, certificates: 1, actions: 2, supervisions: 1, competency: 1, complaints: 1 };
+const SOME = { training: 3, certificates: 1, actions: 2, supervisions: 1, competency: 1, complaints: 1, forms: 1 };
 
 describe("packContents", () => {
   it("includes every section that is entitled and has something", () => {
