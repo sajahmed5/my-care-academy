@@ -110,9 +110,10 @@ One button on the file: **Download evidence pack**.
   looks like a provider with no supervisions.
 - **Plus the source files**, where they exist, as a ZIP alongside: certificate PDFs (the
   certificates pack already does this — reuse it), uploaded right-to-work documents, signed
-  forms. **Not built.** The certificates ZIP stays its own download: one route that renders a
-  PDF *and* streams a hundred attachments is the one that hits the 60-second limit on a carer
-  of four years' standing.
+  forms. **Built (v2.19.0)** as its own route, `/org/staff/<id>/evidence/files`: certificates,
+  staff documents, recruitment documents and Care Certificate evidence, with a README. Kept
+  apart from the PDF because one route that renders a PDF *and* streams a hundred attachments
+  is the one that hits the 60-second limit on a carer of four years' standing.
 - **Only entitled sections.** Same `enabledMap()` as the page, resolved once at the start of the
   job. A pack must never contain a section the page would have locked.
 
@@ -237,9 +238,9 @@ Settled by Saj, 23 Oct 2026:
   compliance pack; Enterprise adds the Care Certificate, white-label and the rostering
   integration.
 - **A carer never reads their own supervision, complaint or spot check.** They sign the
-  supervision while it is being completed, on the staff member's screen. *Not built yet:* a
-  signature at the point of saving a supervision, which is the only part of this decision the
-  code does not yet implement.
+  supervision while it is being completed, on the staff member's screen. **Built (v2.19.1):**
+  the carer draws their signature and types their name on the supervision form, or the
+  manager records why they could not sign; one or the other is required.
 - **Agency and bank staff** need nothing special. If they are not employed by the organisation
   it is that organisation's call how to handle them; they are usually trained by whoever employs
   them. A carer account is the training part of the product either way.

@@ -136,25 +136,27 @@ full from the manager's side, and turning the 63 Word forms into real fields.
 Decided: an organisation uploads its own logo **on its own profile**, and it then appears on
 their certificates, their learners' portal, and their copy of the policies.
 
-`organisations.white_label_logo` exists in the database and **nothing reads or writes it**, so
-this is an upload, storage, and three render sites.
+**Built (v2.18.7–v2.18.8).** A manager uploads the logo on the Account page (PNG or JPEG, under
+512 KB, into the public `org-logos` bucket); `lib/branding.ts` shows it on new certificates, in
+the portal's sidebar and header, and on their copy of each policy — only while the package
+includes white-label.
 
 ---
 
-## 3. Finish what is part-built
+## 3. Finish what is part-built — done, 25 Oct 2026
 
-- **Current staff compliance.** The recruitment tracker covers candidates only. Right to work,
-  DBS, references and insurance for *existing* staff, with expiries feeding the task list.
-- **The organisation-wide "what's due" view.** Supervisions and spot checks can only be reached
-  inside one carer's file. A manager works from "who is due this month", and it is most of the
-  Pro pitch.
-- **The supervision signature.** Carers never read their own record; they sign it at the time, on
-  the manager's screen, while it is being completed (`CARER-FILE.md` §9). The signature is the
-  one part of that decision the code does not yet implement.
-- **The evidence pack's source files** — the ZIP of certificates and uploaded documents that
-  travels with the PDF. It needs its own route; the 60-second function limit is why it is not in
-  the pack route.
-- **Mobile**: the carer file's tabs scroll sideways on a phone instead of stacking.
+- **Current staff compliance** (v2.19.3). Right to work, DBS, references and business car
+  insurance on the carer's file (`staff_documents`), with expiries and missing items in their
+  task list, and their application documents listed beneath.
+- **The organisation-wide "what's due" view** (v2.19.2). "Who's due" in the menu:
+  `/org/due/supervisions` and `/org/due/spot-checks`, each gated on its own feature.
+- **The supervision signature** (v2.19.1). Signed on the manager's screen, or a reason recorded.
+- **The evidence pack's source files** (v2.19.0). A ZIP beside the PDF, on its own route.
+- **Mobile** (v2.18.9). The carer file's sections stack as an accordion on a phone.
+
+Also done the same day: the **rostering integration** for any myroster.care customer (v2.18.5–
+v2.18.6). The portal API now requires `platform.portal_api`, and platform admins issue,
+replace and revoke an organisation's key from its Integration tab.
 
 ---
 
