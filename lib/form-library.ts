@@ -223,6 +223,65 @@ export async function loadAssignment(
 }
 
 // ---------------------------------------------------------------------------
+// Completed responses
+// ---------------------------------------------------------------------------
+
+export interface FormResponse {
+  answers: Record<string, unknown>;
+  signed_name: string | null;
+  submitted_at: string;
+  template_version: number;
+}
+
+/** What was handed in against one assignment, or null if nothing was. */
+export async function loadResponse(
+  supabase: SupabaseClient,
+  assignmentId: string,
+): Promise<FormResponse | null> {
+  const { data } = await supabase
+    .from("form_responses")
+    .select("answers, signed_name, submitted_at, template_version")
+    .eq("assignment_id", assignmentId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    answers: (data.answers as Record<string, unknown> | null) ?? {},
+    signed_name: (data.signed_name as string | null) ?? null,
+    submitted_at: data.submitted_at as string,
+    template_version: data.template_version as number,
+  };
+}
+
+export interface ResponseRow {
+  fieldId: string;
+  label: string;
+  /** The answer as it reads, or "" when the question was left blank. */
+  value: string;
+  /** Answered on an older version of the form; the question has since gone. */
+  removed?: boolean;
+}
+
+/**
+ * A response as question-and-answer rows, in the form's order (#54). The
+ * template only keeps its current questions, so an answer whose question has
+ * since been removed is still shown, at the end, rather than silently lost.
+ */
+export function responseRows(fields: FormField[], answers: Record<string, unknown>): ResponseRow[] {
+  const text = (v: unknown): string =>
+    v === undefined || v === null ? "" : Array.isArray(v) ? v.join(", ") : String(v);
+  const known = new Set(fields.map((f) => f.id));
+  // A conditional question that was never shown to them is not a blank answer.
+  const rows: ResponseRow[] = [...fields]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .filter((f) => isFieldVisible(f, answers))
+    .map((f) => ({ fieldId: f.id, label: f.label, value: text(answers[f.id]) }));
+  for (const [id, v] of Object.entries(answers)) {
+    if (!known.has(id)) rows.push({ fieldId: id, label: "A question no longer on the form", value: text(v), removed: true });
+  }
+  return rows;
+}
+
+// ---------------------------------------------------------------------------
 // Answers
 // ---------------------------------------------------------------------------
 

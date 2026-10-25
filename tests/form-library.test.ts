@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   categoryLabel,
   pruneAnswers,
+  responseRows,
   validateAnswers,
   visibleFormPacks,
 } from "../lib/form-library";
@@ -91,5 +92,32 @@ describe("categoryLabel", () => {
     expect(categoryLabel("hr")).toBe("HR");
     expect(categoryLabel("review")).toBe("Reviews");
     expect(categoryLabel("made-up")).toBe("made-up");
+  });
+});
+
+describe("responseRows", () => {
+  const fields = [
+    { ...NAME, sort_order: 0 },
+    { ...DRIVES, sort_order: 1 },
+    { ...LICENCE, sort_order: 2 },
+    field({ id: "days", label: "Days free", type: "checkbox", options: ["Mon", "Tue"], sort_order: 3 }),
+  ];
+  it("reads each answer against its question, in the form's order", () => {
+    const rows = responseRows(fields, { name: "Sam", drives: "Yes", licence: "AB123", days: ["Mon", "Tue"] });
+    expect(rows.map((r) => [r.label, r.value])).toEqual([
+      ["Full name", "Sam"],
+      ["Do you drive?", "Yes"],
+      ["Licence number", "AB123"],
+      ["Days free", "Mon, Tue"],
+    ]);
+  });
+  it("leaves out a conditional question they were never shown, but keeps a blank one they were", () => {
+    const rows = responseRows(fields, { name: "Sam", drives: "No" });
+    expect(rows.map((r) => r.label)).toEqual(["Full name", "Do you drive?", "Days free"]);
+    expect(rows.find((r) => r.label === "Days free")?.value).toBe("");
+  });
+  it("keeps an answer whose question has since been removed from the form", () => {
+    const rows = responseRows(fields, { name: "Sam", old_q: "Still here" });
+    expect(rows.at(-1)).toMatchObject({ value: "Still here", removed: true });
   });
 });

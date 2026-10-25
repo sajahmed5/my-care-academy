@@ -72,7 +72,15 @@ export function AssignmentList({
               {done.map((a) => (
                 <li key={a.id} className="flex items-center justify-between gap-2 py-1.5">
                   <span>{a.user_name}</span>
-                  <span className="text-xs text-muted-foreground">{fmtDate(a.completed_at)}</span>
+                  <span className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground">{fmtDate(a.completed_at)}</span>
+                    <Link
+                      href={`/org/forms/library/${encodeURIComponent(a.template_code)}/responses/${a.id}`}
+                      className={buttonVariants({ variant: "outline", size: "sm" })}
+                    >
+                      View answers
+                    </Link>
+                  </span>
                 </li>
               ))}
             </ul>

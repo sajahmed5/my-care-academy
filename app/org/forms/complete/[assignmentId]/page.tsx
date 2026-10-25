@@ -54,7 +54,10 @@ export default async function OrgCompleteFormPage({
                 month: "long",
                 year: "numeric",
               })}
-              .
+              .{" "}
+              <Link href={`${back}/responses/${assignment.id}`} className="text-foreground hover:underline">
+                View your answers
+              </Link>
             </CardContent>
           </Card>
         ) : (

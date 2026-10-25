@@ -648,12 +648,22 @@ export default async function StaffDetailPage({
                               : "No date"}
                         </p>
                       </div>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          a.completed_at ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
-                        }`}
-                      >
-                        {a.completed_at ? "Completed" : "Open"}
+                      <span className="flex items-center gap-2">
+                        {a.completed_at && (
+                          <Link
+                            href={`/org/forms/library/${encodeURIComponent(a.template_code)}/responses/${a.id}`}
+                            className="text-xs text-indigo-700 hover:underline"
+                          >
+                            View answers
+                          </Link>
+                        )}
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                            a.completed_at ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
+                          {a.completed_at ? "Completed" : "Open"}
+                        </span>
                       </span>
                     </CardContent>
                   </Card>
