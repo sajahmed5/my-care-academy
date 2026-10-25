@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileDown } from "lucide-react";
+import { FileArchive, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,9 +28,9 @@ export function EvidencePackButton({ userId }: { userId: string }) {
     );
   }
 
-  const href = from
-    ? `/org/staff/${userId}/evidence?from=${from}`
-    : `/org/staff/${userId}/evidence`;
+  const query = from ? `?from=${from}` : "";
+  const href = `/org/staff/${userId}/evidence${query}`;
+  const filesHref = `/org/staff/${userId}/evidence/files${query}`;
 
   return (
     <Card className="w-full">
@@ -57,6 +57,15 @@ export function EvidencePackButton({ userId }: { userId: string }) {
           >
             <FileDown className="size-4" />
             Download pack
+          </a>
+          {/* The certificates, documents and evidence behind the pack, as a
+              ZIP — its own download, so neither runs out of time. */}
+          <a
+            href={filesHref}
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors hover:bg-muted sm:min-h-9"
+          >
+            <FileArchive className="size-4" />
+            Source files (ZIP)
           </a>
           <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
             Close
