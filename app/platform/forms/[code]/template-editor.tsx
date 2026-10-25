@@ -64,6 +64,13 @@ export function TemplateEditor({ template }: { template: FormTemplateRecord }) {
     <div className="space-y-6">
       <Card>
         <CardContent className="space-y-3 pt-6">
+          {/* Unlabelled, this read as a mystery box (#55). */}
+          <div>
+            <p className="text-sm font-semibold">Who can see this form</p>
+            <p className="text-xs text-muted-foreground">
+              Published forms appear in the forms library of every organisation whose package includes it. Drafts and retired forms are hidden from organisations.
+            </p>
+          </div>
           <form action={statusAction} className="flex flex-wrap items-center gap-2">
             <input type="hidden" name="code" value={template.code} />
             <span className="text-sm text-muted-foreground">
