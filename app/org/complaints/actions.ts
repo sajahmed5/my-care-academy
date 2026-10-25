@@ -599,6 +599,10 @@ export async function markNotNeededAction(_prev: SaveState, formData: FormData):
   const name = str(formData, "name");
   const why = str(formData, "why");
   const clear = formData.get("clear") === "1";
+  // A standing action that was given an owner and then turns out not to be
+  // needed: its action goes, and the reason is kept in its place. Before,
+  // the only way out was deleting it, which left no reason behind.
+  const actionId = str(formData, "actionId");
   if (!clear && !why) return { ok: false, error: "Say why it is not needed." };
 
   const supabase = await createClient();
@@ -611,6 +615,17 @@ export async function markNotNeededAction(_prev: SaveState, formData: FormData):
   const check = triage ? triageCheckNamed(name) : findingsActionNamed(name);
   if (!check) return { ok: false, error: "That is not one of the standing checks." };
   const key = triage ? TRIAGE_NA_KEY : FINDINGS_NA_KEY;
+
+  if (actionId && !clear) {
+    const { error: delError } = await supabase
+      .from("record_actions")
+      .delete()
+      .eq("id", actionId)
+      .eq("source_type", "complaint")
+      .eq("source_id", complaintId)
+      .is("completed_at", null);
+    if (delError) return { ok: false, error: delError.message };
+  }
 
   const na = { ...((existing[key] as Record<string, string> | undefined) ?? {}) };
   if (clear) delete na[check];

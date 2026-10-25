@@ -336,7 +336,14 @@ function ActionsEditor({ complaint, stage, entry, staff, disabled, tag }: PanelP
       </div>
 
       {mine.map((a) => (
-        <ActionRow key={a.id} action={a} complaintId={complaint.id} stageId={stage.id} disabled={disabled} />
+        <ActionRow
+          key={a.id}
+          action={a}
+          complaintId={complaint.id}
+          stageId={stage.id}
+          disabled={disabled}
+          standing={standing.some((c) => c.toLowerCase() === a.title.trim().toLowerCase())}
+        />
       ))}
 
       {standing.length > 0 && (
@@ -355,9 +362,24 @@ function ActionsEditor({ complaint, stage, entry, staff, disabled, tag }: PanelP
   );
 }
 
-function ActionRow({ action: a, complaintId, stageId, disabled }: { action: ComplaintAction; complaintId: string; stageId: string; disabled: boolean }) {
+function ActionRow({
+  action: a,
+  complaintId,
+  stageId,
+  disabled,
+  standing,
+}: {
+  action: ComplaintAction;
+  complaintId: string;
+  stageId: string;
+  disabled: boolean;
+  /** One of the stage's standing checks: it can be marked not needed, with why. */
+  standing: boolean;
+}) {
   const [, doneAction, pending] = useActionState<SaveState, FormData>(setActionDoneAction, {});
   const [, delAction] = useActionState<SaveState, FormData>(deleteActionAction, {});
+  const [naState, naAct, marking] = useActionState<SaveState, FormData>(markNotNeededAction, {});
+  const [waiving, setWaiving] = useState(false);
   const late = !a.completedAt && a.dueDate && a.dueDate < new Date().toISOString().slice(0, 10);
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border p-2 text-sm">
@@ -376,18 +398,35 @@ function ActionRow({ action: a, complaintId, stageId, disabled }: { action: Comp
         {a.detail ? ` · ${a.detail}` : ""}
       </span>
       {late && <span className="text-xs font-medium text-rose-600">overdue</span>}
+      {!disabled && standing && !a.completedAt && !waiving && (
+        <button type="button" onClick={() => setWaiving(true)} className="ml-auto text-xs text-muted-foreground hover:text-foreground">
+          Not needed…
+        </button>
+      )}
       {!disabled && (
         <form
           action={delAction}
           onSubmit={(e) => {
             if (!window.confirm(`Remove the action "${a.title}"?`)) e.preventDefault();
           }}
-          className="ml-auto"
+          className={standing && !a.completedAt && !waiving ? "" : "ml-auto"}
         >
           <input type="hidden" name="complaintId" value={complaintId} />
           <input type="hidden" name="actionId" value={a.id} />
           <input type="hidden" name="stageId" value={stageId} />
           <button type="submit" className="text-muted-foreground hover:text-foreground" aria-label="Remove"><Trash2 className="size-3.5" /></button>
+        </form>
+      )}
+      {waiving && (
+        <form action={naAct} className="flex w-full flex-wrap items-end gap-2">
+          <input type="hidden" name="complaintId" value={complaintId} />
+          <input type="hidden" name="stageId" value={stageId} />
+          <input type="hidden" name="name" value={a.title} />
+          <input type="hidden" name="actionId" value={a.id} />
+          <Input name="why" placeholder="Why it is not needed here" className="h-8 flex-1" required />
+          <Button type="submit" size="sm" disabled={marking}>Mark not needed</Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setWaiving(false)}>Cancel</Button>
+          {naState.error && <p className="w-full text-xs text-rose-600">{naState.error}</p>}
         </form>
       )}
     </div>
