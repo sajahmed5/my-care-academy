@@ -21,6 +21,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeatureForOrg } from "@/lib/entitlements";
 import { siteOrigin } from "@/lib/site-url";
 import { IntegrationPanel } from "./integration-panel";
+import { RemoveOrganisation } from "./remove-organisation";
+
+// Removing an organisation deletes every account and file it holds, which
+// runs longer than an ordinary page action.
+export const maxDuration = 300;
 
 /** The page in parts: what is going on, who is in it, how it is set up, how it connects. */
 const SECTIONS = [
@@ -275,6 +280,20 @@ export default async function OrganisationDetailPage({
                 }}
                 tierFeatures={tierFeatures}
               />
+            </CardContent>
+          </Card>
+        )}
+
+        {section === "settings" && (
+          <Card className="border-rose-200">
+            <CardHeader>
+              <CardTitle>Remove organisation</CardTitle>
+              <CardDescription>
+                Records are kept for as long as an organisation uses the platform, and removed when it leaves.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RemoveOrganisation orgId={org.id} name={org.name} suspended={org.status === "suspended"} />
             </CardContent>
           </Card>
         )}
