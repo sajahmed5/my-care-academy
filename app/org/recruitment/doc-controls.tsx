@@ -140,7 +140,14 @@ export function DocControls({
             >
               View
             </Button>
-            <Button size="xs" variant="destructive" disabled={busy} onClick={remove}>
+            <Button
+              size="xs"
+              variant="destructive"
+              disabled={busy}
+              onClick={() => {
+                if (window.confirm(`Remove ${existing.file_name ?? "this file"}? The file is deleted and cannot be got back.`)) remove();
+              }}
+            >
               Remove
             </Button>
           </>

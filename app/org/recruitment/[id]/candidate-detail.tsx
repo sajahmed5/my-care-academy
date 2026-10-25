@@ -195,6 +195,21 @@ export function CandidateDetail({
 
       <form
         action={deleteCandidateAction.bind(null, candidate.id)}
+        onSubmit={(e) => {
+          // Hiring may have made them a learner, and that account is not the
+          // candidate: it stays until it is deleted from Staff (#63).
+          const hired =
+            candidate.status === "hired"
+              ? " Their staff account, if hiring created one, is not deleted with it — remove that from Staff."
+              : "";
+          if (
+            !window.confirm(
+              `Delete ${candidate.full_name}? This permanently removes the candidate and every document uploaded for them. This cannot be undone.${hired}`,
+            )
+          ) {
+            e.preventDefault();
+          }
+        }}
         className="pt-2"
       >
         <Button type="submit" variant="destructive" size="sm">

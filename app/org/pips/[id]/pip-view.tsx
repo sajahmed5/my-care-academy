@@ -318,7 +318,13 @@ function Training({ pip, disabled }: { pip: Pip; disabled: boolean }) {
               {t.attended === true ? "attended" : t.attended === false ? "did not attend" : "upcoming"}{t.assessmentResult ? ` · ${t.assessmentResult}` : ""}
             </span>
             {!disabled && (
-              <form action={del} className="ml-auto">
+              <form
+                action={del}
+                onSubmit={(e) => {
+                  if (!window.confirm(`Remove the session "${t.topic}"?`)) e.preventDefault();
+                }}
+                className="ml-auto"
+              >
                 <input type="hidden" name="pipId" value={pip.id} />
                 <input type="hidden" name="trainingId" value={t.id} />
                 <button type="submit" className="text-xs text-muted-foreground hover:text-foreground">remove</button>

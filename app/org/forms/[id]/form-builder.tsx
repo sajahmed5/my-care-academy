@@ -167,6 +167,7 @@ function ExistingField({
           variant="destructive"
           disabled={busy}
           onClick={async () => {
+            if (!window.confirm(`Delete the field "${field.label}"?`)) return;
             setBusy(true);
             await deleteFieldAction(field.id, formId);
             onDeleted(field.id);

@@ -98,11 +98,37 @@ export async function updateCandidateAction(
   return { ok: true };
 }
 
+/**
+ * Delete a candidate, and every file uploaded for them (#59). The document
+ * rows cascade with the candidate, but the files in the bucket do not — left
+ * behind, a passport or DBS sits there with nothing pointing at it. The whole
+ * folder goes, so files orphaned by an earlier failure go too.
+ */
 export async function deleteCandidateAction(id: string): Promise<void> {
   const context = await requireConsole();
   await assertRecruitment(context);
-  const supabase = await createClient();
-  await supabase.from("candidates").delete().eq("id", id);
+  const admin = createAdminClient();
+  const { data: candidate } = await admin
+    .from("candidates")
+    .select("full_name, status, organisation_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!candidate || candidate.organisation_id !== context.organisationId) redirect("/org/recruitment");
+
+  const folder = `${context.organisationId}/${id}`;
+  const { data: files } = await admin.storage.from("candidate-docs").list(folder, { limit: 1000 });
+  if (files?.length) {
+    await admin.storage.from("candidate-docs").remove(files.map((f) => `${folder}/${f.name}`));
+  }
+  await admin.from("candidates").delete().eq("id", id);
+  await logAudit({
+    context,
+    action: "candidate.deleted",
+    entity: "candidate",
+    entityId: id,
+    detail: { name: candidate.full_name, status: candidate.status, files_removed: files?.length ?? 0 },
+  });
+  revalidatePath("/org/recruitment");
   redirect("/org/recruitment");
 }
 

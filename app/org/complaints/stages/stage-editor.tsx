@@ -51,7 +51,12 @@ function StageRow({ stage }: { stage: ComplaintStage }) {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setEditing(true)}>Edit</Button>
-          <form action={delAction}>
+          <form
+            action={delAction}
+            onSubmit={(e) => {
+              if (!window.confirm(`Remove the "${stage.name}" stage? If any record has used it, it is switched off instead, so nothing written against it is lost.`)) e.preventDefault();
+            }}
+          >
             <input type="hidden" name="stageId" value={stage.id} />
             <Button type="submit" variant="ghost" size="sm" disabled={deleting}>Remove</Button>
           </form>

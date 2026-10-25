@@ -86,7 +86,12 @@ export function AssignmentList({
 function WithdrawButton({ id }: { id: string }) {
   const [state, formAction, pending] = useActionState<SaveState, FormData>(unassignFormAction, {});
   return (
-    <form action={formAction}>
+    <form
+      action={formAction}
+      onSubmit={(e) => {
+        if (!window.confirm("Withdraw this form? They will no longer be asked to complete it.")) e.preventDefault();
+      }}
+    >
       <input type="hidden" name="assignmentId" value={id} />
       <Button type="submit" variant="ghost" size="sm" disabled={pending} title={state.error}>
         Withdraw

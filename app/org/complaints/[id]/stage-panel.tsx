@@ -376,7 +376,13 @@ function ActionRow({ action: a, complaintId, stageId, disabled }: { action: Comp
       </span>
       {late && <span className="text-xs font-medium text-rose-600">overdue</span>}
       {!disabled && (
-        <form action={delAction} className="ml-auto">
+        <form
+          action={delAction}
+          onSubmit={(e) => {
+            if (!window.confirm(`Remove the action "${a.title}"?`)) e.preventDefault();
+          }}
+          className="ml-auto"
+        >
           <input type="hidden" name="complaintId" value={complaintId} />
           <input type="hidden" name="actionId" value={a.id} />
           <input type="hidden" name="stageId" value={stageId} />
@@ -509,7 +515,13 @@ function DocumentsBox({ complaint, stage, disabled }: PanelProps) {
             {d.fileSize ? `${Math.max(1, Math.round(d.fileSize / 1024))} KB · ` : ""}{formatDate(d.uploadedAt)}
           </span>
           {!disabled && (
-            <form action={del} className="ml-auto">
+            <form
+              action={del}
+              onSubmit={(e) => {
+                if (!window.confirm(`Delete ${d.fileName}? This cannot be undone.`)) e.preventDefault();
+              }}
+              className="ml-auto"
+            >
               <input type="hidden" name="complaintId" value={complaint.id} />
               <input type="hidden" name="documentId" value={d.id} />
               <button type="submit" className="text-muted-foreground hover:text-foreground" aria-label="Delete"><Trash2 className="size-3.5" /></button>
