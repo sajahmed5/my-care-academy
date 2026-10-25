@@ -220,7 +220,7 @@ export function LearnersTable({
                 key={f.key}
                 type="button"
                 onClick={() => setFilter(f.key)}
-                className={`inline-flex min-h-11 items-center rounded-full border px-3 py-1 text-sm transition-colors sm:min-h-0 ${
+                className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors sm:min-h-0 ${
                   active
                     ? "border-foreground bg-foreground text-background"
                     : "hover:bg-accent"
@@ -242,7 +242,7 @@ export function LearnersTable({
                 key={f.key}
                 type="button"
                 onClick={() => setFilter(f.key)}
-                className={`inline-flex min-h-11 items-center rounded-full border border-dashed px-3 py-1 text-sm transition-colors sm:min-h-0 ${
+                className={`inline-flex min-h-11 items-center gap-1.5 rounded-full border border-dashed px-3 py-1 text-sm transition-colors sm:min-h-0 ${
                   active
                     ? "border-solid border-foreground bg-foreground text-background"
                     : "hover:bg-accent"
