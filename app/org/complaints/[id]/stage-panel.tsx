@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,7 +107,16 @@ function DocumentStatus({ complaint, stage, entry, disabled }: PanelProps) {
   const [status, setStatus] = useState(entry?.status ?? "pending");
   const [notes, setNotes] = useState(entry?.notes ?? "");
   return (
-    <form action={action} className="space-y-2">
+    <form
+      // Not <form action>: the reset React does after a save would put the
+      // status back to the option the page loaded with (#69). See StageForm.
+      onSubmit={(e) => {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        startTransition(() => action(data));
+      }}
+      className="space-y-2"
+    >
       <input type="hidden" name="complaintId" value={complaint.id} />
       <input type="hidden" name="stageId" value={stage.id} />
       <div className="grid gap-2 sm:grid-cols-[160px_1fr]">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,7 +52,18 @@ export function StageForm({
   for (const s of form.sections) for (const q of s.questions) if (q.id in answers) owned[q.id] = answers[q.id];
 
   return (
-    <form action={action} className="space-y-5">
+    <form
+      // Submitted through a transition rather than <form action>: React resets
+      // a form after a successful action, and a reset puts every <select> back
+      // to the option it showed when the page loaded — the save lands, but the
+      // dropdown snaps back on screen (#64).
+      onSubmit={(e) => {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        startTransition(() => action(data));
+      }}
+      className="space-y-5"
+    >
       <input type="hidden" name="complaintId" value={complaintId} />
       <input type="hidden" name="stageId" value={stageId} />
       <input type="hidden" name="answers" value={JSON.stringify(owned)} />
