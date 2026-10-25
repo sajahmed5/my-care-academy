@@ -8,7 +8,9 @@ import {
   REQUIRED_DOCS,
   CANDIDATE_STAGES,
   CANDIDATE_STATUSES,
+  docState,
   outstandingDocs,
+  type DocState,
   type RequiredDoc,
 } from "@/lib/recruitment";
 import { updateCandidateAction, deleteCandidateAction, hireCandidateAction } from "../actions";
@@ -26,6 +28,13 @@ export interface Candidate {
 }
 export type { Doc };
 
+const STATE_CHIP: Record<DocState, { label: string; className: string }> = {
+  held: { label: "Uploaded", className: "bg-green-100 text-green-700" },
+  not_required: { label: "Not needed", className: "bg-muted text-muted-foreground" },
+  missing: { label: "Required", className: "bg-rose-100 text-rose-700" },
+  expired: { label: "Expired", className: "bg-rose-100 text-rose-700" },
+};
+
 /** One checklist item: its name and status, with the shared controls beside. */
 function DocRow({
   candidateId,
@@ -38,10 +47,19 @@ function DocRow({
   existing?: Doc;
   onChange: () => void;
 }) {
+  const state = docState(existing);
+  const chip = STATE_CHIP[state];
+  const owed = state === "missing" || state === "expired";
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border p-3">
       <div className="min-w-40">
-        <p className="text-sm font-medium">{doc.label}</p>
+        <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+          <span>
+            {doc.label}
+            {owed && <span className="text-rose-600" aria-hidden> *</span>}
+          </span>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${chip.className}`}>{chip.label}</span>
+        </p>
         <DocStatus existing={existing} />
       </div>
       <DocControls candidateId={candidateId} doc={doc} existing={existing} onChange={onChange} />
@@ -144,6 +162,20 @@ export function CandidateDetail({
             {REQUIRED_DOCS.length - outstanding.length} of {REQUIRED_DOCS.length} done
           </p>
         </div>
+        {!hired && (
+          <p className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+            To mark someone hired, every document below must be uploaded (and in
+            date where it expires) or marked not needed.{" "}
+            {outstanding.length > 0 ? (
+              <>
+                Items marked <span className="text-rose-600">*</span> are still
+                needed: {outstanding.length} to go.
+              </>
+            ) : (
+              "Everything is in, so they can be hired."
+            )}
+          </p>
+        )}
         <div className="grid gap-2">
           {REQUIRED_DOCS.map((d) => (
             <DocRow

@@ -170,8 +170,10 @@ export function DocControls({
             <Button size="xs" onClick={upload} disabled={busy || !file}>
               Upload
             </Button>
+            {/* "Mark", not "Not needed": a bare "Not needed" on every row read as
+                every row's status (#57). */}
             <Button size="xs" variant="ghost" disabled={busy} onClick={() => setWaiving(true)}>
-              Not needed
+              Mark not needed…
             </Button>
           </>
         )}
