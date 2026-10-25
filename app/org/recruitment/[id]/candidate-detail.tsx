@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   REQUIRED_DOCS,
-  CANDIDATE_STAGES,
-  CANDIDATE_STATUSES,
+  CANDIDATE_PROGRESS,
   docState,
+  progressOf,
   outstandingDocs,
   type DocState,
   type RequiredDoc,
 } from "@/lib/recruitment";
-import { updateCandidateAction, deleteCandidateAction, hireCandidateAction } from "../actions";
+import { setCandidateProgressAction, deleteCandidateAction, hireCandidateAction } from "../actions";
 import { DocControls, DocStatus, type Doc } from "../doc-controls";
 
 const selectClass =
@@ -75,8 +75,7 @@ export function CandidateDetail({
   documents: Doc[];
 }) {
   const router = useRouter();
-  const [stage, setStage] = useState(candidate.stage);
-  const [status, setStatus] = useState(candidate.status);
+  const [progress, setProgress] = useState<string>(progressOf(candidate));
   const [createLearner, setCreateLearner] = useState(true);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -86,16 +85,19 @@ export function CandidateDetail({
   // Mark hired waits for the whole checklist (issue #51). The server checks
   // the same thing; this is so the manager can see what is in the way.
   const outstanding = outstandingDocs(documents);
-  const hired = status === "hired";
+  const hired = progress === "hired";
 
-  async function saveMeta() {
+  // Saved as soon as it is chosen: one dropdown has no need of a Save button.
+  async function changeProgress(next: string) {
+    const before = progress;
+    setProgress(next);
     setBusy(true);
     setError(null);
-    const r = await updateCandidateAction(candidate.id, { stage, status });
+    const r = await setCandidateProgressAction(candidate.id, next);
     setBusy(false);
     if (!r.ok) {
       setError(r.error ?? "Could not save.");
-      setStatus(candidate.status);
+      setProgress(before);
       return;
     }
     router.refresh();
@@ -110,7 +112,7 @@ export function CandidateDetail({
       setError(r.error ?? "Could not mark hired.");
       return;
     }
-    setStatus("hired");
+    setProgress("hired");
     setMsg(
       r.invited
         ? "Marked hired and invited as a learner. Assign their courses from the Team page."
@@ -123,36 +125,22 @@ export function CandidateDetail({
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-4">
         <div className="space-y-1">
-          <Label className="text-xs">Stage</Label>
+          <Label htmlFor="cand-progress" className="text-xs">Status</Label>
           <select
-            value={stage}
-            onChange={(e) => setStage(e.target.value)}
+            id="cand-progress"
+            value={progress}
+            onChange={(e) => changeProgress(e.target.value)}
+            disabled={busy}
             className={selectClass}
           >
-            {CANDIDATE_STAGES.map((s) => (
-              <option key={s} value={s}>
-                {s}
+            {CANDIDATE_PROGRESS.map((p) => (
+              <option key={p.value} value={p.value} disabled={p.value === "hired"}>
+                {p.label}
+                {p.value === "hired" && !hired ? " (use Mark hired)" : ""}
               </option>
             ))}
           </select>
         </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Status</Label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className={selectClass}
-          >
-            {CANDIDATE_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-        <Button onClick={saveMeta} disabled={busy}>
-          Save
-        </Button>
       </div>
 
       <div className="space-y-2">

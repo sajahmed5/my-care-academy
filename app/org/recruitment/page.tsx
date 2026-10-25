@@ -60,7 +60,7 @@ export default async function RecruitmentPage() {
             <CardTitle>Applicant tracker</CardTitle>
             <CardDescription>
               {rows.length} candidate(s). Click a name to manage documents and
-              stage.
+              status.
             </CardDescription>
           </CardHeader>
           <CardContent>

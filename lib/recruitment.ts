@@ -24,15 +24,42 @@ export function docLabel(key: string): string {
   return REQUIRED_DOCS.find((d) => d.key === key)?.label ?? key;
 }
 
-export const CANDIDATE_STAGES = [
-  "Applied",
-  "Screening",
-  "Interview",
-  "Offer",
-  "Onboarding",
+/**
+ * Where a candidate is, as one value (#58): Applied, Reviewing, then Hired or
+ * Rejected. It used to be two dropdowns, a five-step Stage and a Status that
+ * also offered "hired" beside the Mark hired button. It is still held in the
+ * same two columns — stage for Applied/Reviewing, status for the outcome — so
+ * nothing in the database changed. Older stages (Screening, Interview, Offer,
+ * Onboarding) read as Reviewing.
+ */
+export const CANDIDATE_PROGRESS = [
+  { value: "applied", label: "Applied" },
+  { value: "reviewing", label: "Reviewing" },
+  { value: "hired", label: "Hired" },
+  { value: "rejected", label: "Rejected" },
 ] as const;
 
-export const CANDIDATE_STATUSES = ["candidate", "hired", "rejected"] as const;
+export type CandidateProgress = (typeof CANDIDATE_PROGRESS)[number]["value"];
+
+export function progressOf(c: { stage: string | null; status: string }): CandidateProgress {
+  if (c.status === "hired") return "hired";
+  if (c.status === "rejected") return "rejected";
+  return (c.stage ?? "Applied").trim().toLowerCase() === "applied" ? "applied" : "reviewing";
+}
+
+export function progressLabel(p: CandidateProgress): string {
+  return CANDIDATE_PROGRESS.find((x) => x.value === p)?.label ?? p;
+}
+
+/**
+ * The columns to write for a progress chosen from the dropdown. Hired is not
+ * one of them: hiring is Mark hired, which checks the documents, can create
+ * the learner and writes the audit row.
+ */
+export function progressPatch(p: Exclude<CandidateProgress, "hired">): { stage?: string; status: string } {
+  if (p === "rejected") return { status: "rejected" };
+  return { stage: p === "applied" ? "Applied" : "Reviewing", status: "candidate" };
+}
 
 /** What the database holds for one checklist item: a file, or a reasoned N/A. */
 export interface CandidateDocRecord {

@@ -12,6 +12,7 @@ import {
   REQUIRED_DOCS,
   notReadyMessage,
   outstandingDocs,
+  progressPatch,
   type CandidateDocRecord,
   type ChecklistItem,
 } from "@/lib/recruitment";
@@ -66,32 +67,22 @@ export async function addCandidateAction(
 }
 
 /**
- * Save stage and status. Setting status to "hired" here is the same door as
- * Mark hired, so it waits for the same checklist — otherwise the dropdown
- * would be a way round the gate.
+ * Move a candidate along: Applied, Reviewing or Rejected (#58). Hired is not
+ * here — Mark hired is the one way in, so the document check, the learner
+ * account and the audit row cannot be stepped round. Only these two columns
+ * are written; the action used to take any patch the browser sent.
  */
-export async function updateCandidateAction(
+export async function setCandidateProgressAction(
   id: string,
-  patch: Record<string, unknown>,
+  progress: string,
 ): Promise<{ ok: boolean; error?: string }> {
   const context = await requireConsole();
   await assertRecruitment(context);
-  const supabase = await createClient();
-
-  if (patch.status === "hired") {
-    const { data: current } = await supabase
-      .from("candidates")
-      .select("status")
-      .eq("id", id)
-      .maybeSingle();
-    if (!current) return { ok: false, error: "Candidate not found." };
-    if (current.status !== "hired") {
-      const outstanding = await outstandingFor(createAdminClient(), id);
-      if (outstanding.length > 0) return { ok: false, error: notReadyMessage(outstanding) };
-    }
+  if (progress !== "applied" && progress !== "reviewing" && progress !== "rejected") {
+    return { ok: false, error: "Choose Applied, Reviewing or Rejected. Hiring is done with Mark hired." };
   }
-
-  const { error } = await supabase.from("candidates").update(patch).eq("id", id);
+  const supabase = await createClient();
+  const { error } = await supabase.from("candidates").update(progressPatch(progress)).eq("id", id);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/org/recruitment/${id}`);
   revalidatePath("/org/recruitment");

@@ -5,6 +5,8 @@ import {
   docState,
   notReadyMessage,
   outstandingDocs,
+  progressOf,
+  progressPatch,
   type CandidateDocRecord,
 } from "../lib/recruitment";
 
@@ -70,5 +72,20 @@ describe("Mark hired waits for the whole checklist (issue #51)", () => {
     expect(items).toHaveLength(REQUIRED_DOCS.length);
     expect(items.find((i) => i.key === "literacy")?.state).toBe("not_required");
     expect(items.find((i) => i.key === "dbs")?.state).toBe("missing");
+  });
+});
+
+describe("a candidate's one status (#58)", () => {
+  it("reads Applied, Reviewing, Hired or Rejected from the two columns", () => {
+    expect(progressOf({ stage: "Applied", status: "candidate" })).toBe("applied");
+    expect(progressOf({ stage: "Interview", status: "candidate" })).toBe("reviewing");
+    expect(progressOf({ stage: "Reviewing", status: "candidate" })).toBe("reviewing");
+    expect(progressOf({ stage: "Offer", status: "hired" })).toBe("hired");
+    expect(progressOf({ stage: "Applied", status: "rejected" })).toBe("rejected");
+  });
+  it("writes back only what the dropdown may set — never hired", () => {
+    expect(progressPatch("applied")).toEqual({ stage: "Applied", status: "candidate" });
+    expect(progressPatch("reviewing")).toEqual({ stage: "Reviewing", status: "candidate" });
+    expect(progressPatch("rejected")).toEqual({ status: "rejected" });
   });
 });

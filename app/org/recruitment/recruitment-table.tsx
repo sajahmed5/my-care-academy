@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { REQUIRED_DOCS, docState, type DocState } from "@/lib/recruitment";
+import { REQUIRED_DOCS, docState, progressLabel, progressOf, type CandidateProgress, type DocState } from "@/lib/recruitment";
 import { DocControls, DocStatus, type Doc } from "./doc-controls";
 
 export interface CandidateRow {
@@ -23,10 +23,11 @@ export interface CandidateRow {
   docs: Record<string, Doc>;
 }
 
-const statusVariant: Record<string, "secondary" | "destructive"> = {
-  hired: "secondary",
+const progressVariant: Record<CandidateProgress, "default" | "secondary" | "destructive" | "outline"> = {
+  applied: "outline",
+  reviewing: "secondary",
+  hired: "default",
   rejected: "destructive",
-  candidate: "secondary",
 };
 
 /** One cell of the checklist: held, not needed, expired, or nothing yet. */
@@ -118,7 +119,6 @@ export function RecruitmentTable({ candidates }: { candidates: CandidateRow[] })
                   Candidate
                 </th>
                 <th className="py-2 pr-4 font-medium">Status</th>
-                <th className="py-2 pr-4 font-medium">Stage</th>
                 <th className="py-2 pr-4 font-medium">Docs</th>
                 {REQUIRED_DOCS.map((d) => (
                   <th
@@ -151,11 +151,10 @@ export function RecruitmentTable({ candidates }: { candidates: CandidateRow[] })
                       </div>
                     </td>
                     <td className="py-2 pr-4">
-                      <Badge variant={statusVariant[c.status] ?? "secondary"}>
-                        {c.status}
+                      <Badge variant={progressVariant[progressOf(c)]}>
+                        {progressLabel(progressOf(c))}
                       </Badge>
                     </td>
-                    <td className="py-2 pr-4 whitespace-nowrap">{c.stage}</td>
                     <td className="py-2 pr-4 whitespace-nowrap text-muted-foreground">
                       {done}/{REQUIRED_DOCS.length}
                     </td>
