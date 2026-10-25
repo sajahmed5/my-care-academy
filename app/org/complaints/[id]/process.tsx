@@ -96,7 +96,7 @@ export function ComplaintProcess({
           <p className="whitespace-pre-line text-sm">{complaint.description}</p>
           {complaint.desiredOutcome && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">They would like:</span> {complaint.desiredOutcome}
+              <span className="font-medium text-foreground">Desired outcome:</span> {complaint.desiredOutcome}
             </p>
           )}
           <PeopleNamed complaint={complaint} staff={staff} disabled={closed} />

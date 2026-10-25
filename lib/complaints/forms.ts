@@ -71,7 +71,7 @@ export const complaintFormSchema: StageForm = {
           ],
         },
         { id: "cf_staff", text: "Staff it is about", type: "multiselect", optionsSource: "staff" },
-        { id: "cf_desired", text: "What they would like to see happen", type: "long_text" },
+        { id: "cf_desired", text: "Desired outcome", type: "long_text" },
         { id: "cf_recorded_by", text: "Recorded by", type: "text" },
       ],
     },

@@ -108,8 +108,8 @@ export function NewComplaint() {
             />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="nc-desired">What they would like to see happen</Label>
-            <Input id="nc-desired" name="desiredOutcome" />
+            <Label htmlFor="nc-desired">Desired outcome</Label>
+            <Input id="nc-desired" name="desiredOutcome" placeholder="What the person raising it would like to happen, e.g. an apology, a change of carer" />
           </div>
           {state.error && <p className="text-sm text-rose-600">{state.error}</p>}
           <div className="flex gap-2">

@@ -219,7 +219,7 @@ export function renderResponsePdf(ctx: PdfContext): Promise<Buffer> {
         <Text style={styles.para}>{complaint.description}</Text>
         {complaint.desiredOutcome && (
           <>
-            <Text style={styles.q}>What they would like to see happen</Text>
+            <Text style={styles.q}>Desired outcome</Text>
             <Text style={styles.para}>{complaint.desiredOutcome}</Text>
           </>
         )}
