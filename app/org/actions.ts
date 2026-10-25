@@ -567,6 +567,32 @@ export async function bulkAssignTrainingAction(
       .from("enrolments")
       .upsert(upserts, { onConflict: "user_id,course_id" });
     if (error) return { ok: false, error: error.message, failures };
+
+    // One email per carer for everything the file gave them, as Assign
+    // training does — after the response, so a long file is not held up.
+    const titleOf = new Map((courses ?? []).map((c) => [c.id as string, c.title as string]));
+    const perUser = new Map<string, { titles: string[]; due: string }>();
+    for (const u of upserts) {
+      const entry = perUser.get(u.user_id) ?? { titles: [], due: u.due_date };
+      entry.titles.push(titleOf.get(u.course_id) ?? "a course");
+      if (u.due_date < entry.due) entry.due = u.due_date;
+      perUser.set(u.user_id, entry);
+    }
+    const origin = await siteOrigin();
+    const organisationId = context.organisationId;
+    after(() =>
+      emailAssignees(
+        createAdminClient(),
+        "training_assigned",
+        [...perUser].map(([userId, e]) => ({
+          userId,
+          title: e.titles.length === 1 ? e.titles[0] : `${e.titles.length} courses (${e.titles.slice(0, 5).join(", ")}${e.titles.length > 5 ? ", …" : ""})`,
+          dueDate: e.due,
+          href: "/learn/modules",
+        })),
+        { organisationId, assignedBy: context.userId, origin },
+      ),
+    );
   }
 
   await logAudit({

@@ -22,6 +22,7 @@ import {
   MessageSquareWarning,
   BookMarked,
   CalendarClock,
+  ListChecks,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
@@ -115,6 +116,7 @@ const NAV: Record<string, NavItem[]> = {
     { href: "/learn", label: "Dashboard", icon: LayoutDashboard },
     { href: "/learn/modules", label: "Training", icon: BookOpen },
     { href: "/learn/certificates", label: "Certificates", icon: Award },
+    { href: "/learn/actions", label: "My actions", icon: ListChecks },
     { href: "/learn/policies", label: "Policies", icon: BookMarked, feature: "documents.library" },
     { href: "/learn/forms", label: "Forms", icon: FileText, feature: "forms.builder" },
     { href: "/learn/notifications", label: "Notifications", icon: Bell },

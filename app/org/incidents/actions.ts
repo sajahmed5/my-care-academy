@@ -1,7 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { requireConsole } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { emailAssignees } from "@/lib/assignment-email";
+import { siteOrigin } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
@@ -210,6 +214,20 @@ export async function assignSuggestedTrainingAction(
   if (linkError && !linkError.message.includes("duplicate")) {
     return { ok: false, error: linkError.message };
   }
+
+  // Told like any other training assignment.
+  const origin = await siteOrigin();
+  const organisationId = context.organisationId!;
+  after(async () => {
+    const admin = createAdminClient();
+    const { data: course } = await admin.from("courses").select("title").eq("id", courseId).maybeSingle();
+    await emailAssignees(
+      admin,
+      "training_assigned",
+      [{ userId, title: (course?.title as string | undefined) ?? "A course", dueDate: dueDate || null, href: "/learn/modules" }],
+      { organisationId, assignedBy: context.userId, origin },
+    );
+  });
 
   await logAudit({
     context,

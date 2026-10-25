@@ -532,8 +532,8 @@ export async function addActionAction(_prev: SaveState, formData: FormData): Pro
   });
   if (error) return { ok: false, error: error.message };
 
-  // Tell the owner (#66). A console user can open the record; a carer has no
-  // page for it, so theirs says who to ask.
+  // Tell the owner (#66). A console user can open the record; a carer sees
+  // the action itself, on My actions.
   const origin = await siteOrigin();
   const organisationId = context.organisationId!;
   after(async () => {
@@ -543,7 +543,7 @@ export async function addActionAction(_prev: SaveState, formData: FormData): Pro
     await emailAssignees(
       admin,
       "action_assigned",
-      [{ userId: ownerId, title, dueDate, href: inConsole ? `/org/complaints/${complaintId}` : null, note: detail || null }],
+      [{ userId: ownerId, title, dueDate, href: inConsole ? `/org/complaints/${complaintId}` : "/learn/actions", note: detail || null }],
       { organisationId, assignedBy: context.userId, origin },
     );
   });
