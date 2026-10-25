@@ -18,6 +18,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ConsoleUsers, type ConsoleUser } from "./console-users";
+import { LogoCard } from "./logo-card";
+import { orgBranding } from "@/lib/branding";
+import { hasFeature } from "@/lib/entitlements";
 import { formatDate } from "@/lib/dates";
 
 function fmtDate(iso: string | null): string {
@@ -80,6 +83,11 @@ export default async function AccountPage() {
     lastSeen: (u.last_seen_at as string | null) ?? null,
   }));
 
+  const [branding, whiteLabel] = await Promise.all([
+    orgBranding(context.organisationId),
+    hasFeature(context, "platform.white_label"),
+  ]);
+
   const tier = (org?.package_tier ?? "core") as PackageTier;
   const details = TIER_DETAILS[tier];
   const billing = await getBillingSummary({
@@ -131,6 +139,29 @@ export default async function AccountPage() {
               </Link>{" "}
               and we&apos;ll sort it.
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Your logo (white-label) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Your logo</CardTitle>
+            <CardDescription>
+              Shown on your certificates, your carers&apos; learning portal and your copy of the policies.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {whiteLabel ? (
+              <LogoCard logoUrl={branding?.logoUrl ?? null} orgName={branding?.name ?? "Your organisation"} />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Your own logo is included in Enterprise.{" "}
+                <Link href="/contact?topic=pricing" className="font-medium text-primary hover:underline">
+                  Get in touch
+                </Link>{" "}
+                to add it.
+              </p>
+            )}
           </CardContent>
         </Card>
 
