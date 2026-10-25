@@ -436,7 +436,7 @@ function StandingCheck({ name, why, complaint, stage, staff, disabled }: { name:
             <option value="" disabled>Owner…</option>
             {staff.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
-          <Input name="dueDate" type="date" className="h-8 w-auto" />
+          <Input name="dueDate" type="date" className="h-8 w-auto" required aria-label="Done by" title="Done by" />
           <Button type="submit" size="sm" disabled={adding}>Add</Button>
           <Button type="button" size="sm" variant="ghost" onClick={() => setMode("idle")}>Cancel</Button>
           {addState.error && <p className="w-full text-xs text-rose-600">{addState.error}</p>}
@@ -477,7 +477,7 @@ function AddAction({ complaint, stage, staff }: { complaint: Complaint; stage: C
           <option value="" disabled>Owner…</option>
           {staff.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
-        <Input name="dueDate" type="date" className="w-auto" />
+        <Input name="dueDate" type="date" className="w-auto" required aria-label="Done by" title="Done by" />
         <Input name="detail" placeholder="Detail (optional)" className="flex-1" />
       </div>
       {state.error && <p className="text-xs text-rose-600">{state.error}</p>}

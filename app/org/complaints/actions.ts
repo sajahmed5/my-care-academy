@@ -515,6 +515,9 @@ export async function addActionAction(_prev: SaveState, formData: FormData): Pro
   const detail = str(formData, "detail");
   if (!title) return { ok: false, error: "Say what is to be done." };
   if (!ownerId) return { ok: false, error: "Give it an owner." };
+  // An owner with no date has nothing to work to, and nothing can show it as
+  // overdue (#65). Asked for here, not in the table, which other records share.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return { ok: false, error: "Give it a date it is to be done by." };
 
   const supabase = await createClient();
   const stage = await stageById(supabase, stageId);
@@ -526,7 +529,7 @@ export async function addActionAction(_prev: SaveState, formData: FormData): Pro
     user_id: ownerId,
     title,
     detail: `[${tag}]${detail ? ` ${detail}` : ""}`,
-    due_date: dueDate || null,
+    due_date: dueDate,
     source_type: "complaint",
     source_id: complaintId,
     created_by: context.userId,
