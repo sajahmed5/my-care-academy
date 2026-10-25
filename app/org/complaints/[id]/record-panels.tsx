@@ -146,14 +146,23 @@ export function CloseRecord({
             </form>
 
             <div className="border-t pt-3">
-              <p className="mb-2 text-xs text-muted-foreground">Not closing it, but it is not going on either:</p>
+              <p className="text-sm font-medium">End without closing</p>
+              <p className="mb-2 text-xs text-muted-foreground">
+                Where the person who raised it has withdrawn it, or it will not be taken further, record that instead of closing it. It can be reopened later.
+              </p>
               <div className="flex gap-2">
                 {(["withdrawn", "cancelled"] as const).map((s) => (
-                  <form key={s} action={stAction}>
+                  <form
+                    key={s}
+                    action={stAction}
+                    onSubmit={(e) => {
+                      if (!window.confirm(`Record this as ${s}? It can be reopened later.`)) e.preventDefault();
+                    }}
+                  >
                     <input type="hidden" name="complaintId" value={complaint.id} />
                     <input type="hidden" name="status" value={s} />
-                    <button type="submit" disabled={stPending} className={buttonVariants({ variant: "ghost", size: "sm" })}>
-                      Mark {s}
+                    <button type="submit" disabled={stPending} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                      Record as {s}
                     </button>
                   </form>
                 ))}
