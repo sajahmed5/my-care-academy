@@ -223,7 +223,6 @@ export async function deleteStaffAction(
   revalidatePath("/org");
   revalidatePath("/org/learners");
   revalidatePath("/org/learners/admin");
-  revalidatePath("/org/retention");
   return { ok: true };
 }
 

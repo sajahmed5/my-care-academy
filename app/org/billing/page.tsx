@@ -165,21 +165,6 @@ export default async function AccountPage() {
           </CardContent>
         </Card>
 
-        {/* Retention: 7 years, reviewed here, never deleted automatically. */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Record retention</CardTitle>
-            <CardDescription>
-              Records are kept for 7 years after a carer leaves or a complaint or incident closes.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/org/retention" className="text-sm font-medium text-primary hover:underline">
-              Review records past retention →
-            </Link>
-          </CardContent>
-        </Card>
-
         {/* Billing */}
         <Card>
           <CardHeader>

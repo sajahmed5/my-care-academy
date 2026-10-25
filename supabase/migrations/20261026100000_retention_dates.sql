@@ -1,10 +1,10 @@
 -- ============================================================================
 -- When a member of staff left: the date 7-year retention runs from
 -- ============================================================================
--- Retention is 7 years (Saj, 26 Oct 2026): a leaver's records are kept for
--- seven years after they leave, a closed complaint or incident for seven years
--- after it closed, and nothing is deleted automatically — the Account page
--- lists what has passed retention for a manager to delete (lib/retention.ts).
+-- Written for a 7-year retention review (v2.20.2), withdrawn the same day:
+-- records are kept for as long as the organisation uses the platform, and
+-- removed when it leaves (Saj, 26 Oct 2026). The leaving date is kept anyway
+-- — it is when someone left, which is worth knowing on its own.
 --
 -- Complaints and incidents already carry closed_on. Staff carry only a status,
 -- so there was no date to count from. users.deactivated_at is it, kept by a
