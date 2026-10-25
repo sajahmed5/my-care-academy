@@ -91,6 +91,7 @@ export const FEATURES = [
     category: "documents",
     label: "Full compliance pack",
     isCore: false,
+    hint: "Includes the basic policies and procedures library.",
   },
   // What the employer records about a person. The carer file is where these
   // are read; CARER-FILE.md is the plan they follow.
@@ -99,18 +100,21 @@ export const FEATURES = [
     category: "people",
     label: "Supervisions & appraisals",
     isCore: false,
+    hint: "Appears on each carer's file (Staff, then open a person), not in the menu.",
   },
   {
     key: "people.competency",
     category: "people",
     label: "Spot checks & competency",
     isCore: false,
+    hint: "Appears on each carer's file (Staff, then open a person), not in the menu.",
   },
   {
     key: "platform.white_label",
     category: "platform",
     label: "White-label logo",
     isCore: false,
+    hint: "Not built yet: switching it on changes nothing.",
   },
   {
     key: "platform.portal_api",
@@ -121,6 +125,16 @@ export const FEATURES = [
 ] as const;
 
 export type FeatureKey = (typeof FEATURES)[number]["key"];
+
+/**
+ * What a platform admin should know beside the switch: where a feature shows
+ * up when it is somewhere other than the menu, or that it is not built yet
+ * (#76, #77 — "always on" looked broken when nothing appeared to change).
+ */
+export function featureHint(key: string): string | null {
+  const f = FEATURES.find((x) => x.key === key);
+  return f && "hint" in f ? f.hint : null;
+}
 
 /** The catalogue label, falling back to the raw key for an unknown one. */
 export function featureLabel(key: string): string {

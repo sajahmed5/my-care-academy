@@ -13,7 +13,7 @@ import {
   sizeBandLabel,
   tierLabel,
 } from "@/lib/organisations";
-import { FEATURE_CATEGORIES, FEATURES } from "@/lib/features";
+import { FEATURE_CATEGORIES, FEATURES, featureHint } from "@/lib/features";
 import { choiceFor, type OverrideChoice } from "@/lib/org-subscription";
 import {
   updateOrganisationAction,
@@ -232,6 +232,9 @@ function FeatureExceptions({
               const inPackage = included.has(f.key);
               const on = choice === "follow" ? inPackage : choice === "on";
               const note = byFeature.get(f.key)?.note;
+              const hint = featureHint(f.key);
+              // "Not in Starter" alone read as "it is the basic one" (#74).
+              const from = PACKAGE_TIERS.find((t) => (tierFeatures[t.value] ?? []).includes(f.key));
               return (
                 <div
                   key={f.key}
@@ -242,12 +245,13 @@ function FeatureExceptions({
                     <p className="text-xs text-muted-foreground">
                       {inPackage
                         ? `${tierLabel(tier)} includes this`
-                        : `Not in ${tierLabel(tier)}`}
+                        : `Not in ${tierLabel(tier)}${from ? ` · included from ${from.label}` : ""}`}
                       {" · "}
                       <span className={on ? "text-green-700 dark:text-green-500" : ""}>
                         {on ? "On" : "Off"} for this organisation
                       </span>
                     </p>
+                    {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
                     {note && choice !== "follow" && (
                       <p className="text-xs text-muted-foreground/80">{note}</p>
                     )}
