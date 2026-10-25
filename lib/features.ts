@@ -77,7 +77,9 @@ export const FEATURES = [
     isCore: false,
   },
   // Two versions of the same shelf: the basic set, and the full compliance
-  // pack. A guard on the basic library must treat the pack as including it.
+  // pack. The pack includes the basics: org_has_feature answers
+  // documents.library as on whenever the pack is (migration 20261025120000),
+  // so every guard on the library already counts the pack.
   {
     key: "documents.library",
     category: "documents",
