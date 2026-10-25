@@ -21,6 +21,7 @@ import {
   type LucideIcon,
   MessageSquareWarning,
   BookMarked,
+  CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
@@ -82,6 +83,17 @@ const NAV: Record<string, NavItem[]> = {
     { href: "/org/certificates", label: "Certificates", icon: Award },
     { href: "/org/forms", label: "Forms", icon: FileText, feature: "forms.builder" },
     { href: "/org/recruitment", label: "Recruitment", icon: Briefcase, feature: "recruitment.tracker" },
+    // Supervisions and spot checks used to be reachable only inside one
+    // carer's file; a manager works from who is due this month (ROADMAP §3).
+    {
+      href: "/org/due",
+      label: "Who's due",
+      icon: CalendarClock,
+      children: [
+        { href: "/org/due/supervisions", label: "Supervisions", feature: "people.supervisions" },
+        { href: "/org/due/spot-checks", label: "Spot checks", feature: "people.competency" },
+      ],
+    },
     { href: "/org/observations", label: "Care Certificate", icon: ClipboardCheck, feature: "training.observations" },
     {
       href: "/org/complaints",
