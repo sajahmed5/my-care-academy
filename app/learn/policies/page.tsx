@@ -5,7 +5,7 @@ import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { byCategory, loadLibrary } from "@/lib/policy-library";
+import { byCategory, loadCopies, loadLibrary } from "@/lib/policy-library";
 
 /**
  * The policies a carer is asked to read and accept.
@@ -28,13 +28,32 @@ export default async function LearnerPoliciesPage() {
       .single(),
   ]);
 
-  const policies = (
-    await loadLibrary(supabase, {
+  // Only what the organisation has adopted, completed and published — a
+  // carer never reads a template (ROADMAP §1). The version is the copy's, and
+  // so is the acceptance.
+  const [library, copies, { data: acks }] = await Promise.all([
+    loadLibrary(supabase, {
       enabled,
       serviceType: (org?.service_type as string | null) ?? null,
       userId: context.userId,
-    })
-  ).filter((d) => d.kind === "policy");
+    }),
+    loadCopies(supabase, context.organisationId!),
+    supabase
+      .from("policy_acknowledgements")
+      .select("organisation_policy_id, version")
+      .eq("user_id", context.userId)
+      .not("organisation_policy_id", "is", null),
+  ]);
+  const ackOf = new Map<string, number>();
+  for (const a of acks ?? []) {
+    const id = a.organisation_policy_id as string;
+    ackOf.set(id, Math.max(ackOf.get(id) ?? 0, a.version as number));
+  }
+  const policies = library.flatMap((d) => {
+    const c = copies.get(d.id);
+    if (d.kind !== "policy" || !c || c.status !== "published" || c.version < 1) return [];
+    return [{ ...d, version: c.version, acknowledgedVersion: ackOf.get(c.id) ?? null }];
+  });
 
   const isAccepted = (p: (typeof policies)[number]) =>
     p.acknowledgedVersion != null && p.acknowledgedVersion >= (p.version ?? 1);
@@ -57,7 +76,9 @@ export default async function LearnerPoliciesPage() {
           {outstanding.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                Nothing outstanding — you have accepted every policy.
+                {policies.length === 0
+                  ? "Your manager has not published any policies to you yet."
+                  : "Nothing outstanding — you have accepted every policy."}
               </CardContent>
             </Card>
           ) : (

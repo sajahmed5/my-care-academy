@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PolicyBody } from "@/components/policy-body";
 import { orgBranding } from "@/lib/branding";
 import { PolicyAcceptButton } from "@/components/policy-accept-button";
-import { loadPolicy, render, visiblePacks } from "@/lib/policy-library";
+import { loadCopy, loadPolicy, visiblePacks } from "@/lib/policy-library";
 
 /**
  * One policy, read by the carer it is addressed to, with their employer's
@@ -25,13 +25,8 @@ export default async function LearnerPolicyPage({
   const { code } = await params;
 
   const supabase = await createClient();
-  const [enabled, { data: org }, doc] = await Promise.all([
+  const [enabled, doc] = await Promise.all([
     enabledMap(context),
-    supabase
-      .from("organisations")
-      .select("name")
-      .eq("id", context.organisationId!)
-      .single(),
     loadPolicy(supabase, decodeURIComponent(code), context.userId),
   ]);
   // Carers read policies. The forms are the manager's, and a pack the
@@ -42,8 +37,20 @@ export default async function LearnerPolicyPage({
     notFound();
   }
 
-  const version = doc.version ?? 1;
-  const blocks = render(doc.blocks, (org?.name as string) ?? "Your organisation");
+  // The organisation's published copy is what a carer reads and accepts —
+  // never the template (ROADMAP §1).
+  const copy = await loadCopy(supabase, context.organisationId!, doc.id);
+  if (!copy || copy.status !== "published" || copy.version < 1) notFound();
+  const version = copy.version;
+  const blocks = copy.blocks;
+  const { data: myAck } = await supabase
+    .from("policy_acknowledgements")
+    .select("version")
+    .eq("user_id", context.userId)
+    .eq("organisation_policy_id", copy.id)
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const branding = await orgBranding(context.organisationId);
 
@@ -76,7 +83,7 @@ export default async function LearnerPolicyPage({
               policyId={doc.id}
               code={doc.code}
               version={version}
-              accepted={doc.acknowledgedVersion != null && doc.acknowledgedVersion >= version}
+              accepted={((myAck?.version as number | undefined) ?? 0) >= version}
             />
           </CardContent>
         </Card>

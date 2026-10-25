@@ -9,7 +9,9 @@ import {
   PACK_LABEL,
   byCategory,
   loadAcceptanceCounts,
+  loadCopies,
   loadLibrary,
+  type OrgPolicyCopy,
   type PolicySummary,
 } from "@/lib/policy-library";
 
@@ -55,9 +57,16 @@ export default async function PoliciesPage({
 
   // "12 of 40 accepted" against each policy: the number a manager scans for,
   // and the one an inspector asks about.
+  // Each policy's own copy, if adopted: what the manager is working on, and
+  // what staff have been given to accept.
+  const copies = await loadCopies(supabase, context.organisationId!);
+  const published = policies.flatMap((p) => {
+    const c = copies.get(p.id);
+    return c && c.status === "published" && c.version > 0 ? [{ id: p.id, version: c.version, copyId: c.id }] : [];
+  });
   const { counts, staff } =
     active === "policies"
-      ? await loadAcceptanceCounts(supabase, policies, context.organisationId)
+      ? await loadAcceptanceCounts(supabase, published, context.organisationId)
       : { counts: new Map<string, number>(), staff: 0 };
 
   return (
@@ -69,8 +78,9 @@ export default async function PoliciesPage({
 
         <p className="text-sm text-muted-foreground">
           Templates for {org?.name ?? "your organisation"}, with your name already
-          in them. Anything in square brackets is for you to complete before you
-          publish it to your team.
+          in them. Adopt a policy, complete the highlighted parts with what your
+          service does, and publish it: your staff read and accept your version,
+          never the template.
         </p>
 
         {documents.length > 0 && (
@@ -100,6 +110,7 @@ export default async function PoliciesPage({
                   <Row
                     key={item.id}
                     item={item}
+                    copy={copies.get(item.id) ?? null}
                     accepted={counts.get(item.id) ?? 0}
                     staff={staff}
                   />
@@ -142,17 +153,17 @@ function Tab({
 
 function Row({
   item,
+  copy,
   accepted: acceptedCount,
   staff,
 }: {
   item: PolicySummary;
+  copy: OrgPolicyCopy | null;
   accepted: number;
   staff: number;
 }) {
-  const accepted =
-    item.kind === "policy" && item.acknowledgedVersion != null &&
-    item.acknowledgedVersion === (item.version ?? 1);
   const Icon = item.kind === "log" ? Table2 : item.kind === "policy" ? ShieldCheck : FileText;
+  const live = copy && copy.status === "published" && copy.version > 0;
 
   return (
     <Card>
@@ -170,24 +181,30 @@ function Row({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {item.kind === "policy" && staff > 0 && (
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                acceptedCount >= staff
-                  ? "bg-green-100 text-green-700"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {acceptedCount} of {staff} accepted
-            </span>
-          )}
-          {accepted && (
-            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-              You have accepted this
-            </span>
-          )}
-        </div>
+        {item.kind === "policy" && (
+          <div className="flex items-center gap-2">
+            {live ? (
+              <>
+                <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                  Published · v{copy.version}
+                </span>
+                {staff > 0 && (
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      acceptedCount >= staff ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {acceptedCount} of {staff} accepted
+                  </span>
+                )}
+              </>
+            ) : copy ? (
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Draft</span>
+            ) : (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">Not adopted</span>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
