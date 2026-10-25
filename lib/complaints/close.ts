@@ -45,7 +45,7 @@ const some = (names: string[], max: number) =>
 /** What to do before closing, as an alert or an error. Empty when it can be closed. */
 export function closeGapsMessage(gaps: CloseGap[], untriaged = false, work: CloseWork = NO_CLOSE_WORK): string {
   if (untriaged) {
-    return "This concern has not been triaged yet. Triage it first — that decides what it is and what it needs — or mark it withdrawn or cancelled.";
+    return "This concern has not been triaged yet. Triage it first — that decides what it is and what it needs — or record it as withdrawn or cancelled, under End without closing below.";
   }
   const parts: string[] = [];
   if (gaps.length) parts.push(`Still to do, or to mark as not needed: ${some(gaps.map((g) => g.name), 6)}.`);
