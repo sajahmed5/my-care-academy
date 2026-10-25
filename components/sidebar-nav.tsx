@@ -94,7 +94,7 @@ const NAV: Record<string, NavItem[]> = {
         { href: "/org/incidents", label: "Incidents & accidents", feature: "complaints.register" },
       ],
     },
-    { href: "/org/policies", label: "Policies & documents", icon: BookMarked, feature: "documents.library" },
+    { href: "/org/policies", label: "Policies", icon: BookMarked, feature: "documents.library" },
     { href: "/org/reports", label: "Evidence & exports", icon: FileBarChart },
     { href: "/org/billing", label: "Account", icon: CreditCard },
     { href: "/account", label: "My account", icon: User },

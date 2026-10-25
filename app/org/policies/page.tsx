@@ -14,11 +14,13 @@ import {
 } from "@/lib/policy-library";
 
 /**
- * Policies and documents.
+ * Policies, and the documents that go with them.
  *
  * Two tabs, deliberately: a policy is read and accepted and the acceptance is
  * the evidence; a document is a form or a log to download, print and fill in.
- * One list holding both would be scrolled past.
+ * One list holding both would be scrolled past. With no documents published
+ * to this organisation there is no second tab at all — an empty tab beside
+ * the policies only raised the question of what goes in it (#73).
  */
 export default async function PoliciesPage({
   searchParams,
@@ -29,7 +31,6 @@ export default async function PoliciesPage({
   await requireFeature(context, "documents.library");
 
   const { tab } = await searchParams;
-  const active = tab === "documents" ? "documents" : "policies";
 
   const supabase = await createClient();
   const [enabled, { data: org }] = await Promise.all([
@@ -49,6 +50,7 @@ export default async function PoliciesPage({
 
   const policies = all.filter((d) => d.kind === "policy");
   const documents = all.filter((d) => d.kind !== "policy");
+  const active = tab === "documents" && documents.length > 0 ? "documents" : "policies";
   const shown = active === "policies" ? policies : documents;
 
   // "12 of 40 accepted" against each policy: the number a manager scans for,
@@ -59,7 +61,7 @@ export default async function PoliciesPage({
       : { counts: new Map<string, number>(), staff: 0 };
 
   return (
-    <DashboardShell title="Policies & documents" context={context}>
+    <DashboardShell title="Policies" context={context}>
       <div className="mx-auto max-w-4xl space-y-6">
         <Link href="/org" className="text-sm text-muted-foreground hover:underline">
           ← Back to console
@@ -71,15 +73,17 @@ export default async function PoliciesPage({
           publish it to your team.
         </p>
 
-        <nav aria-label="Library" className="flex items-center gap-1 border-b">
-          <Tab href="/org/policies" label="Policies" count={policies.length} active={active === "policies"} />
-          <Tab
-            href="/org/policies?tab=documents"
-            label="Documents"
-            count={documents.length}
-            active={active === "documents"}
-          />
-        </nav>
+        {documents.length > 0 && (
+          <nav aria-label="Library" className="flex items-center gap-1 border-b">
+            <Tab href="/org/policies" label="Policies" count={policies.length} active={active === "policies"} />
+            <Tab
+              href="/org/policies?tab=documents"
+              label="Documents"
+              count={documents.length}
+              active={active === "documents"}
+            />
+          </nav>
+        )}
 
         {shown.length === 0 ? (
           <Card>
