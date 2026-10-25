@@ -85,6 +85,8 @@ export interface StaffOption {
   value: string;
   label: string;
   role: string;
+  /** False once deactivated: still named on old records, never offered in a picker. */
+  active: boolean;
 }
 
 /** Every stage the organisation has configured, in order. */
@@ -102,16 +104,30 @@ export async function loadStages(supabase: SupabaseClient, organisationId?: stri
   }));
 }
 
-/** The organisation's people, for the "who took part" and "staff named" pickers. */
+/**
+ * The organisation's people, for the "who took part" and "staff named"
+ * pickers. Deactivated people are included so older records still show their
+ * names (the PDF, saved answers); a picker offers only `pickable()` ones.
+ */
 export async function loadStaffOptions(supabase: SupabaseClient, organisationId?: string | null): Promise<StaffOption[]> {
-  let q = supabase.from("users").select("id, full_name, email, role").in("role", ["org_admin", "learner"]);
+  let q = supabase.from("users").select("id, full_name, email, role, status").in("role", ["org_admin", "org_office", "learner"]);
   if (organisationId) q = q.eq("organisation_id", organisationId);
   const { data } = await q.order("full_name").limit(1000);
   return (data ?? []).map((u) => ({
     value: u.id as string,
     label: (u.full_name as string | null) || (u.email as string),
     role: u.role as string,
+    active: u.status === "active",
   }));
+}
+
+/**
+ * Who a picker may offer: the active staff, plus anyone in `keep` — already
+ * chosen on this record — so a saved choice is still shown, not dropped (#63).
+ */
+export function pickable(staff: StaffOption[], keep: Iterable<string | null | undefined> = []): StaffOption[] {
+  const kept = new Set(keep);
+  return staff.filter((s) => s.active || kept.has(s.value));
 }
 
 const summary = (r: Record<string, unknown>): ComplaintSummary => ({

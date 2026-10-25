@@ -5,7 +5,7 @@ import { FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Complaint, ComplaintAction, StageEntry, StaffOption } from "@/lib/complaints/data";
+import { pickable, type Complaint, type ComplaintAction, type StageEntry, type StaffOption } from "@/lib/complaints/data";
 import type { ComplaintStage } from "@/lib/complaints/stages";
 import { formForStage } from "@/lib/complaints/forms";
 import type { AnswerMap } from "@/lib/complaints/schema";
@@ -434,7 +434,7 @@ function StandingCheck({ name, why, complaint, stage, staff, disabled }: { name:
           <input type="hidden" name="title" value={name} />
           <select name="ownerId" className={`${selectClass} h-8 w-auto`} required defaultValue="">
             <option value="" disabled>Owner…</option>
-            {staff.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            {pickable(staff).map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
           <Input name="dueDate" type="date" className="h-8 w-auto" required aria-label="Done by" title="Done by" />
           <Button type="submit" size="sm" disabled={adding}>Add</Button>
@@ -475,7 +475,7 @@ function AddAction({ complaint, stage, staff }: { complaint: Complaint; stage: C
       <div className="flex flex-wrap gap-2">
         <select name="ownerId" className={`${selectClass} w-auto`} required defaultValue="">
           <option value="" disabled>Owner…</option>
-          {staff.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+          {pickable(staff).map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
         <Input name="dueDate" type="date" className="w-auto" required aria-label="Done by" title="Done by" />
         <Input name="detail" placeholder="Detail (optional)" className="flex-1" />

@@ -13,7 +13,7 @@ import {
   type StageForm as StageFormSchema,
 } from "@/lib/complaints/schema";
 import { requiredMissing } from "@/lib/complaints/stage-status";
-import type { StaffOption } from "@/lib/complaints/data";
+import { pickable, type StaffOption } from "@/lib/complaints/data";
 import { saveStageFormAction } from "../actions";
 import { selectClass, textareaClass } from "../new-complaint";
 import type { SaveState } from "@/app/platform/actions";
@@ -43,7 +43,9 @@ export function StageForm({
 }) {
   const [answers, setAnswers] = useState<AnswerMap>(initial);
   const [state, action, pending] = useActionState<SaveState, FormData>(saveStageFormAction, {});
-  const form = withPeopleOptions(schema, staff.map((s) => ({ value: s.value, label: s.label })));
+  // Anyone already chosen stays on screen even if they have since left.
+  const chosen = Object.values(answers).flatMap((v) => (Array.isArray(v) ? v : typeof v === "string" ? [v] : []));
+  const form = withPeopleOptions(schema, pickable(staff, chosen).map((s) => ({ value: s.value, label: s.label })));
   const missing = requiredMissing(form, answers);
   const set = (id: string, v: AnswerValue) => setAnswers((a) => ({ ...a, [id]: v }));
 

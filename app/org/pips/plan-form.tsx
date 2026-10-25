@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { StaffOption } from "@/lib/complaints/data";
+import { pickable, type StaffOption } from "@/lib/complaints/data";
 import { PIP_FREQUENCIES, PIP_KINDS, PIP_SUPPORT_TYPES, type Pip, type PipConcern, type PipSupport } from "@/lib/pips/plan";
 import { savePlanAction } from "./actions";
 import { selectClass, textareaClass } from "../complaints/new-complaint";
@@ -63,7 +63,7 @@ export function PlanForm({
                 <Label htmlFor="pf-user">Who the plan is for</Label>
                 <select id="pf-user" name="userId" className={selectClass} required defaultValue={initialUserId ?? ""}>
                   <option value="" disabled>Pick a member of staff…</option>
-                  {staff.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  {pickable(staff, [initialUserId]).map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               </div>
               <div className="space-y-1">

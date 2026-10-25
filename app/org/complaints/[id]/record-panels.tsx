@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import type { Complaint, ComplaintAction, StaffOption } from "@/lib/complaints/data";
+import { pickable, type Complaint, type ComplaintAction, type StaffOption } from "@/lib/complaints/data";
 import type { ComplaintStage } from "@/lib/complaints/stages";
 import { actionTagFor } from "@/lib/complaints/compute";
 import { closeComplaintAction, setActionDoneAction, setComplaintStatusAction, setPeopleAction } from "../actions";
@@ -17,7 +17,7 @@ import type { SaveState } from "@/app/platform/actions";
 export function PeopleNamed({ complaint, staff, disabled }: { complaint: Complaint; staff: StaffOption[]; disabled: boolean }) {
   const [state, action, pending] = useActionState<SaveState, FormData>(setPeopleAction, {});
   const named = new Set(complaint.people.map((p) => p.user_id));
-  const candidates = staff.filter((s) => s.role === "learner" && !named.has(s.value));
+  const candidates = pickable(staff).filter((s) => s.role === "learner" && !named.has(s.value));
   return (
     <div className="space-y-2 text-sm">
       <div className="flex flex-wrap items-center gap-2">

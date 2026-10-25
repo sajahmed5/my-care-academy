@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatTile } from "@/components/learner-ui";
 import { AlertTriangle, Clock, FolderOpen, Settings2 } from "lucide-react";
-import { loadComplaintList, loadStages, loadStaffOptions } from "@/lib/complaints/data";
+import { loadComplaintList, loadStages, loadStaffOptions, pickable } from "@/lib/complaints/data";
 import { stagesFor } from "@/lib/complaints/stages";
 import { buildSteps, nextStep } from "@/lib/complaints/steps";
 import { NewComplaint } from "./new-complaint";
@@ -82,7 +82,7 @@ export default async function ComplaintsPage({
         {stages.length === 0 ? (
           <SeedStages />
         ) : (
-          <NewComplaint staff={staff.filter((s) => s.role === "learner")} />
+          <NewComplaint staff={pickable(staff).filter((s) => s.role === "learner")} />
         )}
 
         {shown.length === 0 ? (
