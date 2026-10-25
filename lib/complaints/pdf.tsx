@@ -171,9 +171,9 @@ export function renderStagePdf(ctx: PdfContext, stage: ComplaintStage): Promise<
         <Text style={styles.brand}>{ctx.organisationName.toUpperCase()}</Text>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{kindLabel(complaint.kind)} {complaint.reference}</Text>
-        <Meta label="Person concerned" value={complaint.aboutName} />
+        <Meta label="Service user" value={complaint.aboutName} />
         <Meta label="Raised by" value={complaint.raisedByName} />
-        <Meta label="Reached us" value={ukDate(complaint.reportedOn)} />
+        <Meta label="Date raised" value={ukDate(complaint.reportedOn)} />
         <Meta label="Stage status" value={entry?.status === "done" ? "Done" : entry?.status === "na" ? `Not needed${entry.notes ? ` — ${entry.notes}` : ""}` : "Not finished"} />
         {LETTER_KINDS.has(stage.kind) ? (
           <Letter answers={entry?.formAnswers ?? {}} />
@@ -208,14 +208,14 @@ export function renderResponsePdf(ctx: PdfContext): Promise<Buffer> {
         <Text style={styles.title}>{kindLabel(complaint.kind)} response</Text>
         <Text style={styles.subtitle}>Reference {complaint.reference}</Text>
         <Meta label="Raised by" value={complaint.raisedByName} />
-        <Meta label="About the care of" value={complaint.aboutName} />
-        <Meta label="Happened" value={complaint.occurredOn ? ukDate(complaint.occurredOn) : null} />
-        <Meta label="Reached us" value={ukDate(complaint.reportedOn)} />
+        <Meta label="Service user" value={complaint.aboutName} />
+        <Meta label="Date of incident" value={complaint.occurredOn ? ukDate(complaint.occurredOn) : null} />
+        <Meta label="Date raised" value={ukDate(complaint.reportedOn)} />
         <Meta label="Response due" value={complaint.completeBy ? ukDate(complaint.completeBy) : null} />
         <Meta label="Staff named" value={people || null} />
         <Meta label="Status" value={`${complaint.status}${complaint.closedOn ? ` on ${ukDate(complaint.closedOn)}` : ""}`} />
 
-        <Text style={styles.heading}>What was raised</Text>
+        <Text style={styles.heading}>Detailed description</Text>
         <Text style={styles.para}>{complaint.description}</Text>
         {complaint.desiredOutcome && (
           <>

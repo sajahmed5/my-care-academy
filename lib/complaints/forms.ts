@@ -29,11 +29,11 @@ export const complaintFormSchema: StageForm = {
       title: "What was raised",
       order: 1,
       questions: [
-        { id: "cf_date", text: "Date of the complaint or concern", type: "date", required: true },
-        { id: "cf_complainant", text: "Who raised it", type: "text", required: true },
+        { id: "cf_date", text: "Date raised", type: "date", required: true },
+        { id: "cf_complainant", text: "Raised by", type: "text", required: true },
         {
           id: "cf_relationship",
-          text: "What they are to the service",
+          text: "Role",
           type: "select",
           options: [
             { value: "client", label: "The person receiving care" },
@@ -43,7 +43,7 @@ export const complaintFormSchema: StageForm = {
             { value: "other", label: "Someone else" },
           ],
         },
-        { id: "cf_about", text: "Who the care was for", type: "text" },
+        { id: "cf_about", text: "Service user", type: "text" },
         {
           id: "cf_nature",
           text: "What it is about",
@@ -56,7 +56,7 @@ export const complaintFormSchema: StageForm = {
             { value: "other", label: "Something else" },
           ],
         },
-        { id: "cf_details", text: "What was said, in their own words as far as possible", type: "long_text", required: true },
+        { id: "cf_details", text: "Detailed description", type: "long_text", required: true },
         {
           id: "cf_source",
           text: "How it reached us",
@@ -91,7 +91,7 @@ export const triageSchema: StageForm = {
         { id: "mm1_attendees", text: "Who took part", type: "multiselect", optionsSource: "staff", required: true },
         { id: "mm1_issue", text: "The concern, in a few lines", type: "long_text", required: true },
         { id: "mm1_involved", text: "Staff involved", type: "multiselect", optionsSource: "staff" },
-        { id: "mm1_when_received", text: "When it reached us", type: "date" },
+        { id: "mm1_when_received", text: "Date raised", type: "date" },
       ],
     },
     {
@@ -101,7 +101,7 @@ export const triageSchema: StageForm = {
       questions: [
         {
           id: "tri_type",
-          text: "This is",
+          text: "Type",
           type: "select",
           required: true,
           options: [

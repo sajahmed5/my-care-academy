@@ -78,7 +78,9 @@ export function StagePanel(props: PanelProps) {
           <ActionsEditor {...props} tag={tag} />
         )}
         <DocumentsBox {...props} />
-        <NotNeeded {...props} />
+        {/* The Complaint Form is filled in when the record is made, so "not
+            needed" there only raised the question of what it meant (#61). */}
+        {stage.kind !== "complaint_form" && <NotNeeded {...props} />}
       </div>
     );
   }

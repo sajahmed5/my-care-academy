@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatTile } from "@/components/learner-ui";
 import { AlertTriangle, Clock, FolderOpen, Settings2 } from "lucide-react";
-import { loadComplaintList, loadStages, loadStaffOptions, pickable } from "@/lib/complaints/data";
+import { loadComplaintList, loadStages } from "@/lib/complaints/data";
 import { stagesFor } from "@/lib/complaints/stages";
 import { buildSteps, nextStep } from "@/lib/complaints/steps";
 import { NewComplaint } from "./new-complaint";
@@ -30,10 +30,9 @@ export default async function ComplaintsPage({
 
   const supabase = await createClient();
   const orgId = context.organisationId!;
-  const [{ complaints, entries }, stages, staff] = await Promise.all([
+  const [{ complaints, entries }, stages] = await Promise.all([
     loadComplaintList(supabase, orgId),
     loadStages(supabase, orgId),
-    loadStaffOptions(supabase, orgId),
   ]);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -82,7 +81,7 @@ export default async function ComplaintsPage({
         {stages.length === 0 ? (
           <SeedStages />
         ) : (
-          <NewComplaint staff={pickable(staff).filter((s) => s.role === "learner")} />
+          <NewComplaint />
         )}
 
         {shown.length === 0 ? (
