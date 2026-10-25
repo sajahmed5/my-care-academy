@@ -7,6 +7,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadAssignment, loadResponse, responseRows } from "@/lib/form-library";
 import { formatDateTime } from "@/lib/dates";
+import { ViewFile } from "./view-file";
 
 /**
  * A completed form, read back (#54): who handed it in, when, and every answer
@@ -62,8 +63,9 @@ export default async function FormResponsePage({
               {rows.map((r) => (
                 <div key={r.fieldId} className="space-y-1 py-3 first:pt-0 last:pb-0">
                   <dt className={`text-sm font-medium ${r.removed ? "text-muted-foreground italic" : ""}`}>{r.label}</dt>
-                  <dd className="whitespace-pre-wrap text-sm">
+                  <dd className="flex flex-wrap items-center gap-2 whitespace-pre-wrap text-sm">
                     {r.value || <span className="text-muted-foreground">Not answered</span>}
+                    {r.filePath && <ViewFile path={r.filePath} />}
                   </dd>
                 </div>
               ))}

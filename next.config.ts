@@ -10,6 +10,13 @@ const nextConfig: NextConfig = {
   // @react-pdf/renderer is a large native-ish lib; keep it out of the bundle.
   serverExternalPackages: ["@react-pdf/renderer"],
 
+  // Documents travel through server actions: a file on a library form, a
+  // candidate's or a carer's DBS scan. The 1 MB default refused an ordinary
+  // phone photo of a passport. 4 MB stays inside Vercel's 4.5 MB request cap.
+  experimental: {
+    serverActions: { bodySizeLimit: "4mb" },
+  },
+
   // Rostering moved to its own product and domain (Saj, 7 Oct 2026). Old
   // links, bookmarks and search results go there instead of 404ing.
   async redirects() {

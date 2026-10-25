@@ -121,9 +121,17 @@ export function FormComplete({
                 </div>
               )}
               {f.type === "file" && (
-                <p className="text-xs text-muted-foreground">
-                  File uploads are not available on this form yet — hand the document to your manager.
-                </p>
+                <div className="space-y-1">
+                  {/* Sent with the form itself; the server stores it and keeps the path as the answer. */}
+                  <Input
+                    id={`q-${f.id}`}
+                    type="file"
+                    name={`file_${f.id}`}
+                    accept="image/*,application/pdf"
+                    onChange={(e) => set(f.id, e.target.files?.[0] ? { pending: e.target.files[0].name } : undefined)}
+                  />
+                  <p className="text-xs text-muted-foreground">A photo or PDF, under 3 MB.</p>
+                </div>
               )}
               {f.type === "signature" && (
                 <div className="space-y-1">

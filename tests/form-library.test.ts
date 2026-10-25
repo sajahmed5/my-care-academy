@@ -116,6 +116,11 @@ describe("responseRows", () => {
     expect(rows.map((r) => r.label)).toEqual(["Full name", "Do you drive?", "Days free"]);
     expect(rows.find((r) => r.label === "Days free")?.value).toBe("");
   });
+  it("reads a file answer as its name, with where it is stored", () => {
+    const upload = field({ id: "doc", label: "Upload ID", type: "file", sort_order: 9 });
+    const [row] = responseRows([upload], { doc: { file: "org/library/a1/doc-x.pdf", name: "passport.pdf" } });
+    expect(row).toMatchObject({ value: "passport.pdf", filePath: "org/library/a1/doc-x.pdf" });
+  });
   it("keeps an answer whose question has since been removed from the form", () => {
     const rows = responseRows(fields, { name: "Sam", old_q: "Still here" });
     expect(rows.at(-1)).toMatchObject({ value: "Still here", removed: true });

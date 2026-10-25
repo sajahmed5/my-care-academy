@@ -259,6 +259,8 @@ export interface ResponseRow {
   value: string;
   /** Answered on an older version of the form; the question has since gone. */
   removed?: boolean;
+  /** A file answer: where it is stored, for a "View file" link. */
+  filePath?: string;
 }
 
 /**
@@ -267,14 +269,21 @@ export interface ResponseRow {
  * since been removed is still shown, at the end, rather than silently lost.
  */
 export function responseRows(fields: FormField[], answers: Record<string, unknown>): ResponseRow[] {
-  const text = (v: unknown): string =>
-    v === undefined || v === null ? "" : Array.isArray(v) ? v.join(", ") : String(v);
+  const fileOf = (v: unknown) =>
+    v && typeof v === "object" && !Array.isArray(v) && typeof (v as { file?: unknown }).file === "string"
+      ? (v as { file: string; name?: string })
+      : null;
+  const text = (v: unknown): string => {
+    const f = fileOf(v);
+    if (f) return f.name ?? "File";
+    return v === undefined || v === null ? "" : Array.isArray(v) ? v.join(", ") : String(v);
+  };
   const known = new Set(fields.map((f) => f.id));
   // A conditional question that was never shown to them is not a blank answer.
   const rows: ResponseRow[] = [...fields]
     .sort((a, b) => a.sort_order - b.sort_order)
     .filter((f) => isFieldVisible(f, answers))
-    .map((f) => ({ fieldId: f.id, label: f.label, value: text(answers[f.id]) }));
+    .map((f) => ({ fieldId: f.id, label: f.label, value: text(answers[f.id]), filePath: fileOf(answers[f.id])?.file }));
   for (const [id, v] of Object.entries(answers)) {
     if (!known.has(id)) rows.push({ fieldId: id, label: "A question no longer on the form", value: text(v), removed: true });
   }
