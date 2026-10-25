@@ -28,7 +28,7 @@ import {
 } from "@/lib/incidents";
 import { loadSupervisions } from "@/lib/supervisions";
 import { SectionPanel } from "./section-panel";
-import { SectionTabs } from "./section-tabs";
+import { SectionTabs, SectionTabsAfter } from "./section-tabs";
 import { sectionByKey, sectionState } from "./sections";
 import { CompetencyList } from "./competency-list";
 import { EvidencePackButton } from "./evidence-pack-button";
@@ -685,6 +685,7 @@ export default async function StaffDetailPage({
           />
         )}
 
+        <SectionTabsAfter userId={userId} active={section.key} enabled={enabled} />
       </div>
     </DashboardShell>
   );
