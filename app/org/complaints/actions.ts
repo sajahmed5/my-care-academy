@@ -202,7 +202,6 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
   const description = str(formData, "description");
   const desiredOutcome = str(formData, "desiredOutcome");
   const nature = str(formData, "nature");
-  const staff = formData.getAll("staff").map(String).filter(Boolean);
 
   if (!COMPLAINT_NATURES.some((n) => n.value === nature)) return { ok: false, error: "Say what it is about." };
   if (!description) return { ok: false, error: "Say what was raised." };
@@ -244,12 +243,6 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
   if (error) return { ok: false, error: error.message };
   const complaintId = row.id as string;
 
-  if (staff.length) {
-    await supabase
-      .from("complaint_people")
-      .insert(staff.map((userId) => ({ complaint_id: complaintId, user_id: userId, involvement: "involved" })));
-  }
-
   // What was typed here IS the complaint form, so the first stage starts
   // filled in rather than asking for the same facts a second time.
   const form = stages.find((s) => s.kind === "complaint_form");
@@ -262,7 +255,6 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
       cf_about: aboutName || undefined,
       cf_nature: nature,
       cf_details: description,
-      cf_staff: staff,
       cf_desired: desiredOutcome || undefined,
       cf_recorded_by: context.email ?? undefined,
     };
@@ -274,7 +266,7 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
     action: "complaint.recorded",
     entity: "complaint",
     entityId: complaintId,
-    detail: { kind, reference, staff },
+    detail: { kind, reference },
   });
 
   revalidatePath("/org/complaints");

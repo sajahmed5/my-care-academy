@@ -73,7 +73,6 @@ export const complaintFormSchema: StageForm = {
             { value: "other", label: "Other" },
           ],
         },
-        { id: "cf_staff", text: "Staff it is about", type: "multiselect", optionsSource: "staff" },
         { id: "cf_desired", text: "Desired outcome", type: "long_text" },
         { id: "cf_recorded_by", text: "Recorded by", type: "text" },
       ],
