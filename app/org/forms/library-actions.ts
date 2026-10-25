@@ -2,10 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
+import { emailAssignees } from "@/lib/assignment-email";
+import { siteOrigin } from "@/lib/site-url";
 import type { SaveState } from "@/app/platform/actions";
 
 /** A save that can say how many people it reached. */
@@ -81,17 +85,40 @@ export async function assignFormAction(
     return { ok: false, error: "Everyone you chose already has this form open." };
   }
 
-  const { error } = await supabase.from("form_assignments").insert(
-    fresh.map((user_id) => ({
-      organisation_id: context.organisationId,
-      template_id: templateId,
-      user_id,
-      assigned_by: context.userId,
-      due_date: dueDate || null,
-      note: note || null,
-    })),
-  );
+  const { data: created, error } = await supabase
+    .from("form_assignments")
+    .insert(
+      fresh.map((user_id) => ({
+        organisation_id: context.organisationId,
+        template_id: templateId,
+        user_id,
+        assigned_by: context.userId,
+        due_date: dueDate || null,
+        note: note || null,
+      })),
+    )
+    .select("id, user_id, template:form_templates (title)");
   if (error) return { ok: false, error: error.message };
+
+  // Each person is told, after the response so the click is not held up (#72).
+  const origin = await siteOrigin();
+  after(() =>
+    emailAssignees(
+      createAdminClient(),
+      "form_assigned",
+      (created ?? []).map((a) => {
+        const t = (Array.isArray(a.template) ? a.template[0] : a.template) as { title?: string } | null;
+        return {
+          userId: a.user_id as string,
+          title: t?.title ?? "A form",
+          dueDate: dueDate || null,
+          href: `/learn/forms/${a.id as string}`,
+          note: note || null,
+        };
+      }),
+      { organisationId: orgId, assignedBy: context.userId, origin },
+    ),
+  );
 
   await logAudit({
     context,

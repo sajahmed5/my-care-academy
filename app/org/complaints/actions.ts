@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -27,6 +28,8 @@ import {
   triageCheckNamed,
 } from "@/lib/complaints/stage-status";
 import { closeGaps, closeGapsMessage } from "@/lib/complaints/close";
+import { emailAssignees } from "@/lib/assignment-email";
+import { siteOrigin } from "@/lib/site-url";
 
 /**
  * The complaint process. Written through the RLS-scoped client, so the
@@ -535,6 +538,22 @@ export async function addActionAction(_prev: SaveState, formData: FormData): Pro
     created_by: context.userId,
   });
   if (error) return { ok: false, error: error.message };
+
+  // Tell the owner (#66). A console user can open the record; a carer has no
+  // page for it, so theirs says who to ask.
+  const origin = await siteOrigin();
+  const organisationId = context.organisationId!;
+  after(async () => {
+    const admin = createAdminClient();
+    const { data: owner } = await admin.from("users").select("role").eq("id", ownerId).maybeSingle();
+    const inConsole = owner?.role === "org_admin" || owner?.role === "org_office";
+    await emailAssignees(
+      admin,
+      "action_assigned",
+      [{ userId: ownerId, title, dueDate, href: inConsole ? `/org/complaints/${complaintId}` : null, note: detail || null }],
+      { organisationId, assignedBy: context.userId, origin },
+    );
+  });
 
   if (isTriageStage(stage)) {
     const existing = await entryAnswers(supabase, complaintId, stageId);
