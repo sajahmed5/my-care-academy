@@ -178,7 +178,8 @@ RLS does the scoping. No section may rely on the page having filtered by organis
 The file is an HR record on a named person, and assembling scattered records into one place
 raises the stakes of every existing rule rather than creating new ones.
 
-- **Retention** — needs a stated period per record type. Not answered yet (§9).
+- **Retention** — decided: no period. Kept while the organisation uses the platform, removed
+  when it leaves (§9).
 - **Erasure** — `tests/user-erasure.test.ts` exists and must grow to cover every new table.
   A carer who leaves and asks to be erased cannot have supervisions left behind.
 - **Subject access** — the evidence pack is, conveniently, most of a subject access response.
@@ -247,9 +248,7 @@ Settled by Saj, 23 Oct 2026:
 
 Still open:
 
-- **Retention periods** per record type — how long a supervision, a spot check or a complaint
-  is *kept*, and what happens at the end of it. `tests/user-erasure.test.ts` must grow to cover
-  every new table whatever the answer. (How often each review *recurs* is settled — three months
-  for supervisions and spot checks, six for satisfaction; see `ROADMAP.md` §5. Keeping is the
-  other question.)
+- ~~Retention periods~~ — settled 26 Oct 2026: records are kept while the organisation uses the
+  platform and removed when it leaves (`ROADMAP.md` §5). `tests/user-erasure.test.ts` must still
+  grow to cover every new table.
 - **Multi-site** — a carer who works across two of an organisation's services.

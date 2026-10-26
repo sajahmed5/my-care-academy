@@ -52,7 +52,8 @@ Three things follow from what the documents actually are:
   rather than as policy text. So the model is not "read our policy and accept it": an
   organisation **adopts and completes** a template, and its staff acknowledge **their** version.
   That means an `organisation_policies` table holding their copy, with acknowledgements pointing
-  at it. Not built.
+  at it. **Built (v2.21.0):** adopt, complete (publishing waits until no guidance or [fill-in]
+  is left), publish as a version; staff read and accept only published copies.
 - **A library that mixes policies with blank forms teaches people to scroll past both**, so
   every row carries a `kind`. Forms and logs want downloading and printing; policies want
   reading and accepting.
@@ -127,9 +128,10 @@ use them.
 The three builder templates were seeded as the first published forms. The old builder still
 exists under `/org/forms/own` for anything bespoke.
 
-Still to do: file uploads on a library form (the field type exists; the fill page says to hand
-the document over instead), responses in the evidence pack, reading a submitted response in
-full from the manager's side, and turning the 63 Word forms into real fields.
+Done since: file uploads on a library form (v2.20.0), responses in the evidence pack (v2.20.1),
+reading a submitted response in full (v2.17.5), and the Word forms converted into 58 draft
+fillable forms (v2.24.1, `scripts/convert-word-forms.mjs`) — each to be read through and
+published in `/platform/forms`. The 23 spreadsheet logs are still to do.
 
 ## 2. White-label
 
@@ -160,9 +162,12 @@ replace and revoke an organisation's key from its Integration tab.
 
 ---
 
-## 4. The next products
+## 4. The next products — built, 26 Oct 2026
 
-Agreed to build, and to adjust once they are in use.
+Agreed to build, and to adjust once they are in use. All three are in, under a new **Quality**
+category for the first two (`quality.audits`, `quality.feedback`, ticked into Pro and Enterprise):
+audits at `/org/audits` (v2.23.0), feedback surveys at `/org/feedback` with public links at
+`/survey/<token>` (v2.24.0), and classroom sessions at `/org/classroom` (v2.22.0).
 
 - **Audits on a schedule** — medication, care plan, infection control. Templated, recurring,
   findings become actions. The same engine as spot checks, pointed at the service rather than a
@@ -189,9 +194,11 @@ before saving (`REVIEW_INTERVAL_MONTHS` in `lib/records.ts`).
 | Carer satisfaction | every 6 months |
 | Anything else added later | every 6 months |
 
-**Still open: retention.** How long a supervision, spot check or complaint is *kept*, and what
-happens at the end of it — a different question from how often it recurs.
-`tests/user-erasure.test.ts` has to cover every new table whatever the answer.
+**Retention, decided (Saj, 26 Oct 2026):** there is no retention period. Records are kept for as
+long as the organisation uses the platform, and removed when it leaves — a platform admin
+suspends it, then uses Remove organisation on its Settings tab (`lib/org-removal.ts`), which
+deletes its accounts, records and files. `tests/user-erasure.test.ts` still has to cover every
+new table, for a single carer's erasure.
 
 ---
 
