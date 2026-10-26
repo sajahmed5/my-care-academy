@@ -119,6 +119,13 @@ export const FEATURES = [
     hint: "Medication, care plan and infection control audits, under Audits in the menu.",
   },
   {
+    key: "quality.feedback",
+    category: "quality",
+    label: "Client & carer feedback",
+    isCore: false,
+    hint: "Survey links for families, service users and staff, under Feedback in the menu.",
+  },
+  {
     key: "platform.white_label",
     category: "platform",
     label: "White-label logo",

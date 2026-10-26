@@ -24,6 +24,7 @@ import {
   CalendarClock,
   ListChecks,
   ClipboardList,
+  MessageSquareHeart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
@@ -99,6 +100,7 @@ const NAV: Record<string, NavItem[]> = {
       ],
     },
     { href: "/org/audits", label: "Audits", icon: ClipboardList, feature: "quality.audits" },
+    { href: "/org/feedback", label: "Feedback", icon: MessageSquareHeart, feature: "quality.feedback" },
     { href: "/org/observations", label: "Care Certificate", icon: ClipboardCheck, feature: "training.observations" },
     {
       href: "/org/complaints",
