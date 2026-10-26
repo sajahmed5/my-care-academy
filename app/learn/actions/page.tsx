@@ -9,6 +9,7 @@ const SOURCE: Record<string, string> = {
   supervision: "From a supervision",
   competency: "From a spot check",
   complaint: "From a complaint",
+  audit: "From an audit",
 };
 
 const fmt = (d: string) => formatDate(d, { day: "numeric", month: "long", year: "numeric" });

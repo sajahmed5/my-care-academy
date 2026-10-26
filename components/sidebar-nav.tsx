@@ -23,6 +23,7 @@ import {
   BookMarked,
   CalendarClock,
   ListChecks,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
@@ -94,8 +95,10 @@ const NAV: Record<string, NavItem[]> = {
       children: [
         { href: "/org/due/supervisions", label: "Supervisions", feature: "people.supervisions" },
         { href: "/org/due/spot-checks", label: "Spot checks", feature: "people.competency" },
+        { href: "/org/due/audits", label: "Audits", feature: "quality.audits" },
       ],
     },
+    { href: "/org/audits", label: "Audits", icon: ClipboardList, feature: "quality.audits" },
     { href: "/org/observations", label: "Care Certificate", icon: ClipboardCheck, feature: "training.observations" },
     {
       href: "/org/complaints",

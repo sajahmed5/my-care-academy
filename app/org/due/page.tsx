@@ -7,5 +7,6 @@ export default async function DuePage() {
   const context = await requireConsole();
   if (await hasFeature(context, "people.supervisions")) redirect("/org/due/supervisions");
   if (await hasFeature(context, "people.competency")) redirect("/org/due/spot-checks");
+  if (await hasFeature(context, "quality.audits")) redirect("/org/due/audits");
   redirect("/org");
 }

@@ -25,6 +25,7 @@ export const FEATURE_CATEGORIES = [
   { key: "forms", label: "Forms" },
   { key: "documents", label: "Documents" },
   { key: "people", label: "Staff records" },
+  { key: "quality", label: "Quality" },
   { key: "platform", label: "Platform & integration" },
 ] as const;
 
@@ -108,6 +109,14 @@ export const FEATURES = [
     label: "Spot checks & competency",
     isCore: false,
     hint: "Appears on each carer's file (Staff, then open a person), not in the menu.",
+  },
+  // How the service checks itself (ROADMAP §4).
+  {
+    key: "quality.audits",
+    category: "quality",
+    label: "Audits",
+    isCore: false,
+    hint: "Medication, care plan and infection control audits, under Audits in the menu.",
   },
   {
     key: "platform.white_label",

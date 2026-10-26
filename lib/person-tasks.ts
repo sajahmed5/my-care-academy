@@ -71,6 +71,7 @@ const SOURCE_LABEL: Record<string, string> = {
   supervision: "From a supervision",
   competency: "From a spot check",
   complaint: "From a complaint",
+  audit: "From an audit",
 };
 
 const URGENCY_ORDER: Record<TaskUrgency, number> = {
