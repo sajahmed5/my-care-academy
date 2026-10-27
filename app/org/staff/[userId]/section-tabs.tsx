@@ -3,16 +3,78 @@ import { ChevronDown, ChevronRight, Lock } from "lucide-react";
 import { SECTIONS, sectionState, type SectionDef } from "./sections";
 import type { FeatureKey } from "@/lib/features";
 
+/** What is outstanding in a section, shown beside it on the list. */
+export interface SectionCount {
+  text: string;
+  tone: "danger" | "warn" | "muted";
+}
+
+const TONE: Record<SectionCount["tone"], string> = {
+  danger: "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300",
+  warn: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
+  muted: "text-muted-foreground",
+};
+
 /**
- * The tab row across a carer's file.
+ * Every section of a carer's file, down the left beside it (md and up).
  *
  * Links rather than client-side tabs, so a section is addressable: the
  * evidence pack, a reminder email and "3 actions outstanding" elsewhere in the
- * app all need to land on one. It also means a tab's data is only fetched when
- * that tab is open, which matters on a file with four years of history.
+ * app all need to land on one. It also means a section's data is only fetched
+ * when it is open, which matters on a file with four years of history.
  *
- * On a phone the row used to scroll sideways, hiding most sections off the
- * edge. There the sections stack instead, as an accordion (CARER-FILE.md §2):
+ * It was a row of tabs across the top, which ran off the edge after the fifth
+ * section, so it was not apparent the file had more than Training in it
+ * (Saj, 27 Oct 2026). Sections the package leaves out sit at the bottom.
+ */
+export function SectionRail({
+  userId,
+  active,
+  enabled,
+  counts = {},
+}: {
+  userId: string;
+  active: string;
+  enabled: Record<FeatureKey, boolean>;
+  counts?: Record<string, SectionCount>;
+}) {
+  const open = SECTIONS.filter((s) => sectionState(s, enabled) === "open");
+  const shut = SECTIONS.filter((s) => sectionState(s, enabled) !== "open");
+  return (
+    <nav aria-label="Sections of this file" className="hidden rounded-xl border bg-card p-1.5 md:block">
+      {[...open, ...shut].map((section) => {
+        const state = sectionState(section, enabled);
+        const isActive = section.key === active;
+        const count = counts[section.key];
+        return (
+          <Link
+            key={section.key}
+            href={`/org/staff/${userId}?section=${section.key}`}
+            aria-current={isActive ? "page" : undefined}
+            className={`flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm transition-colors ${
+              isActive
+                ? "bg-primary/10 font-medium text-primary"
+                : state === "open"
+                  ? "text-foreground/80 hover:bg-muted"
+                  : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            <StateMarks section={section} enabled={enabled} />
+            <span className="flex-1">{section.label}</span>
+            {state === "planned" && <span className="sr-only"> (coming soon)</span>}
+            {state === "locked" && <span className="sr-only"> (not in your plan)</span>}
+            {count && state === "open" && (
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${TONE[count.tone]}`}>{count.text}</span>
+            )}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+/**
+ * On a phone the sections stack instead, as an accordion (CARER-FILE.md §2):
  * the sections down to the open one here, its content under it, and the rest
  * after the content, from SectionTabsAfter.
  */
@@ -27,42 +89,12 @@ export function SectionTabs({
 }) {
   const at = SECTIONS.findIndex((s) => s.key === active);
   return (
-    <>
-      <div className="-mx-1 hidden overflow-x-auto px-1 sm:block">
-        <nav
-          aria-label="Sections of this file"
-          className="flex min-w-max items-center gap-1 border-b"
-        >
-          {SECTIONS.map((section) => {
-            const state = sectionState(section, enabled);
-            const isActive = section.key === active;
-            return (
-              <Link
-                key={section.key}
-                href={`/org/staff/${userId}?section=${section.key}`}
-                aria-current={isActive ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <StateMarks section={section} enabled={enabled} />
-                {section.label}
-                {state === "planned" && <span className="sr-only"> (coming soon)</span>}
-                {state === "locked" && <span className="sr-only"> (not in your plan)</span>}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-      <StackedRows
-        userId={userId}
-        active={active}
-        enabled={enabled}
-        sections={SECTIONS.slice(0, at < 0 ? SECTIONS.length : at + 1)}
-      />
-    </>
+    <StackedRows
+      userId={userId}
+      active={active}
+      enabled={enabled}
+      sections={SECTIONS.slice(0, at < 0 ? SECTIONS.length : at + 1)}
+    />
   );
 }
 
@@ -104,7 +136,7 @@ function StackedRows({
 }) {
   if (sections.length === 0) return null;
   return (
-    <nav aria-label={label} className="divide-y overflow-hidden rounded-lg border sm:hidden">
+    <nav aria-label={label} className="divide-y overflow-hidden rounded-lg border md:hidden">
       {sections.map((section) => {
         const isActive = section.key === active;
         const Chevron = isActive ? ChevronDown : ChevronRight;

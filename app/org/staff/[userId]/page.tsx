@@ -28,7 +28,7 @@ import {
 } from "@/lib/incidents";
 import { loadSupervisions } from "@/lib/supervisions";
 import { SectionPanel } from "./section-panel";
-import { SectionTabs, SectionTabsAfter } from "./section-tabs";
+import { SectionRail, SectionTabs, SectionTabsAfter, type SectionCount } from "./section-tabs";
 import { sectionByKey, sectionState } from "./sections";
 import { CompetencyList } from "./competency-list";
 import { EvidencePackButton } from "./evidence-pack-button";
@@ -269,57 +269,62 @@ export default async function StaffDetailPage({
   const certByCourse = new Map<string, (typeof certificates)[number]>();
   for (const c of certificates) if (!certByCourse.has(c.course_id)) certByCourse.set(c.course_id, c);
 
+  // What is outstanding, on the section list, so a manager sees where the
+  // problems are without opening every section. Only what this page has
+  // already read on every section: training and certificates.
+  const counts: Record<string, SectionCount> = {};
+  if (stats.overdue > 0) counts.training = { text: `${stats.overdue} overdue`, tone: "danger" };
+  if (certificates.length > 0) counts.certificates = { text: String(certificates.length), tone: "muted" };
+
   return (
-    <DashboardShell title={name} context={context}>
-      <div className="mx-auto max-w-4xl space-y-6">
-        <Link
-          href="/org/learners#learners"
-          className="text-sm text-muted-foreground hover:underline"
-        >
-          ← All learners
-        </Link>
-
-        {/* Learner header */}
-        <Card>
-          <CardContent className="flex flex-wrap items-center justify-between gap-6 pt-6">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-semibold">{name}</h2>
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs capitalize text-muted-foreground">
-                  {roleLabel(profile.role)}
-                </span>
-                {profile.status === "deactivated" && (
-                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-700">
-                    Deactivated
-                  </span>
-                )}
+    <DashboardShell title={name} context={context} back={{ href: "/org/learners#learners", label: "All learners" }}>
+      <div className="mx-auto max-w-6xl md:grid md:grid-cols-[15rem_minmax(0,1fr)] md:items-start md:gap-8">
+        {/* The person, and every section of their file, down the left. Across
+            the top as tabs, most sections were off the edge and it was not
+            apparent there was more than Training (Saj, 27 Oct 2026). */}
+        <aside className="space-y-4 md:sticky md:top-20">
+          <Card>
+            <CardContent className="space-y-4 pt-6">
+              <div className="flex items-center gap-4 md:flex-col md:items-start">
+                <ProgressRing value={stats.overallPct} size={72} stroke={8}>
+                  <span className="text-lg font-semibold">{stats.overallPct}%</span>
+                </ProgressRing>
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs capitalize text-muted-foreground">
+                      {roleLabel(profile.role)}
+                    </span>
+                    {profile.status === "deactivated" && (
+                      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-700">
+                        Deactivated
+                      </span>
+                    )}
+                  </div>
+                  <p className="truncate text-sm text-muted-foreground">{profile.email}</p>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">{profile.email}</p>
-            </div>
-            <div className="flex items-center gap-6">
-              {canRemind && (
-                <NudgeButton
-                  userId={userId}
-                  lastRemindedAt={lastRemindedAt}
-                />
-              )}
-              <ProgressRing value={stats.overallPct} size={104} stroke={10}>
-                <span className="text-2xl font-semibold">{stats.overallPct}%</span>
-                <span className="text-xs text-muted-foreground">overall</span>
-              </ProgressRing>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="flex flex-wrap items-center gap-2">
+                {canRemind && (
+                  <NudgeButton
+                    userId={userId}
+                    lastRemindedAt={lastRemindedAt}
+                  />
+                )}
+                <EvidencePackButton userId={userId} />
+              </div>
+            </CardContent>
+          </Card>
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-muted-foreground">
-            The whole file on this person — training, records and what is
-            outstanding.
-          </p>
-          <EvidencePackButton userId={userId} />
-        </div>
+          <SectionRail userId={userId} active={section.key} enabled={enabled} counts={counts} />
+        </aside>
 
+        <div className="mt-6 min-w-0 space-y-6 md:mt-0">
         <SectionTabs userId={userId} active={section.key} enabled={enabled} />
+
+        {/* A section shown as a panel carries its own title. */}
+        {INLINE_SECTIONS.has(section.key) && state === "open" && (
+          <h2 className="hidden text-lg font-semibold md:block">{section.label}</h2>
+        )}
 
         {section.key === "training" && (
           <>
@@ -748,6 +753,7 @@ export default async function StaffDetailPage({
         )}
 
         <SectionTabsAfter userId={userId} active={section.key} enabled={enabled} />
+        </div>
       </div>
     </DashboardShell>
   );
