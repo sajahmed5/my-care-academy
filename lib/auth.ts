@@ -136,6 +136,8 @@ export interface MemberStatus {
   /** Read alongside status so the shell's "last active" write can skip
    *  itself when it would be a no-op — see DashboardShell. */
   lastSeenAt: string | null;
+  /** For the person menu at the top of the page. */
+  fullName: string | null;
 }
 
 /**
@@ -149,7 +151,7 @@ export const memberStatus = cache(
     const [{ data: me }, { data: org }] = await Promise.all([
       supabase
         .from("users")
-        .select("status, last_seen_at")
+        .select("status, last_seen_at, full_name")
         .eq("id", userId)
         .maybeSingle(),
       organisationId
@@ -164,6 +166,7 @@ export const memberStatus = cache(
       status: me?.status ?? null,
       orgStatus: org?.status ?? null,
       lastSeenAt: me?.last_seen_at ?? null,
+      fullName: me?.full_name ?? null,
     };
   },
 );

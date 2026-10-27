@@ -1,7 +1,7 @@
 import pkg from "../package.json";
 
 /**
- * App/build version, surfaced in the UI (sidebar + marketing footer) so it's
+ * App/build version, surfaced in the UI (person menu + marketing footer) so it's
  * clear which build is live. The version is the single source of truth in
  * package.json; on Vercel we append the short commit SHA of the deploy.
  *

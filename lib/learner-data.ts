@@ -171,7 +171,7 @@ export interface BadgeData {
 }
 
 /**
- * The sidebar unread-notifications badge, and the notifications page. Runs on
+ * The menu's unread-notifications badge, and the notifications page. Runs on
  * EVERY learner page (via DashboardShell), built from the shared per-request
  * reads so a page that also lists enrolments or certificates costs nothing
  * extra.

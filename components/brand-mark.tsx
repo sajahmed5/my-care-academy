@@ -3,7 +3,7 @@ import { Logo } from "@/components/logo";
 /**
  * The logo at the top of the app: the organisation's own when it has
  * white-label and has uploaded one (ROADMAP §2), ours otherwise. Plain props
- * so the client sidebar can use it as well as server pages.
+ * so the client top bar can use it as well as server pages.
  */
 export function BrandMark({
   logoUrl,
