@@ -282,7 +282,7 @@ export default async function StaffDetailPage({
         {/* The person, and every section of their file, down the left. Across
             the top as tabs, most sections were off the edge and it was not
             apparent there was more than Training (Saj, 27 Oct 2026). */}
-        <aside className="space-y-4 md:sticky md:top-20">
+        <aside className="space-y-4 md:sticky md:top-28">
           <Card>
             <CardContent className="space-y-4 pt-6">
               <div className="flex items-center gap-4 md:flex-col md:items-start">

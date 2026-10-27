@@ -235,6 +235,15 @@ export function TopNav({
   const { open, setOpen, ref, pathname } = useOpenMenu();
   const items = withoutGated(role ? (MENUS[role] ?? []) : [], enabled);
   const person = personLinks(role);
+  const current = items.find((item) => itemActive(pathname, item));
+
+  // On a phone the sub-page row scrolls sideways; bring the open page into it.
+  const subRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const row = subRef.current;
+    const link = row?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (row && link) row.scrollLeft = link.offsetLeft - (row.clientWidth - link.offsetWidth) / 2;
+  }, [pathname]);
   const toggle = (key: string) => setOpen((o) => (o === key ? null : key));
 
   const signOut = (
@@ -360,6 +369,37 @@ export function TopNav({
           </button>
         </div>
       </div>
+
+      {/* The sub-pages of the menu you are in, one click away, so changing
+          between them doesn't mean opening the drop-down again (Saj, 27 Oct
+          2026). Plain links have none. */}
+      {current?.children && open !== "__all" && (
+        <nav
+          aria-label={`${current.label} pages`}
+          className="border-b bg-card text-foreground"
+        >
+          <div ref={subRef} className="flex min-w-0 gap-1 overflow-x-auto px-3 sm:px-4">
+            {current.children.map((c) => {
+              const active = isActive(pathname, c.href, c.exact);
+              return (
+                <IntentLink
+                  key={c.href}
+                  href={c.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "inline-flex h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 text-sm transition-colors",
+                    active
+                      ? "border-primary font-medium text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {c.label}
+                </IntentLink>
+              );
+            })}
+          </div>
+        </nav>
+      )}
 
       {open === "__all" && (
         <nav
