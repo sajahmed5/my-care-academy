@@ -48,7 +48,7 @@ export default async function LearnerAssessmentPage({
               competent {learner.observedCompetent}/{learner.total}
             </p>
           </div>
-          <ProgressRing value={pct} color="#0d9488">
+          <ProgressRing value={pct} color="var(--primary)">
             <span className="text-2xl font-bold">{pct}%</span>
             <span className="text-xs text-muted-foreground">observed</span>
           </ProgressRing>

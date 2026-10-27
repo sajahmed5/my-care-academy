@@ -138,7 +138,7 @@ export default async function LearnerDashboard() {
               )}
             </p>
           </div>
-          <ProgressRing value={stats.overallPct} color="#0d9488">
+          <ProgressRing value={stats.overallPct} color="var(--primary)">
             <span className="text-2xl font-bold">{stats.overallPct}%</span>
             <span className="text-xs text-muted-foreground">complete</span>
           </ProgressRing>

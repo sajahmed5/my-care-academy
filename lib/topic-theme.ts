@@ -31,6 +31,9 @@ export function topicTheme(title?: string | null): TopicTheme {
 }
 
 /** Semi-transparent tint of a hex colour, for soft backgrounds. */
-export function tint(hex: string, alpha = "1a"): string {
-  return `${hex}${alpha}`;
+export function tint(color: string, alpha = "1a"): string {
+  // color-mix rather than appending the alpha to a hex, so a theme token such
+  // as var(--primary) can be tinted too.
+  const pct = Math.round((parseInt(alpha, 16) / 255) * 100);
+  return `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 }

@@ -274,7 +274,7 @@ export function TopNav({
             const itemClass = cn(
               "inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium transition-colors",
               active
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_0_-2px_0_var(--highlight)]"
                 : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
             );
             if (item.href) {
@@ -351,6 +351,9 @@ export function TopNav({
                     <PanelLink key={l.href} link={l} pathname={pathname} />
                   ))}
                   {signOut}
+                </div>
+                <div className="border-t">
+                  <SchemePicker />
                 </div>
                 <p className="border-t px-3 pt-1.5 text-center text-[11px] text-muted-foreground">{version}</p>
               </div>
@@ -430,6 +433,7 @@ export function TopNav({
             {person.map((l) => (
               <MobileLink key={l.href} href={l.href} label={l.label} active={isActive(pathname, l.href)} />
             ))}
+            <SchemePicker dark />
             <form action="/auth/signout" method="post">
               <button type="submit" className="flex min-h-11 w-full items-center rounded-lg px-3 text-sm font-medium text-rose-300">
                 Sign out
@@ -459,5 +463,67 @@ function MobileLink({ href, label, active, badge = 0 }: { href: string; label: s
         </span>
       )}
     </IntentLink>
+  );
+}
+
+const SCHEMES = [
+  { key: "", label: "Today" },
+  { key: "a", label: "A" },
+  { key: "b", label: "B" },
+  { key: "c", label: "C" },
+] as const;
+
+/**
+ * Colour schemes on trial (Saj, 27 Oct 2026): flips <html data-theme> and
+ * remembers it in this browser, where the root layout's script picks it up
+ * before paint. Not shown in production.
+ */
+function SchemePicker({ dark = false }: { dark?: boolean }) {
+  const [scheme, setScheme] = useState("");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setScheme(document.documentElement.dataset.theme ?? "");
+  }, []);
+  if (process.env.NODE_ENV === "production") return null;
+
+  function pick(key: string) {
+    setScheme(key);
+    const html = document.documentElement;
+    if (key) html.setAttribute("data-theme", key);
+    else html.removeAttribute("data-theme");
+    try {
+      if (key) localStorage.setItem("mca-theme", key);
+      else localStorage.removeItem("mca-theme");
+    } catch {
+      // Private window: it still applies to this page.
+    }
+  }
+
+  return (
+    <div className="px-3 py-2">
+      <p className={cn("pb-1.5 text-xs", dark ? "text-sidebar-foreground/60" : "text-muted-foreground")}>
+        Colour scheme (trial)
+      </p>
+      <div className="flex gap-1">
+        {SCHEMES.map((x) => (
+          <button
+            key={x.key}
+            type="button"
+            aria-pressed={scheme === x.key}
+            onClick={() => pick(x.key)}
+            className={cn(
+              "h-8 flex-1 rounded-md border text-xs font-medium transition-colors",
+              scheme === x.key
+                ? "border-primary bg-primary text-primary-foreground"
+                : dark
+                  ? "border-sidebar-border text-sidebar-foreground hover:bg-sidebar-accent/60"
+                  : "hover:bg-muted",
+            )}
+          >
+            {x.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -69,7 +69,7 @@ export function StatTile({
   label,
   value,
   icon: Icon,
-  color = "#0d9488",
+  color = "var(--primary)",
   href,
   hint,
 }: {
@@ -115,7 +115,7 @@ export function ProgressRing({
   value,
   size = 128,
   stroke = 12,
-  color = "#0d9488",
+  color = "var(--primary)",
   children,
 }: {
   value: number;
@@ -147,7 +147,7 @@ export function ProgressRing({
           cy={size / 2}
           r={r}
           fill="none"
-          stroke={color}
+          style={{ stroke: color }}
           strokeWidth={stroke}
           strokeDasharray={c}
           strokeDashoffset={offset}
@@ -206,7 +206,7 @@ export function BadgeChip({
   description,
   icon: Icon,
   earned,
-  color = "#0d9488",
+  color = "var(--primary)",
 }: {
   label: string;
   description: string;

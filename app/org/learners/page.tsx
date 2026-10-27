@@ -131,7 +131,7 @@ export default async function LearnersOverviewPage({
           label="Learning hours"
           value={formatDuration(learningSeconds)}
           icon={Timer}
-          color="#0d9488"
+          color="var(--primary)"
           href="/org/learners#learners"
         />
         <StatTile
