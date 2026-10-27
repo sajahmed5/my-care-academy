@@ -8,7 +8,7 @@ import { deriveNotifications, unreadCount } from "@/lib/notifications";
 import { VERSION_LABEL } from "@/lib/version";
 import { StarBank } from "@/components/star-bank";
 import { ReportWidget } from "@/components/report-widget";
-import { isConsoleRole, memberStatus, roleLabel, type UserContext } from "@/lib/auth";
+import { memberStatus, roleLabel, type UserContext } from "@/lib/auth";
 import { enabledMap } from "@/lib/entitlements";
 
 async function learnerBadges(
@@ -29,11 +29,15 @@ async function learnerStarTotal(context: UserContext): Promise<number> {
   return loadStarTotal(context.userId);
 }
 
-/** Which features this org has — gates the menu's pack items. */
+/**
+ * Which features this org has — gates the menu's pack items. Carers too: this
+ * once asked only for console users, so a carer's Policies and Forms links
+ * were always dropped and the pages could only be reached from elsewhere.
+ */
 async function orgAddOns(
   context: UserContext,
 ): Promise<Record<string, boolean>> {
-  if (!isConsoleRole(context.role) || !context.organisationId) return {};
+  if (!context.organisationId) return {};
   return enabledMap(context);
 }
 
