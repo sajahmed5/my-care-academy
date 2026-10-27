@@ -182,7 +182,7 @@ export function CsvImport() {
 
   function downloadTemplate() {
     const csv =
-      "name,email,role\r\nJane Smith,jane.smith@example.com,learner\r\nSam Jones,sam.jones@example.com,org_admin\r\n";
+      "name,email,role\r\nJane Smith,jane.smith@example.com,learner\r\nSam Jones,sam.jones@example.com,learner\r\n";
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -197,8 +197,9 @@ export function CsvImport() {
       <p className="text-sm text-muted-foreground">
         Download the template, fill in one row per person, then upload it
         here as a CSV or an Excel file. Each person is emailed an invite. The
-        role column takes <code>learner</code> (leave it blank for this) or{" "}
-        <code>org_admin</code> for someone who manages training.
+        role column takes <code>learner</code>, or leave it blank. Managers and
+        office staff are added one at a time by a manager, from the Account
+        page.
       </p>
 
       <button

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireConsole } from "@/lib/auth";
+import { requireConsole, roleLabel } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
 import {
@@ -42,11 +42,6 @@ function signedInLabel(iso: string): string {
   });
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  org_admin: "Admin",
-  learner: "Learner",
-};
-
 /**
  * Admin: add, deactivate and remove staff (learners and admin users alike),
  * plus the reminder history and bulk-remind (design doc v2).
@@ -73,6 +68,11 @@ export default async function LearnersAdminPage({
     ? (sectionParam as Section)
     : "staff";
   const orgId = context.organisationId;
+  // Only a manager may deactivate or delete a manager or office worker — the
+  // rule consoleTargetBlock enforces. An office worker was offered the
+  // buttons on those rows and every press was refused.
+  const canChange = (role: string) =>
+    role === "learner" || context.role === "org_admin";
   const supabase = await createClient();
   // Each tab reads only what it shows. The reminder picker needs every
   // learner's full training rollup (all enrolments and certificates) and the
@@ -186,7 +186,7 @@ export default async function LearnersAdminPage({
           <div>
             <CardTitle>Staff</CardTitle>
             <CardDescription>
-              {staff?.length ?? 0} member(s) — admins and learners.
+              {staff?.length ?? 0} member(s) — managers, office staff and learners.
             </CardDescription>
           </div>
           <CsvExport
@@ -223,7 +223,7 @@ export default async function LearnersAdminPage({
                         <span className="text-muted-foreground">{u.email}</span>
                       </td>
                       <td className="px-3 py-2">
-                        {ROLE_LABELS[u.role] ?? u.role}
+                        {roleLabel(u.role)}
                       </td>
                       {/* Two separate facts, deliberately not one word. This
                           column said "active" meaning "not deactivated", while
@@ -254,6 +254,8 @@ export default async function LearnersAdminPage({
                       <td className="px-3 py-2 text-right">
                         {isSelf ? (
                           <span className="text-xs text-muted-foreground">You</span>
+                        ) : !canChange(u.role) ? (
+                          <span className="text-xs text-muted-foreground">Manager only</span>
                         ) : (
                           <span className="inline-flex items-center gap-2">
                             <StatusToggle userId={u.id} status={status} name={u.full_name || u.email} />
@@ -302,7 +304,7 @@ export default async function LearnersAdminPage({
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <span className="text-xs text-muted-foreground">
-                      {ROLE_LABELS[u.role] ?? u.role} ·{" "}
+                      {roleLabel(u.role)} ·{" "}
                       {u.last_seen_at ? (
                         <>signed in {signedInLabel(u.last_seen_at)}</>
                       ) : (
@@ -311,6 +313,8 @@ export default async function LearnersAdminPage({
                     </span>
                     {isSelf ? (
                       <span className="text-xs text-muted-foreground">You</span>
+                    ) : !canChange(u.role) ? (
+                      <span className="text-xs text-muted-foreground">Manager only</span>
                     ) : (
                       <span className="inline-flex items-center gap-2">
                         <StatusToggle userId={u.id} status={status} name={u.full_name || u.email} />
