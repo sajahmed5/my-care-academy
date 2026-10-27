@@ -51,56 +51,14 @@
 }
 
 :root {
-  /* My Care Academy — teal brand. Cool light app background; white cards pop. */
-  --background: oklch(0.985 0.004 225);
-  --foreground: oklch(0.19 0.02 235);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.19 0.02 235);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.19 0.02 235);
-  --primary: oklch(0.52 0.088 218);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.955 0.012 220);
-  --secondary-foreground: oklch(0.3 0.04 225);
-  --muted: oklch(0.965 0.006 224);
-  --muted-foreground: oklch(0.52 0.02 232);
-  --accent: oklch(0.95 0.03 210);
-  --accent-foreground: oklch(0.36 0.06 219);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.915 0.007 230);
-  --input: oklch(0.915 0.007 230);
-  --ring: oklch(0.52 0.088 218);
-  --chart-1: oklch(0.55 0.095 219);
-  --chart-2: oklch(0.68 0.09 200);
-  --chart-3: oklch(0.63 0.11 150);
-  --chart-4: oklch(0.72 0.12 80);
-  --chart-5: oklch(0.62 0.14 25);
-  --radius: 0.7rem;
-  --sidebar: oklch(0.24 0.028 233);
-  --sidebar-foreground: oklch(0.93 0.01 220);
-  --sidebar-primary: oklch(0.66 0.1 205);
-  --sidebar-primary-foreground: oklch(0.16 0.02 233);
-  --sidebar-accent: oklch(0.31 0.03 233);
-  --sidebar-accent-foreground: oklch(0.97 0.01 220);
-  --sidebar-border: oklch(0.34 0.025 233);
-  --sidebar-ring: oklch(0.66 0.1 205);
-}
-
-/*
- * Colour schemes on trial (Saj, 27 Oct 2026). Each overrides the tokens
- * above when <html data-theme="…"> is set; with none set the site is as it
- * was. Picked from the person menu while not in production (TopNav), kept in
- * this browser only. --highlight marks the menu item you are in.
- */
-:root {
-  --highlight: transparent;
-}
-
-/* A — fresh teal: the logo's family, brighter and cleaner. */
-[data-theme="a"] {
+  /* My Care Academy — fresh teal (chosen 27 Oct 2026 from three on trial):
+     the logo's family, brighter and cleaner than the slate-teal before it.
+     A very pale green-white page so white cards stand out. */
   --background: #f5faf9;
   --foreground: #0f2a2e;
+  --card: #ffffff;
   --card-foreground: #0f2a2e;
+  --popover: #ffffff;
   --popover-foreground: #0f2a2e;
   --primary: #0f8178;
   --primary-foreground: #ffffff;
@@ -110,74 +68,26 @@
   --muted-foreground: #587070;
   --accent: #e0f2ef;
   --accent-foreground: #115e59;
+  --destructive: oklch(0.577 0.245 27.325);
   --border: #dcebe8;
   --input: #d3e5e1;
   --ring: #0f8178;
   --chart-1: #0f8178;
+  --chart-2: oklch(0.68 0.09 200);
+  --chart-3: oklch(0.63 0.11 150);
+  --chart-4: oklch(0.72 0.12 80);
+  --chart-5: oklch(0.62 0.14 25);
+  --radius: 0.7rem;
   --sidebar: #0d3b44;
   --sidebar-foreground: #dff4f1;
   --sidebar-primary: #2dd4bf;
+  --sidebar-primary-foreground: #0d3b44;
   --sidebar-accent: #155461;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #1f5965;
   --sidebar-ring: #2dd4bf;
+  /* Underlines the top-bar item you are in. */
   --highlight: #2dd4bf;
-}
-
-/* B — teal with warm coral: teal for trust, coral for warmth and wins. */
-[data-theme="b"] {
-  --background: #fbf8f4;
-  --foreground: #22302f;
-  --card-foreground: #22302f;
-  --popover-foreground: #22302f;
-  --primary: #0f766e;
-  --primary-foreground: #ffffff;
-  --secondary: #f3ede6;
-  --secondary-foreground: #3b3a36;
-  --muted: #f4efe9;
-  --muted-foreground: #6b6560;
-  --accent: #f8ece6;
-  --accent-foreground: #8f3a22;
-  --border: #ece4da;
-  --input: #e4dacd;
-  --ring: #0f766e;
-  --chart-1: #0f766e;
-  --sidebar: #12343b;
-  --sidebar-foreground: #e2f3f0;
-  --sidebar-primary: #f2775a;
-  --sidebar-accent: #1d4a52;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #24525a;
-  --sidebar-ring: #f2775a;
-  --highlight: #f2775a;
-}
-
-/* C — blue and mint: NHS-familiar, more clinical. */
-[data-theme="c"] {
-  --background: #f4f7fd;
-  --foreground: #14213d;
-  --card-foreground: #14213d;
-  --popover-foreground: #14213d;
-  --primary: #1f5bd8;
-  --primary-foreground: #ffffff;
-  --secondary: #e8eefc;
-  --secondary-foreground: #1e3a8a;
-  --muted: #eef2fa;
-  --muted-foreground: #56627e;
-  --accent: #e3ecfd;
-  --accent-foreground: #1e40af;
-  --border: #dde5f3;
-  --input: #d2dcef;
-  --ring: #1f5bd8;
-  --chart-1: #1f5bd8;
-  --sidebar: #13284f;
-  --sidebar-foreground: #e3ebff;
-  --sidebar-primary: #34d399;
-  --sidebar-accent: #1f3a6e;
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #27437a;
-  --sidebar-ring: #34d399;
-  --highlight: #34d399;
 }
 
 .dark {

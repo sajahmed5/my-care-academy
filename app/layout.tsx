@@ -60,13 +60,6 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-/**
- * Applies a colour scheme picked on trial (see globals.css) before the page
- * paints, so it doesn't flash today's colours first. Reads this browser's
- * choice only; with none, nothing changes.
- */
-const THEME_SCRIPT = `try{var t=localStorage.getItem("mca-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -76,12 +69,7 @@ export default function RootLayout({
     <html
       lang="en-GB"
       className={`${inter.variable} ${mono.variable} h-full antialiased`}
-      // The colour scheme on trial is set by the script below, before paint.
-      suppressHydrationWarning
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
-      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <CookieConsent />
