@@ -134,7 +134,7 @@ export default async function LearnerDashboard() {
                 .filter(Boolean)
                 .join(" · ")}
               {streak > 0 && (
-                <span className="ml-1 inline-flex items-center gap-1 font-medium text-orange-600">
+                <span className="ml-1 inline-flex items-center gap-1 font-medium text-orange-700">
                   <Flame className="size-4" /> {streak}-day streak
                 </span>
               )}

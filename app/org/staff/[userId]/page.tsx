@@ -522,7 +522,7 @@ export default async function StaffDetailPage({
                                   certFlag === "red"
                                     ? "text-rose-600"
                                     : certFlag === "amber"
-                                      ? "text-amber-600"
+                                      ? "text-amber-700"
                                       : "text-muted-foreground"
                                 }
                               >
@@ -622,7 +622,7 @@ export default async function StaffDetailPage({
                               flag === "red"
                                 ? "text-rose-600"
                                 : flag === "amber"
-                                  ? "text-amber-600"
+                                  ? "text-amber-700"
                                   : "text-muted-foreground"
                             }
                           >

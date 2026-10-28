@@ -206,7 +206,7 @@ export function QuizRunner({
         You scored <strong>{result?.score}%</strong> ({result?.correct}/{result?.total} correct). Pass mark is {PASS_PERCENT}%.
       </p>
       {result && (
-        <p className="text-sm font-medium text-amber-600">
+        <p className="text-sm font-medium text-amber-700">
           {result.starsAwarded && result.starsAwarded > 0
             ? `+${result.starsAwarded} ⭐ added to your star bank`
             : "No new stars this time — you've already banked your best for this course."}

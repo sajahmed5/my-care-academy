@@ -585,7 +585,7 @@ export function H5PCoursePlayer({
 
       {/* Answer-required hint */}
       {gated && !loading && (
-        <p className="text-center text-sm font-medium text-amber-600">
+        <p className="text-center text-sm font-medium text-amber-700">
           Answer the question{requiredQuestions > 1 ? "s" : ""} on this page to
           continue ({answeredCount}/{requiredQuestions} answered).
         </p>
