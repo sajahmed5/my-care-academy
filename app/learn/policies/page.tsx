@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { EmptyState } from "@/components/learner-ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { byCategory, loadCopies, loadLibrary } from "@/lib/policy-library";
 
@@ -74,13 +75,13 @@ export default async function LearnerPoliciesPage() {
             To read and accept ({outstanding.length})
           </h3>
           {outstanding.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                {policies.length === 0
-                  ? "Your manager has not published any policies to you yet."
-                  : "Nothing outstanding — you have accepted every policy."}
-              </CardContent>
-            </Card>
+            <EmptyState
+              title={policies.length === 0 ? "No policies to read yet" : "You're up to date"}
+            >
+              {policies.length === 0
+                ? "When your manager publishes a policy for you to read, it will be here."
+                : "You have accepted every policy."}
+            </EmptyState>
           ) : (
             byCategory(outstanding).map(([category, items]) => (
               <div key={category} className="space-y-2">

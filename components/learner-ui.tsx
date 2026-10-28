@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, type LucideIcon } from "lucide-react";
+import { AlertTriangle, CheckCircle2, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { topicTheme, tint } from "@/lib/topic-theme";
 
@@ -243,6 +243,31 @@ export function BadgeChip({
       </div>
       <p className="mt-2 text-sm font-medium">{label}</p>
       <p className="text-xs text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+/**
+ * A list with nothing in it. "Nothing to complete." in grey read like an
+ * error; this says it plainly, with a tick, so an empty list reads as done
+ * (design review, 28 Oct 2026).
+ */
+export function EmptyState({
+  title,
+  children,
+  icon: Icon = CheckCircle2,
+}: {
+  title: string;
+  children?: React.ReactNode;
+  icon?: LucideIcon;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-2xl border bg-card px-6 py-10 text-center">
+      <span className="flex size-11 items-center justify-center rounded-full bg-accent text-primary">
+        <Icon className="size-5" />
+      </span>
+      <p className="font-medium">{title}</p>
+      {children && <p className="max-w-sm text-sm text-muted-foreground">{children}</p>}
     </div>
   );
 }

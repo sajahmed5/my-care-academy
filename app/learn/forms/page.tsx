@@ -3,6 +3,7 @@ import { ClipboardList } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { EmptyState } from "@/components/learner-ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadAssignmentsForPerson } from "@/lib/form-library";
 import { formatDate } from "@/lib/dates";
@@ -32,11 +33,9 @@ export default async function LearnerFormsPage() {
         <section className="space-y-2">
           <h3 className="text-sm font-semibold text-muted-foreground">To complete ({open.length})</h3>
           {open.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                Nothing to complete.
-              </CardContent>
-            </Card>
+            <EmptyState title="No forms to fill in">
+              When your manager sends you a form, it will be here.
+            </EmptyState>
           ) : (
             open.map((a) => (
               <Card key={a.id}>

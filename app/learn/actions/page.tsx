@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { EmptyState } from "@/components/learner-ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/lib/dates";
 
@@ -49,9 +50,9 @@ export default async function MyActionsPage() {
           Things you have agreed to do, or been asked to do, by your manager. Your manager ticks each one off when it is done.
         </p>
         {open.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center text-sm text-muted-foreground">Nothing outstanding.</CardContent>
-          </Card>
+          <EmptyState title="Nothing outstanding">
+            Anything you agree to do in a supervision, spot check or audit will be listed here.
+          </EmptyState>
         ) : (
           <div className="space-y-2">
             {open.map((a) => {
