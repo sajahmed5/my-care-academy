@@ -11,13 +11,7 @@ import { loadBadgeData } from "@/lib/learner-data";
 import { deriveNotifications, type NotifType } from "@/lib/notifications";
 import { tint } from "@/lib/topic-theme";
 import { DashboardShell } from "@/components/dashboard-shell";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { AutoMarkRead } from "./auto-mark-read";
 import { formatDate } from "@/lib/dates";
 
@@ -41,14 +35,12 @@ export default async function NotificationsPage() {
     <DashboardShell title="Notifications" context={context}>
       <AutoMarkRead />
       <div className="mx-auto max-w-6xl space-y-6">
+        {/* The page title already says Notifications; the card said it again. */}
+        <p className="text-sm text-muted-foreground">
+          Assignments, new certificates and expiry reminders.
+        </p>
         <Card>
-          <CardHeader>
-            <CardTitle>Notifications</CardTitle>
-            <CardDescription>
-              Assignments, new certificates and expiry reminders.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-2">
             {notifs.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 You&apos;re all caught up 🎉
@@ -78,7 +70,9 @@ export default async function NotificationsPage() {
                               <span className="ml-2 inline-block size-2 rounded-full bg-rose-500 align-middle" />
                             )}
                           </p>
-                          <p className="truncate text-sm text-muted-foreground">
+                          {/* Wraps rather than cuts off: on a phone "Certificate
+                              ready to download" lost its last word. */}
+                          <p className="text-sm text-muted-foreground">
                             {n.body}
                           </p>
                         </div>
