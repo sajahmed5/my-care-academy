@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -75,13 +76,16 @@ function Point({ tag, title, children }: { tag: string; title: string; children:
 }
 
 /** The six courses shown as a sample of the catalogue. */
+// Each card shows a photo from inside that course, so what a visitor sees
+// is what a carer will see. They were plain colour blocks (design review,
+// 28 Oct 2026). Unsplash licence; credits in public/h5p/IMAGE-CREDITS.json.
 const SAMPLE = [
-  ["Safeguarding Adults Level 2", "mca-art-1"],
-  ["Medication Awareness", "mca-art-2"],
-  ["Person Centred Care", "mca-art-3"],
-  ["Infection Prevention and Control", "mca-art-4"],
-  ["Basic Life Support (BLS)", "mca-art-5"],
-  ["Moving and Handling", "mca-art-6"],
+  ["Safeguarding Adults Level 2", "safeguarding-adults-level-2/p6/content/images/sg-conversation.jpg", "Two older women talking together on a sofa"],
+  ["Medication Awareness", "medication-awareness/p6/content/images/med-organiser.jpg", "A hand taking a tablet from a weekly pill organiser"],
+  ["Person Centred Care", "person-centred-care/p3/content/images/pcc-listening.jpg", "An older woman smiling as she listens"],
+  ["Infection Prevention and Control", "infection-prevention-and-control/p4/content/images/ipc-handwashing.jpg", "Hands being washed with soap at a sink"],
+  ["Basic Life Support (BLS)", "basic-life-support-bls/p3/content/images/bls-cpr.jpg", "A CPR training manikin"],
+  ["Moving and Handling", "health-and-safety/p5/content/images/hs-support.jpg", "A woman pushing someone in a wheelchair across a field"],
 ] as const;
 
 const PROGRESS = [
@@ -311,9 +315,17 @@ export default function Home() {
           </p>
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {SAMPLE.map(([title, art]) => (
+          {SAMPLE.map(([title, photo, alt]) => (
             <div key={title} className="overflow-hidden rounded-2xl bg-white ring-1 ring-[#134f63]/10">
-              <div className={`h-20 ${art}`} aria-hidden />
+              <div className="relative h-36 bg-[#e4f2f6]">
+                <Image
+                  src={`/h5p/content/${photo}`}
+                  alt={alt}
+                  fill
+                  sizes="(min-width: 1024px) 352px, (min-width: 640px) 50vw, 100vw"
+                  className="object-cover"
+                />
+              </div>
               <div className="flex items-center gap-2 p-4">
                 <GraduationCap className="size-4 shrink-0 text-[#b7791f]" />
                 <span className="font-semibold">{title}</span>

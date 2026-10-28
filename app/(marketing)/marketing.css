@@ -181,10 +181,3 @@
   background-size: 10px 2px;
 }
 
-/* Course tile artwork (example library). */
-.mca-art-1 { background: linear-gradient(135deg, #fde2c4, #f7c58c); }
-.mca-art-2 { background: linear-gradient(135deg, #d8eef5, #9fd2e6); }
-.mca-art-3 { background: linear-gradient(135deg, #e6e0f7, #c2b6ee); }
-.mca-art-4 { background: linear-gradient(135deg, #dcefe2, #a9d8b8); }
-.mca-art-5 { background: linear-gradient(135deg, #fbe0dc, #f2afa6); }
-.mca-art-6 { background: linear-gradient(135deg, #f1ecd9, #dfd1a0); }
