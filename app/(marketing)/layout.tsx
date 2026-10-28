@@ -1,28 +1,10 @@
 import Link from "next/link";
-import { Caveat, Outfit } from "next/font/google";
 import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { OrganisationLd } from "@/components/structured-data";
+import { caveat, outfit } from "@/lib/fonts";
 import { VERSION_LABEL } from "@/lib/version";
 import "./marketing.css";
-
-// Declared here rather than in the root layout so they are preloaded only on
-// the marketing pages that use them, not on every page of the app.
-// Display face for the marketing headlines (.font-display); the app keeps Inter.
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  display: "swap",
-});
-
-// Handwritten asides on the marketing home page (.mca-hand).
-const caveat = Caveat({
-  variable: "--font-caveat",
-  subsets: ["latin"],
-  weight: ["600"],
-  display: "swap",
-});
 
 // Training only (Saj, 7 Oct 2026) — rostering is a separate product on its
 // own domain now and is not mentioned here.

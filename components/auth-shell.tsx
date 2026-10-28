@@ -1,12 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { outfit } from "@/lib/fonts";
 
 /**
  * The frame every sign-in screen shares: logo, one card, one way back.
@@ -30,22 +24,33 @@ export function AuthShell({
   footer?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  // In the public site's dress since 28 Oct 2026 — its sand-and-sky wash and
+  // its display face — so the step from the website to signing in doesn't
+  // feel like arriving at a different product. Buttons inside stay the app's.
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-6 py-12 sm:py-16">
+    <main
+      className={`${outfit.variable} flex flex-1 flex-col items-center justify-center px-4 py-12 sm:py-16`}
+      style={{
+        background:
+          "radial-gradient(90% 60% at 50% 0%, #f7e6d2 0%, rgba(247,230,210,0) 60%), radial-gradient(70% 50% at 100% 100%, #d9eef5 0%, rgba(217,238,245,0) 60%), #f5faf9",
+      }}
+    >
       <Link href="/" className="mb-8" aria-label="My Care Academy home">
-        <Logo width={180} eager />
+        <Logo width={190} eager />
       </Link>
-      <Card className="w-full max-w-sm shadow-sm">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          {description && <CardDescription>{description}</CardDescription>}
-        </CardHeader>
-        <CardContent>{children}</CardContent>
-      </Card>
+      <div className="w-full max-w-md rounded-3xl bg-card p-6 shadow-xl shadow-[#134f63]/10 ring-1 ring-[#134f63]/10 sm:p-8">
+        <h1 className="font-[family-name:var(--font-outfit)] text-2xl font-semibold tracking-tight text-[#0f2f3c]">
+          {title}
+        </h1>
+        {description && (
+          <div className="mt-1.5 text-sm text-muted-foreground">{description}</div>
+        )}
+        <div className="mt-6">{children}</div>
+      </div>
       {footer && (
         // Held to the card's width so a sentence under it wraps with the card
         // rather than running the width of a desktop window.
-        <div className="mt-6 w-full max-w-sm text-center text-sm text-muted-foreground">
+        <div className="mt-6 w-full max-w-md text-center text-sm text-muted-foreground">
           {footer}
         </div>
       )}
