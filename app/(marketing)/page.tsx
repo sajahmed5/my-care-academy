@@ -32,7 +32,9 @@ const TRUST = [
   ["2002", "the year we started in care"],
   [String(COURSES), "CQC-aligned care courses"],
   ["Unlimited", "learners, managers and admins"],
-  ["0", "add-on modules to buy later"],
+  // Was "0 add-on modules to buy later" — not true once the Care Certificate
+  // observation and the policy packs were sold as add-ons. Per-carer pricing is.
+  ["£0", "per carer, on every plan"],
 ];
 
 /** A desktop monitor with a browser bar — the product pictures sit in these. */
@@ -135,7 +137,7 @@ export default function Home() {
                 See what&apos;s covered
               </PillLink>
             </div>
-            <p className="mca-hand mt-5 inline-block -rotate-2">↳ no add-on modules. Ever.</p>
+            <p className="mca-hand mt-5 inline-block -rotate-2">↳ no per-carer fees. Ever.</p>
           </div>
 
           <div className="relative mx-3 mb-6 lg:mx-0">

@@ -56,7 +56,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "What does it cost?",
-    "One monthly price for the whole service, with unlimited learners and admin users — no per-carer charge and no add-on modules. The plans are on the pricing page.",
+    "One monthly price for the whole service, with unlimited learners and admin users — no per-carer charge, and every course on every plan. The plans are on the pricing page.",
   ],
 ];
 

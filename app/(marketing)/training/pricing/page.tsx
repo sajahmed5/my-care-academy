@@ -55,7 +55,7 @@ export default function TrainingPricingPage() {
             One price for the whole team, unlimited learners
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-[#2b1d0e]/70">
-            Unlimited learners on every plan. Four plans, from the course library on its own to the complete platform. Prices and plan contents are being finalised.
+            Unlimited learners on every plan. Four plans, from the course library on its own to the complete platform.
           </p>
           <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#2b1d0e]/75">
             <li className="inline-flex items-center gap-2"><Users className="size-4 text-[#b7791f]" /> Unlimited learners and admins</li>
