@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye } from "lucide-react";
+import { CalendarClock } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import {
   CourseThumb,
@@ -8,6 +8,7 @@ import {
 } from "@/components/learner-ui";
 import { topicTheme } from "@/lib/topic-theme";
 import { formatDate } from "@/lib/dates";
+import { isOverdue } from "@/lib/engine-logic";
 
 const nowMs = () => Date.now();
 
@@ -28,10 +29,12 @@ export function variantFor(
   if (status === "not_enrolled") return "not_enrolled";
   if (status === "completed") return "completed";
   if (status === "expired") return "retake";
+  // Overdue says so even once started: "In progress" on a course past its
+  // date hid the one thing the carer most needed to know.
+  if (isOverdue(dueDate ?? null, status, new Date(nowMs()))) return "overdue";
   // Content finished but the course isn't complete → the assessment is outstanding.
   if (progress >= 100) return "assessment_due";
   if (status === "in_progress") return "in_progress";
-  if (dueDate && new Date(dueDate).getTime() < nowMs()) return "overdue";
   return "assigned";
 }
 
@@ -76,7 +79,7 @@ export function CourseCard({ c }: { c: CourseCardData }) {
 
       {c.dueDate && status !== "completed" && (
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Eye className="size-3.5" />
+          <CalendarClock className="size-3.5" />
           Due {formatDate(c.dueDate)}
         </p>
       )}

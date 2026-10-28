@@ -21,6 +21,7 @@ import {
   loadEnrolments,
   loadProfile,
 } from "@/lib/learner-data";
+import { byUrgency } from "@/lib/learner-stats";
 import { loadProgramme } from "@/lib/programmes";
 import { computeBadges, computeStreak } from "@/lib/gamification";
 import { topicTheme, tint } from "@/lib/topic-theme";
@@ -101,9 +102,10 @@ export default async function LearnerDashboard() {
     { label: "In progress", value: stats.inProgress, color: "#d97706", icon: Clock, href: "/learn/modules" },
     { label: "Completed", value: stats.completed, color: "#16a34a", icon: CheckCircle2, href: "/learn/modules/completed" },
   ];
-  const myWork = data.enrolments
-    .filter((e) => e.status !== "completed")
-    .slice(0, 4);
+  const myWork = byUrgency(
+    data.enrolments.filter((e) => e.status !== "completed"),
+    now,
+  ).slice(0, 4);
 
   return (
     <DashboardShell title="Dashboard" context={context}>

@@ -46,6 +46,26 @@ export interface LearnerStats {
   overallPct: number;
 }
 
+/**
+ * A carer's outstanding courses in the order to do them: overdue first, then
+ * anything required again, then the rest by due date (soonest first), with
+ * courses already under way before ones not yet started. Overdue work used to
+ * sit wherever it was assigned, so a dashboard could open on a course with no
+ * deadline while the overdue one waited further down.
+ */
+export function byUrgency(enrolments: Enrolment[], now: Date): Enrolment[] {
+  const rank = (e: Enrolment) => {
+    if (isOverdue(e.due_date, e.status, now)) return 0;
+    if (e.status === "expired") return 1;
+    return e.status === "not_started" ? 3 : 2;
+  };
+  const due = (e: Enrolment) =>
+    e.due_date ? new Date(e.due_date).getTime() : Number.POSITIVE_INFINITY;
+  return [...enrolments].sort(
+    (a, b) => rank(a) - rank(b) || due(a) - due(b),
+  );
+}
+
 export function learnerStats(
   enrolments: Enrolment[],
   certificates: Certificate[],

@@ -1,8 +1,12 @@
 import { requireRole } from "@/lib/auth";
 import { loadEnrolments, type Enrolment } from "@/lib/learner-data";
+import { byUrgency } from "@/lib/learner-stats";
+import { isOverdue } from "@/lib/engine-logic";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ModulesTabs } from "./modules-tabs";
 import { CourseCard } from "./course-card";
+
+const nowMs = () => Date.now();
 
 function Section({ title, items }: { title: string; items: Enrolment[] }) {
   if (items.length === 0) return null;
@@ -34,16 +38,25 @@ export default async function AssignedModulesPage() {
   const context = await requireRole("learner");
   const enrolments = await loadEnrolments(context.userId);
 
-  const expired = enrolments.filter((e) => e.status === "expired");
-  const inProgress = enrolments.filter((e) => e.status === "in_progress");
-  const notStarted = enrolments.filter((e) => e.status === "not_started");
+  // Overdue gets its own section at the top, whatever its status, and every
+  // section runs soonest-due first.
+  const now = new Date(nowMs());
+  const outstanding = byUrgency(
+    enrolments.filter((e) => e.status !== "completed"),
+    now,
+  );
+  const overdue = outstanding.filter((e) => isOverdue(e.due_date, e.status, now));
+  const rest = outstanding.filter((e) => !overdue.includes(e));
+  const expired = rest.filter((e) => e.status === "expired");
+  const inProgress = rest.filter((e) => e.status === "in_progress");
+  const notStarted = rest.filter((e) => e.status === "not_started");
 
   return (
     <DashboardShell title="Training" context={context}>
       <div className="mx-auto max-w-5xl space-y-6">
         <ModulesTabs />
 
-        {expired.length + inProgress.length + notStarted.length === 0 && (
+        {outstanding.length === 0 && (
           <p className="rounded-2xl border bg-card p-8 text-center text-muted-foreground">
             You&apos;re all caught up 🎉 Browse the{" "}
             <a href="/learn/modules/all" className="text-primary underline">
@@ -53,6 +66,7 @@ export default async function AssignedModulesPage() {
           </p>
         )}
 
+        <Section title="Overdue" items={overdue} />
         <Section title="Required again" items={expired} />
         <Section title="In progress" items={inProgress} />
         <Section title="To do" items={notStarted} />
