@@ -7,10 +7,12 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" },
 };
 
+// Under the public site's layout since 28 Oct 2026, with its header and
+// footer: on its own it was a bare page with no way back to anything.
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto max-w-2xl flex-1 px-6 py-16">
-      <h1 className="text-3xl font-semibold tracking-tight">Privacy Policy</h1>
+    <div className="mx-auto w-full max-w-2xl flex-1 px-6 pb-8 pt-12 sm:pt-16">
+      <h1 className="font-display text-4xl font-semibold tracking-tight text-[#0f2f3c]">Privacy Policy</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         How My Care Academy handles your personal data under UK GDPR.
       </p>
@@ -81,6 +83,6 @@ export default function PrivacyPage() {
           </p>
         </section>
       </div>
-    </main>
+    </div>
   );
 }
