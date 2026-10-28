@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
@@ -41,14 +42,18 @@ export default async function RecruitmentPage() {
   return (
     <DashboardShell title="Recruitment" context={context}>
       <div className="mx-auto max-w-6xl space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Add candidate</CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Folded away until it's wanted: open on every visit, the form sat
+            above the tracker and pushed the people you came to see below
+            the fold. Adding one opens their page, so it never needs closing. */}
+        <details className="group rounded-2xl border bg-card shadow-sm">
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-4 text-sm font-medium text-primary [&::-webkit-details-marker]:hidden">
+            <Plus className="size-4 transition-transform group-open:rotate-45" />
+            Add a candidate
+          </summary>
+          <div className="border-t px-5 pb-5 pt-4">
             <AddCandidateForm />
-          </CardContent>
-        </Card>
+          </div>
+        </details>
 
         <Card>
           <CardHeader>

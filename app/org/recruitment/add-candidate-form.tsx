@@ -6,6 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addCandidateAction } from "./actions";
 
+const selectClass =
+  "flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm";
+
+const GENDERS = ["Female", "Male", "Non-binary", "Prefer not to say"];
+
 export function AddCandidateForm() {
   const [state, formAction, pending] = useActionState(addCandidateAction, {});
 
@@ -30,7 +35,16 @@ export function AddCandidateForm() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="gender">Gender</Label>
-          <Input id="gender" name="gender" />
+          {/* A list rather than free text, so the tracker can be read and
+              filtered; older candidates keep whatever was typed. */}
+          <select id="gender" name="gender" defaultValue="" className={selectClass}>
+            <option value="">Not given</option>
+            {GENDERS.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
         </div>
         <label className="flex items-end gap-2 pb-2 text-sm">
           <input type="checkbox" name="is_driver" /> Driver
