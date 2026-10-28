@@ -13,17 +13,20 @@ export function CourseThumb({
 }) {
   const t = topicTheme(topic);
   const Icon = t.icon;
+  // A strip on a phone, the full picture from a tablet up: at full height
+  // four cards took four screens of scrolling before a carer saw the fourth
+  // course's name. The picture carries no information the card doesn't.
   return (
     <div
-      className="relative overflow-hidden rounded-xl"
+      className="relative h-14 overflow-hidden rounded-xl sm:h-[var(--thumb-h)]"
       style={{
-        height,
+        "--thumb-h": `${height}px`,
         background: `linear-gradient(135deg, ${t.color}, ${t.color}aa)`,
-      }}
+      } as React.CSSProperties}
     >
-      <Icon className="absolute -bottom-5 -right-4 size-32 text-white/15" />
+      <Icon className="absolute -bottom-5 -right-4 size-20 text-white/15 sm:size-32" />
       <div
-        className="absolute left-3 top-3 flex size-9 items-center justify-center rounded-lg bg-white shadow-sm"
+        className="absolute left-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg bg-white shadow-sm sm:top-3 sm:translate-y-0"
         style={{ color: t.color }}
       >
         <Icon className="size-5" />

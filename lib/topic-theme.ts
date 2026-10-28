@@ -17,7 +17,10 @@ export interface TopicTheme {
 
 const THEMES: Record<string, TopicTheme> = {
   "Care Fundamentals": { color: "#0d9488", icon: Heart },
-  Safeguarding: { color: "#e11d48", icon: Shield },
+  // Indigo, not the red it was: a red card header on Whistleblowing or
+  // Safeguarding Adults read as an error before anyone read the words, and
+  // the same red marks Overdue (design review, 28 Oct 2026).
+  Safeguarding: { color: "#4f46e5", icon: Shield },
   "Health & Safety": { color: "#d97706", icon: HardHat },
   "Infection & Clinical": { color: "#7c3aed", icon: Droplets },
   "Governance & Records": { color: "#0284c7", icon: FileText },
