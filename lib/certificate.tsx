@@ -161,13 +161,19 @@ export interface TrainingRecordRow {
   status: string; // Valid | Expired
 }
 
+// The certificates' look carried onto the record (28 Oct 2026): logo, the
+// teal rule, a status you can scan, and where to check any number on it.
 const recStyles = StyleSheet.create({
-  page: { padding: 40, fontSize: 10, color: "#111827", fontFamily: "Helvetica" },
-  brand: { fontSize: 12, letterSpacing: 2, color: "#0f8178" },
-  h1: { fontSize: 20, fontFamily: "Helvetica-Bold", marginTop: 6 },
-  sub: { color: "#6b7280", marginBottom: 16 },
-  row: { flexDirection: "row", borderBottom: "1 solid #e5e7eb", paddingVertical: 6 },
-  head: { flexDirection: "row", borderBottom: "1.5 solid #111827", paddingBottom: 6, fontFamily: "Helvetica-Bold" },
+  page: { padding: 40, paddingBottom: 56, fontSize: 10, color: DEEP, fontFamily: "Helvetica" },
+  top: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", borderBottom: `2 solid ${TEAL}`, paddingBottom: 10, marginBottom: 14 },
+  logo: { width: 150 },
+  h1: { fontSize: 20, fontFamily: "Helvetica-Bold", color: DEEP },
+  sub: { color: MUTED, marginTop: 3, marginBottom: 16 },
+  row: { flexDirection: "row", borderBottom: "1 solid #dcebe8", paddingVertical: 6 },
+  head: { flexDirection: "row", borderBottom: `1.5 solid ${DEEP}`, paddingBottom: 6, fontFamily: "Helvetica-Bold" },
+  valid: { color: "#15803d", fontFamily: "Helvetica-Bold" },
+  expired: { color: "#be123c", fontFamily: "Helvetica-Bold" },
+  footer: { position: "absolute", bottom: 24, left: 40, right: 40, fontSize: 8.5, color: MUTED, textAlign: "center" },
   cCourse: { width: "40%" },
   cNum: { width: "22%" },
   cDate: { width: "14%" },
@@ -192,9 +198,15 @@ function TrainingRecordDoc({
   return (
     <Document>
       <Page size="A4" style={recStyles.page}>
-        <Text style={recStyles.brand}>MY CARE ACADEMY</Text>
+        <View style={recStyles.top}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text -- a PDF image has no alt */}
+          <Image src={CERTIFICATE_LOGO} style={recStyles.logo} />
+          <Text style={{ color: MUTED }}>Generated {fmtD(generatedAt)}</Text>
+        </View>
         <Text style={recStyles.h1}>Training record — {learnerName}</Text>
-        <Text style={recStyles.sub}>Generated {fmtD(generatedAt)}</Text>
+        <Text style={recStyles.sub}>
+          {rows.length} {rows.length === 1 ? "certificate" : "certificates"}
+        </Text>
 
         <View style={recStyles.head}>
           <Text style={recStyles.cCourse}>Course</Text>
@@ -209,14 +221,19 @@ function TrainingRecordDoc({
             <Text style={recStyles.cNum}>{r.certificateNumber}</Text>
             <Text style={recStyles.cDate}>{fmtD(r.issuedAt)}</Text>
             <Text style={recStyles.cDate}>{fmtD(r.expiresAt)}</Text>
-            <Text style={recStyles.cStatus}>{r.status}</Text>
+            <Text style={[recStyles.cStatus, r.status === "Expired" ? recStyles.expired : recStyles.valid]}>
+              {r.status}
+            </Text>
           </View>
         ))}
         {rows.length === 0 && (
-          <Text style={{ marginTop: 12, color: "#6b7280" }}>
+          <Text style={{ marginTop: 12, color: MUTED }}>
             No certificates yet.
           </Text>
         )}
+        <Text style={recStyles.footer} fixed>
+          Any certificate number above can be checked at {VERIFY_AT}
+        </Text>
       </Page>
     </Document>
   );
