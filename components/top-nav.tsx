@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { IntentLink } from "@/components/intent-link";
 import { BrandMark } from "@/components/brand-mark";
+import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
 import { withoutGated, type FeatureKey } from "@/lib/features";
@@ -270,11 +271,21 @@ export function TopNav({
   return (
     <div ref={ref} data-print="hide" className="sticky top-0 z-30 bg-sidebar text-sidebar-foreground">
       <div className="flex h-14 items-center gap-3 px-3 sm:px-4">
+        {/* Our logo in white straight on the bar; in a white box it looked
+            pasted on. An organisation's uploaded logo keeps the box — its
+            colours are unknown and may not show on the dark bar. */}
         <IntentLink
           href={role ? (items[0]?.href ?? "/") : "/"}
-          className="inline-flex shrink-0 rounded-lg bg-white px-2.5 py-1.5 shadow-sm"
+          className={cn(
+            "inline-flex shrink-0 rounded-lg",
+            brandLogo ? "bg-white px-2.5 py-1.5 shadow-sm" : "px-1 py-1",
+          )}
         >
-          <BrandMark logoUrl={brandLogo} orgName={brandName} width={112} />
+          {brandLogo ? (
+            <BrandMark logoUrl={brandLogo} orgName={brandName} width={112} />
+          ) : (
+            <Logo width={128} className="brightness-0 invert" />
+          )}
         </IntentLink>
 
         {/* Wide screens: the menu itself */}
