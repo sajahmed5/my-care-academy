@@ -82,15 +82,22 @@ export function StatTile({
    *  percentage, so a rate can't be misread as a headcount (issue #21). */
   hint?: string;
 }) {
+  // A tile that reads zero steps back — grey icon, softer number — so the
+  // eye goes to the ones with something in them.
+  const quiet = value === 0 || value === "0%";
   const inner = (
     <>
       <div
         className="flex size-10 items-center justify-center rounded-xl"
-        style={{ backgroundColor: tint(color), color }}
+        style={
+          quiet
+            ? { backgroundColor: "var(--muted)", color: "var(--muted-foreground)" }
+            : { backgroundColor: tint(color), color }
+        }
       >
         <Icon className="size-5" />
       </div>
-      <p className="mt-3 text-3xl font-semibold tracking-tight">{value}</p>
+      <p className={`mt-3 text-3xl font-semibold tracking-tight${quiet ? " text-muted-foreground" : ""}`}>{value}</p>
       <p className="text-sm text-muted-foreground">{label}</p>
       {hint && <p className="text-xs text-muted-foreground/80">{hint}</p>}
     </>

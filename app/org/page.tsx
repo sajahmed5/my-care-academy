@@ -145,73 +145,66 @@ export default async function OrgDashboard() {
       title={organisation?.name ?? "Organisation console"}
       context={context}
     >
-      <div className="mx-auto max-w-6xl space-y-6">
-        <p className="text-sm text-muted-foreground">
-          {organisation?.name} ·{" "}
-          {tierLabel(organisation?.package_tier ?? "core")}
-        </p>
-
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Learners
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatTile label="Active learners" value={activeLearners} icon={Users} color="#0284c7" href="/org/learners?filter=signed_in#learners" />
-            <StatTile label="Not signed in for a month" value={inactive} icon={MoonStar} color="#8b5cf6" href="/org/learners?filter=inactive#learners" />
-            <StatTile label="Never signed in" value={neverActive} icon={UserRoundX} color="#e11d48" href="/org/learners?filter=never#learners" />
-            <StatTile label="In progress" value={inProgress} icon={Clock} color="#f59e0b" href="/org/learners?filter=in_progress#learners" />
-            <StatTile label="With overdue" value={withOverdue} icon={AlertTriangle} color="#e11d48" href="/org/learners?filter=overdue#learners" />
+      {/* What needs doing comes first (design review, 28 Oct 2026): it was a
+          single line under eleven equal tiles, so "2 overdue" weighed the same
+          as "0 completed late" and the one thing to act on sat at the bottom.
+          Tiles that read zero now step back (StatTile dims them). */}
+      <div className="mx-auto max-w-6xl space-y-8">
+        <section className="space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold tracking-tight">
+              {reminders.length === 0 ? "All on track" : "Needs your attention"}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {tierLabel(organisation?.package_tier ?? "core")} plan
+            </p>
           </div>
+          {reminders.length === 0 ? (
+            <p className="rounded-2xl border bg-card px-5 py-6 text-sm text-muted-foreground">
+              Nothing needs your attention — everyone&apos;s on track ✓
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {reminders.map((r) => (
+                <li
+                  key={r.key}
+                  className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-l-4 bg-card px-5 py-4 shadow-sm ${
+                    r.tone === "alert" ? "border-l-rose-500" : "border-l-amber-500"
+                  }`}
+                >
+                  <Link href={r.href} className="min-w-0 flex-1 text-sm font-medium hover:underline">
+                    {r.text}
+                  </Link>
+                  {r.action}
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
-        <section className="space-y-2">
+        <section className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Courses
+            Training
           </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <StatTile label="Assigned training complete" value={`${overallPct}%`} icon={CheckCircle2} color="#10b981" hint={`${totals.completed} of ${totals.assigned} courses`} href="/org/courses" />
+            <StatTile label="Overdue courses" value={totals.overdue} icon={BadgeAlert} color="#ef4444" href="/org/learners/statistics?status=overdue" />
             <StatTile label="In progress" value={`${pct(totals.inProgress)}%`} icon={Clock} color="#f59e0b" hint={`${totals.inProgress} of ${totals.assigned} courses`} href="/org/learners/statistics?status=in_progress" />
             <StatTile label="Not started" value={`${pct(totals.notStarted)}%`} icon={CircleDashed} color="#64748b" hint={`${totals.notStarted} of ${totals.assigned} courses`} href="/org/learners/statistics?status=not_started" />
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <StatTile label="Overdue" value={totals.overdue} icon={BadgeAlert} color="#ef4444" href="/org/learners/statistics?status=overdue" />
-            <StatTile label="Completed" value={totals.completed} icon={BookOpenCheck} color="#16a34a" href="/org/learners/statistics?status=completed" />
             <StatTile label="Completed late" value={totals.late} icon={CalendarClock} color="#f97316" href="/org/learners/statistics?status=late" />
           </div>
         </section>
 
-        <section className="space-y-2">
+        <section className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Notifications &amp; reminders
+            Staff
           </h2>
-          <div className="rounded-2xl border bg-card">
-            {reminders.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-muted-foreground">
-                Nothing needs your attention — everyone&apos;s on track ✓
-              </p>
-            ) : (
-              <ul className="divide-y">
-                {reminders.map((r) => (
-                  <li
-                    key={r.key}
-                    className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-                  >
-                    <span className="flex min-w-0 items-center gap-2 text-sm">
-                      <span
-                        aria-hidden
-                        className={`size-2 shrink-0 rounded-full ${
-                          r.tone === "alert" ? "bg-rose-500" : "bg-amber-500"
-                        }`}
-                      />
-                      <Link href={r.href} className="min-w-0 hover:underline">
-                        {r.text}
-                      </Link>
-                    </span>
-                    {r.action}
-                  </li>
-                ))}
-              </ul>
-            )}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <StatTile label="Active learners" value={activeLearners} icon={Users} color="#0284c7" href="/org/learners?filter=signed_in#learners" />
+            <StatTile label="With overdue training" value={withOverdue} icon={AlertTriangle} color="#e11d48" href="/org/learners?filter=overdue#learners" />
+            <StatTile label="Learning now" value={inProgress} icon={BookOpenCheck} color="#f59e0b" href="/org/learners?filter=in_progress#learners" />
+            <StatTile label="Not signed in for a month" value={inactive} icon={MoonStar} color="#8b5cf6" href="/org/learners?filter=inactive#learners" />
+            <StatTile label="Never signed in" value={neverActive} icon={UserRoundX} color="#e11d48" href="/org/learners?filter=never#learners" />
           </div>
         </section>
       </div>
