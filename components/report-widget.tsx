@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { MessageSquareWarning, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,9 @@ const textareaClass =
   "flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
 
 type Phase = "form" | "sent";
+
+/** Fired by the phone menu's "Report a problem" item to open the widget. */
+export const OPEN_REPORT_EVENT = "report-widget:open";
 
 /**
  * Always-visible "Report an issue" button for every signed-in console. Opens a
@@ -78,6 +81,13 @@ export function ReportWidget() {
     if (include && !shot) void capture();
   }
 
+  // The phone menu has no handle on this component's state; it asks by event.
+  useEffect(() => {
+    const onOpen = () => openWidget();
+    window.addEventListener(OPEN_REPORT_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_REPORT_EVENT, onOpen);
+  });
+
   function reset() {
     setPhase("form");
     setSummary("");
@@ -125,12 +135,15 @@ export function ReportWidget() {
 
   return (
     <div ref={rootRef} data-print="hide">
-      {/* Floating trigger — every role, every console page. */}
+      {/* Every role, every console page. Floating from a tablet up; on a
+          phone it sat over course cards' Assessment buttons and a lesson's
+          Next, so there it waits at the foot of the page (and in the menu). */}
       {!open && (
+        <div className="flex justify-center px-4 pb-6 sm:contents">
         <button
           type="button"
           onClick={openWidget}
-          className="fixed bottom-4 right-4 z-50 inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-lg transition-colors hover:bg-accent"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full border bg-card px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent sm:fixed sm:bottom-4 sm:right-4 sm:z-50 sm:shadow-lg"
           aria-label="Report a problem with the site"
         >
           <MessageSquareWarning className="size-4 text-amber-600" />
@@ -139,6 +152,7 @@ export function ReportWidget() {
               into it as four reports (issues #42–#45). */}
           <span>Report a problem</span>
         </button>
+        </div>
       )}
 
       {open && (

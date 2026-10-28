@@ -127,9 +127,10 @@ export async function DashboardShell({
         <h1 className="truncate text-lg font-semibold tracking-tight">{title}</h1>
       </div>
 
-      {/* Bottom padding keeps the floating Report button clear of the last
-          thing on the page — e.g. a course's Next button. */}
-      <main className="min-w-0 flex-1 px-4 pt-6 pb-24 sm:px-6 sm:pt-8">{children}</main>
+      {/* From a tablet up, bottom padding keeps the floating Report button
+          clear of the last thing on the page — e.g. a course's Next button.
+          On a phone the button follows the page instead of floating. */}
+      <main className="min-w-0 flex-1 px-4 pt-6 pb-8 sm:px-6 sm:pt-8 sm:pb-24">{children}</main>
 
       {/* Always-visible "Report an issue" widget — every role, every page. */}
       <ReportWidget />

@@ -8,6 +8,7 @@ import { BrandMark } from "@/components/brand-mark";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
 import { withoutGated, type FeatureKey } from "@/lib/features";
+import { OPEN_REPORT_EVENT } from "@/components/report-widget";
 
 interface MenuLink {
   href: string;
@@ -430,6 +431,16 @@ export function TopNav({
             {person.map((l) => (
               <MobileLink key={l.href} href={l.href} label={l.label} active={isActive(pathname, l.href)} />
             ))}
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(null);
+                window.dispatchEvent(new Event(OPEN_REPORT_EVENT));
+              }}
+              className="flex min-h-11 w-full items-center rounded-lg px-3 text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent/60"
+            >
+              Report a problem
+            </button>
             <form action="/auth/signout" method="post">
               <button type="submit" className="flex min-h-11 w-full items-center rounded-lg px-3 text-sm font-medium text-rose-300">
                 Sign out
