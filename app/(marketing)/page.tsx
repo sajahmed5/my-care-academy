@@ -147,8 +147,11 @@ export default function Home() {
             <p className="mca-hand mt-5 inline-block -rotate-2">↳ no per-carer fees. Ever.</p>
           </div>
 
-          <div className="relative mx-3 mb-6 lg:mx-0">
-            <div className="lg:[transform:perspective(1600px)_rotateY(-7deg)]">
+          {/* On a phone the screenshot shrank to something no one could read,
+              so there it is left out and the two cards it frames stand on
+              their own, one under the other (design review, 28 Oct 2026). */}
+          <div className="relative mx-3 mb-6 max-sm:mx-0 max-sm:mb-0 max-sm:space-y-3 lg:mx-0">
+            <div className="max-sm:hidden lg:[transform:perspective(1600px)_rotateY(-7deg)]">
               <Monitor label="Learners · compliance at a glance">
                 <Shot
                   src="/training/learners-overview.jpg"
@@ -156,14 +159,14 @@ export default function Home() {
                 />
               </Monitor>
             </div>
-            <div className="mca-float absolute -left-3 -top-5 flex max-w-[15rem] items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-xl shadow-[#0f2f3c]/15 ring-1 ring-[#134f63]/10 sm:-left-7 sm:top-[18%]">
+            <div className="mca-float absolute -left-3 -top-5 flex max-w-[15rem] items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-xl shadow-[#0f2f3c]/15 ring-1 ring-[#134f63]/10 max-sm:static max-sm:max-w-none sm:-left-7 sm:top-[18%]">
               <span className="size-2.5 shrink-0 rounded-full bg-[#c2413a] ring-4 ring-[#c2413a]/15" />
               <span>
                 <span className="block text-[13px] font-semibold">2 carers have training overdue</span>
                 <span className="block text-xs text-[#0f2f3c]/60">One reminder each, sent this morning</span>
               </span>
             </div>
-            <div className="mca-float mca-float-late mca-cert absolute -right-2 hidden w-56 rounded-2xl p-4 shadow-xl shadow-[#0f2f3c]/15 ring-1 ring-[#b7791f]/20 sm:block sm:-right-5 sm:bottom-10 sm:w-64 border-t-4 border-[#b7791f]">
+            <div className="mca-float mca-float-late mca-cert absolute -right-2 w-56 rounded-2xl p-4 shadow-xl shadow-[#0f2f3c]/15 ring-1 ring-[#b7791f]/20 max-sm:static max-sm:w-full sm:-right-5 sm:bottom-10 sm:w-64 border-t-4 border-[#b7791f]">
               <div className="flex items-center justify-between">
                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">✓ Verified certificate</span>
                 <ShieldCheck className="size-4 text-[#134f63]" />

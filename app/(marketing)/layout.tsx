@@ -4,6 +4,7 @@ import { Logo } from "@/components/logo";
 import { OrganisationLd } from "@/components/structured-data";
 import { caveat, outfit } from "@/lib/fonts";
 import { VERSION_LABEL } from "@/lib/version";
+import { MobileMenu } from "./mobile-menu";
 import "./marketing.css";
 
 // Training only (Saj, 7 Oct 2026) — rostering is a separate product on its
@@ -23,9 +24,10 @@ export default function MarketingLayout({
       <OrganisationLd />
       {/* White pill bar floating over each page's gradient opener. */}
       <header className="sticky top-0 z-40 px-4 pt-4">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 rounded-full bg-white/95 px-5 py-2.5 shadow-lg shadow-[#134f63]/10 ring-1 ring-[#134f63]/8 backdrop-blur sm:px-6">
+        {/* relative: the phone menu's panel hangs from the bottom of the pill. */}
+        <div className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-4 rounded-full bg-white/95 py-2.5 pl-4 pr-2 shadow-lg shadow-[#134f63]/10 ring-1 ring-[#134f63]/8 backdrop-blur sm:px-6">
           <Link href="/" aria-label="My Care Academy home" className="shrink-0">
-            <Logo width={140} eager />
+            <Logo width={140} eager className="max-sm:h-auto max-sm:w-[118px]" />
           </Link>
           <nav className="flex items-center gap-1 sm:gap-2">
             {NAV.map((item) => (
@@ -47,25 +49,13 @@ export default function MarketingLayout({
             </Link>
             <Link
               href="/contact?topic=demo"
-              className="inline-flex items-center gap-2 rounded-full bg-[#134f63] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1d6f8a]"
+              className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-[#134f63] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1d6f8a]"
             >
               Book a demo <ArrowRight className="size-4 max-[380px]:hidden" />
             </Link>
+            <MobileMenu links={[...NAV, { href: "/login", label: "Sign in" }]} />
           </nav>
         </div>
-        {/* On a phone the links don't fit in the pill beside the logo and the
-            demo button — they pushed the whole page sideways — so they sit
-            in a row underneath instead. */}
-        <nav aria-label="Products" className="mx-auto mt-2 flex w-fit gap-1 rounded-full bg-white/90 p-1 text-sm font-medium shadow-md shadow-[#134f63]/10 ring-1 ring-[#134f63]/8 backdrop-blur sm:hidden">
-          {NAV.filter((item) => !item.hideOnMobile).map((item) => (
-            <Link key={item.href} href={item.href} className="whitespace-nowrap rounded-full px-3 py-1.5 text-[#0f2f3c]/80 hover:bg-[#134f63]/6">
-              {item.label}
-            </Link>
-          ))}
-          <Link href="/login" className="whitespace-nowrap rounded-full px-3 py-1.5 text-[#0f2f3c]/80 hover:bg-[#134f63]/6">
-            Sign in
-          </Link>
-        </nav>
       </header>
 
       <main className="flex flex-1 flex-col">{children}</main>
