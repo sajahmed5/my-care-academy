@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Check, X } from "lucide-react";
+import { Check, ClipboardCheck, Clock, X } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Confetti } from "@/components/confetti";
-import { PASS_PERCENT, type PublicQuestion } from "@/lib/quiz";
+import { PASS_PERCENT, QUIZ_TARGET, type PublicQuestion } from "@/lib/quiz";
 import {
   startQuizAction,
   submitQuizAction,
@@ -113,18 +113,45 @@ export function QuizRunner({
 
   if (phase === "intro") {
     return (
-      <div className="mx-auto max-w-2xl space-y-6">
-        <h2 className="text-2xl font-semibold">Assessment</h2>
-        <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-          <li>Questions are chosen at random from the course question bank.</li>
-          <li>A mix of question types — multiple choice, select-all, true/false, fill the gap and click-the-image.</li>
-          <li>You need {PASS_PERCENT}% to pass.</li>
-          <li>
-            <strong>You must finish in one sitting</strong> — you can&apos;t leave
-            and resume a part-done assessment.
-          </li>
-          <li>Unlimited retakes if you don&apos;t pass.</li>
-        </ul>
+      // The facts a carer needs before pressing Start, as facts rather than a
+      // grey bullet list — and the one that costs them (leaving part way
+      // means starting again) where it can't be missed (design review,
+      // 28 Oct 2026).
+      <div className="mx-auto max-w-2xl space-y-6 rounded-3xl border bg-card p-6 shadow-sm sm:p-8">
+        <div className="flex items-center gap-3">
+          <span className="flex size-11 items-center justify-center rounded-2xl bg-accent text-primary">
+            <ClipboardCheck className="size-6" />
+          </span>
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight">Ready for the assessment?</h2>
+            <p className="text-sm text-muted-foreground">{courseTitle}</p>
+          </div>
+        </div>
+        <dl className="grid grid-cols-3 gap-3 text-center">
+          <div className="rounded-2xl bg-muted/60 px-2 py-3">
+            <dt className="text-xs text-muted-foreground">Questions</dt>
+            <dd className="whitespace-nowrap text-lg font-semibold sm:text-xl">Up to {QUIZ_TARGET}</dd>
+          </div>
+          <div className="rounded-2xl bg-muted/60 px-2 py-3">
+            <dt className="text-xs text-muted-foreground">To pass</dt>
+            <dd className="whitespace-nowrap text-lg font-semibold sm:text-xl">{PASS_PERCENT}%</dd>
+          </div>
+          <div className="rounded-2xl bg-muted/60 px-2 py-3">
+            <dt className="text-xs text-muted-foreground">Retakes</dt>
+            <dd className="whitespace-nowrap text-lg font-semibold sm:text-xl">Unlimited</dd>
+          </div>
+        </dl>
+        <p className="flex gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <Clock className="mt-0.5 size-4 shrink-0" />
+          <span>
+            <strong>Finish it in one sitting.</strong> If you leave part way
+            through, you can&apos;t pick it up again — you start a new one.
+          </span>
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Questions are picked at random from the course: multiple choice,
+          select-all, true or false, fill the gap and click-the-picture.
+        </p>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <div className="flex flex-wrap items-center gap-3">
           <Button onClick={start} disabled={busy}>
@@ -261,7 +288,7 @@ function QuestionInput({
       return (
         <div className="space-y-2">
           {q.options.map((opt, oi) => (
-            <label key={oi} className="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-2.5 text-sm hover:bg-muted">
+            <label key={oi} className="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors hover:bg-muted has-[:checked]:border-primary has-[:checked]:bg-accent has-[:checked]:font-medium">
               <input type="radio" name={q.id} checked={value === oi} onChange={() => onChange(oi)} />
               {opt}
             </label>
@@ -276,7 +303,7 @@ function QuestionInput({
       return (
         <div className="space-y-2">
           {q.options.map((opt, oi) => (
-            <label key={oi} className="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-2.5 text-sm hover:bg-muted">
+            <label key={oi} className="flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors hover:bg-muted has-[:checked]:border-primary has-[:checked]:bg-accent has-[:checked]:font-medium">
               <input type="checkbox" checked={arr.includes(oi)} onChange={() => toggle(oi)} />
               {opt}
             </label>
