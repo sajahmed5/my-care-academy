@@ -238,8 +238,11 @@ export function H5PCoursePlayer({
           librariesPath: "/h5p/libraries",
           frameJs: "/h5p/assets/frame.bundle.js",
           frameCss: "/h5p/assets/styles/h5p.css",
-          // The site's teal on buttons, gaps and picked answers, not H5P's blue.
-          customCss: "/h5p/assets/styles/mca-theme.css",
+          // The site's teal on buttons, gaps and picked answers, not H5P's
+          // blue, and room on reading pages. /h5p/assets is cached for a
+          // week, so bump ?v= whenever mca-theme.css changes or carers keep
+          // the old one.
+          customCss: "/h5p/assets/styles/mca-theme.css?v=2",
         });
         if (!disposed) {
           setLoading(false);
@@ -575,8 +578,10 @@ export function H5PCoursePlayer({
         </div>
       )}
 
-      {/* h5p-standalone mounts the current page here. */}
-      <div ref={containerRef} className="h5p-mount" />
+      {/* h5p-standalone mounts the current page here — in a card, like the
+          rest of the app, rather than loose on the page (the room inside it
+          comes from mca-theme.css). */}
+      <div ref={containerRef} className="h5p-mount overflow-hidden rounded-2xl border bg-card shadow-sm" />
 
       {/* Answer-required hint */}
       {gated && !loading && (

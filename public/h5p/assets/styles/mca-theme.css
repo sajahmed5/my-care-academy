@@ -58,3 +58,39 @@
 .h5p-multichoice .h5p-answer[aria-checked="true"]:not(.h5p-wrong):not(.h5p-correct):not([aria-disabled="true"]):hover .h5p-alternative-container {
   background-color: #eef7f5;
 }
+
+/*
+ * Reading pages. The lesson sat edge to edge on a white block with no
+ * margin, so long pages read as a wall (design review, 28 Oct 2026). The
+ * page now sits in a card (h5p-course-player) and gets room inside it,
+ * calmer line spacing and the site's text colours.
+ */
+.h5p-no-frame > .h5p-column {
+  padding: 0.75em 1.6em 1.4em;
+}
+@media (max-width: 480px) {
+  .h5p-no-frame > .h5p-column {
+    padding: 0.5em 1.05em 1.1em;
+  }
+}
+.h5p-advanced-text {
+  color: #1f3a3d;
+  line-height: 1.7;
+}
+.h5p-advanced-text h2,
+.h5p-advanced-text h3,
+.h5p-advanced-text h4 {
+  color: #0f2a2e;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.h5p-advanced-text li + li {
+  margin-top: 0.35em;
+}
+.h5p-advanced-text strong {
+  color: #0f2a2e;
+}
+/* Photos with rounded corners, like every other picture on the site. */
+.h5p-column-content.h5p-image img {
+  border-radius: 0.9em;
+}
