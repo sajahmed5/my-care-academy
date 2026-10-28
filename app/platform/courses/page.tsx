@@ -29,9 +29,6 @@ export default async function CoursesAdminPage() {
   return (
     <DashboardShell title="Courses & question banks" context={context}>
       <div className="mx-auto max-w-6xl space-y-6">
-        <Link href="/platform" className="text-sm text-muted-foreground hover:underline">
-          ← Back to console
-        </Link>
         <Card>
           <CardHeader>
             <CardTitle>Course catalogue</CardTitle>

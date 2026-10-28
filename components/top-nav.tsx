@@ -17,6 +17,8 @@ interface MenuLink {
   feature?: FeatureKey;
   /** Highlight only on this exact path — an "Overview" that shares its root. */
   exact?: boolean;
+  /** Other paths that light this link up, e.g. a carer's file under Overview. */
+  also?: string[];
 }
 
 interface MenuItem {
@@ -42,7 +44,9 @@ const ORG_MENU: MenuItem[] = [
     label: "Learners",
     also: ["/org/staff"],
     children: [
-      { href: "/org/learners", label: "Overview", exact: true },
+      // A carer's file is reached from this list, so it lights up here too —
+      // on the file, nothing in the row under the bar said where you were.
+      { href: "/org/learners", label: "Overview", exact: true, also: ["/org/staff"] },
       { href: "/org/learners/statistics", label: "Every assignment" },
       { href: "/org/learners/admin", label: "Add & invite staff" },
     ],
@@ -142,9 +146,14 @@ function isActive(pathname: string, href: string, exact = false): boolean {
   return pathname.startsWith(href + "/");
 }
 
+function linkActive(pathname: string, link: MenuLink): boolean {
+  if (isActive(pathname, link.href, link.exact)) return true;
+  return (link.also ?? []).some((p) => pathname === p || pathname.startsWith(p + "/"));
+}
+
 function itemActive(pathname: string, item: MenuItem): boolean {
   if (item.href && isActive(pathname, item.href)) return true;
-  if (item.children?.some((c) => isActive(pathname, c.href, c.exact))) return true;
+  if (item.children?.some((c) => linkActive(pathname, c))) return true;
   return (item.also ?? []).some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
@@ -190,7 +199,7 @@ const panelClass =
   "absolute top-full z-40 mt-1 min-w-52 rounded-lg border bg-card p-1 text-card-foreground shadow-lg";
 
 function PanelLink({ link, pathname }: { link: MenuLink; pathname: string }) {
-  const active = isActive(pathname, link.href, link.exact);
+  const active = linkActive(pathname, link);
   return (
     <IntentLink
       href={link.href}
@@ -381,7 +390,7 @@ export function TopNav({
         >
           <div ref={subRef} className="flex min-w-0 gap-1 overflow-x-auto px-3 sm:px-4">
             {current.children.map((c) => {
-              const active = isActive(pathname, c.href, c.exact);
+              const active = linkActive(pathname, c);
               return (
                 <IntentLink
                   key={c.href}
@@ -420,7 +429,7 @@ export function TopNav({
                   {item.label}
                 </p>
                 {(item.children ?? []).map((c) => (
-                  <MobileLink key={c.href} href={c.href} label={c.label} active={isActive(pathname, c.href, c.exact)} />
+                  <MobileLink key={c.href} href={c.href} label={c.label} active={linkActive(pathname, c)} />
                 ))}
               </div>
             ),

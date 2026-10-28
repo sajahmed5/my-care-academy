@@ -161,7 +161,7 @@ export function CourseEnrolmentsTable({
                         {r.certificateId ? (
                           <a
                             href={`/org/certificates/${r.certificateId}/download`}
-                            className="font-medium hover:underline"
+                            className="font-medium text-primary hover:underline"
                             title={`Download ${r.learner}'s certificate`}
                           >
                             {r.course}
@@ -174,7 +174,7 @@ export function CourseEnrolmentsTable({
                     <td className="px-3 py-2">
                       <Link
                         href={`/org/staff/${r.userId}`}
-                        className="font-medium hover:underline"
+                        className="font-medium text-primary hover:underline"
                       >
                         {r.learner}
                       </Link>

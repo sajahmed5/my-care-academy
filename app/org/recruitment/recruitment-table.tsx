@@ -141,7 +141,7 @@ export function RecruitmentTable({ candidates }: { candidates: CandidateRow[] })
                     <td className="sticky left-0 bg-background py-2 pr-4">
                       <Link
                         href={`/org/recruitment/${c.id}`}
-                        className="font-medium hover:underline"
+                        className="font-medium text-primary hover:underline"
                       >
                         {c.full_name}
                       </Link>

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
@@ -42,10 +41,6 @@ export default async function RecruitmentPage() {
   return (
     <DashboardShell title="Recruitment" context={context}>
       <div className="mx-auto max-w-6xl space-y-6">
-        <Link href="/org" className="text-sm text-muted-foreground hover:underline">
-          ← Back to console
-        </Link>
-
         <Card>
           <CardHeader>
             <CardTitle>Add candidate</CardTitle>

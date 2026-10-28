@@ -173,7 +173,7 @@ export function CertificatesTable({
                     <td className="px-3 py-2">
                       <Link
                         href={`/org/staff/${r.userId}`}
-                        className="font-medium hover:underline"
+                        className="font-medium text-primary hover:underline"
                       >
                         {r.learner}
                       </Link>

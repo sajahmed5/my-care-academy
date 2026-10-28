@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { tierLabel } from "@/lib/organisations";
@@ -24,9 +23,6 @@ export default async function PlatformBillingPage() {
   return (
     <DashboardShell title="Billing" context={context}>
       <div className="mx-auto max-w-6xl space-y-6">
-        <Link href="/platform" className="text-sm text-muted-foreground hover:underline">
-          ← Back to console
-        </Link>
         <Card>
           <CardHeader>
             <CardTitle>Subscriptions</CardTitle>

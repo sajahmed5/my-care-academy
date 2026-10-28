@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -39,10 +38,6 @@ export default async function SettingsPage() {
   return (
     <DashboardShell title="Automation settings" context={context}>
       <div className="mx-auto max-w-6xl space-y-6">
-        <Link href="/platform" className="text-sm text-muted-foreground hover:underline">
-          ← Back to console
-        </Link>
-
         <Card>
           <CardHeader>
             <CardTitle>Reminders &amp; renewals</CardTitle>

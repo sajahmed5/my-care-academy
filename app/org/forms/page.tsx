@@ -57,10 +57,7 @@ export default async function OrgFormsPage() {
   return (
     <DashboardShell title="Forms" context={context}>
       <div className="mx-auto max-w-6xl space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Link href="/org" className="text-sm text-muted-foreground hover:underline">
-            ← Back to console
-          </Link>
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Link href="/org/forms/own" className="text-sm text-primary hover:underline">
             Your own forms →
           </Link>

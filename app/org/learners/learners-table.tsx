@@ -273,7 +273,7 @@ export function LearnersTable({
               <li key={r.id} className={`rounded-2xl border bg-card p-4 ${gone ? "opacity-60" : ""}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <Link href={`/org/staff/${r.id}`} className="block truncate font-medium hover:underline">
+                    <Link href={`/org/staff/${r.id}`} className="block truncate font-medium text-primary hover:underline">
                       {r.name}
                     </Link>
                     <p className="truncate text-xs text-muted-foreground">{r.email}</p>
@@ -338,7 +338,7 @@ export function LearnersTable({
                     <td className="px-3 py-2">
                       <Link
                         href={`/org/staff/${r.id}`}
-                        className="font-medium hover:underline"
+                        className="font-medium text-primary hover:underline"
                       >
                         {r.name}
                       </Link>

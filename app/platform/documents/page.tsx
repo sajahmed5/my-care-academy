@@ -81,10 +81,6 @@ export default async function PlatformDocumentsPage({
   return (
     <DashboardShell title="Document library" context={context}>
       <div className="mx-auto max-w-6xl space-y-6">
-        <Link href="/platform" className="text-sm text-muted-foreground hover:underline">
-          ← Back to console
-        </Link>
-
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatTile
             label="All"

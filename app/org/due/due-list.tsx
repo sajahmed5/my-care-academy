@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DUE_GROUP_LABEL, DUE_ORDER, type DueRow, type DueRowStatus } from "@/lib/due-view";
 import { formatDate } from "@/lib/dates";
@@ -54,12 +55,14 @@ export function DueList({ rows, section, noun }: { rows: DueRow[]; section: stri
                     href={`/org/staff/${r.person.id}?section=${section}`}
                     className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm hover:bg-muted/50"
                   >
-                    <span className="font-medium">{r.person.name}</span>
+                    <span className="font-medium text-primary">{r.person.name}</span>
                     <span className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       <span>Last {noun}: {fmt(r.last)}</span>
                       <span className={`rounded-full px-2 py-0.5 font-medium ${CHIP[r.status]}`}>
                         {r.status === "never" ? "None on file" : r.next ? `Next ${fmt(r.next)}` : "No date set"}
                       </span>
+                      {/* The whole row opens the carer's file; say so. */}
+                      <ChevronRight className="size-4" aria-hidden />
                     </span>
                   </Link>
                 ))}

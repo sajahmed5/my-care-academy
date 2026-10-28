@@ -72,10 +72,6 @@ export default async function PoliciesPage({
   return (
     <DashboardShell title="Policies" context={context}>
       <div className="mx-auto max-w-6xl space-y-6">
-        <Link href="/org" className="text-sm text-muted-foreground hover:underline">
-          ← Back to console
-        </Link>
-
         <p className="text-sm text-muted-foreground">
           Templates for {org?.name ?? "your organisation"}, with your name already
           in them. Adopt a policy, complete the highlighted parts with what your
