@@ -134,6 +134,22 @@
   html {
     @apply font-sans;
   }
+  /* Every file picker's button in the app's own style, not the browser's
+     grey "Choose file" box (design review, 28 Oct 2026). Inputs built on
+     components/ui/input get the same through its file: classes. */
+  input[type="file"]::file-selector-button {
+    margin-right: 0.75rem;
+    border: 0;
+    border-radius: 9999px;
+    padding: 0.35rem 0.85rem;
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+    font-weight: 500;
+    cursor: pointer;
+  }
+  input[type="file"]::file-selector-button:hover {
+    background: var(--accent);
+  }
 }
 @keyframes confetti-fall {
   to {
