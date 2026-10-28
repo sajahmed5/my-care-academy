@@ -238,6 +238,8 @@ export function H5PCoursePlayer({
           librariesPath: "/h5p/libraries",
           frameJs: "/h5p/assets/frame.bundle.js",
           frameCss: "/h5p/assets/styles/h5p.css",
+          // The site's teal on buttons, gaps and picked answers, not H5P's blue.
+          customCss: "/h5p/assets/styles/mca-theme.css",
         });
         if (!disposed) {
           setLoading(false);

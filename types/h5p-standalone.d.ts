@@ -7,6 +7,8 @@ declare module "h5p-standalone" {
     contentJsonPath?: string;
     frameJs: string;
     frameCss: string;
+    /** Extra stylesheet(s), loaded after the libraries' own. */
+    customCss?: string | string[];
     frame?: boolean;
     fullScreen?: boolean;
     export?: boolean;
