@@ -8,6 +8,7 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { formatDate } from "./dates";
+import { CERTIFICATE_LOGO } from "./certificate-logo";
 
 export interface CertificateData {
   learnerName: string;
@@ -26,35 +27,64 @@ export interface CertificateData {
   orgName?: string | null;
 }
 
+/*
+ * Redesigned 28 Oct 2026 (design review). It was black Helvetica in a plain
+ * box with an indigo the brand doesn't use, and told an inspector to "verify
+ * at /verify" — a path, which means nothing on paper. Now: the site's teal in
+ * a double frame, our logo, a sand rule, and the full address to check it.
+ */
+const TEAL = "#0f8178";
+const DEEP = "#0f2a2e";
+const MUTED = "#587070";
+const SAND = "#d9b98a";
+
+/** Where a certificate is checked, as printed: no scheme, it's for reading. */
+const VERIFY_AT = `${(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.mycareacademy.co.uk")
+  .replace(/^https?:\/\//, "")
+  .replace(/\/+$/, "")}/verify`;
+
 const styles = StyleSheet.create({
   page: {
-    padding: 48,
+    padding: 28,
     fontSize: 12,
-    color: "#111827",
+    color: DEEP,
     fontFamily: "Helvetica",
+    backgroundColor: "#ffffff",
   },
-  border: {
+  outer: {
     flex: 1,
-    border: "2 solid #111827",
-    borderRadius: 8,
-    padding: 40,
+    border: `3 solid ${TEAL}`,
+    borderRadius: 14,
+    padding: 8,
+  },
+  inner: {
+    flex: 1,
+    border: `0.75 solid ${SAND}`,
+    borderRadius: 9,
+    paddingVertical: 34,
+    paddingHorizontal: 48,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#fbfdfc",
   },
-  brand: { fontSize: 14, letterSpacing: 2, color: "#6366f1", marginBottom: 8 },
+  logo: { width: 190, marginBottom: 18 },
   orgLogo: { maxHeight: 56, maxWidth: 220, objectFit: "contain", marginBottom: 12 },
-  heading: { fontSize: 26, fontFamily: "Helvetica-Bold", marginBottom: 24 },
-  label: { fontSize: 11, color: "#6b7280", marginBottom: 4 },
-  name: { fontSize: 22, fontFamily: "Helvetica-Bold", marginBottom: 16 },
-  course: { fontSize: 16, marginBottom: 24 },
-  row: { flexDirection: "row", gap: 40, marginTop: 24 },
+  brand: { fontSize: 11, letterSpacing: 2.5, color: TEAL, marginBottom: 14 },
+  heading: { fontSize: 30, fontFamily: "Helvetica-Bold", color: DEEP },
+  rule: { width: 72, height: 2, backgroundColor: SAND, marginTop: 14, marginBottom: 22 },
+  label: { fontSize: 11, color: MUTED, marginBottom: 5 },
+  name: { fontSize: 26, fontFamily: "Helvetica-Bold", color: DEEP, marginBottom: 16 },
+  course: { fontSize: 18, fontFamily: "Helvetica-Bold", color: TEAL, marginBottom: 6, textAlign: "center" },
+  row: { flexDirection: "row", gap: 56, marginTop: 24 },
   meta: { alignItems: "center" },
-  metaValue: { fontSize: 12, fontFamily: "Helvetica-Bold" },
-  number: { marginTop: 28, fontSize: 10, color: "#6b7280" },
+  metaValue: { fontSize: 13, fontFamily: "Helvetica-Bold", color: DEEP },
+  footer: { marginTop: 30, alignItems: "center" },
+  number: { fontSize: 10, color: DEEP, fontFamily: "Helvetica-Bold", letterSpacing: 0.5 },
+  verify: { marginTop: 4, fontSize: 9.5, color: MUTED },
   note: {
-    marginTop: 14,
+    marginTop: 12,
     fontSize: 8,
-    color: "#6b7280",
+    color: MUTED,
     textAlign: "center",
     maxWidth: 460,
   },
@@ -69,43 +99,48 @@ function fmt(date: Date): string {
 }
 
 function CertificateDoc({ data }: { data: CertificateData }) {
+  const whiteLabel = !!data.orgLogoUrl;
   return (
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
-        <View style={styles.border}>
-          {data.orgLogoUrl && (
-            // eslint-disable-next-line jsx-a11y/alt-text -- a PDF image has no alt
-            <Image src={data.orgLogoUrl} style={styles.orgLogo} />
-          )}
-          <Text style={styles.brand}>
-            {data.orgLogoUrl && data.orgName ? data.orgName.toUpperCase() : "MY CARE ACADEMY"}
-          </Text>
-          <Text style={styles.heading}>Certificate of Completion</Text>
-          <Text style={styles.label}>This certifies that</Text>
-          <Text style={styles.name}>{data.learnerName}</Text>
-          <Text style={styles.label}>
-            {data.note ? "has successfully completed the knowledge assessment for" : "has successfully completed"}
-          </Text>
-          <Text style={styles.course}>{data.courseTitle}</Text>
+        <View style={styles.outer}>
+          <View style={styles.inner}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text -- a PDF image has no alt */}
+            <Image src={whiteLabel ? data.orgLogoUrl! : CERTIFICATE_LOGO} style={whiteLabel ? styles.orgLogo : styles.logo} />
+            {whiteLabel && data.orgName && (
+              <Text style={styles.brand}>{data.orgName.toUpperCase()}</Text>
+            )}
+            <Text style={styles.heading}>Certificate of Completion</Text>
+            <View style={styles.rule} />
+            <Text style={styles.label}>This certifies that</Text>
+            <Text style={styles.name}>{data.learnerName}</Text>
+            <Text style={styles.label}>
+              {data.note ? "has successfully completed the knowledge assessment for" : "has successfully completed"}
+            </Text>
+            <Text style={styles.course}>{data.courseTitle}</Text>
 
-          <View style={styles.row}>
-            <View style={styles.meta}>
-              <Text style={styles.label}>Issued</Text>
-              <Text style={styles.metaValue}>{fmt(data.issuedAt)}</Text>
+            <View style={styles.row}>
+              <View style={styles.meta}>
+                <Text style={styles.label}>Issued</Text>
+                <Text style={styles.metaValue}>{fmt(data.issuedAt)}</Text>
+              </View>
+              <View style={styles.meta}>
+                <Text style={styles.label}>Expires</Text>
+                <Text style={styles.metaValue}>
+                  {data.expiresAt ? fmt(data.expiresAt) : "Does not expire"}
+                </Text>
+              </View>
             </View>
-            <View style={styles.meta}>
-              <Text style={styles.label}>Expires</Text>
-              <Text style={styles.metaValue}>
-                {data.expiresAt ? fmt(data.expiresAt) : "Does not expire"}
+
+            <View style={styles.footer}>
+              <Text style={styles.number}>Certificate no. {data.certificateNumber}</Text>
+              <Text style={styles.verify}>
+                Check it is genuine at {VERIFY_AT}
+                {whiteLabel ? " · issued through My Care Academy" : ""}
               </Text>
             </View>
+            {data.note && <Text style={styles.note}>{data.note}</Text>}
           </View>
-
-          <Text style={styles.number}>
-            Certificate no. {data.certificateNumber} · verify at /verify
-            {data.orgLogoUrl ? " · issued through My Care Academy" : ""}
-          </Text>
-          {data.note && <Text style={styles.note}>{data.note}</Text>}
         </View>
       </Page>
     </Document>
@@ -128,7 +163,7 @@ export interface TrainingRecordRow {
 
 const recStyles = StyleSheet.create({
   page: { padding: 40, fontSize: 10, color: "#111827", fontFamily: "Helvetica" },
-  brand: { fontSize: 12, letterSpacing: 2, color: "#2b7a99" },
+  brand: { fontSize: 12, letterSpacing: 2, color: "#0f8178" },
   h1: { fontSize: 20, fontFamily: "Helvetica-Bold", marginTop: 6 },
   sub: { color: "#6b7280", marginBottom: 16 },
   row: { flexDirection: "row", borderBottom: "1 solid #e5e7eb", paddingVertical: 6 },

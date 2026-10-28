@@ -20,7 +20,7 @@ import { LETTER_KINDS } from "./compute";
 
 const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 10, color: "#111827", fontFamily: "Helvetica" },
-  brand: { fontSize: 9, letterSpacing: 2, color: "#6366f1", marginBottom: 6 },
+  brand: { fontSize: 9, letterSpacing: 2, color: "#0f8178", marginBottom: 6 }, // the site's teal, not indigo
   title: { fontSize: 18, fontFamily: "Helvetica-Bold", marginBottom: 2 },
   subtitle: { fontSize: 11, color: "#374151", marginBottom: 14 },
   metaRow: { flexDirection: "row", marginBottom: 3 },
