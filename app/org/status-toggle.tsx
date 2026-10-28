@@ -53,9 +53,11 @@ export function StatusToggle({
       <Button
         type="submit"
         size="xs"
-        variant={deactivating ? "destructive" : "outline"}
+        variant={deactivating ? "ghost" : "outline"}
         disabled={pending}
-        className="min-h-11 sm:min-h-0"
+        // Deactivating is a pause, not a deletion: muted until hovered, like
+        // Delete beside it, so a page of staff isn't a column of red.
+        className={`min-h-11 sm:min-h-0${deactivating ? " text-muted-foreground hover:bg-amber-50 hover:text-amber-800" : ""}`}
       >
         {pending ? "…" : deactivating ? "Deactivate" : "Reactivate"}
       </Button>

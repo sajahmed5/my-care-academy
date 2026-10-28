@@ -43,7 +43,10 @@ export function DeleteStaffButton({
         type="submit"
         disabled={pending}
         title={`Delete ${name}`}
-        className="inline-flex min-h-11 items-center gap-1 rounded-full border border-destructive/40 px-3 py-1 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50 sm:min-h-0"
+        // Quiet until you reach for it: red outlined on every row of the staff
+        // list, it was the loudest thing on the page for the action you least
+        // want (design review, 28 Oct 2026). It still asks first.
+        className="inline-flex min-h-11 items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:text-destructive disabled:opacity-50 sm:min-h-0"
       >
         <Trash2 className="size-3.5" />
         {pending ? "Deleting…" : "Delete"}
