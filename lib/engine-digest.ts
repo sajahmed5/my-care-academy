@@ -10,6 +10,7 @@
  * everything that applies to them.
  */
 
+import { emailButton, emailLayout, esc } from "./email-layout";
 import { daysSince } from "@/lib/engine-logic";
 import { formatDate } from "./dates";
 
@@ -21,13 +22,7 @@ export function chunk<T>(items: T[], size: number): T[][] {
 }
 
 /** Escape text going into email HTML — names and titles are user-entered. */
-export function esc(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+export { esc };
 
 const fmtDate = (d: string | Date) =>
   formatDate(d, { day: "numeric", month: "long", year: "numeric" });
@@ -35,10 +30,7 @@ const fmtDate = (d: string | Date) =>
 const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
 
 function wrap(title: string, body: string): string {
-  return `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;color:#17222c">
-    <h2 style="margin:0 0 16px">${title}</h2>${body}
-    <p style="color:#888;font-size:12px;margin-top:24px">My Care Academy — automated notification.</p>
-  </div>`;
+  return emailLayout({ heading: title, body });
 }
 
 // ---------------------------------------------------------------- reminders
@@ -119,7 +111,7 @@ export function reminderEmail(
         : i.dueDate
           ? `Due ${fmtDate(i.dueDate)}`
           : "No due date";
-      return `<li style="margin:0 0 8px"><strong>${esc(i.courseTitle)}</strong><br><span style="font-size:14px;color:#4f6070">${when}</span></li>`;
+      return `<li style="margin:0 0 8px"><strong>${esc(i.courseTitle)}</strong><br><span style="font-size:14px;color:#587070">${when}</span></li>`;
     })
     .join("");
 
@@ -128,7 +120,7 @@ export function reminderEmail(
     `<p>Hi ${esc(name)},</p>
      <p>You have ${items.length} ${plural(items.length, "course")} to complete on My Care Academy:</p>
      <ul style="padding-left:18px">${rows}</ul>
-     <p><a href="${origin}/learn" style="display:inline-block;background:#2e7291;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Continue your training</a></p>`,
+     ${emailButton(`${origin}/learn`, "Continue your training")}`,
   );
   return { subject, html };
 }
@@ -151,7 +143,7 @@ function noticeLine(n: RenewalNotice, withName: boolean): string {
     n.kind === "expired"
       ? `<span style="color:#c0392b;font-weight:600">expired ${fmtDate(n.expiresAt)}</span> — needs retaking`
       : `expires ${fmtDate(n.expiresAt)} (within ${n.withinDays} days)`;
-  return `<li style="margin:0 0 8px">${who}<strong>${esc(n.courseTitle)}</strong><br><span style="font-size:14px;color:#4f6070">${what}</span></li>`;
+  return `<li style="margin:0 0 8px">${who}<strong>${esc(n.courseTitle)}</strong><br><span style="font-size:14px;color:#587070">${what}</span></li>`;
 }
 
 /** The learner's own renewal email — every certificate of theirs that needs attention. */
@@ -177,7 +169,7 @@ export function renewalLearnerEmail(
     `<p>Hi ${esc(name)},</p>
      <p>${expired > 0 ? "Some of your training needs to be retaken to stay compliant:" : "Some of your certificates are coming up for renewal:"}</p>
      <ul style="padding-left:18px">${notices.map((n) => noticeLine(n, false)).join("")}</ul>
-     <p><a href="${origin}/learn" style="display:inline-block;background:#2e7291;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Go to my training</a></p>`,
+     ${emailButton(`${origin}/learn`, "Go to my training")}`,
   );
   return { subject, html };
 }
@@ -206,7 +198,7 @@ export function renewalOrgEmail(
     `Certificates — ${esc(orgName)}`,
     `<p>${parts.join(", ")}:</p>
      <ul style="padding-left:18px">${sorted.map((n) => noticeLine(n, true)).join("")}</ul>
-     <p><a href="${origin}/org/certificates" style="display:inline-block;background:#2e7291;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Open certificates</a></p>`,
+     ${emailButton(`${origin}/org/certificates`, "Open certificates")}`,
   );
   return { subject: `Certificates: ${parts.join(", ")} — ${orgName}`, html };
 }

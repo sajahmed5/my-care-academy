@@ -8,7 +8,7 @@
  * the wording can be tested without sending anything.
  */
 
-import { esc } from "@/lib/engine-digest";
+import { emailButton, emailLayout, emailQuote, esc } from "@/lib/email-layout";
 
 export interface Enquiry {
   name: string;
@@ -82,20 +82,20 @@ export function enquiryReceivedEmail(
   const message = (enquiry.message ?? "").trim();
   const firstName = enquiry.name.trim().split(/\s+/)[0] || "there";
 
-  const html = `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;color:#17222c">
-    <h2 style="margin:0 0 16px">Thanks — we've got your enquiry</h2>
-    <p>Hi ${esc(firstName)},</p>
+  const html = emailLayout({
+    heading: "Thanks — we've got your enquiry",
+    body: `<p>Hi ${esc(firstName)},</p>
     <p>Thanks for getting in touch with My Care Academy about <strong>${esc(enquiry.topicLabel.toLowerCase())}</strong>. One of us will come back to you within one working day.</p>
-    <p>If it's urgent, call us on <a href="tel:+441616944701" style="color:${BRAND}">0161 694 4701</a> — we're here 9am to 5pm, Monday to Friday.</p>
+    <p>If it's urgent, call us on <a href="tel:+441616944701" style="color:#0f8178">0161 694 4701</a> — we're here 9am to 5pm, Monday to Friday.</p>
     ${
       message
         ? `<p style="margin:20px 0 4px;font-weight:600">What you told us</p>
-       <div style="white-space:pre-wrap;border-left:3px solid ${BRAND};padding:8px 12px;background:#f3f7f9">${esc(message)}</div>`
+       ${emailQuote(esc(message))}`
         : ""
     }
-    <p style="margin-top:24px"><a href="${origin}/training" style="display:inline-block;background:${BRAND};color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">See the course library</a></p>
-    <p style="color:#888;font-size:12px;margin-top:24px">My Care Academy · 107 Wellington Road, Stockport, SK4 2LR · 0161 694 4701<br>You're receiving this because you sent us an enquiry. There's nothing to do with this email — it's just your copy.</p>
-  </div>`;
+    ${emailButton(`${origin}/training`, "See the course library")}`,
+    footer: "My Care Academy · 107 Wellington Road, Stockport, SK4 2LR · 0161 694 4701<br>You're receiving this because you sent us an enquiry. There's nothing to do with this email — it's just your copy.",
+  });
 
   return { subject: "We've got your enquiry — My Care Academy", html };
 }

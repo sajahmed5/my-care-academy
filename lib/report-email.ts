@@ -5,7 +5,7 @@
  * without sending anything.
  */
 
-import { esc } from "@/lib/engine-digest";
+import { emailButton, emailLayout, emailQuote, esc } from "@/lib/email-layout";
 
 const STATUS_WORDS: Record<string, string> = {
   open: "Open",
@@ -43,18 +43,18 @@ export function reportUpdateEmail(
   const note = clean(c.note);
   const noteBlock = note
     ? `<p style="margin:16px 0 4px;font-weight:600">Note from the support team</p>
-       <div style="white-space:pre-wrap;border-left:3px solid #2e7291;padding:8px 12px;background:#f3f7f9">${esc(note)}</div>`
+       ${emailQuote(esc(note))}`
     : "";
 
-  const html = `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;color:#17222c">
-    <h2 style="margin:0 0 16px">Your report has been updated</h2>
-    <p>Hi ${esc(name?.trim() || "there")},</p>
+  const html = emailLayout({
+    heading: "Your report has been updated",
+    body: `<p>Hi ${esc(name?.trim() || "there")},</p>
     <p>Thanks for reporting <strong>#${c.reportNo} ${esc(c.summary)}</strong>.</p>
-    <p>Status: <strong>${esc(word)}</strong>${statusChanged ? ` <span style="color:#4f6070">(was ${esc(STATUS_WORDS[c.prevStatus] ?? c.prevStatus)})</span>` : ""}</p>
+    <p>Status: <strong>${esc(word)}</strong>${statusChanged ? ` <span style="color:#587070">(was ${esc(STATUS_WORDS[c.prevStatus] ?? c.prevStatus)})</span>` : ""}</p>
     ${noteBlock}
-    <p style="margin-top:20px"><a href="${origin}/report" style="display:inline-block;background:#2e7291;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">See my reports</a></p>
-    <p style="color:#888;font-size:12px;margin-top:24px">My Care Academy — you're receiving this because you reported an issue.</p>
-  </div>`;
+    ${emailButton(`${origin}/report`, "See my reports")}`,
+    footer: "My Care Academy — you're receiving this because you reported an issue.",
+  });
   return { subject, html };
 }
 
@@ -72,18 +72,18 @@ export function reportReceivedEmail(
   origin: string,
 ): { subject: string; html: string } {
   const detail = (report.description ?? "").trim();
-  const html = `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto;color:#17222c">
-    <h2 style="margin:0 0 16px">Thanks — we've got your report</h2>
-    <p>Hi ${esc(name?.trim() || "there")},</p>
+  const html = emailLayout({
+    heading: "Thanks — we've got your report",
+    body: `<p>Hi ${esc(name?.trim() || "there")},</p>
     <p>You reported <strong>#${report.reportNo} ${esc(report.summary)}</strong>. It's with the support team, and we'll email you when there's an update.</p>
     ${
       detail
         ? `<p style="margin:16px 0 4px;font-weight:600">What you told us</p>
-       <div style="white-space:pre-wrap;border-left:3px solid #2e7291;padding:8px 12px;background:#f3f7f9">${esc(detail)}</div>`
+       ${emailQuote(esc(detail))}`
         : ""
     }
-    <p style="margin-top:20px"><a href="${origin}/report" style="display:inline-block;background:#2e7291;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">See my reports</a></p>
-    <p style="color:#888;font-size:12px;margin-top:24px">My Care Academy — you're receiving this because you reported an issue. There's nothing to do with this email; keep it for the reference number.</p>
-  </div>`;
+    ${emailButton(`${origin}/report`, "See my reports")}`,
+    footer: "My Care Academy — you're receiving this because you reported an issue. There's nothing to do with this email; keep it for the reference number.",
+  });
   return { subject: `We've logged your report #${report.reportNo}: ${report.summary}`, html };
 }

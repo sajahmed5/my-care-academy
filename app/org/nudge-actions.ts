@@ -4,6 +4,7 @@ import { requireConsole } from "@/lib/auth";
 import { siteOrigin } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
+import { emailButton, emailLayout, esc } from "@/lib/email-layout";
 import { createSetPasswordLink } from "@/lib/invites";
 import { bucketOf, isActiveLearner, loadOrgLearners } from "@/lib/org-learners";
 import type { NudgeGroup } from "./nudge-types";
@@ -52,13 +53,16 @@ async function nudgeOne(
   const titles = outstanding.map(
     (e) => (e.courses as unknown as { title?: string } | null)?.title ?? "a course",
   );
-  const list = titles.map((t) => `<li>${t}</li>`).join("");
+  const list = titles.map((t) => `<li style="margin:0 0 6px"><strong>${esc(t)}</strong></li>`).join("");
   const subject = "A reminder to complete your training";
-  const html = `<p>Hi ${learner.full_name ?? "there"},</p>
+  const html = emailLayout({
+    body: `<p>Hi ${esc(learner.full_name ?? "there")},</p>
 <p>You have training still to complete on My Care Academy:</p>
-<ul>${list}</ul>
-<p>Please <a href="${origin}/learn">log in and finish your outstanding courses</a> when you can.</p>
-<p>Thank you.</p>`;
+<ul style="padding-left:18px">${list}</ul>
+${emailButton(`${origin}/learn`, "Finish my training")}
+<p>Thank you.</p>`,
+    footer: "My Care Academy — a reminder sent by your manager.",
+  });
 
   const sent = await sendEmail({ to: learner.email, subject, html });
   await admin.from("email_log").insert({
@@ -209,19 +213,17 @@ async function sendSignInReminder(
   }
 
   const subject = "Set up your My Care Academy account";
-  const html = `<p>Hi ${learner.full_name ?? "there"},</p>
-<p>An account has been set up for you on My Care Academy by ${orgName}, but you
+  const html = emailLayout({
+    body: `<p>Hi ${esc(learner.full_name ?? "there")},</p>
+<p>An account has been set up for you on My Care Academy by ${esc(orgName)}, but you
 haven't signed in yet.</p>
 <p>Use the link below to choose a password and get started — it only takes a
 minute.</p>
-<p style="margin:24px 0">
-  <a href="${link}"
-     style="background:#111;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">
-    Set your password
-  </a>
-</p>
+${emailButton(link, "Set your password")}
 <p>Once you're in, any training assigned to you will be waiting on your
-dashboard.</p>`;
+dashboard.</p>`,
+    footer: `My Care Academy — sent by ${esc(orgName)} to help you sign in.`,
+  });
 
   const sent = await sendEmail({ to: learner.email, subject, html });
   await admin.from("email_log").insert({

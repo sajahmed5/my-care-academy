@@ -1,3 +1,4 @@
+import { emailLayout } from "./email-layout";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmailBatch } from "@/lib/email";
 import { siteOrigin } from "@/lib/site-url";
@@ -136,10 +137,7 @@ function platformAdminEmails(refs: EngineRefs): string[] {
 }
 
 function wrap(title: string, body: string): string {
-  return `<div style="font-family:system-ui,sans-serif;max-width:520px;margin:auto">
-    <h2>${title}</h2>${body}
-    <p style="color:#888;font-size:12px;margin-top:24px">My Care Academy — automated notification.</p>
-  </div>`;
+  return emailLayout({ heading: title, body });
 }
 
 // ---------------------------------------------------------------- sending

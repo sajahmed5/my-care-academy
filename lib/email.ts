@@ -1,3 +1,5 @@
+import { emailButton, emailLayout, emailLinkFallback, esc } from "./email-layout";
+
 /**
  * Send an email via Resend. Returns true if dispatched.
  *
@@ -124,21 +126,15 @@ export async function sendInviteEmail({
 
   if (!apiKey) return { sent: false, link: inviteUrl };
 
-  const joining = orgName ? ` for <strong>${orgName}</strong>` : "";
-  const html = `
-    <div style="font-family:system-ui,sans-serif;max-width:480px;margin:auto">
-      <h2>You've been invited to My Care Academy</h2>
-      <p>You've been invited as ${roleLabel}${joining}. Click below to set your
+  const joining = orgName ? ` for <strong>${esc(orgName)}</strong>` : "";
+  const html = emailLayout({
+    heading: "You've been invited to My Care Academy",
+    body: `<p>You've been invited as ${esc(roleLabel)}${joining}. Click below to set your
       password and get started.</p>
-      <p style="margin:24px 0">
-        <a href="${inviteUrl}"
-           style="background:#111;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">
-          Accept invitation
-        </a>
-      </p>
-      <p style="color:#666;font-size:13px">If the button doesn't work, paste this
-      link into your browser:<br>${inviteUrl}</p>
-    </div>`;
+      ${emailButton(inviteUrl, "Accept invitation")}
+      ${emailLinkFallback(inviteUrl)}`,
+    footer: "My Care Academy — you're receiving this because someone invited you.",
+  });
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -177,20 +173,14 @@ export async function sendPasswordResetEmail({
   to: string;
   resetUrl: string;
 }): Promise<SendResult> {
-  const html = `
-    <div style="font-family:system-ui,sans-serif;max-width:480px;margin:auto">
-      <h2>Reset your My Care Academy password</h2>
-      <p>We received a request to reset your password. Click below to choose a
+  const html = emailLayout({
+    heading: "Reset your My Care Academy password",
+    body: `<p>We received a request to reset your password. Click below to choose a
       new one. If you didn't ask for this, you can safely ignore this email.</p>
-      <p style="margin:24px 0">
-        <a href="${resetUrl}"
-           style="background:#111;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">
-          Reset password
-        </a>
-      </p>
-      <p style="color:#666;font-size:13px">If the button doesn't work, paste this
-      link into your browser:<br>${resetUrl}</p>
-    </div>`;
+      ${emailButton(resetUrl, "Reset password")}
+      ${emailLinkFallback(resetUrl)}`,
+    footer: "My Care Academy — sent because a password reset was asked for on your account.",
+  });
   const sent = await sendEmail({
     to,
     subject: "Reset your My Care Academy password",

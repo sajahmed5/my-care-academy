@@ -18,7 +18,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendEmailBatch } from "./email";
-import { esc } from "./engine-digest";
+import { emailButton, emailLayout, esc } from "./email-layout";
 import { formatDate } from "./dates";
 
 export type AssignmentKind = "form_assigned" | "action_assigned" | "training_assigned";
@@ -65,14 +65,15 @@ export function assignmentEmail(
     : "";
   const note = notice.note ? `<p style="color:#444">${esc(notice.note)}</p>` : "";
   const link = notice.href
-    ? `<p style="margin:24px 0"><a href="${ctx.origin}${notice.href}" style="background:#111;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none">Open it</a></p>`
+    ? emailButton(`${ctx.origin}${notice.href}`, "Open it")
     : `<p>Speak to ${esc(ctx.assignedByName)} if you need more detail.</p>`;
-  const html = `<div style="font-family:system-ui,sans-serif;max-width:480px;margin:auto">
-<p>Hi ${esc(ctx.name ?? "there")},</p>
+  const html = emailLayout({
+    body: `<p>Hi ${esc(ctx.name ?? "there")},</p>
 <p>${esc(ctx.assignedByName)} at ${esc(ctx.orgName)} has given you ${what} on My Care Academy:</p>
-<p style="font-size:16px"><strong>${esc(notice.title)}</strong></p>
-${note}${due}${link}
-</div>`;
+<p style="font-size:17px"><strong>${esc(notice.title)}</strong></p>
+${note}${due}${link}`,
+    footer: `My Care Academy — sent for ${esc(ctx.orgName)}.`,
+  });
   return { subject, html };
 }
 
