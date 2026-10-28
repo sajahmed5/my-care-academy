@@ -4,6 +4,7 @@ import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   PACK_LABEL,
@@ -64,6 +65,11 @@ export default async function PoliciesPage({
     const c = copies.get(p.id);
     return c && c.status === "published" && c.version > 0 ? [{ id: p.id, version: c.version, copyId: c.id }] : [];
   });
+  const drafts = policies.filter((p) => {
+    const c = copies.get(p.id);
+    return c && !(c.status === "published" && c.version > 0);
+  }).length;
+  const notAdopted = policies.length - published.length - drafts;
   const { counts, staff } =
     active === "policies"
       ? await loadAcceptanceCounts(supabase, published, context.organisationId)
@@ -78,6 +84,27 @@ export default async function PoliciesPage({
           service does, and publish it: your staff read and accept your version,
           never the template.
         </p>
+
+        {/* Where the service stands, at a glance: every row used to say
+            "Not adopted" in grey and nothing said what to do about it
+            (design review, 28 Oct 2026). */}
+        {active === "policies" && policies.length > 0 && (
+          <div className="flex flex-wrap gap-2 text-sm">
+            <span className="rounded-full bg-green-100 px-3 py-1 font-medium text-green-700">
+              {published.length} published
+            </span>
+            {drafts > 0 && (
+              <span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-700">
+                {drafts} in draft
+              </span>
+            )}
+            {notAdopted > 0 && (
+              <span className="rounded-full bg-muted px-3 py-1 font-medium text-muted-foreground">
+                {notAdopted} still to adopt
+              </span>
+            )}
+          </div>
+        )}
 
         {documents.length > 0 && (
           <nav aria-label="Library" className="flex items-center gap-1 border-b">
@@ -167,7 +194,7 @@ function Row({
         <div className="flex min-w-0 items-start gap-3">
           <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
           <div className="min-w-0">
-            <Link href={`/org/policies/${item.code}`} className="font-medium hover:underline">
+            <Link href={`/org/policies/${item.code}`} className="font-medium text-primary hover:underline">
               {item.title}
             </Link>
             <p className="text-xs text-muted-foreground">
@@ -195,9 +222,19 @@ function Row({
                 )}
               </>
             ) : copy ? (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Draft</span>
+              <>
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">Draft</span>
+                <Link href={`/org/policies/${item.code}`} className={buttonVariants({ size: "sm", variant: "outline" })}>
+                  Finish and publish
+                </Link>
+              </>
             ) : (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">Not adopted</span>
+              <>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">Not adopted</span>
+                <Link href={`/org/policies/${item.code}`} className={buttonVariants({ size: "sm" })}>
+                  Review and adopt
+                </Link>
+              </>
             )}
           </div>
         )}
