@@ -98,8 +98,15 @@ export default function Home() {
       <section className="mca-home-hero relative -mt-24 overflow-hidden px-4 pb-16 pt-36 sm:pt-44">
         <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[1.02fr_1fr]">
           <div>
+            {/* The local page's link from the home page lives here, on the
+                place name, rather than mid-sentence in the hero copy where it
+                read as an SEO link. */}
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1d6f8a]">
-              Care training · Stockport &amp; Greater Manchester · since 2002
+              Care training ·{" "}
+              <Link href="/care-training-manchester-stockport" className="underline-offset-4 hover:underline">
+                Stockport &amp; Greater Manchester
+              </Link>{" "}
+              · since 2002
             </div>
             <h1 className="font-display mt-4 text-balance text-4xl font-bold leading-[1.02] tracking-tight text-[#0f2f3c] sm:text-6xl">
               Care training, written by people who{" "}
@@ -123,11 +130,7 @@ export default function Home() {
               {COURSES} CQC-aligned home care courses your carers finish on
               their phones, certificates anyone can verify, and a compliance
               position you can show an inspector the moment they ask. Built in
-              Stockport by a care company — see{" "}
-              <Link href="/care-training-manchester-stockport" className="font-semibold text-[#1d6f8a] underline underline-offset-2">
-                care training across Greater Manchester
-              </Link>
-              .
+              Stockport by a care company.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <PillLink href="/contact?topic=demo">
