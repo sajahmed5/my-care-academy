@@ -59,7 +59,8 @@ export default async function CoursesOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      {/* One row on a wide screen, so the course table starts above the fold. */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
         <StatTile
           label="Assigned training complete"
           value={`${overallPct}%`}
@@ -84,8 +85,6 @@ export default async function CoursesOverviewPage() {
           hint={`${totals.notStarted} of ${totals.assigned} courses`}
           href="/org/learners/statistics?status=not_started"
         />
-      </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <StatTile
           label="Overdue"
           value={totals.overdue}
