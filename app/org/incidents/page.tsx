@@ -38,7 +38,7 @@ export default async function IncidentsPage({
 
   return (
     <DashboardShell title="Complaints & incidents" context={context}>
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <Link href="/org" className="text-sm text-muted-foreground hover:underline">
           ← Back to console
         </Link>

@@ -36,7 +36,7 @@ export default async function MyReportsPage() {
 
   return (
     <DashboardShell title="My reports" context={context}>
-      <div className="mx-auto max-w-3xl space-y-4">
+      <div className="mx-auto max-w-6xl space-y-4">
         <p className="text-sm text-muted-foreground">
           Issues you&apos;ve reported with the Report button, and what the support team has
           done about them. You get an email when you report something, and

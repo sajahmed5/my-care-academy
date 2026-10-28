@@ -28,7 +28,7 @@ export default async function LearnerFormsPage() {
 
   return (
     <DashboardShell title="Forms" context={context}>
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <section className="space-y-2">
           <h3 className="text-sm font-semibold text-muted-foreground">To complete ({open.length})</h3>
           {open.length === 0 ? (

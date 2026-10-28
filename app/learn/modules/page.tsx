@@ -53,7 +53,7 @@ export default async function AssignedModulesPage() {
 
   return (
     <DashboardShell title="Training" context={context}>
-      <div className="mx-auto max-w-5xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <ModulesTabs />
 
         {outstanding.length === 0 && (

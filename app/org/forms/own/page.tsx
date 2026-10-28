@@ -30,7 +30,7 @@ export default async function FormsPage() {
 
   return (
     <DashboardShell title="Forms" context={context}>
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <Link href="/org/forms" className="text-sm text-muted-foreground hover:underline">
           ← Forms library
         </Link>

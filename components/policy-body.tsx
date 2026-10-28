@@ -32,8 +32,9 @@ function withFillIns(text: string) {
 }
 
 export function PolicyBody({ blocks }: { blocks: PolicyBlock[] }) {
+  // A readable line length inside the page's wider frame.
   return (
-    <div className="space-y-3">
+    <div className="max-w-3xl space-y-3">
       {blocks.map((block, i) => {
         if (block.type === "heading") {
           return (

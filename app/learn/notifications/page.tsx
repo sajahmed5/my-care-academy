@@ -40,7 +40,7 @@ export default async function NotificationsPage() {
   return (
     <DashboardShell title="Notifications" context={context}>
       <AutoMarkRead />
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Notifications</CardTitle>

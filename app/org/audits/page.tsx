@@ -49,7 +49,7 @@ export default async function AuditsPage({ searchParams }: { searchParams: Promi
 
   return (
     <DashboardShell title="Audits" context={context}>
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <div className="grid gap-3 sm:grid-cols-3">
           {AUDIT_KINDS.map((k) => {
             const last = latest.get(k.key);

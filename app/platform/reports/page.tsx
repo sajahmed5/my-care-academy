@@ -26,7 +26,7 @@ export default async function ReportsAdminPage() {
 
   return (
     <DashboardShell title="Issues & bug reports" context={context}>
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <Link
           href="/platform"
           className="text-sm text-muted-foreground hover:underline"

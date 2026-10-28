@@ -97,7 +97,7 @@ export default async function AccountPage() {
 
   return (
     <DashboardShell title="Account" context={context}>
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         {/* Package */}
         <Card className="overflow-hidden">
           <div className="bg-gradient-to-r from-teal-600 to-sky-600 px-6 py-5 text-white">

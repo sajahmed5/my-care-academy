@@ -31,7 +31,7 @@ export default async function SupervisionsDuePage() {
   );
   return (
     <DashboardShell title="Supervisions due" context={context}>
-      <div className="mx-auto max-w-4xl space-y-4">
+      <div className="mx-auto max-w-6xl space-y-4">
         <p className="text-sm text-muted-foreground">
           Every current carer and when their next supervision falls. Open someone to record one.
         </p>

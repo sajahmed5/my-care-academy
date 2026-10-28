@@ -71,7 +71,7 @@ export default async function ReportDetailPage({
 
   return (
     <DashboardShell title={`Issue #${report.report_no}`} context={context}>
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <Link
           href="/platform/reports"
           className="text-sm text-muted-foreground hover:underline"

@@ -44,7 +44,7 @@ export default async function MyActionsPage() {
 
   return (
     <DashboardShell title="My actions" context={context}>
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <p className="text-sm text-muted-foreground">
           Things you have agreed to do, or been asked to do, by your manager. Your manager ticks each one off when it is done.
         </p>

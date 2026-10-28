@@ -30,7 +30,7 @@ export default async function AuditsDuePage() {
   });
   return (
     <DashboardShell title="Audits due" context={context}>
-      <div className="mx-auto max-w-4xl space-y-4">
+      <div className="mx-auto max-w-6xl space-y-4">
         <p className="text-sm text-muted-foreground">Each audit, when it was last carried out and when the next one falls.</p>
         <Card>
           <CardContent className="divide-y p-0">

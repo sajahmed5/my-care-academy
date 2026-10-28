@@ -23,7 +23,7 @@ export default async function CertificatesPage() {
 
   return (
     <DashboardShell title="Certificates" context={context}>
-      <div className="mx-auto max-w-5xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
             Your most recent pass is the live certificate for each course.

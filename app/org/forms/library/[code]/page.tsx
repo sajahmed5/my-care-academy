@@ -56,7 +56,7 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
 
   return (
     <DashboardShell title={template.title} context={context}>
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <Link href="/org/forms" className="text-sm text-muted-foreground hover:underline">
           ← All forms
         </Link>

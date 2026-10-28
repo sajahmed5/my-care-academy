@@ -145,7 +145,7 @@ export default async function OrgDashboard() {
       title={organisation?.name ?? "Organisation console"}
       context={context}
     >
-      <div className="mx-auto max-w-5xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <p className="text-sm text-muted-foreground">
           {organisation?.name} ·{" "}
           {tierLabel(organisation?.package_tier ?? "core")}

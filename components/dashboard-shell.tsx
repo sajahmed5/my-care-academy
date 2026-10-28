@@ -118,13 +118,19 @@ export async function DashboardShell({
         stars={learner ? <StarBank initialTotal={starTotal} /> : undefined}
       />
 
+      {/* The title sits on the same edge as the page under it. Every page is
+          the one width (max-w-6xl); before, they ranged from 3xl to 6xl, so
+          the content jumped sideways from tab to tab and never lined up with
+          a title pinned to the far left. */}
       <div className="border-b bg-card/85 px-4 py-3 sm:px-6">
-        {back && (
-          <Link href={back.href} className="text-xs text-muted-foreground hover:underline">
-            ← {back.label}
-          </Link>
-        )}
-        <h1 className="truncate text-lg font-semibold tracking-tight">{title}</h1>
+        <div className="mx-auto max-w-6xl">
+          {back && (
+            <Link href={back.href} className="text-xs text-muted-foreground hover:underline">
+              ← {back.label}
+            </Link>
+          )}
+          <h1 className="truncate text-lg font-semibold tracking-tight">{title}</h1>
+        </div>
       </div>
 
       {/* From a tablet up, bottom padding keeps the floating Report button

@@ -37,7 +37,7 @@ export default async function FillFormPage({
 
   return (
     <DashboardShell title={form.title} context={context}>
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-6xl *:max-w-2xl">
         <Card>
           <CardHeader>
             <CardTitle>{form.title}</CardTitle>

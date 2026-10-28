@@ -49,7 +49,7 @@ export default async function AllCoursesPage({
 
   return (
     <DashboardShell title="Training" context={context}>
-      <div className="mx-auto max-w-5xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <ModulesTabs />
         <p className="text-sm text-muted-foreground">
           Browse the full catalogue and enrol on any course.

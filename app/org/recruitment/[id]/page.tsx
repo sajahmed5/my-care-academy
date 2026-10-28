@@ -40,7 +40,7 @@ export default async function CandidatePage({
 
   return (
     <DashboardShell title={candidate.full_name} context={context}>
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex items-center justify-between">
           <Link href="/org/recruitment" className="text-sm text-muted-foreground hover:underline">
             ← All candidates

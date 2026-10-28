@@ -29,7 +29,7 @@ export default async function NewPipPage({
 
   return (
     <DashboardShell title="Start a performance plan" context={context}>
-      <div className="mx-auto max-w-3xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <Link href={complaint ? `/org/complaints/${complaint}` : "/org/pips"} className="text-sm text-muted-foreground hover:underline">
           ← Back
         </Link>

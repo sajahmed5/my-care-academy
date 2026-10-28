@@ -31,7 +31,7 @@ export default async function OrgCompleteFormPage({
 
   return (
     <DashboardShell title={assignment.template_title} context={context}>
-      <div className="mx-auto max-w-2xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6 *:max-w-2xl">
         <Link href={back} className="text-sm text-muted-foreground hover:underline">
           ← Back to the form
         </Link>

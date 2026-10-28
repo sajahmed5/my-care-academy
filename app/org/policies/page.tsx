@@ -71,7 +71,7 @@ export default async function PoliciesPage({
 
   return (
     <DashboardShell title="Policies" context={context}>
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-6xl space-y-6">
         <Link href="/org" className="text-sm text-muted-foreground hover:underline">
           ← Back to console
         </Link>
