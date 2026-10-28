@@ -23,7 +23,8 @@ describe("dates are formatted in UK time", () => {
   });
 
   it("formats the same way whatever options come with it", () => {
-    expect(formatDate("2026-10-23T23:30:09.448Z")).toBe("24/10/2026");
+    expect(formatDate("2026-10-23T23:30:09.448Z")).toBe("24 Oct 2026");
+    expect(formatDateTime("2026-10-23T23:30:09.448Z")).toBe("24 Oct 2026, 00:30");
     expect(
       formatDateTime("2026-10-23T23:30:09.448Z", {
         dateStyle: "short",
