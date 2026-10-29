@@ -75,6 +75,7 @@ export const complaintFormSchema: StageForm = {
             { value: "letter", label: "Letter" },
             { value: "in_person", label: "In person" },
             { value: "survey", label: "Survey or review" },
+            { value: "link", label: "The online raise-a-concern link" },
             { value: "other", label: "Other" },
           ],
         },

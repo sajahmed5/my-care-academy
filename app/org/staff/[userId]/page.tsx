@@ -30,6 +30,7 @@ import { competencyForm, suggestedSlugs } from "@/lib/audit-forms";
 import { loadAuditForms } from "@/lib/audit-forms-data";
 import { suggestionsFor, type Suggestion } from "@/lib/complaints/categories";
 import { loadConcernTraining, loadConcernsForPerson } from "@/lib/complaints/person";
+import { loadComplimentsForPerson } from "@/lib/complaints/compliments";
 import { loadBookings, loadSupervisions } from "@/lib/supervisions";
 import { SectionPanel } from "./section-panel";
 import { SectionRail, SectionTabs, SectionTabsAfter, type SectionCount } from "./section-tabs";
@@ -257,10 +258,10 @@ export default async function StaffDetailPage({
   // Concerns this person is named in, and what each one suggests. The
   // suggestion needs the catalogue and what has already been assigned off
   // that record — both only on this tab, and only when entitled.
-  const concerns =
+  const [concerns, compliments] =
     section.key === "complaints" && state === "open"
-      ? await loadConcernsForPerson(supabase, userId)
-      : [];
+      ? await Promise.all([loadConcernsForPerson(supabase, userId), loadComplimentsForPerson(supabase, userId)])
+      : [[], []];
   const suggestions: Record<string, Suggestion[]> = {};
   if (concerns.length) {
     const [{ data: courseRows }, assignedByConcern] = await Promise.all([
@@ -736,6 +737,7 @@ export default async function StaffDetailPage({
             <ConcernList
               userId={userId}
               concerns={concerns}
+              compliments={compliments}
               suggestions={suggestions}
             />
           </div>

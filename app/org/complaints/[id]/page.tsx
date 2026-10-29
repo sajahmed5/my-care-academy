@@ -90,6 +90,18 @@ export default async function ComplaintPage({
     triageTitles,
   );
 
+  // "3 concerns about this client this year", this one included.
+  const yearStart = `${today.slice(0, 4)}-01-01`;
+  const clientConcerns = complaint.client
+    ? ((
+        await supabase
+          .from("complaints")
+          .select("id", { count: "exact", head: true })
+          .eq("client_id", complaint.client.id)
+          .gte("reported_on", yearStart)
+      ).count ?? 0)
+    : 0;
+
   // The legal reminders read the answers by stage kind, not by stage id.
   const byKind: Record<string, Record<string, unknown>> = {};
   for (const st of stages) {
@@ -138,6 +150,7 @@ export default async function ComplaintPage({
           clients={clients}
           training={training}
           reminders={reminders}
+          clientConcerns={clientConcerns}
         />
       </div>
     </DashboardShell>

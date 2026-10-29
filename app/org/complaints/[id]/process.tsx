@@ -58,6 +58,7 @@ export function ComplaintProcess({
   clients,
   training,
   reminders,
+  clientConcerns,
 }: {
   complaint: Complaint;
   stages: ComplaintStage[];
@@ -72,6 +73,7 @@ export function ComplaintProcess({
   clients: ClientOption[] | null;
   training: { userId: string; name: string | null; suggestions: Suggestion[] }[];
   reminders: Reminder[];
+  clientConcerns: number;
 }) {
   const [openId, setOpenId] = useState<string | null>(initialStageId);
   const entryOf = (stageId: string) => complaint.stageEntries.find((e) => e.stageId === stageId);
@@ -95,6 +97,8 @@ export function ComplaintProcess({
               <p className="text-sm text-muted-foreground">
                 Reported {fmtDate(complaint.reportedOn)}
                 {complaint.raisedByName ? ` by ${complaint.raisedByName}` : ""}
+                {complaint.raisedVia === "link" ? " through the online link" : ""}
+                {complaint.raisedByContact ? ` (${complaint.raisedByContact})` : ""}
                 {complaint.occurredOn ? ` · happened ${fmtDate(complaint.occurredOn)}` : ""}
                 {complaint.completeBy ? ` · response due ${fmtDate(complaint.completeBy)}` : ""}
               </p>
@@ -108,7 +112,7 @@ export function ComplaintProcess({
               {complaint.closedOn ? ` ${fmtDate(complaint.closedOn)}` : ""}
             </span>
           </div>
-          <RecordFacts complaint={complaint} clients={clients} disabled={closed} />
+          <RecordFacts complaint={complaint} clients={clients} disabled={closed} clientConcerns={clientConcerns} />
           <p className="whitespace-pre-line text-sm">{complaint.description}</p>
           {complaint.desiredOutcome && (
             <p className="text-sm text-muted-foreground">

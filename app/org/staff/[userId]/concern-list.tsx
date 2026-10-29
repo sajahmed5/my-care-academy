@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { kindLabel, statusLabel } from "@/lib/complaints/stages";
 import { categoryLabel, type Suggestion } from "@/lib/complaints/categories";
 import type { PersonConcern } from "@/lib/complaints/person";
+import type { Compliment } from "@/lib/complaints/compliments";
+import { ComplimentCard } from "@/app/org/complaints/compliments/compliment-form";
 import { SuggestedTraining } from "@/app/org/complaints/suggested-training";
 import { formatDate } from "@/lib/dates";
 
@@ -31,14 +33,27 @@ function fmtDate(d: string | null): string {
 export function ConcernList({
   userId,
   concerns,
+  compliments,
   suggestions,
 }: {
   userId: string;
   concerns: PersonConcern[];
+  /** The thanks as well as the complaints: a file is read as a whole. */
+  compliments: Compliment[];
   suggestions: Record<string, Suggestion[]>;
 }) {
   return (
     <div className="space-y-3">
+      {compliments.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm font-semibold">
+            {compliments.length} compliment{compliments.length === 1 ? "" : "s"}
+          </p>
+          {compliments.map((c) => (
+            <ComplimentCard key={c.id} compliment={c} />
+          ))}
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
           {concerns.length === 0

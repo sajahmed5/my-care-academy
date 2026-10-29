@@ -117,10 +117,13 @@ export function RecordFacts({
   complaint,
   clients,
   disabled,
+  clientConcerns,
 }: {
   complaint: Complaint;
   clients: ClientOption[] | null;
   disabled: boolean;
+  /** Concerns about the same client this calendar year, this one included. */
+  clientConcerns: number;
 }) {
   const [editing, setEditing] = useState(false);
   const [catState, catAction, catPending] = useActionState<SaveState, FormData>(setCategoryAction, {});
@@ -141,6 +144,23 @@ export function RecordFacts({
             ) : (
               "not linked"
             )}
+          </span>
+        )}
+        {complaint.client && clientConcerns > 1 && (
+          <Link href={`/org/clients/${complaint.client.id}#concerns`} className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 hover:underline">
+            {clientConcerns} concerns about this client this year
+          </Link>
+        )}
+        {complaint.client && (
+          <span>
+            <span className="text-muted-foreground">Funded by: </span>
+            {complaint.client.funderType === "council"
+              ? complaint.client.funderName || "a council (not named on the client list)"
+              : complaint.client.funderType === "self"
+                ? "themselves"
+                : complaint.client.funderType === "nhs"
+                  ? "the NHS"
+                  : complaint.client.funderName || "other"}
           </span>
         )}
         {!disabled && (
