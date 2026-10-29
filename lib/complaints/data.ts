@@ -85,6 +85,8 @@ export interface Complaint extends ComplaintSummary {
   triagedAt: string | null;
   /** complaints.reminders: the legal reminders a manager has confirmed. */
   reminders: unknown;
+  /** The interim update's "what we have found so far", in a person's words. */
+  interimFindings: string | null;
   occurredOn: string | null;
   desiredOutcome: string | null;
   outcomeSummary: string | null;
@@ -262,7 +264,7 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
   const { data: row } = await supabase
     .from("complaints")
     .select(
-      `id, reference, kind, status, raised_by_name, raised_by_role, about_name, category, occurred_on, reported_on, complete_by, closed_on, description, desired_outcome, outcome_summary, lessons_learned, created_at, triaged_at, reminders, raised_via, raised_by_contact, ${CLIENT_EMBED}`,
+      `id, reference, kind, status, raised_by_name, raised_by_role, about_name, category, occurred_on, reported_on, complete_by, closed_on, description, desired_outcome, outcome_summary, lessons_learned, created_at, triaged_at, reminders, raised_via, raised_by_contact, interim_findings, ${CLIENT_EMBED}`,
     )
     .eq("id", id)
     .maybeSingle();
@@ -303,6 +305,7 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
     raisedVia: (row.raised_via as string | null) ?? "office",
     raisedByContact: (row.raised_by_contact as string | null) ?? null,
     reminders: row.reminders ?? {},
+    interimFindings: (row.interim_findings as string | null) ?? null,
     occurredOn: (row.occurred_on as string | null) ?? null,
     desiredOutcome: (row.desired_outcome as string | null) ?? null,
     outcomeSummary: (row.outcome_summary as string | null) ?? null,

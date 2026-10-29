@@ -1013,3 +1013,17 @@ export async function confirmReminderAction(_prev: SaveState, formData: FormData
   revalidatePath(`/org/complaints/${id}`);
   return { ok: true };
 }
+
+/** The interim update's "what we have found so far", kept so it can be printed again. */
+export async function saveInterimFindingsAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
+  const context = await requireComplaints();
+  if (!context) return { ok: false, error: NOT_IN_PLAN };
+  const id = str(formData, "complaintId");
+  const text = str(formData, "interimFindings");
+  if (text.length > 10000) return { ok: false, error: "Keep it under 10,000 characters." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("complaints").update({ interim_findings: text || null }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/org/complaints/${id}`);
+  return { ok: true };
+}
