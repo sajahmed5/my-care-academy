@@ -18,6 +18,8 @@ import { isFreeWebmail } from "@/lib/recruitment-references";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { ReferencesPanel, type RefereeView } from "./references-panel";
+import { SigningPanel, type SigningView } from "./signing-panel";
+import { SIGNING_DOC_KEYS, addressFromApplication } from "@/lib/signing-documents";
 
 /**
  * One candidate (RECRUITMENT.md): the four stages, each step with where it
@@ -50,7 +52,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   const a = await latestAttempt(admin, id);
   // Referees: copied from their application the first time anyone looks.
   await importReferees(admin, id, context.organisationId!);
-  const [{ data: refRows }, { data: interview }, { data: offerLetter }, { data: starter }] = await Promise.all([
+  const [{ data: refRows }, { data: interview }, { data: offerLetter }, { data: starter }, { data: signings }, { data: shadowing }, { data: appAnswers }] = await Promise.all([
     admin
       .from("candidate_references")
       .select("id, position, referee_type, referee_name, email, phone, organisation, status, requested_at, reminder_count")
@@ -59,6 +61,9 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
     admin.from("candidate_interviews").select("status, overall_score, outcome").eq("candidate_id", id).maybeSingle(),
     admin.from("candidate_letters").select("sent_at").eq("candidate_id", id).eq("kind", "offer").maybeSingle(),
     admin.from("candidate_starter_forms").select("status, submitted_at").eq("candidate_id", id).maybeSingle(),
+    admin.from("candidate_signings").select("doc_key, status").eq("candidate_id", id),
+    admin.from("candidate_shadowing").select("status, completed_at").eq("candidate_id", id).maybeSingle(),
+    admin.from("candidate_applications").select("answers").eq("candidate_id", id).maybeSingle(),
   ]);
   const referees: RefereeView[] = (refRows ?? []).map((r) => ({
     id: r.id as string,
@@ -117,6 +122,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
           status={status}
           hasEmail={!!candidate.email}
           outstanding={outstanding.map((s) => (s.state === "expired" ? `${s.label} (expired)` : s.label))}
+          welcomeDefault={settingsRow?.welcome_on_hire !== false}
         />
 
         {stages.map((s) => {
@@ -130,6 +136,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
             locked: st.locked,
             state: st.state,
             doc: (docs ?? []).find((d) => d.doc_type === st.key) as StepView["doc"],
+            signedHref: (signings ?? []).some((g) => g.doc_key === st.key && g.status === "signed") ? `/org/recruitment/${id}/signed/${st.key}` : undefined,
           }));
           const body = (
             <ul className="border-t">
@@ -206,6 +213,40 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
                         Read their answers
                       </Link>
                     )}
+                  </div>
+                </li>
+              )}
+              {s.stage === 4 && !s.locked && s.steps.some((st) => (SIGNING_DOC_KEYS as string[]).includes(st.key)) && (
+                <li className="border-t bg-muted/30 px-5 py-3.5">
+                  <SigningPanel
+                    candidateId={id}
+                    hasEmail={!!candidate.email}
+                    address={addressFromApplication(appAnswers?.answers as Record<string, unknown> | null)}
+                    docs={s.steps
+                      .filter((st) => (SIGNING_DOC_KEYS as string[]).includes(st.key))
+                      .map((st): SigningView => ({
+                        key: st.key,
+                        label: st.label,
+                        status: ((signings ?? []).find((g) => g.doc_key === st.key)?.status as SigningView["status"] | undefined) ?? "none",
+                        done: st.state === "confirmed" || st.state === "not_needed",
+                      }))}
+                  />
+                </li>
+              )}
+              {s.stage === 4 && !s.locked && s.steps.some((st) => st.key === "shadowing") && (
+                <li className="border-t bg-muted/30 px-5 py-3.5">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                    <span className="font-medium">Shadowing record</span>
+                    <span className="text-muted-foreground">
+                      {shadowing?.status === "complete"
+                        ? `Finished ${formatDate(shadowing.completed_at as string)}.`
+                        : shadowing
+                          ? "Started, not finished."
+                          : "The mentor's feedback after their shadowing shift."}
+                    </span>
+                    <Link href={`/org/recruitment/${id}/shadowing`} className={buttonVariants({ size: "sm", variant: "outline" })}>
+                      {shadowing ? "Open the shadowing record" : "Record the feedback"}
+                    </Link>
                   </div>
                 </li>
               )}

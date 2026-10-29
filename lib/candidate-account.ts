@@ -72,12 +72,14 @@ export async function inviteCandidate(
  * sign in with the password they already have. Returns false when there's no
  * candidate login to move (the caller invites them as a learner instead).
  */
-export async function makeCandidateStaff(admin: Admin, candidateId: string, orgId: string): Promise<boolean> {
+export async function makeCandidateStaff(admin: Admin, candidateId: string, orgId: string, opts: { email?: boolean } = {}): Promise<boolean> {
   const { data: c } = await admin.from("candidates").select("user_id, full_name, email, organisations(name)").eq("id", candidateId).maybeSingle();
   if (!c?.user_id) return false;
   const { data: user } = await admin.from("users").select("role").eq("id", c.user_id as string).maybeSingle();
   if (user?.role !== "candidate") return false;
   await admin.from("users").update({ role: "learner", organisation_id: orgId }).eq("id", c.user_id as string);
+  // The welcome pack says the same and more, when it's going.
+  if (opts.email === false) return true;
   const company = (c.organisations as unknown as { name: string } | null)?.name ?? "your new employer";
   const url = `${await siteOrigin()}/login`;
   await sendEmail({

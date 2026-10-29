@@ -25,12 +25,16 @@ export default async function MyApplicationPage() {
 
   const views = await Promise.all(
     (candidates ?? []).map(async (c) => {
-      const [{ data: docs }, { data: settingsRow }] = await Promise.all([
+      const [{ data: docs }, { data: settingsRow }, { data: signings }] = await Promise.all([
         admin.from("candidate_documents").select("doc_type, file_path, expires_at, not_required, review_status, review_note").eq("candidate_id", c.id as string),
         admin.from("recruitment_settings").select("*").eq("organisation_id", c.organisation_id as string).maybeSingle(),
+        admin.from("candidate_signings").select("doc_key, status, snapshot").eq("candidate_id", c.id as string),
       ]);
       const stages = progress((docs ?? []) as CandidateDocRecord[], settingsFromRow(settingsRow), { dbsConviction: c.dbs_conviction === true });
-      return { c, stages };
+      const toSign = (signings ?? [])
+        .filter((s) => s.status === "sent")
+        .map((s) => ({ key: s.doc_key as string, title: (s.snapshot as { title: string }).title }));
+      return { c, stages, toSign };
     }),
   );
   const first = String(views[0]?.c.full_name ?? "").split(" ")[0];
@@ -50,13 +54,13 @@ export default async function MyApplicationPage() {
         </p>
       )}
 
-      {views.map(({ c, stages }) => {
+      {views.map(({ c, stages, toSign }) => {
         const company = (c.organisations as unknown as { name: string } | null)?.name ?? "";
         const open = stages.flatMap((s) => (s.locked ? [] : s.steps));
         const mine = open.filter((s) => s.candidateUploads && (s.state === "not_started" || s.state === "sent_back" || s.state === "expired") && (s.required || s.state === "sent_back"));
         // The health form is theirs to fill in online, not an upload.
         const form = open.find((s) => s.key === "starter_form" && (s.state === "not_started" || s.state === "sent_back"));
-        const waiting = open.filter((s) => s.required && !isDone(s.state) && !mine.includes(s) && s !== form);
+        const waiting = open.filter((s) => s.required && !isDone(s.state) && !mine.includes(s) && s !== form && !toSign.some((t) => t.key === s.key));
         const done = stages.flatMap((s) => s.steps).filter((s) => isDone(s.state));
         const current = stages.find((s) => !s.complete)?.stage ?? 4;
         return (
@@ -98,7 +102,16 @@ export default async function MyApplicationPage() {
                     </Link>
                   </div>
                 )}
-                {mine.length === 0 && !form ? (
+                {toSign.map((t) => (
+                  <div key={t.key} className="rounded-2xl border border-primary bg-card p-4">
+                    <p className="font-medium">{t.title}</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">Read it and sign with your finger or mouse.</p>
+                    <Link href={`/my-application/sign/${c.id as string}/${t.key}`} className="mt-3 inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                      Read and sign
+                    </Link>
+                  </div>
+                ))}
+                {mine.length === 0 && !form && toSign.length === 0 ? (
                   <p className="rounded-2xl border bg-card p-4 text-sm text-muted-foreground">Nothing right now. We&apos;ll email you when there is.</p>
                 ) : (
                   mine.map((s) => (

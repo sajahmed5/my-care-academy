@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import type { RecruitmentSettings } from "@/lib/recruitment";
 import { DEFAULT_HOURS_LINE, type LetterDefaults } from "@/lib/recruitment-letters";
+import { MAX_CONTACTS, WELCOME_FIELDS, type WelcomeContact } from "@/lib/welcome-pack";
 import { saveRecruitmentSettingsAction } from "../actions";
 
 function Option({ name, checked, title, children, disabled }: { name: string; checked: boolean; title: string; children: React.ReactNode; disabled: boolean }) {
@@ -37,11 +38,13 @@ function TextOption({ name, label, value, disabled, placeholder }: { name: strin
 export function SettingsForm({
   settings,
   letters,
+  welcome,
   switchable,
   canEdit,
 }: {
   settings: RecruitmentSettings;
   letters: LetterDefaults;
+  welcome: { onHire: boolean; guide: string; contacts: WelcomeContact[] };
   switchable: { key: string; label: string; hint: string }[];
   canEdit: boolean;
 }) {
@@ -80,6 +83,42 @@ export function SettingsForm({
         </div>
         <TextOption name="offer_hours_line" label="Hours" value={letters.hoursLine} disabled={!canEdit} placeholder={DEFAULT_HOURS_LINE} />
         <TextOption name="offer_pay_line" label="Pay" value={letters.payLine} disabled={!canEdit} placeholder="For example: Your pay will be £12.60 an hour, with mileage paid at 45p a mile." />
+      </fieldset>
+      <fieldset className="space-y-3">
+        <legend className="mb-2 font-semibold">Welcome pack</legend>
+        <Option name="welcome_on_hire" checked={welcome.onHire} title="Email the welcome pack when someone is hired" disabled={!canEdit}>
+          The guide below and who to contact, sent from your company. You can untick it for one person when you hire them.
+        </Option>
+        <label className="block text-sm">
+          <span className="font-medium">The welcome guide</span>
+          <textarea
+            name="welcome_guide"
+            defaultValue={welcome.guide}
+            disabled={!canEdit}
+            rows={14}
+            className="mt-1 w-full rounded-lg border bg-background p-3 font-mono text-[13px] leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          />
+          <span className="mt-1 block text-xs text-muted-foreground">
+            Filled in for each person: {WELCOME_FIELDS.map((f) => `{{${f.field}}} ${f.meaning}`).join("; ")}. &ldquo;## &rdquo; starts a heading, &ldquo;- &rdquo; a bullet.
+          </span>
+        </label>
+        <div className="space-y-2">
+          <p className="text-sm font-medium">Who to contact</p>
+          {Array.from({ length: Math.min(MAX_CONTACTS, Math.max(3, welcome.contacts.length + 1)) }, (_, i) => {
+            const c = welcome.contacts[i];
+            const cell = "h-10 w-full rounded-lg border bg-background px-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
+            return (
+              <div key={i} className="grid gap-2 rounded-xl border p-3 sm:grid-cols-5">
+                <input name={`contact_label_${i}`} defaultValue={c?.label} disabled={!canEdit} placeholder="Office" aria-label={`Contact ${i + 1}: what for`} className={cell} />
+                <input name={`contact_name_${i}`} defaultValue={c?.name} disabled={!canEdit} placeholder="Name (optional)" aria-label={`Contact ${i + 1}: name`} className={cell} />
+                <input name={`contact_phone_${i}`} defaultValue={c?.phone} disabled={!canEdit} placeholder="Phone" aria-label={`Contact ${i + 1}: phone`} className={cell} />
+                <input name={`contact_email_${i}`} defaultValue={c?.email} disabled={!canEdit} placeholder="Email" aria-label={`Contact ${i + 1}: email`} className={cell} />
+                <input name={`contact_hours_${i}`} defaultValue={c?.hours} disabled={!canEdit} placeholder="Mon–Fri 9am–5pm" aria-label={`Contact ${i + 1}: hours`} className={cell} />
+              </div>
+            );
+          })}
+          <p className="text-xs text-muted-foreground">Save to get another row. A contact needs a phone number or an email.</p>
+        </div>
       </fieldset>
       {canEdit && (
         <div className="flex items-center gap-3">

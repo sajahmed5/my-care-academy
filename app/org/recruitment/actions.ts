@@ -11,10 +11,13 @@ import { requireFeature } from "@/lib/entitlements";
 import { siteOrigin } from "@/lib/site-url";
 import { emailApplicationLink, issueApplicationLink, newToken } from "@/lib/candidate-links";
 import { inviteCandidate, makeCandidateStaff } from "@/lib/candidate-account";
+import { copyToStaffFile, sendWelcomePack, startInduction } from "@/lib/hire";
 import { unlockAttempt } from "@/lib/literacy-attempts";
 import { overallScore, sanitiseInterview, validateInterview } from "@/lib/recruitment-interview";
 import type { FieldError } from "@/lib/recruitment-application";
 import { sendReferenceRequest } from "@/lib/reference-requests";
+import { sanitiseShadowing, shadowingNote, validateShadowing } from "@/lib/recruitment-shadowing";
+import { DEFAULT_WELCOME_GUIDE, MAX_CONTACTS, MAX_GUIDE_CHARS, sanitiseContacts } from "@/lib/welcome-pack";
 import { sendEmail } from "@/lib/email";
 import { emailButton, emailLayout, esc } from "@/lib/email-layout";
 import {
@@ -174,6 +177,11 @@ export async function confirmStepAction(
   if (!loaded) return { ok: false, error: "Candidate not found." };
   const step = openStep(loaded.stages, docType);
   if (typeof step === "string") return { ok: false, error: step };
+
+  // A document signed online is accepted from the signed copy, where the
+  // company countersigns: confirming the step here would skip that.
+  const { data: signing } = await admin.from("candidate_signings").select("status").eq("candidate_id", candidateId).eq("doc_key", docType).maybeSingle();
+  if (signing?.status === "signed") return { ok: false, error: "They signed this online: open it under Documents to sign to read and accept it." };
 
   const existing = loaded.docs.find((d) => d.doc_type === docType);
   const trimmed = note.trim().slice(0, 500) || null;
@@ -504,43 +512,75 @@ export async function deleteCandidateAction(id: string): Promise<void> {
 }
 
 /**
- * Hire; optionally create the candidate as a learner. Refused while any
- * required step is outstanding: the button is disabled for the same reason,
- * but the button is not the gate.
+ * Hire (RECRUITMENT.md, release 6). Refused while any required step is
+ * outstanding: the button is disabled for the same reason, but the button is
+ * not the gate. Their candidate login becomes their training login (or they're
+ * invited), the checked documents move onto their staff file, their induction
+ * starts, and the welcome pack goes, as the office chose.
  */
 export async function hireCandidateAction(
   candidateId: string,
-  createLearner: boolean,
-): Promise<{ ok: boolean; invited?: boolean; error?: string }> {
+  opts: { createLearner: boolean; induction: boolean; welcome: boolean },
+): Promise<{ ok: boolean; message?: string; error?: string }> {
   const context = await requireConsole();
   await assertRecruitment(context);
   const admin = createAdminClient();
-  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  const orgId = context.organisationId!;
+  const loaded = await loadCandidate(admin, candidateId, orgId);
   if (!loaded) return { ok: false, error: "Candidate not found." };
   const outstanding = outstandingSteps(loaded.stages, loaded.settings);
   if (outstanding.length > 0) return { ok: false, error: notReadyMessage(outstanding) };
-
-  await admin.from("candidates").update({ status: "hired", hired_at: new Date().toISOString() }).eq("id", candidateId);
-
-  let invited = false;
   const { candidate } = loaded;
-  // Their candidate login becomes their training login, if they have one.
-  if (createLearner && (await makeCandidateStaff(admin, candidateId, context.organisationId!))) {
-    invited = true;
-  } else if (createLearner && candidate.email) {
+  const { data: claimed } = await admin
+    .from("candidates")
+    .update({ status: "hired", hired_at: new Date().toISOString() })
+    .eq("id", candidateId)
+    .eq("status", "candidate")
+    .select("id");
+  if (!claimed?.length) return { ok: false, error: "They've already been hired." };
+
+  // Their login: the candidate one becomes staff, or a new invite.
+  let userId: string | null = null;
+  const welcome = opts.welcome && !!candidate.email;
+  if (opts.createLearner && (await makeCandidateStaff(admin, candidateId, orgId, { email: !welcome }))) {
+    userId = candidate.user_id as string;
+  } else if (opts.createLearner && candidate.email) {
     const result = await createInvite({
       email: candidate.email as string,
       role: "learner",
-      organisationId: context.organisationId!,
+      organisationId: orgId,
       fullName: candidate.full_name as string,
       roleLabel: "learner",
     });
-    invited = !!result.userId;
+    userId = result.userId ?? null;
+    if (userId) await admin.from("candidates").update({ user_id: userId }).eq("id", candidateId);
   }
 
-  await logAudit({ context, action: "candidate.hired", entity: "candidate", entityId: candidateId, detail: { created_learner: invited } });
+  const said: string[] = ["Hired."];
+  let moved: string[] = [];
+  let courses = 0;
+  if (userId) {
+    moved = await copyToStaffFile(admin, candidateId, orgId, userId, context.userId);
+    if (moved.length) said.push(`${moved.map((m) => (m === "dbs" ? "DBS" : "Right to work")).join(" and ")} moved to their staff file.`);
+    if (opts.induction) {
+      const { data: c } = await admin.from("candidates").select("start_date").eq("id", candidateId).maybeSingle();
+      courses = await startInduction(admin, orgId, userId, (c?.start_date as string | null) ?? null);
+      if (courses) said.push(`Induction started: ${courses} courses.`);
+    }
+    said.push("They've been sent their login.");
+  }
+  if (welcome && (await sendWelcomePack(admin, candidateId, orgId))) said.push("Welcome pack sent.");
+
+  await logAudit({
+    context,
+    action: "candidate.hired",
+    entity: "candidate",
+    entityId: candidateId,
+    detail: { login: !!userId, staff_file: moved, induction_courses: courses, welcome },
+  });
   done(candidateId);
-  return { ok: true, invited };
+  revalidatePath("/org/learners");
+  return { ok: true, message: said.join(" ") };
 }
 
 /** The company's recruitment settings. Managers only. */
@@ -557,6 +597,7 @@ export async function saveRecruitmentSettingsAction(
     thirdReference: formData.get("third_reference") === "on",
     dbsBeforeStart: formData.get("dbs_before_start") === "on",
   };
+  const guide = String(formData.get("welcome_guide") ?? "").replace(/\r/g, "").trim().slice(0, MAX_GUIDE_CHARS);
   const words = (k: string, max: number) => String(formData.get(k) ?? "").replace(/\s+/g, " ").trim().slice(0, max) || null;
   const supabase = await createClient();
   const { error } = await supabase.from("recruitment_settings").upsert({
@@ -569,6 +610,18 @@ export async function saveRecruitmentSettingsAction(
     offer_signatory_title: words("offer_signatory_title", 80),
     offer_hours_line: words("offer_hours_line", 500),
     offer_pay_line: words("offer_pay_line", 300),
+    welcome_on_hire: formData.get("welcome_on_hire") === "on",
+    // Our guide unchanged is stored as nothing, so improvements to it reach them.
+    welcome_guide: guide && guide !== DEFAULT_WELCOME_GUIDE.trim() ? guide : null,
+    welcome_contacts: sanitiseContacts(
+      Array.from({ length: MAX_CONTACTS }, (_, i) => ({
+        label: formData.get(`contact_label_${i}`),
+        name: formData.get(`contact_name_${i}`),
+        phone: formData.get(`contact_phone_${i}`),
+        email: formData.get(`contact_email_${i}`),
+        hours: formData.get(`contact_hours_${i}`),
+      })),
+    ),
     updated_by: context.userId,
   });
   if (error) return { error: "The settings couldn't be saved. Try again." };
@@ -687,6 +740,63 @@ export async function saveRefereeAction(
     { onConflict: "candidate_id,position" },
   );
   if (error) return { error: "The referee couldn't be saved. Try again." };
+  done(candidateId);
+  return { ok: true };
+}
+
+/**
+ * The shadowing record: the mentor's feedback, saved as it's typed and
+ * finished on purpose, which confirms the Shadowing step with the verdict.
+ */
+export async function saveShadowingAction(
+  candidateId: string,
+  raw: unknown,
+  finish: boolean,
+): Promise<{ ok: boolean; error?: string; problems?: Record<string, FieldError[]> }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  const step = openStep(loaded.stages, "shadowing");
+  if (typeof step === "string") return { ok: false, error: step };
+  const answers = sanitiseShadowing(raw);
+  if (finish) {
+    const problems = validateShadowing(answers, new Date().toISOString().slice(0, 10));
+    if (Object.keys(problems).length) return { ok: false, error: "Some answers still need filling in.", problems };
+  }
+  const now = new Date().toISOString();
+  const { error } = await admin.from("candidate_shadowing").upsert(
+    {
+      organisation_id: context.organisationId,
+      candidate_id: candidateId,
+      answers,
+      status: finish ? "complete" : "draft",
+      completed_at: finish ? now : null,
+      completed_by: finish ? context.userId : null,
+      updated_by: context.userId,
+    },
+    { onConflict: "candidate_id" },
+  );
+  if (error) return { ok: false, error: "The shadowing record couldn't be saved. Try again." };
+  if (finish) {
+    await admin.from("candidate_documents").upsert(
+      {
+        candidate_id: candidateId,
+        organisation_id: context.organisationId,
+        doc_type: "shadowing",
+        file_path: null,
+        not_required: false,
+        review_status: "confirmed",
+        review_note: shadowingNote(answers),
+        uploaded_by_candidate: false,
+        reviewed_by: context.userId,
+        reviewed_at: now,
+      },
+      { onConflict: "candidate_id,doc_type" },
+    );
+    await logAudit({ context, action: "candidate.shadowing_recorded", entity: "candidate", entityId: candidateId, detail: { recommended: answers.recommend === "yes" } });
+  }
   done(candidateId);
   return { ok: true };
 }

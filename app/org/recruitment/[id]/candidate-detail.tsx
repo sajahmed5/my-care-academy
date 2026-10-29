@@ -15,15 +15,19 @@ export function CandidateActions({
   status,
   hasEmail,
   outstanding,
+  welcomeDefault,
 }: {
   candidateId: string;
   status: string;
   hasEmail: boolean;
   outstanding: string[];
+  welcomeDefault: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [createLearner, setCreateLearner] = useState(hasEmail);
+  const [induction, setInduction] = useState(true);
+  const [welcome, setWelcome] = useState(welcomeDefault && hasEmail);
   const [message, setMessage] = useState<string | null>(null);
   const ready = outstanding.length === 0;
 
@@ -60,10 +64,22 @@ export function CandidateActions({
           </p>
         )}
         {ready && hasEmail && (
-          <label className="mt-2 flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={createLearner} onChange={(e) => setCreateLearner(e.target.checked)} className="size-4" />
-            Give them a login for their training (they get an email)
-          </label>
+          <div className="mt-2 space-y-1.5">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={createLearner} onChange={(e) => setCreateLearner(e.target.checked)} className="size-4" />
+              Give them a login for their training, and move their checked documents to their staff file
+            </label>
+            {createLearner && (
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={induction} onChange={(e) => setInduction(e.target.checked)} className="size-4" />
+                Start their induction: the Care Certificate courses, due 12 weeks from their start
+              </label>
+            )}
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={welcome} onChange={(e) => setWelcome(e.target.checked)} className="size-4" />
+              Email them the welcome pack
+            </label>
+          </div>
         )}
       </div>
       <Button
@@ -71,8 +87,8 @@ export function CandidateActions({
         disabled={!ready || pending}
         onClick={() =>
           start(async () => {
-            const r = await hireCandidateAction(candidateId, createLearner);
-            setMessage(r.ok ? (r.invited ? "Hired. They've been sent their login." : "Hired.") : (r.error ?? "That didn't work."));
+            const r = await hireCandidateAction(candidateId, { createLearner, induction: createLearner && induction, welcome });
+            setMessage(r.ok ? (r.message ?? "Hired.") : (r.error ?? "That didn't work."));
             router.refresh();
           })
         }

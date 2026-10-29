@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { formatDate } from "@/lib/dates";
 import type { StepState } from "@/lib/recruitment";
 import {
@@ -24,6 +25,8 @@ export interface StepView {
   required: boolean;
   locked: boolean;
   state: StepState;
+  /** Signed online and waiting for the office: accepted from the signed copy, not here. */
+  signedHref?: string;
   doc?: {
     id: string;
     file_name: string | null;
@@ -119,7 +122,10 @@ export function StepRow({ candidateId, step }: { candidateId: string; step: Step
             {step.doc?.file_path && (
               <Button variant="outline" size="sm" onClick={view}>View</Button>
             )}
-            {step.state === "submitted" && (
+            {step.state === "submitted" && step.signedHref && (
+              <Link href={step.signedHref} className={buttonVariants({ size: "sm" })}>Read and sign</Link>
+            )}
+            {step.state === "submitted" && !step.signedHref && (
               <>
                 <Button size="sm" disabled={pending} onClick={() => run(() => confirmStepAction(candidateId, step.key, ""))}>Confirm</Button>
                 <Button variant="outline" size="sm" onClick={() => setMode("sendback")}>Send back</Button>

@@ -174,5 +174,10 @@ form exists, it works the paper way: the office uploads it and confirms it.
    stage 2 ends with a "Conditional offer" step; the AI charge shows on the
    Account page but is not yet added to the Stripe invoice automatically.*
 6. **Sign-up and hire** — signing online, shadowing, the welcome pack, and
-   hire moving documents onto the staff file.
+   hire moving documents onto the staff file. *Built 29 Oct 2026 (v2.29.6):
+   the signing-document wording editor came forward from release 7, since
+   nothing can be sent while the template's blanks remain. Left out of
+   MyRoster's role acceptance: bank details and the Mileage Form. References
+   taken online stay in the recruitment record rather than moving to the
+   staff file, which only holds files.*
 7. **Editing** — each company's own questions, test, letters and documents.

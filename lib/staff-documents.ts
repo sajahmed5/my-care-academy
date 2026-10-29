@@ -80,3 +80,14 @@ export function staffDocTasks(docs: StaffDoc[], now: Date): StaffDocTask[] {
   }
   return tasks;
 }
+
+/**
+ * On hire (RECRUITMENT.md, release 6), which recruitment step fills which staff document. Right to work: the share
+ * code check where there is one, otherwise the ID (a UK or Irish passport is
+ * the right-to-work proof). Only steps held as a file move: a step done on
+ * paper or online stays in the recruitment record.
+ */
+export const STAFF_FILE_SOURCES: Array<{ staffDoc: StaffDocKey; from: string[] }> = [
+  { staffDoc: "right_to_work", from: ["share_code", "proof_id"] },
+  { staffDoc: "dbs", from: ["dbs"] },
+];

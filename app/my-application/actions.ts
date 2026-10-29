@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { progress, settingsFromRow, type CandidateDocRecord } from "@/lib/recruitment";
 import { STARTER_DOC_NOTE, sanitiseStarter, validateStarter } from "@/lib/recruitment-starter";
 import type { FieldError } from "@/lib/recruitment-application";
+import { allPartsDone, validSignature, type PartState, type Snapshot } from "@/lib/signing-documents";
 
 /**
  * A candidate uploads a document from their own page (RECRUITMENT.md, release
@@ -183,4 +184,74 @@ export async function submitStarterAction(
   revalidatePath("/my-application");
   revalidatePath(`/org/recruitment/${candidateId}`);
   return { ok: true };
+}
+
+/**
+ * The candidate signs one part of a document they've been sent (or declines
+ * a part that may be declined). The last part puts the document in front of
+ * the office, which accepts it or countersigns it.
+ */
+export async function signPartAction(
+  candidateId: string,
+  docKey: string,
+  partId: string,
+  sig: { dataUrl: string; signedName: string } | { declined: true },
+): Promise<{ ok: boolean; error?: string; done?: boolean }> {
+  const context = await requireCandidate();
+  const admin = createAdminClient();
+  const { data: c } = await admin.from("candidates").select("id, user_id, status, organisation_id").eq("id", candidateId).maybeSingle();
+  if (!c || c.user_id !== context.userId || c.status !== "candidate") return { ok: false, error: "That isn't one of your applications." };
+  const { data: row } = await admin
+    .from("candidate_signings")
+    .select("id, status, snapshot, state")
+    .eq("candidate_id", candidateId)
+    .eq("doc_key", docKey)
+    .maybeSingle();
+  if (!row) return { ok: false, error: "That document hasn't been sent to you." };
+  if (row.status !== "sent") return { ok: false, error: "You've already signed this." };
+  const snap = row.snapshot as Snapshot;
+  const part = snap.parts.find((p) => p.id === partId);
+  if (!part) return { ok: false, error: "That part isn't in this document." };
+
+  const state = { ...((row.state ?? {}) as Record<string, PartState>) };
+  const now = new Date().toISOString();
+  if ("declined" in sig) {
+    if (!part.optional) return { ok: false, error: "This part needs your signature." };
+    state[partId] = { declined: true, signedAt: now };
+  } else {
+    const signedName = String(sig.signedName ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
+    if (!validSignature(sig.dataUrl)) return { ok: false, error: "Sign in the box first." };
+    if (!signedName) return { ok: false, error: "Type your full name." };
+    state[partId] = { dataUrl: sig.dataUrl, signedName, signedAt: now };
+  }
+  const done = allPartsDone(snap, state);
+  // Only the call that moves it from sent records it, so a double tap can't sign twice.
+  const { data: updated } = await admin
+    .from("candidate_signings")
+    .update({ state, ...(done ? { status: "signed", signed_at: now } : {}) })
+    .eq("id", row.id as string)
+    .eq("status", "sent")
+    .select("id");
+  if (!updated?.length) return { ok: false, error: "You've already signed this." };
+  if (done) {
+    await admin.from("candidate_documents").upsert(
+      {
+        candidate_id: candidateId,
+        organisation_id: c.organisation_id,
+        doc_type: docKey,
+        file_path: null,
+        file_name: null,
+        not_required: false,
+        review_status: "submitted",
+        review_note: snap.countersigned ? "Signed online: waiting for your signature" : "Signed online",
+        uploaded_by_candidate: true,
+        reviewed_by: null,
+        reviewed_at: null,
+      },
+      { onConflict: "candidate_id,doc_type" },
+    );
+    revalidatePath("/my-application");
+    revalidatePath(`/org/recruitment/${candidateId}`);
+  }
+  return { ok: true, done };
 }
