@@ -111,6 +111,7 @@ const MENUS: Record<string, MenuItem[]> = {
     { label: "Organisations", href: "/platform/organisations" },
     { label: "Packages", href: "/platform/tiers" },
     { label: "Analytics", href: "/platform/analytics" },
+    { label: "Face to face", href: "/platform/face-to-face" },
     {
       label: "Content",
       children: [
