@@ -56,9 +56,9 @@ async function has(client: SupabaseClient, feature: string): Promise<boolean> {
 }
 
 beforeAll(async () => {
-  tierOnly = (await orgAdminOn("core_forms", "tier")).client;
+  tierOnly = (await orgAdminOn("core_recruitment", "tier")).client;
 
-  const off = await orgAdminOn("core_forms", "off");
+  const off = await orgAdminOn("core_recruitment", "off");
   await setFeature(off.orgId, "forms.builder", false);
   overriddenOff = off.client;
 
@@ -74,7 +74,7 @@ afterAll(async () => {
 describe("has_feature", () => {
   it("follows the package when there is no override", async () => {
     expect(await has(tierOnly, "forms.builder")).toBe(true);
-    expect(await has(tierOnly, "recruitment.tracker")).toBe(false);
+    expect(await has(tierOnly, "platform.white_label")).toBe(false);
   });
 
   it("lets an override switch off something the package includes", async () => {
@@ -141,7 +141,7 @@ describe("the legacy add-on switches", () => {
     const { client, orgId } = await orgAdminOn("core", "rename");
     await adminClient()
       .from("organisations")
-      .update({ name: `Renamed ${RUN}`, package_tier: "core_forms" })
+      .update({ name: `Renamed ${RUN}`, package_tier: "core_recruitment" })
       .eq("id", orgId);
     // No switch was written, so the package decides.
     expect(await has(client, "forms.builder")).toBe(true);

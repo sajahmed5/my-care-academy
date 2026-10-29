@@ -3,10 +3,13 @@ import { CheckCircle2 } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import {
+  PACKAGE_TIERS,
   TIER_DETAILS,
   tierLabel,
   type PackageTier,
 } from "@/lib/organisations";
+import { LIST_PRICE_GBP } from "@/lib/pricing";
+import { ChangePackage } from "./change-package";
 import { formatMoney, getBillingSummary } from "@/lib/account-billing";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
@@ -34,8 +37,9 @@ function fmtDate(iso: string | null): string {
 
 /**
  * Account (formerly Billing): the current package in full, a read-only
- * payment summary, and account admin. Plan changes are owner-only, so there
- * is deliberately no upgrade/downgrade UI here (design doc v2).
+ * payment summary, and account admin. Plan changes are still made by us, but
+ * since 29 Oct 2026 a manager can ask for one here ("Change your package")
+ * rather than being sent to the contact form.
  */
 /** Stripe's words, in the manager's words. */
 const SUB_STATUS: Record<string, string> = {
@@ -49,11 +53,16 @@ const SUB_STATUS: Record<string, string> = {
   paused: "Paused",
 };
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ package?: string }>;
+}) {
   const context = await requireRole("org_admin");
+  const { package: preselect } = await searchParams;
 
   const supabase = await createClient();
-  const [{ data: org }, { data: me }, { data: consoleRows }] = await Promise.all([
+  const [{ data: org }, { data: me }, { data: consoleRows }, { data: openAsk }] = await Promise.all([
     supabase
       .from("organisations")
       .select(
@@ -73,6 +82,14 @@ export default async function AccountPage() {
       .in("role", ["org_admin", "org_office"])
       .order("role")
       .order("full_name"),
+    supabase
+      .from("package_change_requests")
+      .select("to_tier, created_at")
+      .eq("organisation_id", context.organisationId!)
+      .eq("status", "open")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
   const consoleUsers: ConsoleUser[] = (consoleRows ?? []).map((u) => ({
     id: u.id as string,
@@ -126,19 +143,33 @@ export default async function AccountPage() {
                 </li>
               ))}
             </ul>
-            {/* "Get in touch" with nothing to touch: both of these told a
-                manager to contact us and left them to work out how. */}
-            <p className="mt-4 text-xs text-muted-foreground">
-              Want to change your package? Plan changes are handled by My Care
-              Academy —{" "}
-              <Link
-                href="/contact?topic=pricing"
-                className="font-medium text-primary hover:underline"
-              >
-                get in touch
-              </Link>{" "}
-              and we&apos;ll sort it.
-            </p>
+          </CardContent>
+        </Card>
+
+        {/* Change your package: the packages side by side, and a request to us. */}
+        <Card id="change" className="scroll-mt-20">
+          <CardHeader>
+            <CardTitle>Change your package</CardTitle>
+            <CardDescription>
+              Choose a package and we&apos;ll set it up with you. Nothing changes until we&apos;ve been in touch.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChangePackage
+              current={tier}
+              preselect={preselect ?? null}
+              asked={
+                openAsk
+                  ? { label: tierLabel(openAsk.to_tier as string), on: fmtDate(openAsk.created_at as string) }
+                  : null
+              }
+              options={PACKAGE_TIERS.map((t) => ({
+                value: t.value,
+                label: t.label,
+                price: LIST_PRICE_GBP[t.value],
+                points: TIER_DETAILS[t.value].features.slice(0, 4),
+              }))}
+            />
           </CardContent>
         </Card>
 
@@ -156,10 +187,10 @@ export default async function AccountPage() {
             ) : (
               <p className="text-sm text-muted-foreground">
                 Your own logo is included in Enterprise.{" "}
-                <Link href="/contact?topic=pricing" className="font-medium text-primary hover:underline">
-                  Get in touch
-                </Link>{" "}
-                to add it.
+                <Link href="/org/billing?package=full#change" className="font-medium text-primary hover:underline">
+                  Ask to move to Enterprise
+                </Link>
+                .
               </p>
             )}
           </CardContent>

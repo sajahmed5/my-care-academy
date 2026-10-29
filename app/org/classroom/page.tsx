@@ -1,4 +1,5 @@
 import { requireConsole } from "@/lib/auth";
+import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,7 @@ const fmt = (d: string) => formatDate(d, { day: "numeric", month: "short", year:
  */
 export default async function ClassroomPage() {
   const context = await requireConsole();
+  await requireFeature(context, "training.classroom");
   const supabase = await createClient();
   const orgId = context.organisationId!;
   const [{ data: sessions }, { data: courses }, { data: staff }] = await Promise.all([

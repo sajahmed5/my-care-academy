@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { tierLabel } from "@/lib/organisations";
+import { formatDate } from "@/lib/dates";
 import { notFound } from "next/navigation";
 import { Users, CheckCircle2, AlertTriangle, MoonStar, UserRoundX } from "lucide-react";
 import { requireRole, isConsoleRole, type UserRole } from "@/lib/auth";
@@ -106,6 +108,14 @@ export default async function OrganisationDetailPage({
 
   if (!org) notFound();
 
+  // A manager's open request to change package, from their Account page.
+  const { data: asks } = await supabase
+    .from("package_change_requests")
+    .select("id, to_tier, note, created_at")
+    .eq("organisation_id", id)
+    .eq("status", "open")
+    .order("created_at", { ascending: false });
+
   // The rostering integration (myroster.care): the key's dates, whether the
   // package lets it be used, and how many carers it has linked. The key
   // columns are read as the service role, as the API reads them.
@@ -184,6 +194,21 @@ export default async function OrganisationDetailPage({
           </Link>
           <OrgNudgeButton orgId={org.id} />
         </div>
+
+        {(asks ?? []).map((a) => (
+          <div key={a.id as string} role="status" className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            <p>
+              <strong>Asked to move to {tierLabel(a.to_tier as string)}</strong> on{" "}
+              {formatDate(a.created_at as string, { day: "numeric", month: "long", year: "numeric" })}.{" "}
+              Set the package under{" "}
+              <Link href={`/platform/organisations/${org.id}?section=settings`} className="font-medium underline">
+                Settings
+              </Link>{" "}
+              once it&apos;s agreed; the request closes when you save it.
+            </p>
+            {a.note && <p className="mt-1 text-amber-900">Their note: {a.note as string}</p>}
+          </div>
+        ))}
 
         <nav aria-label="Sections" className="flex items-center gap-1 border-b">
           {SECTIONS.map((s) => (

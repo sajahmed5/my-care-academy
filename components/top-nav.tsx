@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { ChevronDown, Lock, Menu, X } from "lucide-react";
 import { IntentLink } from "@/components/intent-link";
 import { BrandMark } from "@/components/brand-mark";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
-import { withoutGated, type FeatureKey } from "@/lib/features";
+import { withLocks, withoutGated, type FeatureKey } from "@/lib/features";
 import { OPEN_REPORT_EVENT } from "@/components/report-widget";
 
 interface MenuLink {
@@ -20,6 +20,8 @@ interface MenuLink {
   exact?: boolean;
   /** Other paths that light this link up, e.g. a carer's file under Overview. */
   also?: string[];
+  /** Not in the package: the link goes to the page that says which one has it. */
+  locked?: boolean;
 }
 
 interface MenuItem {
@@ -30,14 +32,17 @@ interface MenuItem {
   children?: MenuLink[];
   /** Other paths that belong here, e.g. a carer's file under Learners. */
   also?: string[];
+  locked?: boolean;
 }
 
 /**
  * The menu across the top of every signed-in page (Saj, 27 Oct 2026). It
  * replaced the left-hand panel, whose fifteen-odd links became eight items:
  * a few plain links, the rest drop-downs grouped as the panel grouped them.
- * Anything an organisation's package leaves out is dropped by withoutGated,
- * and a drop-down left with nothing in it goes with it.
+ * For a carer, anything the company's package leaves out is dropped by
+ * withoutGated, and a drop-down left with nothing in it goes with it. For the
+ * console it stays, padlocked, and leads to the page saying which package has
+ * it (withLocks, 29 Oct 2026).
  */
 const ORG_MENU: MenuItem[] = [
   { label: "Overview", href: "/org" },
@@ -58,7 +63,7 @@ const ORG_MENU: MenuItem[] = [
       { href: "/org/courses", label: "Courses overview", exact: true },
       { href: "/org/courses/admin", label: "Assign training" },
       { href: "/org/courses/statistics", label: "Time taken" },
-      { href: "/org/classroom", label: "Classroom sessions" },
+      { href: "/org/classroom", label: "Classroom sessions", feature: "training.classroom" },
       { href: "/org/observations", label: "Care Certificate", feature: "training.observations" },
     ],
   },
@@ -199,6 +204,16 @@ function useOpenMenu() {
 const panelClass =
   "absolute top-full z-40 mt-1 min-w-52 rounded-lg border bg-card p-1 text-card-foreground shadow-lg";
 
+/** The padlock beside anything the package leaves out, with words for a screen reader. */
+function LockMark() {
+  return (
+    <>
+      <Lock aria-hidden="true" className="size-3 shrink-0 opacity-70" />
+      <span className="sr-only">(not in your package)</span>
+    </>
+  );
+}
+
 function PanelLink({ link, pathname }: { link: MenuLink; pathname: string }) {
   const active = linkActive(pathname, link);
   return (
@@ -206,11 +221,13 @@ function PanelLink({ link, pathname }: { link: MenuLink; pathname: string }) {
       href={link.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "block rounded-md px-3 py-2 text-sm transition-colors",
+        "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm transition-colors",
         active ? "bg-muted font-medium text-foreground" : "text-foreground/80 hover:bg-muted",
+        link.locked && !active && "text-muted-foreground",
       )}
     >
       {link.label}
+      {link.locked && <LockMark />}
     </IntentLink>
   );
 }
@@ -244,7 +261,9 @@ export function TopNav({
   stars?: React.ReactNode;
 }) {
   const { open, setOpen, ref, pathname } = useOpenMenu();
-  const items = withoutGated(role ? (MENUS[role] ?? []) : [], enabled);
+  const menu = role ? (MENUS[role] ?? []) : [];
+  const items =
+    role === "org_admin" || role === "org_office" ? withLocks(menu, enabled) : withoutGated(menu, enabled);
   const person = personLinks(role);
   const current = items.find((item) => itemActive(pathname, item));
 
@@ -293,7 +312,9 @@ export function TopNav({
         {/* Wide screens: the menu itself */}
         <nav aria-label="Main" className="hidden min-w-0 flex-1 items-center gap-0.5 lg:flex">
           {items.map((item) => {
-            const active = itemActive(pathname, item);
+            // Only the one whose sub-pages are showing: Audits sits under both
+            // Who's due and Quality, and a locked page is shared by both.
+            const active = item === current;
             const itemClass = cn(
               "inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium transition-colors",
               active
@@ -310,6 +331,7 @@ export function TopNav({
                   className={itemClass}
                 >
                   {item.label}
+                  {item.locked && <LockMark />}
                   {badge > 0 && (
                     <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-xs font-semibold text-white">
                       {badge}
@@ -329,6 +351,7 @@ export function TopNav({
                   className={itemClass}
                 >
                   {item.label}
+                  {item.locked && <LockMark />}
                   <ChevronDown className={cn("size-3.5 transition-transform", isOpen && "rotate-180")} />
                 </button>
                 {isOpen && (
@@ -410,13 +433,14 @@ export function TopNav({
                   href={c.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "inline-flex h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 text-sm transition-colors",
+                    "inline-flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 text-sm transition-colors",
                     active
                       ? "border-primary font-medium text-foreground"
                       : "border-transparent text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {c.label}
+                  {c.locked && <LockMark />}
                 </IntentLink>
               );
             })}
@@ -434,7 +458,7 @@ export function TopNav({
             item.href ? (
               // A plain link after a drop-down's list would read as part of it.
               <div key={item.label} className={items[i - 1]?.children ? "mt-3" : undefined}>
-                <MobileLink href={item.href} label={item.label} badge={badges[item.href] ?? 0} active={itemActive(pathname, item)} />
+                <MobileLink href={item.href} label={item.label} badge={badges[item.href] ?? 0} active={itemActive(pathname, item)} locked={item.locked} />
               </div>
             ) : (
               <div key={item.label} className="pt-3">
@@ -442,7 +466,7 @@ export function TopNav({
                   {item.label}
                 </p>
                 {(item.children ?? []).map((c) => (
-                  <MobileLink key={c.href} href={c.href} label={c.label} active={linkActive(pathname, c)} />
+                  <MobileLink key={c.href} href={c.href} label={c.label} active={linkActive(pathname, c)} locked={c.locked} />
                 ))}
               </div>
             ),
@@ -475,7 +499,7 @@ export function TopNav({
   );
 }
 
-function MobileLink({ href, label, active, badge = 0 }: { href: string; label: string; active: boolean; badge?: number }) {
+function MobileLink({ href, label, active, badge = 0, locked = false }: { href: string; label: string; active: boolean; badge?: number; locked?: boolean }) {
   return (
     <IntentLink
       href={href}
@@ -486,6 +510,7 @@ function MobileLink({ href, label, active, badge = 0 }: { href: string; label: s
       )}
     >
       <span className="flex-1">{label}</span>
+      {locked && <LockMark />}
       {badge > 0 && (
         <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-xs font-semibold text-white">
           {badge}

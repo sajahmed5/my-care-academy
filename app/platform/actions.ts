@@ -190,6 +190,15 @@ export async function updateOrganisationAction(
     if (clearError) return { ok: false, error: clearError.message };
   }
 
+  // A manager's request for this package is answered by setting it. Written
+  // as the service role: signed-in users can only read and add requests.
+  await createAdminClient()
+    .from("package_change_requests")
+    .update({ status: "done", handled_at: new Date().toISOString() })
+    .eq("organisation_id", id)
+    .eq("to_tier", packageTier)
+    .eq("status", "open");
+
   await logAudit({
     context,
     organisationId: id,

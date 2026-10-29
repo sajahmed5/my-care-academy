@@ -24,7 +24,7 @@ export const FEATURE_CATEGORIES = [
   { key: "complaints", label: "Complaints & safeguarding" },
   { key: "forms", label: "Forms" },
   { key: "documents", label: "Documents" },
-  { key: "people", label: "Staff records" },
+  { key: "people", label: "Staff Audits" },
   { key: "quality", label: "Quality" },
   { key: "platform", label: "Platform & integration" },
 ] as const;
@@ -59,38 +59,46 @@ export const FEATURES = [
     label: "Care Certificate observations",
     isCore: false,
   },
+  // Face-to-face: the organisation's own classroom sessions, with who came.
+  // Enterprise, with the Care Certificate (PACKAGES.md, 29 Oct 2026).
+  {
+    key: "training.classroom",
+    category: "training",
+    label: "Classroom sessions",
+    isCore: false,
+  },
   {
     key: "recruitment.tracker",
     category: "recruitment",
-    label: "Recruitment tracker",
+    label: "Recruitment",
     isCore: false,
   },
   {
     key: "complaints.register",
     category: "complaints",
-    label: "Complaints & safeguarding register",
+    label: "Complaints & safeguarding",
     isCore: false,
   },
   {
     key: "forms.builder",
     category: "forms",
-    label: "Forms library",
+    label: "Forms",
     isCore: false,
   },
-  // Two versions of the same shelf: the basic set, and the full compliance
-  // pack. The pack includes the basics: org_has_feature answers
-  // documents.library as on whenever the pack is (migration 20261025120000),
-  // so every guard on the library already counts the pack.
+  // Two versions of the same shelf, sold together since 29 Oct 2026 as one
+  // combined pack in Pro. The pack includes the basics: org_has_feature
+  // answers documents.library as on whenever the pack is (migration
+  // 20261025120000), so every guard on the library already counts the pack.
   {
     key: "documents.library",
     category: "documents",
-    label: "Policies & procedures library (CQC basics)",
+    label: "Policies & procedures",
     isCore: false,
   },
   {
     key: "documents.compliance_pack",
     category: "documents",
-    label: "Full compliance pack",
+    label: "Policies & procedures (full pack)",
     isCore: false,
     hint: "Includes the basic policies and procedures library.",
   },
@@ -130,7 +138,7 @@ export const FEATURES = [
     category: "platform",
     label: "White-label logo",
     isCore: false,
-    hint: "Not built yet: switching it on changes nothing.",
+    hint: "The organisation's logo on its certificates, menu, policies and surveys.",
   },
   {
     key: "platform.portal_api",
@@ -170,6 +178,43 @@ export function coreFeatureKeys(): FeatureKey[] {
 interface Gated {
   feature?: FeatureKey;
   children?: { feature?: FeatureKey }[];
+}
+
+/** Where a console user lands for a feature their package leaves out. */
+export function lockedHref(feature: FeatureKey): string {
+  return `/org/locked/${feature}`;
+}
+
+interface Lockable {
+  href?: string;
+  feature?: FeatureKey;
+  locked?: boolean;
+  children?: { href: string; feature?: FeatureKey; locked?: boolean }[];
+}
+
+/**
+ * The console's menu: what the package leaves out stays in, marked locked and
+ * pointing at the page that says which package has it (Saj, 29 Oct 2026 —
+ * hiding it meant a manager never learned it existed). A drop-down whose
+ * pages are all locked is marked locked too. Carers keep withoutGated: they
+ * never see what their company hasn't bought.
+ */
+export function withLocks<T extends Lockable>(
+  items: readonly T[],
+  enabled: Record<string, boolean>,
+): T[] {
+  const locked = (feature?: FeatureKey) => !!feature && !enabled[feature];
+  return items.map((item) => {
+    if (item.children) {
+      const children = item.children.map((c) =>
+        locked(c.feature) ? { ...c, locked: true, href: lockedHref(c.feature!) } : c,
+      );
+      return { ...item, children, locked: children.every((c) => c.locked) };
+    }
+    return locked(item.feature)
+      ? { ...item, locked: true, href: lockedHref(item.feature!) }
+      : item;
+  });
 }
 
 /**

@@ -6,7 +6,10 @@ export const PACKAGE_TIERS = [
   // Four-tier model (Saj, 9 Sept 2026: a bronze/silver/gold/platinum ladder
   // "with more professional names"), renamed to these on 23 Oct 2026. The
   // labels are the public names; the keys below are internal and unchanged.
-  // Prices and contents to be confirmed.
+  // The keys' old meanings no longer match since the 29 Oct 2026 regroup:
+  // core_forms is Growth (recruitment and the staff records), core_recruitment
+  // is Pro (complaints, audits, forms and policies). Stripe's price env vars
+  // use the keys, so they stay.
   { value: "core", label: "Starter" },
   { value: "core_forms", label: "Growth" },
   { value: "core_recruitment", label: "Pro" },
@@ -21,12 +24,11 @@ export function tierLabel(value: string): string {
 
 /**
  * What each package includes, shown on the org Account page and the public
- * pricing page. Drafted from what each tier actually enables — awaiting the
- * official package sheet.
+ * pricing page, from Saj's package sheet (29 Oct 2026, PACKAGES.md).
  *
  * The packages are a ladder: each one includes everything in the one below,
  * so the bullets say "Everything in X" rather than repeating it. That is a
- * claim about tier_features, not just copy — 20261023190000 ticks the rows
+ * claim about tier_features, not just copy — 20261029120000 ticks the rows
  * that make it true, and unticking one on the Packages screen makes this copy
  * a lie.
  */
@@ -34,10 +36,12 @@ export const TIER_DETAILS: Record<
   PackageTier,
   { tagline: string; features: string[] }
 > = {
+  // Regrouped 29 Oct 2026 (PACKAGES.md). Each line describes what is built
+  // today: as the HR pack, Staff Audits and the rest grow, so does this copy.
   core: {
-    tagline: "Everything a care team needs to train and stay compliant.",
+    tagline: "Training for the whole team.",
     features: [
-      "Full CQC-aligned course library",
+      "Full CQC-aligned course library and induction programmes",
       "Unlimited learners and admin users",
       "Certificates with verification and expiry tracking",
       "Training matrix and CSV exports",
@@ -45,32 +49,32 @@ export const TIER_DETAILS: Record<
     ],
   },
   core_forms: {
-    tagline: "Training plus your own paperwork.",
+    tagline: "Hire, check and support your staff.",
     features: [
       "Everything in Starter",
-      "Forms builder — custom forms with e-signatures",
-      "Form submissions tracked per staff member",
-      "Policies & procedures library",
+      "Recruitment tracker: candidates, documents and DBS expiry",
+      "Supervisions and appraisals, with agreed actions tracked",
+      "Spot checks and competency assessments",
     ],
   },
   core_recruitment: {
-    tagline: "Everything it takes to run compliance, not just training.",
+    tagline: "Run your whole compliance in one place.",
     features: [
       "Everything in Growth",
-      "Recruitment tracker — candidates, interviews and DBS expiry",
-      "Complaints, accidents and safeguarding register",
-      "Supervisions and appraisals, with agreed actions tracked",
-      "Spot checks and competency assessments",
-      "Full compliance pack of policies and procedures",
+      "Complaints, accidents and safeguarding",
+      "Medication, care plan and infection control audits",
+      "Forms, and feedback surveys for families and staff",
+      "CQC policies and procedures, with who has read each one",
     ],
   },
   full: {
-    tagline: "The complete platform for growing care providers.",
+    tagline: "For larger and growing providers.",
     features: [
       "Everything in Pro",
       "Care Certificate workplace assessment",
-      "Your own branding on certificates and the portal",
-      "Rostering system integration",
+      "Classroom session records on the training matrix",
+      "Your own logo on certificates, the portal and your policies",
+      "Rostering system integration (MyRoster)",
       "Priority support",
     ],
   },

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { GraduationCap, ShieldCheck, Users } from "lucide-react";
+import { Check, GraduationCap, ShieldCheck, Users } from "lucide-react";
 import { PACKAGE_TIERS, TIER_DETAILS } from "@/lib/organisations";
 import { HIGHLIGHTED_TIER, LIST_PRICE_GBP } from "@/lib/pricing";
 import TierCards from "./tier-cards";
@@ -28,6 +28,25 @@ const PRICE: Record<string, { monthly: number; highlight?: boolean }> = Object.f
   ]),
 );
 
+// Every package, line by line: the tick starts at the first package that has
+// it and runs up the ladder. The same matrix as tier_features (20261029120000)
+// and TIER_DETAILS — change one, change all three.
+const COMPARE: { label: string; detail: string; from: number }[] = [
+  { label: "Online training", detail: "Courses, inductions, matrix, certificates and reminders", from: 0 },
+  { label: "Recruitment", detail: "Candidates, their documents and DBS expiry", from: 1 },
+  { label: "Supervisions and appraisals", detail: "Signed in the room, with agreed actions tracked", from: 1 },
+  { label: "Spot checks and competency", detail: "Area by area, with who's due next", from: 1 },
+  { label: "Complaints and safeguarding", detail: "Complaints, accidents, near misses and safeguarding concerns", from: 2 },
+  { label: "Service audits", detail: "Medication, care plan and infection control", from: 2 },
+  { label: "Forms and feedback surveys", detail: "Forms your staff fill in, and surveys for families and staff", from: 2 },
+  { label: "Policies and procedures", detail: "CQC templates, and who has read each one", from: 2 },
+  { label: "Care Certificate", detail: "Workplace observations and sign-off", from: 3 },
+  { label: "Classroom sessions", detail: "Your own sessions on the training matrix", from: 3 },
+  { label: "Your own logo", detail: "On certificates, the portal and your policies", from: 3 },
+  { label: "Rostering integration", detail: "Connected to MyRoster", from: 3 },
+  { label: "Priority support", detail: "", from: 3 },
+];
+
 const FAQ: [string, string][] = [
   ["Is there a per-learner charge?", "No. Every plan includes unlimited learners and admin users. You pay one monthly price for your organisation."],
   ["Which courses are included?", "The full library of 59 CQC-aligned care courses, with interactive content, a 20-question assessment and a branded, verifiable certificate for each."],
@@ -52,10 +71,10 @@ export default function TrainingPricingPage() {
             <GraduationCap className="size-4" /> Training · pricing
           </div>
           <h1 className="font-display mt-4 max-w-3xl text-balance text-4xl font-semibold leading-[1.02] tracking-tight text-[#2b1d0e] sm:text-6xl">
-            One price for the whole team, unlimited learners
+            One price for the whole team
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-[#2b1d0e]/70">
-            Unlimited learners on every plan. Four plans, from the course library on its own to the complete platform.
+            Four packages, from training on its own to everything a care service runs on. Unlimited learners on every one.
           </p>
           <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#2b1d0e]/75">
             <li className="inline-flex items-center gap-2"><Users className="size-4 text-[#b7791f]" /> Unlimited learners and admins</li>
@@ -76,7 +95,45 @@ export default function TrainingPricingPage() {
             highlight: PRICE[tier.value].highlight,
           }))}
         />
-        <p className="mt-4 text-center text-sm text-[#0f2f3c]/55">Prices exclude VAT. Annual plans get two months free.</p>
+        <p className="mt-4 text-center text-sm text-[#0f2f3c]/65">Prices exclude VAT. Annual plans get two months free.</p>
+      </Section>
+
+      <Section>
+        <H2>Compare every package</H2>
+        <p className="mt-2 text-[#0f2f3c]/70">Each package includes everything in the one before it.</p>
+        <div className="mt-6 overflow-x-auto rounded-2xl ring-1 ring-[#134f63]/12">
+          <table className="w-full min-w-[720px] border-collapse text-sm">
+            <thead>
+              <tr className="bg-[#f5faf9]">
+                <th scope="col" className="px-5 py-3.5 text-left font-semibold">What&apos;s included</th>
+                {PACKAGE_TIERS.map((t) => (
+                  <th key={t.value} scope="col" className="w-28 px-3 py-3.5 font-semibold">
+                    {t.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {COMPARE.map((row) => (
+                <tr key={row.label} className="border-t border-[#134f63]/10">
+                  <th scope="row" className="px-5 py-3.5 text-left font-normal">
+                    <span className="font-semibold">{row.label}</span>
+                    {row.detail && <span className="block text-[13px] text-[#0f2f3c]/65">{row.detail}</span>}
+                  </th>
+                  {PACKAGE_TIERS.map((t, i) => (
+                    <td key={t.value} className="px-3 py-3.5 text-center">
+                      {i >= row.from ? (
+                        <Check className="mx-auto size-5 text-[#047857]" aria-label="Included" />
+                      ) : (
+                        <span className="text-[#0f2f3c]/35" aria-label="Not included">—</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Section>
 
       <Section tone="soft">

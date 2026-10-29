@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireConsole } from "@/lib/auth";
+import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
@@ -25,6 +26,7 @@ export interface ClassroomState extends SaveState {
  */
 export async function recordClassroomSessionAction(_prev: ClassroomState, formData: FormData): Promise<ClassroomState> {
   const context = await requireConsole();
+  await requireFeature(context, "training.classroom");
   const orgId = context.organisationId!;
   const title = String(formData.get("title") ?? "").trim();
   const courseId = String(formData.get("courseId") ?? "").trim() || null;

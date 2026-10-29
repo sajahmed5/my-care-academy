@@ -3,7 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { FEATURES, type FeatureKey } from "@/lib/features";
+import { FEATURES, lockedHref, type FeatureKey } from "@/lib/features";
 import type { UserContext } from "@/lib/auth";
 
 /**
@@ -57,13 +57,19 @@ export async function hasFeature(
   return (await loadEntitlements()).has(key);
 }
 
-/** Redirect away unless the organisation has the feature. */
+/**
+ * Redirect away unless the organisation has the feature. A console user goes,
+ * by default, to the page that says which package has it (29 Oct 2026) — not
+ * back to the Overview, which left them wondering where the page went.
+ */
 export async function requireFeature(
   context: UserContext,
   key: FeatureKey,
-  redirectTo = "/org",
+  redirectTo?: string,
 ): Promise<void> {
-  if (!(await hasFeature(context, key))) redirect(redirectTo);
+  if (await hasFeature(context, key)) return;
+  const isConsole = context.role === "org_admin" || context.role === "org_office";
+  redirect(redirectTo ?? (isConsole ? lockedHref(key) : "/org"));
 }
 
 /**

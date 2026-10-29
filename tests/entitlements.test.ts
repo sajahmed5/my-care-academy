@@ -113,22 +113,29 @@ describe("tier contents", () => {
     }
   });
 
-  it("reproduce today's add-on semantics", () => {
+  it("match the packages agreed on 29 Oct 2026 (PACKAGES.md)", () => {
     const has = (tier: string, feature: string) =>
       ticks.some((t) => t.tier_key === tier && t.feature_key === feature);
-
-    // What tierFlags() in lib/billing.ts used to derive.
-    expect(has("core_forms", "forms.builder")).toBe(true);
-    expect(has("core_recruitment", "recruitment.tracker")).toBe(true);
-    expect(has("full", "forms.builder")).toBe(true);
-    expect(has("full", "recruitment.tracker")).toBe(true);
-
-    // Starter has neither.
-    expect(has("core", "forms.builder")).toBe(false);
-    expect(has("core", "recruitment.tracker")).toBe(false);
-
-    // Enterprise's published feature list promises the Care Certificate, so
-    // the matrix says so too — the old tierFlags() never did.
-    expect(has("full", "training.observations")).toBe(true);
+    const from: Record<string, string> = {
+      "recruitment.tracker": "core_forms",
+      "people.supervisions": "core_forms",
+      "people.competency": "core_forms",
+      "complaints.register": "core_recruitment",
+      "quality.audits": "core_recruitment",
+      "quality.feedback": "core_recruitment",
+      "forms.builder": "core_recruitment",
+      "documents.library": "core_recruitment",
+      "documents.compliance_pack": "core_recruitment",
+      "training.observations": "full",
+      "training.classroom": "full",
+      "platform.white_label": "full",
+      "platform.portal_api": "full",
+    };
+    const ladder = ["core", "core_forms", "core_recruitment", "full"];
+    for (const [feature, first] of Object.entries(from)) {
+      ladder.forEach((tier, i) => {
+        expect(has(tier, feature), `${feature} in ${tier}`).toBe(i >= ladder.indexOf(first));
+      });
+    }
   });
 });
