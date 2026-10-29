@@ -9,6 +9,7 @@ import {
   ukTime,
 } from "../lib/face-to-face";
 import { bookingEmail } from "../lib/face-to-face-email";
+import { hashSignInToken, newSignInToken, signInProblem } from "../lib/classroom-sign-in";
 
 /**
  * Face-to-face sessions are typed in UK time and stored as instants. The
@@ -95,5 +96,27 @@ describe("face-to-face booking emails", () => {
   it("tells people when we cancel, and when the company does", () => {
     expect(bookingEmail("session_cancelled", session, ctx).html).toContain("please don't go");
     expect(bookingEmail("cancelled", session, ctx).html).toContain("Demo Care has cancelled your place");
+  });
+});
+
+describe("classroom QR sign-in", () => {
+  const open = { organisation_id: "org-1", finished_at: null, sign_in_expires_at: "2026-10-29T20:00:00Z" };
+  const now = new Date("2026-10-29T10:00:00Z");
+
+  it("lets the company's own staff in while the code lasts", () => {
+    expect(signInProblem(open, "org-1", now)).toBeNull();
+  });
+
+  it("turns away another company, a finished session and a code that has run out", () => {
+    expect(signInProblem(open, "org-2", now)).toContain("another company");
+    expect(signInProblem({ ...open, finished_at: "2026-10-29T11:00:00Z" }, "org-1", now)).toContain("finished");
+    expect(signInProblem(open, "org-1", new Date("2026-10-29T21:00:00Z"))).toContain("run out");
+    expect(signInProblem(null, "org-1", now)).toContain("doesn't work");
+  });
+
+  it("stores only a hash of the code", () => {
+    const token = newSignInToken();
+    expect(hashSignInToken(token)).toMatch(/^[0-9a-f]{64}$/);
+    expect(hashSignInToken(token)).not.toContain(token);
   });
 });
