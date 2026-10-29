@@ -15,9 +15,9 @@ import type { SaveState } from "@/app/platform/actions";
 /** What happens next for each type, said where the choice is made. */
 const PROCESS: Record<string, string> = {
   complaint: "Acknowledge in 3 working days, investigate, and respond in writing within 28.",
-  safeguarding: "Keep the person safe, refer to the council's safeguarding team, and notify CQC.",
+  safeguarding: "Keep the person safe, refer to the council's safeguarding team, notify CQC, the police if needed, then the council's outcome and lessons.",
   issue: "An action plan, then a monitoring review to check it worked.",
-  accident: "What happened and who was hurt, then actions and any training.",
+  accident: "What happened and who was hurt, whether RIDDOR applies, then actions and any training.",
   near_miss: "What happened and what would have, then actions so it does not happen.",
 };
 

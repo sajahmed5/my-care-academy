@@ -10,6 +10,7 @@ import { loadComplaint, loadStages, loadStaffOptions } from "@/lib/complaints/da
 import { isUntriaged, stagesFor } from "@/lib/complaints/stages";
 import { suggestionsFor } from "@/lib/complaints/categories";
 import { loadConcernTraining } from "@/lib/complaints/person";
+import { readConfirmations, remindersFor } from "@/lib/complaints/reminders";
 import { buildSteps, nextStep } from "@/lib/complaints/steps";
 import { closeGaps, closeGapsMessage } from "@/lib/complaints/close";
 import { isTriageStage } from "@/lib/complaints/compute";
@@ -89,6 +90,15 @@ export default async function ComplaintPage({
     triageTitles,
   );
 
+  // The legal reminders read the answers by stage kind, not by stage id.
+  const byKind: Record<string, Record<string, unknown>> = {};
+  for (const st of stages) {
+    const e = complaint.stageEntries.find((x) => x.stageId === st.id);
+    if (e) byKind[st.kind] = e.formAnswers;
+  }
+  const council = complaint.client?.funderType === "council" ? complaint.client.funderName : null;
+  const reminders = remindersFor(complaint.kind, byKind, readConfirmations(complaint.reminders), { council });
+
   const triage = stages.find(isTriageStage);
   const triaged = !isUntriaged(complaint.kind) && (!triage || complaint.stageEntries.some((e) => e.stageId === triage.id && e.status !== "pending"));
   const closeMessage = closeGapsMessage(closeGaps(stages, complaint.stageEntries), !triaged, {
@@ -127,6 +137,7 @@ export default async function ComplaintPage({
           initialStageId={openStage ?? null}
           clients={clients}
           training={training}
+          reminders={reminders}
         />
       </div>
     </DashboardShell>
