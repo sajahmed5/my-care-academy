@@ -7,7 +7,6 @@ import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
 import { parseAgreedActions } from "@/lib/records";
 import { COMPETENCY_AREAS, COMPETENCY_OUTCOMES } from "@/lib/competency";
-import { SUPERVISION_KINDS, carerSignature } from "@/lib/supervisions";
 import type { SaveState } from "@/app/platform/actions";
 
 /** A save that can also say how many agreed actions it created. */
@@ -126,118 +125,6 @@ export async function setPersonActionDoneAction(
 
   if (userId) revalidatePath(`/org/staff/${userId}`);
   return { ok: true };
-}
-
-/**
- * Record a supervision, an appraisal or a review, with what was agreed.
- *
- * The agreed actions become record_actions rather than a paragraph in the
- * summary: the point of writing them down is that somebody chases them, and
- * nothing chases a sentence. They land in the same list as the carer's
- * training, which is the whole idea of the file.
- *
- * The supervision and its actions are two writes, not one transaction.
- * PostgREST has no transaction across calls, so the order matters: the record
- * goes in first, and an action that fails to save leaves a supervision with
- * one fewer action — recoverable, and visible. The other order would lose the
- * record and keep the actions, which is neither.
- */
-export async function addSupervisionAction(
-  _prev: SupervisionState,
-  formData: FormData,
-): Promise<SupervisionState> {
-  const context = await requireConsole();
-
-  const userId = String(formData.get("userId") ?? "");
-  const kind = String(formData.get("kind") ?? "supervision");
-  const heldOn = String(formData.get("heldOn") ?? "").trim();
-  const summary = String(formData.get("summary") ?? "").trim();
-  const nextDue = String(formData.get("nextDue") ?? "").trim();
-  const agreed = parseAgreedActions(String(formData.get("agreed") ?? ""));
-  const actionsDue = String(formData.get("actionsDue") ?? "").trim();
-  // Signed on the manager's screen at the time (CARER-FILE.md §9), or a
-  // reason it could not be.
-  const signed = carerSignature({
-    signature: String(formData.get("carerSignature") ?? ""),
-    name: String(formData.get("carerSignedName") ?? ""),
-    unsignedReason: formData.get("carerCannotSign") === "1" ? String(formData.get("carerUnsignedReason") ?? "") : "",
-    now: new Date(),
-  });
-
-  if (!heldOn) return { ok: false, error: "Say when it was held." };
-  if (!SUPERVISION_KINDS.some((k) => k.value === kind)) {
-    return { ok: false, error: "Pick what kind of record this is." };
-  }
-  if (summary.length > 5000) {
-    return { ok: false, error: "Keep the summary under 5000 characters." };
-  }
-  if (formData.get("carerCannotSign") === "1" && !String(formData.get("carerUnsignedReason") ?? "").trim()) {
-    return { ok: false, error: "Say why they cannot sign now." };
-  }
-  if (!signed.ok) return { ok: false, error: signed.error };
-
-  // Said plainly, rather than leaving RLS to refuse the insert and reporting
-  // "new row violates row-level security policy" to a care manager.
-  if (!(await hasFeature(context, "people.supervisions"))) {
-    return { ok: false, error: "Supervisions are not included in your plan." };
-  }
-
-  const supabase = await createClient();
-
-  const { data: target } = await supabase
-    .from("users")
-    .select("id")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!target) return { ok: false, error: "That person is not in your organisation." };
-
-  const { data: row, error } = await supabase
-    .from("supervisions")
-    .insert({
-      organisation_id: context.organisationId,
-      user_id: userId,
-      supervisor_id: context.userId,
-      kind,
-      held_on: heldOn,
-      summary: summary || null,
-      next_due: nextDue || null,
-      created_by: context.userId,
-      ...signed.fields,
-    })
-    .select("id")
-    .single();
-  if (error) return { ok: false, error: error.message };
-
-  if (agreed.length) {
-    const { error: actionError } = await supabase.from("record_actions").insert(
-      agreed.map((title) => ({
-        organisation_id: context.organisationId,
-        user_id: userId,
-        title,
-        due_date: actionsDue || null,
-        source_type: "supervision",
-        source_id: row.id,
-        created_by: context.userId,
-      })),
-    );
-    if (actionError) {
-      return {
-        ok: false,
-        error: `Saved the record, but the agreed actions did not save: ${actionError.message}`,
-      };
-    }
-  }
-
-  await logAudit({
-    context,
-    action: "supervision.recorded",
-    entity: "user",
-    entityId: userId,
-    detail: { kind, heldOn, actions: agreed.length, signedByCarer: !!signed.fields.carer_signature },
-  });
-
-  revalidatePath(`/org/staff/${userId}`);
-  return { ok: true, count: agreed.length };
 }
 
 /**

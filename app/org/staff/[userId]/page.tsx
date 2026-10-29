@@ -27,7 +27,7 @@ import {
   suggestionsFor,
   type Suggestion,
 } from "@/lib/incidents";
-import { loadSupervisions } from "@/lib/supervisions";
+import { loadBookings, loadSupervisions } from "@/lib/supervisions";
 import { SectionPanel } from "./section-panel";
 import { SectionRail, SectionTabs, SectionTabsAfter, type SectionCount } from "./section-tabs";
 import { sectionByKey, sectionState } from "./sections";
@@ -118,10 +118,24 @@ export default async function StaffDetailPage({
     // Their compliance documents feed the task list as well as their own
     // section, so the Actions tab reads them too (ROADMAP §3).
     const wantsStaffDocs = recruitmentOpen || (wantsTasks && enabled["recruitment.tracker"]);
-    const [supervisions, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs] = await Promise.all([
-      section.key === "supervisions" && state === "open"
-        ? loadSupervisions(supabase, userId)
-        : Promise.resolve([]),
+    const supervisionsOpen = section.key === "supervisions" && state === "open";
+    const [supervisions, bookings, holders, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs] = await Promise.all([
+      supervisionsOpen ? loadSupervisions(supabase, userId) : Promise.resolve([]),
+      supervisionsOpen ? loadBookings(supabase, userId) : Promise.resolve([]),
+      // Who can hold one: anyone with console access (STAFF-AUDITS.md).
+      supervisionsOpen
+        ? supabase
+            .from("users")
+            .select("id, full_name, email")
+            .eq("organisation_id", context.organisationId!)
+            .in("role", ["org_admin", "org_office"])
+            .eq("status", "active")
+            .order("full_name")
+            .limit(200)
+            .then((r) =>
+              (r.data ?? []).map((u) => ({ id: u.id as string, name: (u.full_name as string | null) || (u.email as string) })),
+            )
+        : Promise.resolve([] as { id: string; name: string }[]),
       section.key === "competency" && state === "open"
         ? loadCompetencyChecks(supabase, userId)
         : Promise.resolve([]),
@@ -140,11 +154,11 @@ export default async function StaffDetailPage({
         : Promise.resolve([] as StaffDoc[]),
       recruitmentOpen ? loadApplicationDocs(supabase, userId) : Promise.resolve([] as ApplicationDoc[]),
     ]);
-    return { enabled, state, supervisions, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs };
+    return { enabled, state, supervisions, bookings, holders, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs };
   });
   const [
     { profile, enrolments, certificates, assessments },
-    { enabled, state, supervisions, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs },
+    { enabled, state, supervisions, bookings, holders, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs },
     { data: libraryRows },
     { data: classroomRows },
   ] = await Promise.all([
@@ -663,7 +677,14 @@ export default async function StaffDetailPage({
 
         {section.key === "supervisions" && state === "open" && (
           <div id="supervisions" className="scroll-mt-24 space-y-2">
-            <SupervisionList userId={userId} carerName={name} supervisions={supervisions} />
+            <SupervisionList
+              userId={userId}
+              carerName={name}
+              supervisions={supervisions}
+              bookings={bookings}
+              holders={holders}
+              meId={context.userId}
+            />
           </div>
         )}
 

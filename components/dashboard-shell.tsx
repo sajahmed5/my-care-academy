@@ -18,7 +18,7 @@ async function learnerBadges(
   if (!learn) return {};
   try {
     const data = await loadBadgeData(context.userId);
-    const notifs = deriveNotifications(data.enrolments, data.certificates, new Date());
+    const notifs = deriveNotifications(data.enrolments, data.certificates, new Date(), data.bookings);
     return { "/learn/notifications": unreadCount(notifs, data.readAt) };
   } catch {
     return {};

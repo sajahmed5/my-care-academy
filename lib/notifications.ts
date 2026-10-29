@@ -1,6 +1,7 @@
 import { daysUntil } from "@/lib/engine-logic";
+import { formatDate } from "@/lib/dates";
 
-export type NotifType = "assigned" | "certificate" | "expiring" | "required";
+export type NotifType = "assigned" | "certificate" | "expiring" | "required" | "booked";
 
 export interface Notif {
   id: string;
@@ -26,6 +27,16 @@ export interface CertInput {
   title: string;
 }
 
+/** A booked supervision or appraisal (STAFF-AUDITS.md). */
+export interface BookingInput {
+  id: string;
+  kind: string;
+  booked_on: string;
+  booked_time: string | null;
+  /** When it was booked — the notification is new from then. */
+  created_at: string;
+}
+
 const EXPIRY_WINDOW_DAYS = 60;
 
 /** Derive a learner's notifications from their enrolments and certificates. Pure. */
@@ -33,8 +44,22 @@ export function deriveNotifications(
   enrolments: EnrolmentInput[],
   certificates: CertInput[],
   now: Date,
+  bookings: BookingInput[] = [],
 ): Notif[] {
   const items: Notif[] = [];
+
+  for (const b of bookings) {
+    const what = b.kind === "appraisal" ? "Appraisal" : "Supervision";
+    const day = formatDate(b.booked_on, { weekday: "short", day: "numeric", month: "short" });
+    items.push({
+      id: `booked-${b.id}`,
+      type: "booked",
+      title: `${what} booked`,
+      body: b.booked_time ? `${day} at ${b.booked_time}` : day,
+      at: b.created_at,
+      href: "/learn/reviews",
+    });
+  }
 
   // Latest certificate per course (newest issued).
   const latestCert = new Map<string, CertInput>();

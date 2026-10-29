@@ -22,7 +22,7 @@ export function DueList({ rows, section, noun }: { rows: DueRow[]; section: stri
   if (rows.length === 0) {
     return (
       <Card>
-        <CardContent className="py-8 text-center text-sm text-muted-foreground">No current carers.</CardContent>
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">No current staff.</CardContent>
       </Card>
     );
   }
@@ -58,6 +58,9 @@ export function DueList({ rows, section, noun }: { rows: DueRow[]; section: stri
                     <span className="font-medium text-primary">{r.person.name}</span>
                     <span className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       <span>Last {noun}: {fmt(r.last)}</span>
+                      {r.booked && (
+                        <span className="rounded-full bg-teal-50 px-2 py-0.5 font-medium text-teal-800">Booked {fmt(r.booked)}</span>
+                      )}
                       <span className={`rounded-full px-2 py-0.5 font-medium ${CHIP[r.status]}`}>
                         {r.status === "never" ? "None on file" : r.next ? `Next ${fmt(r.next)}` : "No date set"}
                       </span>

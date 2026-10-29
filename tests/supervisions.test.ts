@@ -13,6 +13,11 @@ function supervision(over: Partial<Supervision> = {}): Supervision {
     carer_signed_name: null,
     carer_signed_at: null,
     carer_unsigned_reason: null,
+    answers: [],
+    actions_review: [],
+    manager_signature: null,
+    manager_signed_name: null,
+    manager_signed_at: null,
     ...over,
   };
 }

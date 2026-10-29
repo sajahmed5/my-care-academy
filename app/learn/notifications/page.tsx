@@ -4,6 +4,7 @@ import {
   Award,
   Clock,
   AlertTriangle,
+  CalendarCheck,
   type LucideIcon,
 } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
@@ -20,6 +21,7 @@ const STYLE: Record<NotifType, { icon: LucideIcon; color: string }> = {
   certificate: { icon: Award, color: "#7c3aed" },
   expiring: { icon: Clock, color: "#d97706" },
   required: { icon: AlertTriangle, color: "#e11d48" },
+  booked: { icon: CalendarCheck, color: "#0f766e" },
 };
 
 export default async function NotificationsPage() {
@@ -27,7 +29,7 @@ export default async function NotificationsPage() {
   // The same per-request reads the shell's unread badge uses — one load.
   const data = await loadBadgeData(context.userId);
 
-  const notifs = deriveNotifications(data.enrolments, data.certificates, new Date());
+  const notifs = deriveNotifications(data.enrolments, data.certificates, new Date(), data.bookings);
 
   const readAt = data.readAt ? +new Date(data.readAt) : 0;
 
@@ -37,7 +39,7 @@ export default async function NotificationsPage() {
       <div className="space-y-6">
         {/* The page title already says Notifications; the card said it again. */}
         <p className="text-sm text-muted-foreground">
-          Assignments, new certificates and expiry reminders.
+          Assignments, new certificates, expiry reminders and booked supervisions.
         </p>
         <Card>
           <CardContent className="pt-2">

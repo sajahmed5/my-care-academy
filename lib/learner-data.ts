@@ -2,6 +2,7 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Certificate, Enrolment } from "@/lib/learner-stats";
 import { computeStarTotal } from "@/lib/stars";
+import type { BookingInput } from "@/lib/notifications";
 
 interface JoinedCourse {
   title?: string;
@@ -170,7 +171,32 @@ export interface BadgeData {
     title: string;
   }[];
   readAt: string | null;
+  /** Booked supervisions and appraisals (STAFF-AUDITS.md). */
+  bookings: BookingInput[];
 }
+
+/**
+ * Their booked supervisions and appraisals still to come. Empty without
+ * Staff Audits: the own-read policy checks the feature, so nothing comes back.
+ * Bookings made, not the record — a carer never reads a supervision.
+ */
+export const loadMyBookings = cache(async (userId: string): Promise<BookingInput[]> => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("staff_audit_bookings")
+    .select("id, kind, booked_on, booked_time, created_at")
+    .eq("user_id", userId)
+    .eq("status", "booked")
+    .gte("booked_on", new Date().toISOString().slice(0, 10))
+    .limit(10);
+  return (data ?? []).map((b) => ({
+    id: b.id as string,
+    kind: b.kind as string,
+    booked_on: b.booked_on as string,
+    booked_time: (b.booked_time as string | null) ?? null,
+    created_at: b.created_at as string,
+  }));
+});
 
 /**
  * The menu's unread-notifications badge, and the notifications page. Runs on
@@ -179,12 +205,13 @@ export interface BadgeData {
  * extra.
  */
 export async function loadBadgeData(userId: string): Promise<BadgeData> {
-  const [enrolments, certificates, me] = await Promise.all([
+  const [enrolments, certificates, me, bookings] = await Promise.all([
     loadEnrolments(userId),
     loadCertificates(userId),
     loadProfile(userId),
+    loadMyBookings(userId),
   ]);
-  return { enrolments, certificates, readAt: me.readAt };
+  return { enrolments, certificates, readAt: me.readAt, bookings };
 }
 
 export { learnerStats, type Certificate, type Enrolment, type LearnerStats } from "@/lib/learner-stats";

@@ -30,12 +30,13 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
   "people.supervisions": {
     area: "Supervisions",
     home: "/org/due/supervisions",
-    heading: "Supervisions and appraisals, on every carer's file",
+    heading: "Supervisions and appraisals, on every staff file",
     bullets: [
-      "Supervisions, appraisals, probation and return-to-work meetings recorded",
-      "Signed by the carer in the room",
-      "What was agreed becomes actions on their task list",
-      "Who's due next, across the whole team",
+      "Real questions for each one, with last time's actions reviewed",
+      "Booked ahead: the carer is emailed the date and who with",
+      "A short self-assessment the carer fills in before their appraisal",
+      "Signed by both of you in the room; what was agreed goes on their task list",
+      "Who's due next, across carers and office staff",
     ],
   },
   "people.competency": {

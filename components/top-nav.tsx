@@ -73,6 +73,7 @@ const ORG_MENU: MenuItem[] = [
     label: "Who's due",
     children: [
       { href: "/org/due/supervisions", label: "Supervisions", feature: "people.supervisions" },
+      { href: "/org/due/appraisals", label: "Appraisals", feature: "people.supervisions" },
       { href: "/org/due/spot-checks", label: "Spot checks", feature: "people.competency" },
       { href: "/org/due/audits", label: "Audits", feature: "quality.audits" },
     ],
@@ -130,6 +131,8 @@ const MENUS: Record<string, MenuItem[]> = {
     { label: "Training", href: "/learn/modules", also: ["/learn/courses", "/learn/programmes"] },
     { label: "Certificates", href: "/learn/certificates" },
     { label: "My actions", href: "/learn/actions" },
+    // Their booked supervisions and appraisal self-assessment (STAFF-AUDITS.md).
+    { label: "Supervisions", href: "/learn/reviews", feature: "people.supervisions" },
     { label: "Policies", href: "/learn/policies", feature: "documents.library" },
     { label: "Forms", href: "/learn/forms", feature: "forms.builder" },
     { label: "Notifications", href: "/learn/notifications" },
