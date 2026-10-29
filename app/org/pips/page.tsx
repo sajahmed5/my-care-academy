@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireConsole } from "@/lib/auth";
-import { requireFeature } from "@/lib/entitlements";
+import { hasFeature, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { buttonVariants } from "@/components/ui/button";
@@ -21,9 +21,12 @@ const STATUS_STYLE: Record<string, string> = {
 /** Every plan, with where it has got to and what is owed next. */
 export default async function PipsPage() {
   const context = await requireConsole();
-  await requireFeature(context, "complaints.register");
+  await requireFeature(context, "people.performance_plans");
   const supabase = await createClient();
-  const pips = await loadPips(supabase, context.organisationId);
+  const [pips, withComplaints] = await Promise.all([
+    loadPips(supabase, context.organisationId),
+    hasFeature(context, "complaints.register"),
+  ]);
   const today = new Date().toISOString().slice(0, 10);
 
   const rows = pips.map((p) => ({ pip: p, ...pipSteps(p, today) }));
@@ -34,9 +37,10 @@ export default async function PipsPage() {
     <DashboardShell title="Performance plans" context={context}>
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Link href="/org/complaints" className="text-sm text-muted-foreground hover:underline">
-            ← Complaints
-          </Link>
+          <p className="text-sm text-muted-foreground">
+            Raised from a supervision, spot check or competency that wasn&apos;t met
+            {withComplaints ? ", or from a complaint" : ""}.
+          </p>
           <Link href="/org/pips/new" className={buttonVariants({ variant: "outline", size: "sm" })}>
             <Plus className="size-4" /> Start a plan
           </Link>
@@ -51,7 +55,7 @@ export default async function PipsPage() {
         {rows.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-sm text-muted-foreground">
-              No plans yet. One usually starts from a complaint, against the member of staff it named.
+              No plans yet. Raise one from a carer&apos;s file — a supervision, or a spot check or competency that wasn&apos;t met.
             </CardContent>
           </Card>
         ) : (

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { buildDueRows } from "@/lib/due-view";
-import { COMPETENCY_AREAS } from "@/lib/competency";
+import { loadAuditForms } from "@/lib/audit-forms-data";
 import { DueList } from "../due-list";
 import { loadCurrentCarers } from "../load";
 
@@ -18,9 +18,11 @@ export default async function CompetencyDuePage({ searchParams }: { searchParams
   const context = await requireConsole();
   await requireFeature(context, "people.competency");
   const { area: areaParam } = await searchParams;
-  const area = COMPETENCY_AREAS.some((a) => a.value === areaParam) ? areaParam! : null;
   const supabase = await createClient();
   const orgId = context.organisationId!;
+  // The company's own skills, as it has them (STAFF-AUDITS.md, Editable).
+  const areas = (await loadAuditForms(orgId)).competency.map((f) => ({ value: f.key, label: f.label }));
+  const area = areas.some((a) => a.value === areaParam) ? areaParam! : null;
   const [people, records] = await Promise.all([
     loadCurrentCarers(supabase, orgId),
     fetchAll((f, t) => {
@@ -51,7 +53,7 @@ export default async function CompetencyDuePage({ searchParams }: { searchParams
           <Link href="/org/due/competency" className={chip(!area)}>
             Every skill
           </Link>
-          {COMPETENCY_AREAS.map((a) => (
+          {areas.map((a) => (
             <Link key={a.value} href={`/org/due/competency?area=${a.value}`} className={chip(area === a.value)}>
               {a.label}
             </Link>

@@ -50,6 +50,17 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
       "Who's due next, per skill, across the whole team",
     ],
   },
+  "people.performance_plans": {
+    area: "Performance plans",
+    home: "/org/pips",
+    heading: "Performance plans, raised when an audit isn't met",
+    bullets: [
+      "Raised from a supervision, spot check or competency, and linked back to it",
+      "What is wrong, what good looks like and how it is measured",
+      "Weekly reviews against the plan, with the support offered",
+      "Signed by the carer and the manager, as a PDF for their file",
+    ],
+  },
   "clients.list": {
     area: "Clients",
     home: "/org/clients",

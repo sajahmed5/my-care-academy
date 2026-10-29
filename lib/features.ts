@@ -118,6 +118,17 @@ export const FEATURES = [
     isCore: false,
     hint: "Appears on each carer's file (Staff, then open a person), not in the menu.",
   },
+  // Performance plans, raised from a supervision, spot check or competency
+  // that wasn't met — or, with Complaints & safeguarding, from a complaint.
+  // Staff Audits (Growth) since 29 Oct 2026; gated on complaints.register
+  // before that.
+  {
+    key: "people.performance_plans",
+    category: "people",
+    label: "Performance plans",
+    isCore: false,
+    hint: "Under Staff audits in the menu, and raised from a carer's file.",
+  },
   // The people the service cares for, so spot checks, QAs, audits and
   // concerns link to the same person (PACKAGES.md, Clients, 29 Oct 2026).
   {

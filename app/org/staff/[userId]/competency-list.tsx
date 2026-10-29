@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { dueStatus, type DueStatus } from "@/lib/records";
 import type { CheckAnswer } from "@/lib/audit-forms";
 import {
-  COMPETENCY_AREAS,
   areaLabel,
   areasOfConcern,
   latestByArea,
@@ -55,6 +54,8 @@ export function CompetencyList({
   checks,
   spotChecks,
   suggestions,
+  areas,
+  canRaisePlan,
 }: {
   userId: string;
   isCarer: boolean;
@@ -62,7 +63,12 @@ export function CompetencyList({
   spotChecks: SpotCheck[];
   /** "spot_check:<id>" or "competency:<id>" → what it suggests. */
   suggestions: Record<string, Suggestion[]>;
+  /** The skills this company assesses: ours, as it has changed them, and its own. */
+  areas: { value: string; label: string }[];
+  /** Performance plans are in the package (people.performance_plans). */
+  canRaisePlan: boolean;
 }) {
+  const labelOf = (key: string) => areas.find((a) => a.value === key)?.label ?? areaLabel(key);
   if (!isCarer) {
     return (
       <Card>
@@ -145,6 +151,7 @@ export function CompetencyList({
                   sourceId={s.id}
                   suggestions={suggestions[`spot_check:${s.id}`] ?? []}
                 />
+                {canRaisePlan && s.outcome !== "met" && <RaisePlan userId={userId} from={`spot_check:${s.id}`} />}
               </CardContent>
             </Card>
           ))
@@ -160,7 +167,7 @@ export function CompetencyList({
         </div>
         <Card>
           <CardContent className="divide-y p-0">
-            {COMPETENCY_AREAS.map((a) => {
+            {areas.map((a) => {
               const latest = current.get(a.value);
               const status = dueStatus(latest?.next_due ?? null, now);
               return (
@@ -193,7 +200,7 @@ export function CompetencyList({
             <CardContent className="space-y-2 pt-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-medium">
-                  {areaLabel(c.area)} · {fmtDate(c.checked_on)}
+                  {labelOf(c.area)} · {fmtDate(c.checked_on)}
                 </p>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${OUTCOME_STYLE[c.outcome] ?? "bg-muted"}`}>
                   {outcomeLabel(c.outcome)}
@@ -206,6 +213,7 @@ export function CompetencyList({
               <Answers answers={c.criteria} />
               {c.notes && <p className="whitespace-pre-line text-sm text-muted-foreground">{c.notes}</p>}
               <Suggested userId={userId} sourceType="competency" sourceId={c.id} suggestions={suggestions[`competency:${c.id}`] ?? []} />
+              {canRaisePlan && c.outcome !== "met" && <RaisePlan userId={userId} from={`competency:${c.id}`} />}
             </CardContent>
           </Card>
         ))}
@@ -215,6 +223,15 @@ export function CompetencyList({
 }
 
 const RESULT_LABEL: Record<string, string> = { yes: "Yes", no: "No", na: "N/A" };
+
+/** Raise a performance plan from a record that wasn't met (STAFF-AUDITS.md). */
+export function RaisePlan({ userId, from }: { userId: string; from: string }) {
+  return (
+    <Link href={`/org/pips/new?user=${userId}&from=${from}`} className="inline-block text-sm font-medium text-primary hover:underline">
+      Raise a performance plan →
+    </Link>
+  );
+}
 
 /** The "No"s up front, everything in the drop-down. */
 function Answers({ answers }: { answers: CheckAnswer[] }) {

@@ -55,6 +55,8 @@ function shape(r: Record<string, unknown>): Pip {
     status: r.status as string,
     complaintId: (r.complaint_id as string | null) ?? null,
     complaintReference: complaint?.reference ?? null,
+    raisedFromType: (r.raised_from_type as string | null) ?? null,
+    raisedFromId: (r.raised_from_id as string | null) ?? null,
     reason: (r.reason as string | null) ?? null,
     concerns: readConcerns(r.concerns),
     expectations: readExpectations(r.expectations),

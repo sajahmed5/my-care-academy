@@ -20,11 +20,14 @@ import {
 } from "@/lib/pips/plan";
 
 /**
- * Performance plans. Written through the RLS-scoped client, gated on
- * complaints.register like the record they usually come from.
+ * Performance plans. Written through the RLS-scoped client. Part of Staff
+ * Audits (people.performance_plans, Growth) since 29 Oct 2026: raised from a
+ * supervision, spot check or competency, or — with Complaints & safeguarding —
+ * from a complaint.
  */
 
 const NOT_IN_PLAN = "Performance plans are not included in your plan.";
+const RAISED_FROM = ["supervision", "spot_check", "competency"];
 const str = (fd: FormData, key: string) => String(fd.get(key) ?? "").trim();
 const json = (fd: FormData, key: string): unknown => {
   try {
@@ -36,7 +39,7 @@ const json = (fd: FormData, key: string): unknown => {
 
 async function requirePips() {
   const context = await requireConsole();
-  if (!(await hasFeature(context, "complaints.register"))) return null;
+  if (!(await hasFeature(context, "people.performance_plans"))) return null;
   return context;
 }
 
@@ -56,6 +59,8 @@ export async function savePlanAction(_prev: SaveState, formData: FormData): Prom
   const userId = str(formData, "userId");
   const kind = str(formData, "kind") || "pip";
   const complaintId = str(formData, "complaintId");
+  const raisedFromType = str(formData, "raisedFromType");
+  const raisedFromId = str(formData, "raisedFromId");
   const reason = str(formData, "reason");
   const concerns = readConcerns(json(formData, "concerns"));
   const expectations = readExpectations(json(formData, "expectations"));
@@ -116,6 +121,9 @@ export async function savePlanAction(_prev: SaveState, formData: FormData): Prom
       organisation_id: context.organisationId,
       user_id: userId,
       complaint_id: complaintId || null,
+      ...(RAISED_FROM.includes(raisedFromType) && /^[0-9a-f-]{36}$/.test(raisedFromId)
+        ? { raised_from_type: raisedFromType, raised_from_id: raisedFromId }
+        : {}),
       duration_weeks: durationWeeks,
       start_date: startDate,
       review_until: weeks.at(-1)?.periodEnd ?? null,

@@ -69,24 +69,28 @@ const ORG_MENU: MenuItem[] = [
   },
   { label: "Certificates", href: "/org/certificates" },
   { label: "Clients", href: "/org/clients", feature: "clients.list" },
+  // Staff Audits (STAFF-AUDITS.md): who's due each one, performance plans,
+  // and the company's own forms. Audits of the service sit under Quality.
   {
-    label: "Who's due",
+    label: "Staff audits",
+    also: ["/org/due/supervisions", "/org/due/appraisals", "/org/due/spot-checks", "/org/due/competency", "/org/pips", "/org/staff-audits"],
     children: [
-      { href: "/org/due/supervisions", label: "Supervisions", feature: "people.supervisions" },
-      { href: "/org/due/appraisals", label: "Appraisals", feature: "people.supervisions" },
-      { href: "/org/due/spot-checks", label: "Spot checks", feature: "people.competency" },
-      { href: "/org/due/competency", label: "Competency", feature: "people.competency" },
-      { href: "/org/due/audits", label: "Audits", feature: "quality.audits" },
+      { href: "/org/due/supervisions", label: "Supervisions due", feature: "people.supervisions" },
+      { href: "/org/due/appraisals", label: "Appraisals due", feature: "people.supervisions" },
+      { href: "/org/due/spot-checks", label: "Spot checks due", feature: "people.competency" },
+      { href: "/org/due/competency", label: "Competency due", feature: "people.competency" },
+      { href: "/org/pips", label: "Performance plans", feature: "people.performance_plans" },
+      { href: "/org/staff-audits/forms", label: "Forms & due periods", feature: "people.supervisions" },
     ],
   },
   {
     label: "Quality",
     children: [
       { href: "/org/audits", label: "Audits", feature: "quality.audits" },
+      { href: "/org/due/audits", label: "Audits due", feature: "quality.audits" },
       { href: "/org/feedback", label: "Feedback", feature: "quality.feedback" },
       { href: "/org/complaints", label: "Complaints", feature: "complaints.register" },
       { href: "/org/incidents", label: "Incidents & accidents", feature: "complaints.register" },
-      { href: "/org/pips", label: "Performance plans", feature: "complaints.register" },
     ],
   },
   {

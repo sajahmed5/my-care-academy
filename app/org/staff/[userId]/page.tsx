@@ -26,7 +26,8 @@ import {
   loadSpotChecks,
   suggestionsFromSlugs,
 } from "@/lib/competency";
-import { COMPETENCY_FORMS, SPOT_CHECK_FORM, competencyForm, suggestedSlugs } from "@/lib/audit-forms";
+import { competencyForm, suggestedSlugs } from "@/lib/audit-forms";
+import { loadAuditForms } from "@/lib/audit-forms-data";
 import {
   loadIncidentTraining,
   loadIncidentsForPerson,
@@ -126,7 +127,7 @@ export default async function StaffDetailPage({
     const wantsStaffDocs = recruitmentOpen || (wantsTasks && enabled["recruitment.tracker"]);
     const supervisionsOpen = section.key === "supervisions" && state === "open";
     const competencyOpen = section.key === "competency" && state === "open";
-    const [supervisions, bookings, holders, competencyChecks, spotChecks, auditTraining, actionRows, formAsks, staffDocs, applicationDocs] = await Promise.all([
+    const [supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs, applicationDocs] = await Promise.all([
       supervisionsOpen ? loadSupervisions(supabase, userId) : Promise.resolve([]),
       supervisionsOpen ? loadBookings(supabase, userId) : Promise.resolve([]),
       // Who can hold one: anyone with console access (STAFF-AUDITS.md).
@@ -145,6 +146,7 @@ export default async function StaffDetailPage({
         : Promise.resolve([] as { id: string; name: string }[]),
       competencyOpen ? loadCompetencyChecks(supabase, userId) : Promise.resolve([]),
       competencyOpen ? loadSpotChecks(supabase, userId) : Promise.resolve([]),
+      competencyOpen ? loadAuditForms(context.organisationId!) : Promise.resolve(null),
       competencyOpen ? loadAuditTraining(supabase, userId) : Promise.resolve(new Map<string, Map<string, string | null>>()),
       // The written-down half of the task list, on the tab that shows it. The
       // derived half comes from the training record.
@@ -161,11 +163,11 @@ export default async function StaffDetailPage({
         : Promise.resolve([] as StaffDoc[]),
       recruitmentOpen ? loadApplicationDocs(supabase, userId) : Promise.resolve([] as ApplicationDoc[]),
     ]);
-    return { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditTraining, actionRows, formAsks, staffDocs, applicationDocs };
+    return { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs, applicationDocs };
   });
   const [
     { profile, enrolments, certificates, assessments },
-    { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditTraining, actionRows, formAsks, staffDocs, applicationDocs },
+    { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs, applicationDocs },
     { data: libraryRows },
     { data: classroomRows },
   ] = await Promise.all([
@@ -294,11 +296,11 @@ export default async function StaffDetailPage({
   const shortfalls = [
     ...spotChecks
       .filter((c) => c.outcome !== "met")
-      .map((c) => ({ key: `spot_check:${c.id}`, slugs: suggestedSlugs(SPOT_CHECK_FORM, c.outcome, c.items) })),
+      .map((c) => ({ key: `spot_check:${c.id}`, slugs: auditForms ? suggestedSlugs(auditForms.spotCheck, c.outcome, c.items) : [] })),
     ...competencyChecks
       .filter((c) => c.outcome !== "met")
       .map((c) => {
-        const form = competencyForm(c.area, COMPETENCY_FORMS);
+        const form = auditForms ? competencyForm(c.area, auditForms.competency) : undefined;
         return { key: `competency:${c.id}`, slugs: form ? suggestedSlugs(form, c.outcome, c.criteria) : [] };
       }),
   ].filter((s) => s.slugs.length > 0);
@@ -714,6 +716,7 @@ export default async function StaffDetailPage({
               bookings={bookings}
               holders={holders}
               meId={context.userId}
+              canRaisePlan={enabled["people.performance_plans"]}
             />
           </div>
         )}
@@ -726,6 +729,8 @@ export default async function StaffDetailPage({
               checks={competencyChecks}
               spotChecks={spotChecks}
               suggestions={auditSuggestions}
+              areas={(auditForms?.competency ?? []).map((f) => ({ value: f.key, label: f.label }))}
+              canRaisePlan={enabled["people.performance_plans"]}
             />
           </div>
         )}

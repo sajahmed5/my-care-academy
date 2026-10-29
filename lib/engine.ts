@@ -11,6 +11,9 @@ import {
   needsReminder,
   engagementRate,
 } from "@/lib/engine-logic";
+import { hasFeatureForOrg } from "@/lib/entitlements";
+import { resolveForms, type FormOverride } from "@/lib/audit-forms";
+import { staffAuditDigest, staffAuditDigestHtml } from "@/lib/staff-audit-digest";
 import {
   chunk,
   esc,
@@ -479,12 +482,15 @@ export async function processWeeklyDigest(
 
   const outbox: Outgoing[] = [];
   let digests = 0;
+  const audits = await loadStaffAuditDigests(admin, r, [...r.orgs.keys()].filter((id) => stats.get(id)?.any), now);
+  const origin = await siteOrigin();
   for (const [orgId, orgName] of r.orgs) {
     const s = stats.get(orgId);
     if (!s?.any) continue;
     const admins = orgAdminEmails(r, orgId);
     if (admins.length === 0) continue;
     digests += 1;
+    const auditHtml = staffAuditDigestHtml(audits.get(orgId) ?? [], origin);
     for (const to of admins) {
       outbox.push({
         orgId,
@@ -497,7 +503,7 @@ export async function processWeeklyDigest(
              <li>Completions this week: <strong>${s.completions}</strong></li>
              <li>Overdue enrolments: <strong>${s.overdue}</strong></li>
              <li>Not yet started: <strong>${s.notStarted}</strong></li>
-           </ul>`,
+           </ul>${auditHtml}`,
         ),
       });
     }
@@ -505,4 +511,83 @@ export async function processWeeklyDigest(
   await flush(admin, outbox, dryRun);
 
   return { digestsSent: digests };
+}
+
+/**
+ * Who is due a Staff Audit, per organisation that has them (STAFF-AUDITS.md):
+ * what the weekly email adds under the training summary. The records are read
+ * only when some organisation is entitled, and the entitlement is asked per
+ * organisation — this runs as the service role, so has_feature() has no
+ * organisation of its own to read.
+ */
+async function loadStaffAuditDigests(
+  admin: Admin,
+  refs: EngineRefs,
+  orgIds: string[],
+  now: Date,
+): Promise<Map<string, ReturnType<typeof staffAuditDigest>>> {
+  const out = new Map<string, ReturnType<typeof staffAuditDigest>>();
+  const entitled = await Promise.all(
+    orgIds.map(async (id) => ({
+      id,
+      meetings: await hasFeatureForOrg(admin, id, "people.supervisions"),
+      checks: await hasFeatureForOrg(admin, id, "people.competency"),
+    })),
+  );
+  const wanted = entitled.filter((e) => e.meetings || e.checks);
+  if (wanted.length === 0) return out;
+
+  const [supervisions, spotChecks, competency, forms] = await Promise.all([
+    fetchAll((f, t) => admin.from("supervisions").select("id, organisation_id, user_id, kind, held_on, next_due").order("id").range(f, t)),
+    fetchAll((f, t) => admin.from("spot_checks").select("id, organisation_id, user_id, checked_on, next_due").order("id").range(f, t)),
+    fetchAll((f, t) => admin.from("competency_checks").select("id, organisation_id, user_id, area, checked_on, next_due").order("id").range(f, t)),
+    fetchAll((f, t) =>
+      admin.from("staff_audit_forms").select("id, organisation_id, kind, area_key, label, questions, self_assessment, due_every, due_unit, archived").order("id").range(f, t),
+    ),
+  ]);
+  const users = [...refs.users.entries()];
+  for (const e of wanted) {
+    const people = (roles: string[]) =>
+      users
+        .filter(([, u]) => u.org === e.id && u.status === "active" && roles.includes(u.role))
+        .map(([id, u]) => ({ id, name: u.name }));
+    const mine = <T extends { organisation_id: unknown }>(rows: T[]) => rows.filter((x) => x.organisation_id === e.id);
+    const resolved = resolveForms(
+      mine(forms).map((o) => ({
+        kind: o.kind as FormOverride["kind"],
+        area_key: (o.area_key as string) ?? "",
+        label: (o.label as string | null) ?? null,
+        questions: Array.isArray(o.questions) ? o.questions : [],
+        self_assessment: Array.isArray(o.self_assessment) ? o.self_assessment : [],
+        due_every: o.due_every as number,
+        due_unit: o.due_unit === "weeks" ? "weeks" : "months",
+        archived: !!o.archived,
+      })),
+    );
+    out.set(
+      e.id,
+      staffAuditDigest({
+        carers: people(["learner"]),
+        staff: people(["learner", "org_admin", "org_office"]),
+        supervisions: mine(supervisions).map((x) => ({
+          userId: x.user_id as string,
+          kind: x.kind as string,
+          heldOn: x.held_on as string,
+          nextDue: (x.next_due as string | null) ?? null,
+        })),
+        spotChecks: mine(spotChecks).map((x) => ({ userId: x.user_id as string, heldOn: x.checked_on as string, nextDue: (x.next_due as string | null) ?? null })),
+        competency: mine(competency).map((x) => ({
+          userId: x.user_id as string,
+          heldOn: x.checked_on as string,
+          nextDue: (x.next_due as string | null) ?? null,
+          area: x.area as string,
+        })),
+        areas: resolved.competency.map((f) => ({ key: f.key, label: f.label })),
+        meetings: e.meetings,
+        checks: e.checks,
+        now,
+      }),
+    );
+  }
+  return out;
 }

@@ -3,7 +3,8 @@ import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
-import { DEFAULT_FORMS, isAuditKind } from "@/lib/audit-forms";
+import { isAuditKind } from "@/lib/audit-forms";
+import { loadAuditForms } from "@/lib/audit-forms-data";
 import { loadBooking, shapeSelfAssessment } from "@/lib/supervisions";
 import { SupervisionForm, type ActionToReview } from "./supervision-form";
 
@@ -24,7 +25,7 @@ export default async function NewSupervisionPage({
   const { kind: kindParam, booking: bookingParam } = await searchParams;
   const supabase = await createClient();
 
-  const [{ data: person }, { data: me }, booking, { data: latest }] = await Promise.all([
+  const [{ data: person }, { data: me }, booking, { data: latest }, forms] = await Promise.all([
     supabase.from("users").select("id, full_name, email").eq("id", userId).maybeSingle(),
     supabase.from("users").select("full_name, email").eq("id", context.userId).maybeSingle(),
     bookingParam ? loadBooking(supabase, bookingParam) : Promise.resolve(null),
@@ -35,11 +36,12 @@ export default async function NewSupervisionPage({
       .order("held_on", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    loadAuditForms(context.organisationId!),
   ]);
   if (!person) notFound();
   const usable = booking && booking.user_id === userId && booking.status === "booked" ? booking : null;
   const kind = usable && isAuditKind(usable.kind) ? usable.kind : isAuditKind(kindParam ?? "") ? kindParam! : "supervision";
-  const form = DEFAULT_FORMS[kind as keyof typeof DEFAULT_FORMS];
+  const form = forms[kind as "supervision" | "appraisal"];
 
   // Last time's actions: everything still open from earlier supervisions and
   // appraisals, and whatever came out of the latest one even if it has since

@@ -120,6 +120,7 @@ describe("tier contents", () => {
       "recruitment.tracker": "core_forms",
       "people.supervisions": "core_forms",
       "people.competency": "core_forms",
+      "people.performance_plans": "core_forms",
       "clients.list": "core_forms",
       "complaints.register": "core_recruitment",
       "quality.audits": "core_recruitment",
