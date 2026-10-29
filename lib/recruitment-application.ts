@@ -1,5 +1,6 @@
 import { GENDER_OPTIONS, LANGUAGE_OPTIONS, PREFER_NOT_TO_SAY, tidyLanguage } from "@/lib/demographics";
 import { ROLES, SOURCES } from "@/lib/recruitment";
+import { formatDate } from "@/lib/dates";
 /**
  * Brought across from MyRoster (src/lib/recruitment/applicationForm.ts) on
  * 29 Oct 2026, with HG Care's own wording made neutral and two questions
@@ -483,3 +484,27 @@ export function sanitiseWith(sections: FormSection[], raw: unknown): Answers {
   }
   return out;
 }
+
+/** One answer as a line of text, whatever kind of question it was. */
+export function answerText(field: FormField, value: unknown): string {
+  if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) return "—";
+  if (field.type === "yesno") return value === "yes" ? "Yes" : value === "no" ? "No" : String(value);
+  if (field.type === "checkbox") return value === true ? "Agreed" : "—";
+  if (field.type === "month") {
+    if (value === CURRENT) return field.allowCurrent ?? "Now";
+    const i = monthIndex(value);
+    return i === null ? String(value) : formatMonth(i);
+  }
+  if (field.type === "date" && typeof value === "string") return formatDate(value);
+  if (field.type === "matrix" && Array.isArray(value)) {
+    const byRow = new Map<string, string[]>();
+    for (const cell of value as string[]) {
+      const [row, col] = cell.split("|");
+      byRow.set(row, [...(byRow.get(row) ?? []), col]);
+    }
+    return (field.matrix?.rows ?? []).filter((r) => byRow.has(r)).map((r) => `${r}: ${byRow.get(r)!.join(", ")}`).join("; ");
+  }
+  if (Array.isArray(value)) return (value as string[]).join(", ");
+  return String(value);
+}
+
