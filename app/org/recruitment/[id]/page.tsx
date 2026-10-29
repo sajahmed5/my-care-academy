@@ -13,6 +13,11 @@ import { LiteracyPanel, type AttemptView } from "./literacy-panel";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { latestAttempt } from "@/lib/literacy-attempts";
 import { markLiteracy, sanitiseLiteracyAnswers } from "@/lib/literacy-test";
+import { importReferees } from "@/lib/reference-requests";
+import { isFreeWebmail } from "@/lib/recruitment-references";
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
+import { ReferencesPanel, type RefereeView } from "./references-panel";
 
 /**
  * One candidate (RECRUITMENT.md): the four stages, each step with where it
@@ -41,7 +46,33 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   if (!candidate) notFound();
 
   // The latest literacy attempt, marked here (the key never leaves the server).
-  const a = await latestAttempt(createAdminClient(), id);
+  const admin = createAdminClient();
+  const a = await latestAttempt(admin, id);
+  // Referees: copied from their application the first time anyone looks.
+  await importReferees(admin, id, context.organisationId!);
+  const [{ data: refRows }, { data: interview }, { data: offerLetter }, { data: starter }] = await Promise.all([
+    admin
+      .from("candidate_references")
+      .select("id, position, referee_type, referee_name, email, phone, organisation, status, requested_at, reminder_count")
+      .eq("candidate_id", id)
+      .order("position"),
+    admin.from("candidate_interviews").select("status, overall_score, outcome").eq("candidate_id", id).maybeSingle(),
+    admin.from("candidate_letters").select("sent_at").eq("candidate_id", id).eq("kind", "offer").maybeSingle(),
+    admin.from("candidate_starter_forms").select("status, submitted_at").eq("candidate_id", id).maybeSingle(),
+  ]);
+  const referees: RefereeView[] = (refRows ?? []).map((r) => ({
+    id: r.id as string,
+    position: r.position as number,
+    type: r.referee_type as string,
+    name: r.referee_name as string,
+    email: (r.email as string | null) ?? null,
+    phone: (r.phone as string | null) ?? null,
+    organisation: (r.organisation as string | null) ?? null,
+    status: r.status as string,
+    requested: r.requested_at ? formatDate(r.requested_at as string) : null,
+    reminders: (r.reminder_count as number) ?? 0,
+    webmailEmployer: r.referee_type === "Previous employer" && isFreeWebmail(r.email as string | null),
+  }));
   const attempt: AttemptView | null = a
     ? {
         attemptNo: a.attempt_no as number,
@@ -60,6 +91,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   const stages = progress((docs ?? []) as CandidateDocRecord[], settings, { dbsConviction: candidate.dbs_conviction === true });
   const now = currentStage(stages);
   const outstanding = outstandingSteps(stages, settings);
+  const interviewConfirmed = stages.flatMap((x) => x.steps).find((st) => st.key === "interview")?.state === "confirmed";
   const status = candidate.status as string;
   const meta = [
     candidate.role_applied,
@@ -118,6 +150,68 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
               {s.stage === 1 && !s.locked && s.steps.some((st) => st.key === "literacy") && (
                 <li className="border-t bg-muted/30 px-5 py-3.5">
                   <LiteracyPanel candidateId={id} hasEmail={!!candidate.email} attempt={attempt} />
+                </li>
+              )}
+              {s.stage === 2 && !s.locked && (
+                <li className="border-t bg-muted/30 px-5 py-3.5">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                    <span className="font-medium">Interview record</span>
+                    <span className="text-muted-foreground">
+                      {interview?.status === "complete"
+                        ? `Scored ${interview.overall_score} of 5 · ${interview.outcome}.`
+                        : interview
+                          ? "Started, not finished."
+                          : "Fill it in as the interview runs."}
+                    </span>
+                    <Link href={`/org/recruitment/${id}/interview`} className={buttonVariants({ size: "sm", variant: "outline" })}>
+                      {interview ? "Open the interview record" : "Start the interview record"}
+                    </Link>
+                  </div>
+                </li>
+              )}
+              {s.stage === 2 && !s.locked && status === "candidate" && (
+                <li className="border-t bg-muted/30 px-5 py-3.5">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                    <span className="font-medium">Offer letter</span>
+                    <span className="text-muted-foreground">
+                      {offerLetter?.sent_at
+                        ? `Sent ${formatDate(offerLetter.sent_at as string)}.`
+                        : interviewConfirmed
+                          ? "Write it, with why you chose them, and email it."
+                          : "Once the interview is confirmed."}
+                    </span>
+                    {interviewConfirmed && (
+                      <Link href={`/org/recruitment/${id}/offer`} className={buttonVariants({ size: "sm", variant: offerLetter?.sent_at ? "outline" : "default" })}>
+                        {offerLetter?.sent_at ? "Open the offer" : offerLetter ? "Carry on with the offer" : "Write the offer"}
+                      </Link>
+                    )}
+                  </div>
+                </li>
+              )}
+              {s.stage === 3 && !s.locked && s.steps.some((st) => st.key === "starter_form") && (
+                <li className="border-t bg-muted/30 px-5 py-3.5">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                    <span className="font-medium">Health, equality and DBS form</span>
+                    <span className="text-muted-foreground">
+                      {starter?.status === "submitted"
+                        ? `Sent in ${formatDate(starter.submitted_at as string)}.`
+                        : starter
+                          ? "They've started it."
+                          : candidate.user_id
+                            ? "They fill it in when they sign in to their application."
+                            : "They fill it in once they have a login: sending the offer gives them one."}
+                    </span>
+                    {starter?.status === "submitted" && (
+                      <Link href={`/org/recruitment/${id}/starter`} className={buttonVariants({ size: "sm", variant: "outline" })}>
+                        Read their answers
+                      </Link>
+                    )}
+                  </div>
+                </li>
+              )}
+              {s.stage === 3 && !s.locked && (
+                <li className="border-t bg-muted/30 px-5 py-3.5">
+                  <ReferencesPanel candidateId={id} referees={referees} slots={3} />
                 </li>
               )}
               {s.stage === 3 && !s.locked && (

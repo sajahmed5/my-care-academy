@@ -12,6 +12,9 @@ import { siteOrigin } from "@/lib/site-url";
 import { emailApplicationLink, issueApplicationLink, newToken } from "@/lib/candidate-links";
 import { inviteCandidate, makeCandidateStaff } from "@/lib/candidate-account";
 import { unlockAttempt } from "@/lib/literacy-attempts";
+import { overallScore, sanitiseInterview, validateInterview } from "@/lib/recruitment-interview";
+import type { FieldError } from "@/lib/recruitment-application";
+import { sendReferenceRequest } from "@/lib/reference-requests";
 import { sendEmail } from "@/lib/email";
 import { emailButton, emailLayout, esc } from "@/lib/email-layout";
 import {
@@ -216,7 +219,8 @@ export async function sendBackStepAction(
     .update({ review_status: "sent_back", review_note: trimmed, reviewed_by: context.userId, reviewed_at: new Date().toISOString() })
     .eq("id", existing.id as string);
   // A document they uploaded: tell them, with a way back to their page.
-  if (existing.uploaded_by_candidate && docType !== "application" && loaded.candidate.email) {
+  // (A reference came from the referee, not the candidate: they aren't emailed about it.)
+  if (existing.uploaded_by_candidate && docType !== "application" && !docType.startsWith("reference_") && loaded.candidate.email) {
     const company = await orgName(admin, context.organisationId!);
     const url = `${await siteOrigin()}/my-application`;
     await sendEmail({
@@ -553,6 +557,7 @@ export async function saveRecruitmentSettingsAction(
     thirdReference: formData.get("third_reference") === "on",
     dbsBeforeStart: formData.get("dbs_before_start") === "on",
   };
+  const words = (k: string, max: number) => String(formData.get(k) ?? "").replace(/\s+/g, " ").trim().slice(0, max) || null;
   const supabase = await createClient();
   const { error } = await supabase.from("recruitment_settings").upsert({
     organisation_id: context.organisationId,
@@ -560,10 +565,128 @@ export async function saveRecruitmentSettingsAction(
     steps_off: settings.stepsOff,
     third_reference: settings.thirdReference,
     dbs_before_start: settings.dbsBeforeStart,
+    offer_signatory_name: words("offer_signatory_name", 80),
+    offer_signatory_title: words("offer_signatory_title", 80),
+    offer_hours_line: words("offer_hours_line", 500),
+    offer_pay_line: words("offer_pay_line", 300),
     updated_by: context.userId,
   });
   if (error) return { error: "The settings couldn't be saved. Try again." };
   await logAudit({ context, action: "recruitment.settings_saved", entity: "organisation", entityId: context.organisationId!, detail: { ...settings } });
   revalidatePath("/org/recruitment", "layout");
+  return { ok: true };
+}
+
+/**
+ * The interview record: saved as the interview runs, finished with one
+ * overall score and an outcome, which confirms the Interview step with the
+ * score on it. The candidate never sees it.
+ */
+export async function saveInterviewAction(
+  candidateId: string,
+  raw: unknown,
+  finish: boolean,
+): Promise<{ ok: boolean; error?: string; problems?: Record<string, FieldError[]> }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  const step = openStep(loaded.stages, "interview");
+  if (typeof step === "string") return { ok: false, error: step };
+  const answers = sanitiseInterview(raw);
+  if (finish) {
+    const problems = validateInterview(answers, new Date().toISOString().slice(0, 10));
+    if (Object.keys(problems).length) return { ok: false, error: "Some answers still need filling in.", problems };
+  }
+  const score = overallScore(answers);
+  const outcome = typeof answers.outcome === "string" ? answers.outcome : null;
+  const { error } = await admin.from("candidate_interviews").upsert(
+    {
+      organisation_id: context.organisationId,
+      candidate_id: candidateId,
+      answers,
+      status: finish ? "complete" : "draft",
+      overall_score: score,
+      outcome,
+      completed_at: finish ? new Date().toISOString() : null,
+      updated_by: context.userId,
+    },
+    { onConflict: "candidate_id" },
+  );
+  if (error) return { ok: false, error: "The interview couldn't be saved. Try again." };
+  if (finish) {
+    await admin.from("candidate_documents").upsert(
+      {
+        candidate_id: candidateId,
+        organisation_id: context.organisationId,
+        doc_type: "interview",
+        file_path: null,
+        not_required: false,
+        review_status: "confirmed",
+        review_note: `Scored ${score} of 5 · ${outcome}`,
+        uploaded_by_candidate: false,
+        reviewed_by: context.userId,
+        reviewed_at: new Date().toISOString(),
+      },
+      { onConflict: "candidate_id,doc_type" },
+    );
+    await logAudit({ context, action: "candidate.interviewed", entity: "candidate", entityId: candidateId, detail: { score, outcome } });
+  }
+  done(candidateId);
+  return { ok: true };
+}
+
+/** Ask a referee for their reference by email (a new link each time). */
+export async function sendReferenceRequestAction(candidateId: string, referenceId: string): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  const { data: ref } = await admin.from("candidate_references").select("candidate_id, email, status, position").eq("id", referenceId).maybeSingle();
+  if (!ref || ref.candidate_id !== candidateId) return { ok: false, error: "Referee not found." };
+  if (!ref.email) return { ok: false, error: "Add the referee's email address first." };
+  if (ref.status === "received") return { ok: false, error: "Their reference is already in." };
+  const step = openStep(loaded.stages, `reference_${ref.position}`);
+  if (typeof step === "string") return { ok: false, error: step };
+  const sent = await sendReferenceRequest(admin, referenceId, context.userId, false);
+  if (!sent) return { ok: false, error: "The email couldn't be sent. Try again." };
+  await logAudit({ context, action: "candidate.reference_requested", entity: "candidate", entityId: candidateId, detail: { position: ref.position } });
+  done(candidateId);
+  return { ok: true };
+}
+
+/** Add a referee by hand, or correct one: the office's details stand. */
+export async function saveRefereeAction(
+  candidateId: string,
+  _prev: { ok?: boolean; error?: string },
+  formData: FormData,
+): Promise<{ ok?: boolean; error?: string }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { error: "Candidate not found." };
+  const position = Number(formData.get("position"));
+  if (![1, 2, 3].includes(position)) return { error: "Choose which reference this is." };
+  const text = (k: string) => String(formData.get(k) ?? "").trim().slice(0, 200) || null;
+  const name = text("referee_name");
+  if (!name) return { error: "Give the referee's name." };
+  const { error } = await admin.from("candidate_references").upsert(
+    {
+      organisation_id: context.organisationId,
+      candidate_id: candidateId,
+      position,
+      referee_type: formData.get("referee_type") === "Previous employer" ? "Previous employer" : "Character reference",
+      referee_name: name,
+      email: text("email")?.toLowerCase() ?? null,
+      phone: text("phone"),
+      organisation: text("organisation"),
+    },
+    { onConflict: "candidate_id,position" },
+  );
+  if (error) return { error: "The referee couldn't be saved. Try again." };
+  done(candidateId);
   return { ok: true };
 }

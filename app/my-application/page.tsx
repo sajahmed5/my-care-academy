@@ -4,6 +4,7 @@ import { requireCandidate } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isDone, progress, settingsFromRow, STAGES, type CandidateDocRecord } from "@/lib/recruitment";
 import { UploadStep } from "./upload-step";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Your application" };
 
@@ -53,7 +54,9 @@ export default async function MyApplicationPage() {
         const company = (c.organisations as unknown as { name: string } | null)?.name ?? "";
         const open = stages.flatMap((s) => (s.locked ? [] : s.steps));
         const mine = open.filter((s) => s.candidateUploads && (s.state === "not_started" || s.state === "sent_back" || s.state === "expired") && (s.required || s.state === "sent_back"));
-        const waiting = open.filter((s) => s.required && !isDone(s.state) && !mine.includes(s));
+        // The health form is theirs to fill in online, not an upload.
+        const form = open.find((s) => s.key === "starter_form" && (s.state === "not_started" || s.state === "sent_back"));
+        const waiting = open.filter((s) => s.required && !isDone(s.state) && !mine.includes(s) && s !== form);
         const done = stages.flatMap((s) => s.steps).filter((s) => isDone(s.state));
         const current = stages.find((s) => !s.complete)?.stage ?? 4;
         return (
@@ -84,7 +87,18 @@ export default async function MyApplicationPage() {
             {c.status === "candidate" && (
               <>
                 <h2 className="px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">For you to do</h2>
-                {mine.length === 0 ? (
+                {form && (
+                  <div className="rounded-2xl border border-primary bg-card p-4">
+                    <p className="font-medium">{form.label}</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      {form.state === "sent_back" ? `The office asked you to change something: ${form.doc?.review_note ?? ""}` : "About 10 minutes. Your answers are confidential."}
+                    </p>
+                    <Link href={`/my-application/health/${c.id as string}`} className="mt-3 inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
+                      Fill it in
+                    </Link>
+                  </div>
+                )}
+                {mine.length === 0 && !form ? (
                   <p className="rounded-2xl border bg-card p-4 text-sm text-muted-foreground">Nothing right now. We&apos;ll email you when there is.</p>
                 ) : (
                   mine.map((s) => (

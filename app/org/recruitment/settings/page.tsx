@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { RECRUITMENT_STEPS, settingsFromRow } from "@/lib/recruitment";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { SettingsForm } from "./settings-form";
+import { letterDefaultsFromRow } from "@/lib/recruitment-letters";
 
 /**
  * How this company recruits (RECRUITMENT.md): stages in order or not, the
@@ -19,7 +20,7 @@ export default async function RecruitmentSettingsPage() {
   const switchable = RECRUITMENT_STEPS.filter((s) => s.canSwitchOff).map((s) => ({ key: s.key, label: s.label, hint: s.hint }));
   return (
     <DashboardShell title="Recruitment settings" context={context}>
-      <SettingsForm settings={settings} switchable={switchable} canEdit={context.role === "org_admin"} />
+      <SettingsForm settings={settings} letters={letterDefaultsFromRow(data)} switchable={switchable} canEdit={context.role === "org_admin"} />
     </DashboardShell>
   );
 }
