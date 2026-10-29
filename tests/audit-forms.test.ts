@@ -165,3 +165,111 @@ describe("due rows with bookings", () => {
     expect(rows[0]).toMatchObject({ status: "overdue", booked: "2026-11-05" });
   });
 });
+
+import {
+  COMPETENCY_FORMS,
+  SPOT_CHECK_FORM,
+  readCheckAnswers,
+  suggestedOutcome,
+  suggestedSlugs,
+} from "../lib/audit-forms";
+import { suggestionsFromSlugs } from "../lib/competency";
+
+describe("spot check and competency forms", () => {
+  it("are due every 12 weeks and every 12 months per skill", () => {
+    expect(SPOT_CHECK_FORM.due).toEqual({ every: 12, unit: "weeks" });
+    for (const f of COMPETENCY_FORMS) expect(f.due).toEqual({ every: 12, unit: "months" });
+  });
+
+  it("cover the eight agreed skills, each with its own criteria", () => {
+    expect(COMPETENCY_FORMS.map((f) => f.key)).toEqual([
+      "medication",
+      "hoist",
+      "moving_people",
+      "moving_objects",
+      "food_hydration",
+      "de_escalation",
+      "infection_control",
+      "personal_care",
+    ]);
+    for (const f of [...COMPETENCY_FORMS, SPOT_CHECK_FORM]) {
+      const ids = f.items.map((i) => i.id);
+      expect(ids.length).toBeGreaterThan(0);
+      expect(new Set(ids).size).toBe(ids.length);
+    }
+  });
+});
+
+describe("readCheckAnswers", () => {
+  const items = [
+    { id: "a", label: "Badge" },
+    { id: "b", label: "PPE" },
+  ];
+
+  it("needs every item answered", () => {
+    expect(readCheckAnswers(items, [{ id: "a", result: "yes" }])).toEqual({ ok: false, error: 'Answer "PPE".' });
+  });
+
+  it("needs a comment on a No", () => {
+    const r = readCheckAnswers(items, [
+      { id: "a", result: "yes" },
+      { id: "b", result: "no", comment: " " },
+    ]);
+    expect(r).toEqual({ ok: false, error: 'Say what was wrong with "PPE".' });
+  });
+
+  it("snapshots the wording and drops anything else", () => {
+    const r = readCheckAnswers(items, [
+      { id: "a", result: "na" },
+      { id: "b", result: "no", comment: "No apron" },
+      { id: "z", result: "yes" },
+    ]);
+    expect(r).toEqual({
+      ok: true,
+      answers: [
+        { id: "a", label: "Badge", result: "na", comment: "" },
+        { id: "b", label: "PPE", result: "no", comment: "No apron" },
+      ],
+    });
+  });
+
+  it("refuses a made-up result", () => {
+    expect(readCheckAnswers(items, [{ id: "a", result: "maybe" }, { id: "b", result: "yes" }]).ok).toBe(false);
+  });
+});
+
+describe("suggestedOutcome", () => {
+  it("is met with no Nos, needs support with one or two, not met with three", () => {
+    expect(suggestedOutcome([{ result: "yes" }, { result: "na" }])).toBe("met");
+    expect(suggestedOutcome([{ result: "no" }, { result: "yes" }])).toBe("developing");
+    expect(suggestedOutcome([{ result: "no" }, { result: "no" }, { result: "no" }])).toBe("not_met");
+  });
+});
+
+describe("suggested training", () => {
+  it("comes from a spot check's Nos, de-duplicated, only when it fell short", () => {
+    const answers = [
+      { id: "ppe", result: "no" },
+      { id: "hand_hygiene", result: "no" },
+      { id: "uniform", result: "no" },
+      { id: "records", result: "yes" },
+    ];
+    expect(suggestedSlugs(SPOT_CHECK_FORM, "developing", answers)).toEqual(["infection-prevention-and-control"]);
+    expect(suggestedSlugs(SPOT_CHECK_FORM, "met", answers)).toEqual([]);
+  });
+
+  it("comes from the skill itself for competency", () => {
+    const hoist = COMPETENCY_FORMS.find((f) => f.key === "hoist")!;
+    expect(suggestedSlugs(hoist, "not_met", [])).toEqual(["moving-and-handling"]);
+  });
+
+  it("marks what has already been assigned off the record", () => {
+    const courses = [
+      { id: "c1", slug: "moving-and-handling", title: "Moving and Handling" },
+      { id: "c2", slug: "other", title: "Other" },
+    ];
+    expect(suggestionsFromSlugs(["moving-and-handling", "missing"], courses, new Map([["c1", "after the hoist check"]]))).toEqual([
+      { course: courses[0], assigned: true, reason: "after the hoist check" },
+    ]);
+  });
+});

@@ -8,8 +8,8 @@ import { DueList } from "../due-list";
 import { loadCurrentCarers } from "../load";
 
 /**
- * Who is due a spot check, across the organisation (ROADMAP §3). Each area
- * falls due on its own; a carer's date is the soonest of them, as on the file.
+ * Who is due a spot check, across the organisation (ROADMAP §3). Carers only,
+ * and never booked: spot checks stay unannounced (STAFF-AUDITS.md).
  */
 export default async function SpotChecksDuePage() {
   const context = await requireConsole();
@@ -20,8 +20,8 @@ export default async function SpotChecksDuePage() {
     loadCurrentCarers(supabase, orgId),
     fetchAll((f, t) =>
       supabase
-        .from("competency_checks")
-        .select("id, user_id, area, checked_on, next_due")
+        .from("spot_checks")
+        .select("id, user_id, checked_on, next_due")
         .eq("organisation_id", orgId)
         .order("id")
         .range(f, t),
@@ -29,21 +29,16 @@ export default async function SpotChecksDuePage() {
   ]);
   const rows = buildDueRows(
     people,
-    records.map((r) => ({
-      userId: r.user_id as string,
-      heldOn: r.checked_on as string,
-      nextDue: (r.next_due as string | null) ?? null,
-      area: r.area as string,
-    })),
+    records.map((r) => ({ userId: r.user_id as string, heldOn: r.checked_on as string, nextDue: (r.next_due as string | null) ?? null })),
     new Date(),
   );
   return (
     <DashboardShell title="Spot checks due" context={context}>
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Every current carer and when their next spot check falls — the soonest across the areas they are checked in.
+          Every current carer and when their next spot check falls. They are unannounced, so nobody is told the date.
         </p>
-        <DueList rows={rows} section="competency" noun="check" />
+        <DueList rows={rows} section="competency" noun="spot check" />
       </div>
     </DashboardShell>
   );

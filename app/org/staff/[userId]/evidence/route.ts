@@ -6,7 +6,7 @@ import { logAudit } from "@/lib/audit";
 import { loadOrgLearnerTraining } from "@/lib/org-learner";
 import { loadPersonActions } from "@/lib/person-tasks";
 import { loadSupervisions, kindLabel } from "@/lib/supervisions";
-import { areaLabel, loadCompetencyChecks, outcomeLabel } from "@/lib/competency";
+import { areaLabel, loadCompetencyChecks, loadSpotChecks, outcomeLabel, spotOutcomeLabel } from "@/lib/competency";
 import {
   categoryLabel,
   kindLabel as incidentKindLabel,
@@ -76,7 +76,7 @@ export async function GET(
     { profile, enrolments, certificates },
     { data: org },
     actions,
-    [supervisions, checks, incidents, formResponses],
+    [supervisions, checks, incidents, formResponses, spotChecks],
     { data: classroomRows },
   ] = await Promise.all([
     enabledRead,
@@ -100,6 +100,7 @@ export async function GET(
               .limit(200)
               .then((r) => r.data ?? [])
           : Promise.resolve([]),
+        on["people.competency"] ? loadSpotChecks(supabase, userId) : Promise.resolve([]),
       ]),
     ),
     // Face-to-face sessions they attended, printed with the training record.
@@ -128,6 +129,7 @@ export async function GET(
   const actionRows = since(actions, (a) => a.due_date ?? a.completed_at, from);
   const supervisionRows = since(supervisions, (s) => s.held_on, from);
   const checkRows = since(checks, (c) => c.checked_on, from);
+  const spotRows = since(spotChecks, (c) => c.checked_on, from);
   const incidentRows = since(incidents, (i) => i.occurred_on, from);
   const formRows = since(formResponses, (f) => f.submitted_at as string, from);
 
@@ -138,7 +140,7 @@ export async function GET(
       certificates: certificateRows.length,
       actions: actionRows.length,
       supervisions: supervisionRows.length,
-      competency: checkRows.length,
+      competency: checkRows.length + spotRows.length,
       complaints: incidentRows.length,
       forms: formRows.length,
     },
@@ -192,12 +194,35 @@ export async function GET(
         .join("\n") || null,
       status: s.next_due ? `Next ${fmt(s.next_due)}` : null,
     })),
-    competency: checkRows.map((c) => ({
-      when: fmt(c.checked_on),
-      what: `${areaLabel(c.area)}${c.assessor_name ? ` — ${c.assessor_name}` : ""}`,
-      detail: c.notes,
-      status: outcomeLabel(c.outcome),
-    })),
+    // Spot checks and competency assessments share the section, newest first.
+    competency: [
+      ...spotRows.map((c) => ({
+        sort: c.checked_on,
+        when: fmt(c.checked_on),
+        what: `Spot check${c.client_name ? ` at ${c.client_name}'s` : ""}${c.assessor_name ? ` — ${c.assessor_name}` : ""}`,
+        detail:
+          [
+            ...c.items.filter((i) => i.result === "no").map((i) => `Not met: ${i.label}${i.comment ? ` (${i.comment})` : ""}`),
+            c.notes,
+            c.carer_signed_name ? `Signed by ${c.carer_signed_name}.` : c.carer_unsigned_reason ? `Not signed: ${c.carer_unsigned_reason}.` : null,
+          ]
+            .filter(Boolean)
+            .join("\n") || null,
+        status: spotOutcomeLabel(c.outcome),
+      })),
+      ...checkRows.map((c) => ({
+        sort: c.checked_on,
+        when: fmt(c.checked_on),
+        what: `${areaLabel(c.area)}${c.assessor_name ? ` — ${c.assessor_name}` : ""}`,
+        detail:
+          [...c.criteria.filter((i) => i.result === "no").map((i) => `Not met: ${i.label}${i.comment ? ` (${i.comment})` : ""}`), c.notes]
+            .filter(Boolean)
+            .join("\n") || null,
+        status: outcomeLabel(c.outcome),
+      })),
+    ]
+      .sort((a, b) => b.sort.localeCompare(a.sort))
+      .map((r) => ({ when: r.when, what: r.what, detail: r.detail, status: r.status })),
     complaints: incidentRows.map((i) => ({
       when: fmt(i.occurred_on),
       what: `${incidentKindLabel(i.kind)} — ${categoryLabel(i.category)}`,

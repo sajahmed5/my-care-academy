@@ -75,6 +75,7 @@ const ORG_MENU: MenuItem[] = [
       { href: "/org/due/supervisions", label: "Supervisions", feature: "people.supervisions" },
       { href: "/org/due/appraisals", label: "Appraisals", feature: "people.supervisions" },
       { href: "/org/due/spot-checks", label: "Spot checks", feature: "people.competency" },
+      { href: "/org/due/competency", label: "Competency", feature: "people.competency" },
       { href: "/org/due/audits", label: "Audits", feature: "quality.audits" },
     ],
   },
