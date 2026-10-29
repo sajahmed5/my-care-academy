@@ -1,0 +1,100 @@
+# Complaints & safeguarding — agreed plan (29 Oct 2026)
+
+Agreed with Saj on 29 Oct 2026. Nothing below is built yet beyond what's
+marked as today's. Complaints & safeguarding is in Pro and up (see
+PACKAGES.md).
+
+## Today
+
+- **Complaints** (`/org/complaints`, migration 20261024100000) — a seven-step
+  process (concern raised, triage, acknowledge, investigate, findings,
+  outcome, follow-up and close) with stages each company configures, stage
+  forms (acknowledgement, meeting minutes, action plan, outcome letter, duty
+  of candour, monitoring review), the clock (acknowledge in 3 working days,
+  respond in 28), named staff, uploads, a PDF of the record, and actions on
+  the task list. A record is a complaint, a safeguarding concern or an issue.
+- **Incidents & accidents** (`/org/incidents`) — a separate register of
+  complaints, accidents, near misses and safeguarding concerns, with the staff
+  named and suggested training.
+
+The problem: a complaint or a safeguarding concern can go in either place,
+safeguarding has no process of its own, and accidents have no RIDDOR prompt.
+On 29 Oct 2026 there are 2 test complaints and nothing in the register.
+
+## One front door
+
+Everything is raised in one place as a **concern**, then triaged into one of
+five types, each with its own process:
+
+| Type | Process |
+|---|---|
+| **Complaint** | Today's seven steps, with MyRoster's newer parts (below) |
+| **Safeguarding** | Its own process (below) |
+| **Issue** | Today's issue route: action plan and monitoring review |
+| **Accident** | What happened, injuries, RIDDOR check, actions, suggested training |
+| **Near miss** | What happened, what would have happened, actions |
+
+The incidents register is merged into this; its rows (none today) would move.
+
+**Triage checks.** As in MyRoster, triage sets the checks the concern needs,
+and each can be linked from the concern: a **carer spot check** (Staff
+Audits) and a **client QA** (Service audits), alongside carer statements and
+uploaded evidence. Doing the check ticks it off on the concern.
+
+**Raised by anyone in the office**, or by a family or client through a public
+"raise a concern" link (like the feedback survey links), which arrives
+waiting for triage.
+
+## Safeguarding
+
+1. Immediate actions to keep the person safe.
+2. Referral to the council's safeguarding team — date and reference number.
+3. CQC notification.
+4. Police, if a crime may have happened.
+5. The council's enquiry outcome (a Section 42 enquiry under the Care Act).
+6. Lessons learned, and actions.
+
+The legal reminders (council, CQC, and later a DBS barring referral if it
+ends in a dismissal — HR-PACK.md) show the moment a concern is triaged as
+safeguarding. The manager confirms each; the site never files anything.
+
+## Accidents
+
+What happened, who was hurt and how, first aid given, and a **RIDDOR
+reminder** for injuries that must be reported to the HSE. Accidents and near
+misses can lead to actions and suggested training.
+
+## From MyRoster
+
+Brought across (MyRoster `src/lib/complaint*.ts`, `concern*.ts`):
+
+- **Interim letter** — for when the council chases part-way through: what's
+  done, what's still to come and when, worked out from the file.
+- **Readiness check** — what's still missing before the response goes out.
+  Warns, never blocks.
+- **Evidence bundle** — one ZIP, files numbered to match the appendices in
+  the response; a missing file is listed as missing, not dropped.
+- **Guidance** — the "what to do" procedure (Regulation 16, Regulation 20
+  duty of candour), as a PDF to hand to a client, council or CQC.
+- **AI drafting** — acknowledgement, interim and response letters, from what's
+  on file only. 1.5 times cost; a person always checks and sends.
+- **Precedent** — how similar closed complaints were handled shapes a draft's
+  approach, never its facts.
+- **Council tracking** — which council the concern is with, taken from the
+  client's funder (see the client list in PACKAGES.md).
+
+Waiting for the MyRoster review: anything that reads the rota — visit
+records, QA visits from the rota, patterns spotted across visits.
+
+## Also
+
+- **Clients.** A concern links to a client from the client list (PACKAGES.md):
+  "3 concerns about this client this year", and the council filled in.
+- **Performance plans** can be raised from a concern and link back to it
+  (STAFF-AUDITS.md).
+- **Compliments** are logged too, linked to the carer they're about, and show
+  on the carer's file and in their appraisal.
+- **Who sees it.** Managers and office. A carer named in a concern never sees
+  it.
+- **Trends page.** Concerns by type, category, carer, client and month — for
+  CQC's well-led questions.
