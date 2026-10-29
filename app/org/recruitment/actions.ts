@@ -557,6 +557,7 @@ export async function saveRecruitmentSettingsAction(
     thirdReference: formData.get("third_reference") === "on",
     dbsBeforeStart: formData.get("dbs_before_start") === "on",
   };
+  const words = (k: string, max: number) => String(formData.get(k) ?? "").replace(/\s+/g, " ").trim().slice(0, max) || null;
   const supabase = await createClient();
   const { error } = await supabase.from("recruitment_settings").upsert({
     organisation_id: context.organisationId,
@@ -564,6 +565,10 @@ export async function saveRecruitmentSettingsAction(
     steps_off: settings.stepsOff,
     third_reference: settings.thirdReference,
     dbs_before_start: settings.dbsBeforeStart,
+    offer_signatory_name: words("offer_signatory_name", 80),
+    offer_signatory_title: words("offer_signatory_title", 80),
+    offer_hours_line: words("offer_hours_line", 500),
+    offer_pay_line: words("offer_pay_line", 300),
     updated_by: context.userId,
   });
   if (error) return { error: "The settings couldn't be saved. Try again." };

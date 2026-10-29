@@ -50,13 +50,15 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   const a = await latestAttempt(admin, id);
   // Referees: copied from their application the first time anyone looks.
   await importReferees(admin, id, context.organisationId!);
-  const [{ data: refRows }, { data: interview }] = await Promise.all([
+  const [{ data: refRows }, { data: interview }, { data: offerLetter }, { data: starter }] = await Promise.all([
     admin
       .from("candidate_references")
       .select("id, position, referee_type, referee_name, email, phone, organisation, status, requested_at, reminder_count")
       .eq("candidate_id", id)
       .order("position"),
     admin.from("candidate_interviews").select("status, overall_score, outcome").eq("candidate_id", id).maybeSingle(),
+    admin.from("candidate_letters").select("sent_at").eq("candidate_id", id).eq("kind", "offer").maybeSingle(),
+    admin.from("candidate_starter_forms").select("status, submitted_at").eq("candidate_id", id).maybeSingle(),
   ]);
   const referees: RefereeView[] = (refRows ?? []).map((r) => ({
     id: r.id as string,
@@ -89,6 +91,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   const stages = progress((docs ?? []) as CandidateDocRecord[], settings, { dbsConviction: candidate.dbs_conviction === true });
   const now = currentStage(stages);
   const outstanding = outstandingSteps(stages, settings);
+  const interviewConfirmed = stages.flatMap((x) => x.steps).find((st) => st.key === "interview")?.state === "confirmed";
   const status = candidate.status as string;
   const meta = [
     candidate.role_applied,
@@ -163,6 +166,46 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
                     <Link href={`/org/recruitment/${id}/interview`} className={buttonVariants({ size: "sm", variant: "outline" })}>
                       {interview ? "Open the interview record" : "Start the interview record"}
                     </Link>
+                  </div>
+                </li>
+              )}
+              {s.stage === 2 && !s.locked && status === "candidate" && (
+                <li className="border-t bg-muted/30 px-5 py-3.5">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                    <span className="font-medium">Offer letter</span>
+                    <span className="text-muted-foreground">
+                      {offerLetter?.sent_at
+                        ? `Sent ${formatDate(offerLetter.sent_at as string)}.`
+                        : interviewConfirmed
+                          ? "Write it, with why you chose them, and email it."
+                          : "Once the interview is confirmed."}
+                    </span>
+                    {interviewConfirmed && (
+                      <Link href={`/org/recruitment/${id}/offer`} className={buttonVariants({ size: "sm", variant: offerLetter?.sent_at ? "outline" : "default" })}>
+                        {offerLetter?.sent_at ? "Open the offer" : offerLetter ? "Carry on with the offer" : "Write the offer"}
+                      </Link>
+                    )}
+                  </div>
+                </li>
+              )}
+              {s.stage === 3 && !s.locked && s.steps.some((st) => st.key === "starter_form") && (
+                <li className="border-t bg-muted/30 px-5 py-3.5">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                    <span className="font-medium">Health, equality and DBS form</span>
+                    <span className="text-muted-foreground">
+                      {starter?.status === "submitted"
+                        ? `Sent in ${formatDate(starter.submitted_at as string)}.`
+                        : starter
+                          ? "They've started it."
+                          : candidate.user_id
+                            ? "They fill it in when they sign in to their application."
+                            : "They fill it in once they have a login: sending the offer gives them one."}
+                    </span>
+                    {starter?.status === "submitted" && (
+                      <Link href={`/org/recruitment/${id}/starter`} className={buttonVariants({ size: "sm", variant: "outline" })}>
+                        Read their answers
+                      </Link>
+                    )}
                   </div>
                 </li>
               )}

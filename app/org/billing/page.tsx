@@ -25,6 +25,10 @@ import { LogoCard } from "./logo-card";
 import { orgBranding } from "@/lib/branding";
 import { hasFeature } from "@/lib/entitlements";
 import { formatDate } from "@/lib/dates";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { aiStatus, monthCharge } from "@/lib/ai";
+import { AI_MARKUP, formatGbp } from "@/lib/ai-cost";
+import { AiSettingsForm } from "./ai-card";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -100,9 +104,12 @@ export default async function AccountPage({
     lastSeen: (u.last_seen_at as string | null) ?? null,
   }));
 
-  const [branding, whiteLabel] = await Promise.all([
+  const admin = createAdminClient();
+  const [branding, whiteLabel, ai, aiMonth] = await Promise.all([
     orgBranding(context.organisationId),
     hasFeature(context, "platform.white_label"),
+    aiStatus(admin, context.organisationId!),
+    monthCharge(admin, context.organisationId!),
   ]);
 
   const tier = (org?.package_tier ?? "core") as PackageTier;
@@ -193,6 +200,20 @@ export default async function AccountPage({
                 .
               </p>
             )}
+          </CardContent>
+        </Card>
+
+        {/* AI */}
+        <Card>
+          <CardHeader>
+            <CardTitle>AI</CardTitle>
+            <CardDescription>
+              This month: {formatGbp(ai.chargedGbp)} from {aiMonth.requests} request{aiMonth.requests === 1 ? "" : "s"}. It&apos;s added to your
+              monthly bill as &ldquo;AI usage&rdquo;, at {AI_MARKUP} times what it costs us.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AiSettingsForm enabled={ai.enabled} limitGbp={ai.limitGbp} />
           </CardContent>
         </Card>
 
