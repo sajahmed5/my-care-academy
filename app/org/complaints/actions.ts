@@ -23,6 +23,7 @@ import {
   type ComplaintKind,
 } from "@/lib/complaints/stages";
 import { CONCERN_CATEGORIES } from "@/lib/complaints/categories";
+import { REMINDER_KEYS } from "@/lib/complaints/reminders";
 import { loadCloseCheck, loadStages, nextReference } from "@/lib/complaints/data";
 import { actionTagFor, computeStageStatus, isTriageStage, holdsFindings } from "@/lib/complaints/compute";
 import { cleanConcernFindings, CONCERN_FINDINGS_KEY, type ConcernFinding } from "@/lib/complaints/findings";
@@ -205,7 +206,7 @@ async function prefillStages(
   supabase: Awaited<ReturnType<typeof createClient>>,
   complaintId: string,
   kind: string,
-  record: { reportedOn: string; occurredOn: string | null; description: string },
+  record: { reportedOn: string; occurredOn: string | null; description: string; council?: string | null },
   userId: string,
 ) {
   const [allStages, { data: existing }] = await Promise.all([
@@ -227,6 +228,11 @@ async function prefillStages(
       answers = { ar_date: happened, ar_what: record.description };
     } else if (stage.kind === "near_miss_report") {
       answers = { nm_date: happened, nm_what: record.description };
+    } else if (stage.kind === "sg_immediate") {
+      answers = { sgi_date: record.reportedOn };
+    } else if (stage.kind === "sg_referral" && record.council) {
+      // The council that funds the client is usually the one to refer to.
+      answers = { sgr_council: record.council };
     }
     if (answers) await recompute(supabase, complaintId, stage, answers, userId);
   }
@@ -268,7 +274,7 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
     loadStages(supabase, context.organisationId),
     nextReference(supabase, kind, reportedOn),
     clientId
-      ? supabase.from("clients").select("id, full_name").eq("id", clientId).maybeSingle().then((r) => r.data)
+      ? supabase.from("clients").select("id, full_name, funder_type, funder_name").eq("id", clientId).maybeSingle().then((r) => r.data)
       : Promise.resolve(null),
   ]);
   if (allStages.length === 0) return { ok: false, error: "Set up the process first: the organisation has no stages yet." };
@@ -329,7 +335,8 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
     await recompute(supabase, complaintId, form, answers, context.userId);
   }
   if (triaged) {
-    await prefillStages(supabase, complaintId, kind, { reportedOn, occurredOn: occurredOn || null, description }, context.userId);
+    const council = client?.funder_type === "council" ? ((client.funder_name as string | null) ?? null) : null;
+    await prefillStages(supabase, complaintId, kind, { reportedOn, occurredOn: occurredOn || null, description, council }, context.userId);
   }
 
   await logAudit({
@@ -354,10 +361,13 @@ async function setKind(
   id: string,
   kind: ComplaintKind,
   userId: string,
-): Promise<{ error?: string; record?: { reportedOn: string; occurredOn: string | null; description: string; was: string } }> {
+): Promise<{
+  error?: string;
+  record?: { reportedOn: string; occurredOn: string | null; description: string; council: string | null; was: string };
+}> {
   const { data: row } = await supabase
     .from("complaints")
-    .select("kind, reported_on, occurred_on, description, complete_by, triaged_at")
+    .select("kind, reported_on, occurred_on, description, complete_by, triaged_at, client:clients (funder_type, funder_name)")
     .eq("id", id)
     .maybeSingle();
   if (!row) return { error: "That record is no longer there." };
@@ -372,8 +382,10 @@ async function setKind(
     })
     .eq("id", id);
   if (error) return { error: error.message };
+  const client = (Array.isArray(row.client) ? row.client[0] : row.client) as { funder_type?: string; funder_name?: string | null } | null;
   return {
     record: {
+      council: client?.funder_type === "council" ? (client.funder_name ?? null) : null,
       reportedOn,
       occurredOn: (row.occurred_on as string | null) ?? null,
       description: row.description as string,
@@ -966,5 +978,38 @@ export async function assignConcernTrainingAction(_prev: SaveState, formData: Fo
 
   revalidatePath(`/org/staff/${userId}`);
   revalidatePath(`/org/complaints/${complaintId}`);
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Legal reminders
+// ---------------------------------------------------------------------------
+
+/**
+ * A manager confirms a legal reminder — the council, CQC, police, DBS or
+ * RIDDOR — is in hand. The site files nothing; this keeps who said so and
+ * when. Undo clears it, for a confirmation made by mistake.
+ */
+export async function confirmReminderAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
+  const context = await requireComplaints();
+  if (!context) return { ok: false, error: NOT_IN_PLAN };
+  const id = str(formData, "complaintId");
+  const key = str(formData, "key");
+  const undo = formData.get("undo") === "1";
+  if (!(REMINDER_KEYS as readonly string[]).includes(key)) return { ok: false, error: "That is not one of the reminders." };
+
+  const supabase = await createClient();
+  const [{ data: row }, { data: me }] = await Promise.all([
+    supabase.from("complaints").select("reminders").eq("id", id).maybeSingle(),
+    supabase.from("users").select("full_name, email").eq("id", context.userId).maybeSingle(),
+  ]);
+  if (!row) return { ok: false, error: "That record is no longer there." };
+  const reminders = { ...((row.reminders as Record<string, unknown> | null) ?? {}) };
+  if (undo) delete reminders[key];
+  else reminders[key] = { at: new Date().toISOString(), by: context.userId, byName: (me?.full_name as string | null) || (me?.email as string | null) || null };
+  const { error } = await supabase.from("complaints").update({ reminders }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  await logAudit({ context, action: undo ? "complaint.reminder_undone" : "complaint.reminder_confirmed", entity: "complaint", entityId: id, detail: { key } });
+  revalidatePath(`/org/complaints/${id}`);
   return { ok: true };
 }

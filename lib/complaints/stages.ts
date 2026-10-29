@@ -20,7 +20,7 @@ export const COMPLAINT_KINDS: { value: ComplaintKind; label: string; plural: str
   { value: "complaint", label: "Complaint", plural: "Complaints", prefix: "COM", hint: "Investigated, with a written response in 28 days" },
   { value: "safeguarding", label: "Safeguarding concern", plural: "Safeguarding", prefix: "SAF", hint: "Someone may be at risk of abuse or neglect: keep them safe, refer to the council" },
   { value: "issue", label: "Issue", plural: "Issues", prefix: "ISS", hint: "Put right, recorded and monitored" },
-  { value: "accident", label: "Accident", plural: "Accidents", prefix: "ACC", hint: "Someone was hurt: what happened, and the first aid given" },
+  { value: "accident", label: "Accident", plural: "Accidents", prefix: "ACC", hint: "Someone was hurt: what happened, first aid, and whether RIDDOR applies" },
   { value: "near_miss", label: "Near miss", plural: "Near misses", prefix: "NM", hint: "Nobody was hurt, but could have been" },
 ];
 
@@ -51,7 +51,13 @@ export type StageKind =
   | "monitoring_review"
   | "accident_report"
   | "near_miss_report"
-  | "incident_actions";
+  | "incident_actions"
+  | "sg_immediate"
+  | "sg_referral"
+  | "sg_cqc"
+  | "sg_police"
+  | "sg_enquiry"
+  | "sg_lessons";
 
 /**
  * What a stage opens. A stage whose kind is wrong falls back to the plain
@@ -70,6 +76,12 @@ export const STAGE_KINDS: { value: StageKind; label: string; hint: string }[] = 
   { value: "accident_report", label: "Accident report", hint: "What happened, who was hurt and how, first aid given" },
   { value: "near_miss_report", label: "Near miss report", hint: "What happened, and what would have happened" },
   { value: "incident_actions", label: "Actions and training", hint: "What is being done so it does not happen again" },
+  { value: "sg_immediate", label: "Safeguarding: keeping them safe", hint: "The risk, and what was done straight away" },
+  { value: "sg_referral", label: "Safeguarding: council referral", hint: "Whether it was referred, when, and the council's reference" },
+  { value: "sg_cqc", label: "Safeguarding: CQC notification", hint: "Whether CQC was notified, and when" },
+  { value: "sg_police", label: "Safeguarding: police", hint: "Whether a crime may have happened, and the crime reference" },
+  { value: "sg_enquiry", label: "Safeguarding: council enquiry", hint: "The outcome of the council's Section 42 enquiry" },
+  { value: "sg_lessons", label: "Safeguarding: lessons learned", hint: "What was learned, the actions, and any DBS referral" },
 ];
 
 export const stageKindLabel = (value: string) => STAGE_KINDS.find((k) => k.value === value)?.label ?? value;
@@ -103,6 +115,7 @@ export function completeByFor(reportedOn: string): string {
 const ALL: ComplaintKind[] = ["complaint", "safeguarding", "issue"];
 const COM_SAF: ComplaintKind[] = ["complaint", "safeguarding"];
 const INCIDENTS: ComplaintKind[] = ["accident", "near_miss"];
+const SAF: ComplaintKind[] = ["safeguarding"];
 
 /**
  * The stages an organisation starts with. The order is the order the work
@@ -115,20 +128,27 @@ const INCIDENTS: ComplaintKind[] = ["accident", "near_miss"];
  */
 export const DEFAULT_STAGES: { name: string; kind: StageKind; appliesTo: ComplaintKind[] }[] = [
   { name: "Complaint Form", kind: "complaint_form", appliesTo: ALL },
-  { name: "Triage", kind: "meeting_minutes", appliesTo: ALL },
-  { name: "Acknowledgement", kind: "acknowledgement", appliesTo: ALL },
+  { name: "Triage", kind: "meeting_minutes", appliesTo: ["complaint", "issue"] },
+  // Safeguarding has its own six (20261029213200), not the complaint's seven.
+  { name: "Keeping Them Safe", kind: "sg_immediate", appliesTo: SAF },
+  { name: "Council Referral", kind: "sg_referral", appliesTo: SAF },
+  { name: "CQC Notification", kind: "sg_cqc", appliesTo: SAF },
+  { name: "Police", kind: "sg_police", appliesTo: SAF },
+  { name: "Acknowledgement", kind: "acknowledgement", appliesTo: ["complaint", "issue"] },
   { name: "Carer Statement", kind: "document", appliesTo: ALL },
   { name: "Action Plan", kind: "action_plan", appliesTo: ["issue"] },
   { name: "Monitoring Review", kind: "monitoring_review", appliesTo: ["issue"] },
-  { name: "Previous QAs", kind: "document", appliesTo: COM_SAF },
-  { name: "Spot Checks", kind: "document", appliesTo: COM_SAF },
-  { name: "Training Records", kind: "document", appliesTo: COM_SAF },
-  { name: "Client Visit", kind: "document", appliesTo: COM_SAF },
-  { name: "Findings", kind: "meeting_minutes", appliesTo: COM_SAF },
-  { name: "Follow-up", kind: "meeting_minutes", appliesTo: COM_SAF },
-  { name: "Outcome Letter", kind: "outcome_letter", appliesTo: ALL },
-  { name: "Duty of Candour Letter", kind: "duty_of_candour", appliesTo: ["complaint", "safeguarding"] },
+  { name: "Previous QAs", kind: "document", appliesTo: ["complaint"] },
+  { name: "Spot Checks", kind: "document", appliesTo: ["complaint"] },
+  { name: "Training Records", kind: "document", appliesTo: ["complaint"] },
+  { name: "Client Visit", kind: "document", appliesTo: ["complaint"] },
+  { name: "Findings", kind: "meeting_minutes", appliesTo: ["complaint"] },
+  { name: "Follow-up", kind: "meeting_minutes", appliesTo: ["complaint"] },
+  { name: "Outcome Letter", kind: "outcome_letter", appliesTo: ["complaint", "issue"] },
+  { name: "Duty of Candour Letter", kind: "duty_of_candour", appliesTo: ["complaint"] },
   { name: "Council Correspondence", kind: "document", appliesTo: COM_SAF },
+  { name: "Council Enquiry Outcome", kind: "sg_enquiry", appliesTo: SAF },
+  { name: "Lessons Learned", kind: "sg_lessons", appliesTo: SAF },
   { name: "Accident Report", kind: "accident_report", appliesTo: ["accident"] },
   { name: "Near Miss Report", kind: "near_miss_report", appliesTo: ["near_miss"] },
   { name: "Actions and Training", kind: "incident_actions", appliesTo: INCIDENTS },

@@ -11,6 +11,8 @@
  *   accident_report    an accident: what happened, who was hurt, first aid.
  *   near_miss_report   a near miss: what happened, and what would have.
  *   incident_actions   after either: why, and what will stop it again.
+ *   sg_*               safeguarding's six: safe, council, CQC, police,
+ *                      the council's enquiry, lessons learned.
  *
  * Question ids are prefixed by their stage (cf_, mm1_, mm2_, mm3_, mr_) and
  * are the keys answers are stored under, so they are never renamed — a tidier
@@ -316,6 +318,54 @@ export const accidentReportSchema: StageForm = {
         { id: "ar_family_told", text: "Were the family or next of kin told?", type: "yes_no" },
       ],
     },
+    {
+      id: "riddor",
+      title: "RIDDOR",
+      order: 3,
+      description:
+        "Some injuries must be reported to the Health and Safety Executive. The questions below are the ones that decide it; the reminder at the top of the record says what applies.",
+      questions: [
+        {
+          id: "ar_specified",
+          text: "Was it a specified injury?",
+          type: "yes_no",
+          required: true,
+          help: "A fracture other than to fingers, thumbs or toes; an amputation; loss of sight; a crush injury to the head or body; a serious burn; scalping; or loss of consciousness from a head injury or lack of air.",
+        },
+        {
+          id: "ar_off_work",
+          text: "Is the member of staff off work, or unable to do their normal job?",
+          type: "select",
+          showWhen: { questionId: "ar_who", equals: "staff" },
+          options: [
+            { value: "no", label: "No" },
+            { value: "up_to_7", label: "Yes, for up to 7 days so far" },
+            { value: "over_7", label: "Yes, for more than 7 days" },
+          ],
+        },
+        {
+          id: "ar_work_related",
+          text: "Did it arise from the work — how care was given, the equipment, or the place?",
+          type: "yes_no",
+          help: "For a client or visitor, RIDDOR applies only when the accident came from the work, not from, say, a fall that nothing about the care caused.",
+        },
+        { id: "ar_riddor", text: "Is it reportable to the HSE under RIDDOR?", type: "yes_no", required: true },
+        { id: "ar_riddor_why", text: "Why, or why not", type: "long_text", required: true },
+        {
+          id: "ar_riddor_date",
+          text: "Date reported to the HSE",
+          type: "date",
+          required: true,
+          showWhen: { questionId: "ar_riddor", equals: true },
+        },
+        {
+          id: "ar_riddor_ref",
+          text: "HSE reference",
+          type: "text",
+          showWhen: { questionId: "ar_riddor", equals: true },
+        },
+      ],
+    },
   ],
 };
 
@@ -357,6 +407,174 @@ export const incidentActionsSchema: StageForm = {
           text: "Which, and who is updating it",
           type: "long_text",
           showWhen: { questionId: "ia_plans", equals: true },
+        },
+      ],
+    },
+  ],
+};
+
+// ---------------------------------------------------------------------------
+// Safeguarding (20261029213200). Six stages, each a decision someone made and
+// can be asked about: whether to refer, notify, or call the police is a
+// yes/no with a reason either way, and "yes" asks for the date and the
+// reference that prove it happened. The site files nothing itself.
+// ---------------------------------------------------------------------------
+
+/** "Why not", asked when the answer to a needed? question is No. */
+const whyNot = (id: string, on: string) =>
+  ({ id, text: "Why not", type: "long_text", required: true, showWhen: { questionId: on, equals: false } }) as const;
+
+export const sgImmediateSchema: StageForm = {
+  sections: [
+    {
+      id: "safe",
+      title: "Keeping them safe",
+      order: 1,
+      description: "First, and before anything else is written down: is the person safe now?",
+      questions: [
+        { id: "sgi_date", text: "Date", type: "date", required: true },
+        { id: "sgi_risk", text: "What the risk is, and to whom", type: "long_text", required: true },
+        { id: "sgi_actions", text: "What was done straight away to keep them safe", type: "long_text", required: true },
+        { id: "sgi_wishes", text: "What the person wants to happen", type: "long_text", help: "Making safeguarding personal: their views, in their words where possible." },
+        { id: "sgi_staff", text: "Was a member of staff stopped from working with them, or suspended?", type: "yes_no", required: true },
+        {
+          id: "sgi_staff_detail",
+          text: "Who, and what was put in place",
+          type: "long_text",
+          showWhen: { questionId: "sgi_staff", equals: true },
+        },
+        { id: "sgi_family_told", text: "Were the family or representative told?", type: "yes_no" },
+      ],
+    },
+  ],
+};
+
+export const sgReferralSchema: StageForm = {
+  sections: [
+    {
+      id: "referral",
+      title: "Referral to the council's safeguarding team",
+      order: 1,
+      questions: [
+        { id: "sgr_needed", text: "Does this need a referral to the council's safeguarding team?", type: "yes_no", required: true },
+        whyNot("sgr_why_not", "sgr_needed"),
+        { id: "sgr_council", text: "Which council", type: "text", required: true, showWhen: { questionId: "sgr_needed", equals: true } },
+        { id: "sgr_date", text: "Date referred", type: "date", required: true, showWhen: { questionId: "sgr_needed", equals: true } },
+        { id: "sgr_reference", text: "The council's reference", type: "text", showWhen: { questionId: "sgr_needed", equals: true } },
+        {
+          id: "sgr_how",
+          text: "How it was made",
+          type: "select",
+          showWhen: { questionId: "sgr_needed", equals: true },
+          options: [
+            { value: "phone", label: "Phone" },
+            { value: "online", label: "Online form" },
+            { value: "email", label: "Email" },
+          ],
+        },
+        { id: "sgr_contact", text: "Who we spoke to", type: "text", showWhen: { questionId: "sgr_needed", equals: true } },
+      ],
+    },
+  ],
+};
+
+export const sgCqcSchema: StageForm = {
+  sections: [
+    {
+      id: "cqc",
+      title: "CQC notification",
+      order: 1,
+      description:
+        "Regulation 18 of the CQC (Registration) Regulations 2009: abuse, or an allegation of abuse, is notified to CQC without delay.",
+      questions: [
+        { id: "sgc_needed", text: "Does CQC need to be notified?", type: "yes_no", required: true },
+        whyNot("sgc_why_not", "sgc_needed"),
+        { id: "sgc_date", text: "Date notified", type: "date", required: true, showWhen: { questionId: "sgc_needed", equals: true } },
+        { id: "sgc_reference", text: "CQC's reference", type: "text", showWhen: { questionId: "sgc_needed", equals: true } },
+      ],
+    },
+  ],
+};
+
+export const sgPoliceSchema: StageForm = {
+  sections: [
+    {
+      id: "police",
+      title: "Police",
+      order: 1,
+      description: "If someone is in immediate danger, call 999 first.",
+      questions: [
+        { id: "sgp_needed", text: "Might a crime have happened?", type: "yes_no", required: true },
+        whyNot("sgp_why_not", "sgp_needed"),
+        { id: "sgp_date", text: "Date reported to the police", type: "date", required: true, showWhen: { questionId: "sgp_needed", equals: true } },
+        { id: "sgp_reference", text: "Crime reference", type: "text", showWhen: { questionId: "sgp_needed", equals: true } },
+        { id: "sgp_officer", text: "Officer or station", type: "text", showWhen: { questionId: "sgp_needed", equals: true } },
+      ],
+    },
+  ],
+};
+
+export const sgEnquirySchema: StageForm = {
+  sections: [
+    {
+      id: "enquiry",
+      title: "The council's enquiry",
+      order: 1,
+      description:
+        "Under Section 42 of the Care Act 2014 the council decides whether to make an enquiry. This stays open until they say how it ended.",
+      questions: [
+        {
+          id: "sge_route",
+          text: "What the council did",
+          type: "select",
+          required: true,
+          options: [
+            { value: "s42", label: "A Section 42 enquiry" },
+            { value: "other", label: "Another enquiry or action" },
+            { value: "none", label: "No further action at referral" },
+            { value: "not_referred", label: "Not referred (see Council Referral)" },
+          ],
+        },
+        { id: "sge_date", text: "Date of the outcome", type: "date", required: true },
+        {
+          id: "sge_finding",
+          text: "Was the concern found to be true?",
+          type: "select",
+          options: [
+            { value: "substantiated", label: "Substantiated" },
+            { value: "partly", label: "Partly substantiated" },
+            { value: "not", label: "Not substantiated" },
+            { value: "inconclusive", label: "Inconclusive" },
+          ],
+        },
+        { id: "sge_outcome", text: "What the council concluded, and asked of us", type: "long_text", required: true },
+      ],
+    },
+  ],
+};
+
+export const sgLessonsSchema: StageForm = {
+  sections: [
+    {
+      id: "lessons",
+      title: "Lessons learned",
+      order: 1,
+      questions: [
+        { id: "sgl_lessons", text: "What we learned", type: "long_text", required: true },
+        { id: "sgl_shared", text: "How it was shared with the team", type: "long_text" },
+        {
+          id: "sgl_removed",
+          text: "Was anyone dismissed, or removed from working with people, because they harmed or put someone at risk?",
+          type: "yes_no",
+          required: true,
+          help: "If so, the Safeguarding Vulnerable Groups Act 2006 says a referral must be made to the DBS — including when they resigned first.",
+        },
+        {
+          id: "sgl_dbs_date",
+          text: "Date of the DBS barring referral",
+          type: "date",
+          required: true,
+          showWhen: { questionId: "sgl_removed", equals: true },
         },
       ],
     },
@@ -406,6 +624,18 @@ export function formForStage(stage: { name: string; kind: string }): StageForm |
       return nearMissReportSchema;
     case "incident_actions":
       return incidentActionsSchema;
+    case "sg_immediate":
+      return sgImmediateSchema;
+    case "sg_referral":
+      return sgReferralSchema;
+    case "sg_cqc":
+      return sgCqcSchema;
+    case "sg_police":
+      return sgPoliceSchema;
+    case "sg_enquiry":
+      return sgEnquirySchema;
+    case "sg_lessons":
+      return sgLessonsSchema;
     default:
       return null;
   }

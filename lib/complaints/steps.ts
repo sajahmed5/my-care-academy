@@ -17,7 +17,11 @@ import { meetingNumber } from "./forms";
 import { acknowledgementState } from "./acknowledgement";
 import { readTriageNa, triageChecksUnassigned } from "./stage-status";
 
-export type StepKey = "raised" | "report" | "triage" | "acknowledge" | "investigate" | "findings" | "outcome" | "actions" | "close";
+export type StepKey =
+  | "raised" | "report" | "triage"
+  | "safe" | "refer" | "cqc" | "police"
+  | "acknowledge" | "investigate" | "findings" | "outcome"
+  | "enquiry" | "lessons" | "actions" | "close";
 
 export interface StepStage { id: string; name: string; kind: string }
 export interface StepEntry { stageId: string; status?: string | null; formAnswers?: Record<string, unknown> | null }
@@ -38,6 +42,12 @@ const TITLES: Record<StepKey, string> = {
   raised: "Concern raised",
   report: "What happened",
   triage: "Triage",
+  safe: "Keep them safe",
+  refer: "Council referral",
+  cqc: "CQC notification",
+  police: "Police",
+  enquiry: "Council's enquiry",
+  lessons: "Lessons learned",
   acknowledge: "Acknowledge",
   investigate: "Investigate",
   findings: "Findings",
@@ -48,7 +58,13 @@ const TITLES: Record<StepKey, string> = {
 // An accident or a near miss has only "What happened" and "Actions and
 // training" of these, so the same list serves every type: a step with no
 // stages for the record's type is left out.
-const ORDER: StepKey[] = ["raised", "report", "triage", "acknowledge", "investigate", "findings", "outcome", "actions", "close"];
+// Safeguarding's six sit around the investigation the same way: keep them
+// safe, refer, notify, police, then whatever statements are gathered, then
+// the council's outcome and the lessons.
+const ORDER: StepKey[] = [
+  "raised", "report", "triage", "safe", "refer", "cqc", "police",
+  "acknowledge", "investigate", "findings", "outcome", "enquiry", "lessons", "actions", "close",
+];
 
 /**
  * The step a stage belongs to, from its kind. Kinds this project does not
@@ -73,6 +89,12 @@ export function stepOfStage(stage: StepStage): StepKey {
     case "accident_report":
     case "near_miss_report": return "report";
     case "incident_actions": return "actions";
+    case "sg_immediate": return "safe";
+    case "sg_referral": return "refer";
+    case "sg_cqc": return "cqc";
+    case "sg_police": return "police";
+    case "sg_enquiry": return "enquiry";
+    case "sg_lessons": return "lessons";
     default: return "investigate"; // statements, evidence, documents
   }
 }
@@ -137,6 +159,18 @@ export function nextStep(
       return { step: cur.key, text: `Finish the ${names[0] || "form"}: some required answers are missing.` };
     case "actions":
       return { step: cur.key, text: "Say why it happened and what will stop it happening again, and give each action an owner and a date." };
+    case "safe":
+      return { step: cur.key, text: "Make sure the person is safe now, and record what was done straight away." };
+    case "refer":
+      return { step: cur.key, text: "Decide whether to refer to the council's safeguarding team, and record the date and their reference." };
+    case "cqc":
+      return { step: cur.key, text: "Decide whether CQC needs to be notified, and record when it was." };
+    case "police":
+      return { step: cur.key, text: "Decide whether a crime may have happened, and if so record the police report." };
+    case "enquiry":
+      return { step: cur.key, text: "Waiting for the council: record what their enquiry concluded once they say." };
+    case "lessons":
+      return { step: cur.key, text: "Record what was learned, agree the actions, and say whether a DBS referral was needed." };
     case "triage": {
       // Say what is actually missing once Triage has been started.
       const a = (entries.find((e) => e.stageId === cur.stages[0]?.id)?.formAnswers ?? {}) as Record<string, unknown>;

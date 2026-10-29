@@ -15,6 +15,14 @@ PACKAGES.md).
   idempotent statement in the migration (re-run it after release to catch
   anything recorded in between), and `incidents` stays readable until then.
   The carer's file and evidence pack read concerns.
+- **Safeguarding, accidents, reminders** (29 Oct 2026, migration
+  20261029213200) — safeguarding's own six stages (`sg_*` kinds; the
+  complaint-only stages no longer apply to it). "What the law asks of you" at
+  the top of a safeguarding concern (council, CQC, police, and DBS once
+  someone is removed) and an accident (RIDDOR, firmer when the answers say it
+  looks reportable). A reminder is ticked by its stage's answers or by a
+  manager's confirmation, kept in `complaints.reminders`; nothing is filed.
+  The client's council is filled in on the referral.
 
 ## Before the front door
 

@@ -17,6 +17,8 @@ import { fmtDate } from "../complaint-row";
 import { StagePanel } from "./stage-panel";
 import { CloseRecord, PeopleNamed } from "./record-panels";
 import { ChangeType, RecordFacts, TriagePanel } from "./triage";
+import { Reminders } from "./reminders";
+import type { Reminder } from "@/lib/complaints/reminders";
 import type { ClientOption } from "../new-complaint";
 
 const STATE_STYLE: Record<ComplaintStep["state"], string> = {
@@ -55,6 +57,7 @@ export function ComplaintProcess({
   initialStageId,
   clients,
   training,
+  reminders,
 }: {
   complaint: Complaint;
   stages: ComplaintStage[];
@@ -68,6 +71,7 @@ export function ComplaintProcess({
   initialStageId: string | null;
   clients: ClientOption[] | null;
   training: { userId: string; name: string | null; suggestions: Suggestion[] }[];
+  reminders: Reminder[];
 }) {
   const [openId, setOpenId] = useState<string | null>(initialStageId);
   const entryOf = (stageId: string) => complaint.stageEntries.find((e) => e.stageId === stageId);
@@ -126,6 +130,8 @@ export function ComplaintProcess({
           )}
         </CardContent>
       </Card>
+
+      <Reminders complaintId={complaint.id} reminders={reminders} disabled={closed} />
 
       {untriaged ? (
         <div className="space-y-6">

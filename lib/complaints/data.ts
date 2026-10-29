@@ -79,6 +79,8 @@ export interface ComplaintClient {
 export interface Complaint extends ComplaintSummary {
   raisedByRole: string | null;
   triagedAt: string | null;
+  /** complaints.reminders: the legal reminders a manager has confirmed. */
+  reminders: unknown;
   occurredOn: string | null;
   desiredOutcome: string | null;
   outcomeSummary: string | null;
@@ -256,7 +258,7 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
   const { data: row } = await supabase
     .from("complaints")
     .select(
-      `id, reference, kind, status, raised_by_name, raised_by_role, about_name, category, occurred_on, reported_on, complete_by, closed_on, description, desired_outcome, outcome_summary, lessons_learned, created_at, triaged_at, ${CLIENT_EMBED}`,
+      `id, reference, kind, status, raised_by_name, raised_by_role, about_name, category, occurred_on, reported_on, complete_by, closed_on, description, desired_outcome, outcome_summary, lessons_learned, created_at, triaged_at, reminders, ${CLIENT_EMBED}`,
     )
     .eq("id", id)
     .maybeSingle();
@@ -294,6 +296,7 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
     ...summary(row as Record<string, unknown>),
     raisedByRole: (row.raised_by_role as string | null) ?? null,
     triagedAt: (row.triaged_at as string | null) ?? null,
+    reminders: row.reminders ?? {},
     occurredOn: (row.occurred_on as string | null) ?? null,
     desiredOutcome: (row.desired_outcome as string | null) ?? null,
     outcomeSummary: (row.outcome_summary as string | null) ?? null,
@@ -314,7 +317,7 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
     })),
     actions: (actions ?? []).map((a) => {
       const detail = (a.detail as string | null) ?? null;
-      const tag = detail?.match(/^\[(meeting:\d|plan|actions)\]\s*/);
+      const tag = detail?.match(/^\[(meeting:\d|plan|actions|lessons)\]\s*/);
       return {
         id: a.id as string,
         title: a.title as string,
