@@ -8,6 +8,7 @@ import {
   processReminders,
   processEngagement,
 } from "@/lib/engine";
+import { processFaceToFaceReminders } from "@/lib/face-to-face-email";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -17,7 +18,10 @@ function authorized(req: NextRequest): boolean {
   return !!secret && req.headers.get("authorization") === `Bearer ${secret}`;
 }
 
-/** Daily engine run: renewals (expire + remind), learner reminders, engagement alerts. */
+/**
+ * Daily engine run: renewals (expire + remind), learner reminders, engagement
+ * alerts, and the day-before reminder for face-to-face sessions.
+ */
 export async function GET(req: NextRequest) {
   if (!authorized(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -36,6 +40,7 @@ export async function GET(req: NextRequest) {
   const renewals = await processRenewals(settings, now, dryRun, refs);
   const reminders = await processReminders(settings, now, dryRun, refs);
   const engagement = await processEngagement(settings, now, dryRun, refs);
+  const faceToFace = await processFaceToFaceReminders(admin, now, dryRun);
   // Referees who haven't answered: a reminder after 3 days, twice at most.
   const references = await chaseReferences(admin, now, dryRun);
 
@@ -45,6 +50,7 @@ export async function GET(req: NextRequest) {
     ...renewals,
     ...reminders,
     ...engagement,
+    ...faceToFace,
     referenceReminders: references,
   });
 }

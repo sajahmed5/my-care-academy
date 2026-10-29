@@ -63,6 +63,7 @@ const ORG_MENU: MenuItem[] = [
       { href: "/org/courses", label: "Courses overview", exact: true },
       { href: "/org/courses/admin", label: "Assign training" },
       { href: "/org/courses/statistics", label: "Time taken" },
+      { href: "/org/face-to-face", label: "Face-to-face training", feature: "training.face_to_face" },
       { href: "/org/classroom", label: "Classroom sessions", feature: "training.classroom" },
       { href: "/org/observations", label: "Care Certificate", feature: "training.observations" },
     ],

@@ -74,7 +74,7 @@ export const FEATURES = [
     category: "training",
     label: "Face-to-face training",
     isCore: false,
-    hint: "Our sessions in Stockport, set up under Face to face in the platform menu.",
+    hint: "Booking our Stockport sessions, under Training in the menu. Sessions are set up under Face to face.",
   },
   {
     key: "recruitment.tracker",

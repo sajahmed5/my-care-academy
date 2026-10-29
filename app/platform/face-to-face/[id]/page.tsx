@@ -9,6 +9,13 @@ import { sessionTitle, sessionWhen, ukDay, ukTime } from "@/lib/face-to-face";
 import { formatDateTime } from "@/lib/dates";
 import { SessionForm } from "../session-form";
 import { CancelSession } from "./cancel-session";
+import { RemoveBooking } from "./remove-booking";
+
+const STATUS_LABEL: Record<string, string> = {
+  booked: "Booked",
+  attended: "Attended",
+  no_show: "Didn't come",
+};
 
 const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
 
@@ -17,7 +24,7 @@ export default async function FaceToFaceSessionPage({ params }: { params: Promis
   const context = await requireRole("platform_admin");
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: s }, { data: courses }, { data: closed }] = await Promise.all([
+  const [{ data: s }, { data: courses }, { data: closed }, { data: bookings }] = await Promise.all([
     supabase
       .from("face_to_face_sessions")
       .select("id, kind, course_id, starts_at, ends_at, trainer_name, places, location, notes, cancelled_at, course:courses (title)")
@@ -25,6 +32,14 @@ export default async function FaceToFaceSessionPage({ params }: { params: Promis
       .maybeSingle(),
     supabase.from("courses").select("id, title").order("title"),
     supabase.from("face_to_face_closed_days").select("day, reason").gte("day", ukDay(new Date())),
+    supabase
+      .from("face_to_face_bookings")
+      .select(
+        "id, status, created_at, person:users!face_to_face_bookings_user_id_fkey (full_name, email), booker:users!face_to_face_bookings_booked_by_fkey (full_name, email), org:organisations (name)",
+      )
+      .eq("session_id", id)
+      .neq("status", "cancelled")
+      .order("created_at"),
   ]);
   if (!s) notFound();
 
@@ -47,6 +62,51 @@ export default async function FaceToFaceSessionPage({ params }: { params: Promis
             <p className="text-sm text-rose-700">Cancelled {formatDateTime(s.cancelled_at as string)}.</p>
           )}
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              Who&apos;s booked ({(bookings ?? []).length} of {s.places as number})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(bookings ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nobody yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-left text-xs text-muted-foreground">
+                    <tr>
+                      <th className="py-2 pr-3 font-medium">Name</th>
+                      <th className="py-2 pr-3 font-medium">Company</th>
+                      <th className="py-2 pr-3 font-medium">Booked by</th>
+                      <th className="py-2 pr-3 font-medium">Status</th>
+                      <th className="py-2" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {(bookings ?? []).map((b) => {
+                      const person = one(b.person as unknown as { full_name: string | null; email: string | null } | null);
+                      const booker = one(b.booker as unknown as { full_name: string | null; email: string | null } | null);
+                      const name = person?.full_name || person?.email || "Someone no longer on the system";
+                      return (
+                        <tr key={b.id as string}>
+                          <td className="py-2 pr-3 font-medium">{name}</td>
+                          <td className="py-2 pr-3">{one(b.org as unknown as { name: string } | null)?.name ?? "—"}</td>
+                          <td className="py-2 pr-3 text-muted-foreground">{booker?.full_name || booker?.email || "—"}</td>
+                          <td className="py-2 pr-3">{STATUS_LABEL[b.status as string] ?? (b.status as string)}</td>
+                          <td className="py-2 text-right">
+                            {b.status === "booked" && !ended && <RemoveBooking id={b.id as string} name={name} />}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {!s.cancelled_at && !ended && (
           <Card>
