@@ -24,7 +24,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   const [{ data: candidate }, { data: docs }, { data: settingsRow }, { data: application }] = await Promise.all([
     supabase
       .from("candidates")
-      .select("id, full_name, email, phone, postcode, entry_date, status, role_applied, source, dbs_conviction, hired_at, rejected_at")
+      .select("id, full_name, email, phone, postcode, entry_date, status, role_applied, source, dbs_conviction, hired_at, rejected_at, user_id")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -91,6 +91,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
                     status={(application?.status as "draft" | "submitted" | undefined) ?? "none"}
                     hasEmail={!!candidate.email}
                     sentAt={application?.sent_at ? formatDate(application.sent_at as string) : null}
+                    hasLogin={!!candidate.user_id}
                   />
                 </li>
               )}

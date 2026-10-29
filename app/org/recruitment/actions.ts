@@ -10,6 +10,9 @@ import { logAudit } from "@/lib/audit";
 import { requireFeature } from "@/lib/entitlements";
 import { siteOrigin } from "@/lib/site-url";
 import { emailApplicationLink, issueApplicationLink, newToken } from "@/lib/candidate-links";
+import { inviteCandidate, makeCandidateStaff } from "@/lib/candidate-account";
+import { sendEmail } from "@/lib/email";
+import { emailButton, emailLayout, esc } from "@/lib/email-layout";
 import {
   RECRUITMENT_STEPS,
   notReadyMessage,
@@ -37,12 +40,12 @@ async function loadCandidate(admin: Admin, candidateId: string, orgId: string) {
   const [{ data: candidate }, { data: docs }, { data: settingsRow }] = await Promise.all([
     admin
       .from("candidates")
-      .select("id, full_name, email, organisation_id, status, dbs_conviction")
+      .select("id, full_name, email, organisation_id, status, dbs_conviction, user_id")
       .eq("id", candidateId)
       .maybeSingle(),
     admin
       .from("candidate_documents")
-      .select("id, doc_type, file_path, expires_at, not_required, review_status, review_note")
+      .select("id, doc_type, file_path, expires_at, not_required, review_status, review_note, uploaded_by_candidate")
       .eq("candidate_id", candidateId),
     admin.from("recruitment_settings").select("*").eq("organisation_id", orgId).maybeSingle(),
   ]);
@@ -210,6 +213,22 @@ export async function sendBackStepAction(
     .from("candidate_documents")
     .update({ review_status: "sent_back", review_note: trimmed, reviewed_by: context.userId, reviewed_at: new Date().toISOString() })
     .eq("id", existing.id as string);
+  // A document they uploaded: tell them, with a way back to their page.
+  if (existing.uploaded_by_candidate && docType !== "application" && loaded.candidate.email) {
+    const company = await orgName(admin, context.organisationId!);
+    const url = `${await siteOrigin()}/my-application`;
+    await sendEmail({
+      to: loaded.candidate.email as string,
+      subject: `${company} needs something changed on your application`,
+      html: emailLayout({
+        heading: "Something to send again",
+        body: `<p>${esc(company)} has looked at what you sent for <strong>${esc(stepLabel(docType))}</strong> and asked:</p>
+          <p><em>${esc(trimmed)}</em></p>
+          <p>Sign in to send it again.</p>${emailButton(url, "Open my application")}`,
+        footer: `Sent for ${esc(company)} by My Care Academy.`,
+      }),
+    });
+  }
   // An online application goes back to them to change, with the note, by email.
   if (docType === "application") {
     const { data: app } = await admin
@@ -223,6 +242,24 @@ export async function sendBackStepAction(
       await emailApplicationLink({ to: loaded.candidate.email as string, firstName: null, company: await orgName(admin, context.organisationId!), link, note: trimmed });
     }
   }
+  done(candidateId);
+  return { ok: true };
+}
+
+function stepLabel(key: string): string {
+  return RECRUITMENT_STEPS.find((s) => s.key === key)?.label ?? key;
+}
+
+/** Give a candidate a login to follow their application, by email. */
+export async function inviteCandidateAction(candidateId: string): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  const r = await inviteCandidate(admin, candidateId);
+  if (!r.ok) return r;
+  await logAudit({ context, action: "candidate.login_sent", entity: "candidate", entityId: candidateId });
   done(candidateId);
   return { ok: true };
 }
@@ -435,7 +472,10 @@ export async function hireCandidateAction(
 
   let invited = false;
   const { candidate } = loaded;
-  if (createLearner && candidate.email) {
+  // Their candidate login becomes their training login, if they have one.
+  if (createLearner && (await makeCandidateStaff(admin, candidateId, context.organisationId!))) {
+    invited = true;
+  } else if (createLearner && candidate.email) {
     const result = await createInvite({
       email: candidate.email as string,
       role: "learner",

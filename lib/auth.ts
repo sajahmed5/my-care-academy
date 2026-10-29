@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isStaff } from "@/lib/roles";
 
-export type UserRole = "platform_admin" | "org_admin" | "org_office" | "learner";
+/** "candidate": someone applying, with a login to follow it and no organisation (RECRUITMENT.md). */
+export type UserRole = "platform_admin" | "org_admin" | "org_office" | "learner" | "candidate";
 
 /**
  * The two roles that open the organisation console. org_admin is the manager:
@@ -39,6 +40,8 @@ export function roleLabel(role: UserRole | string | null): string {
       return "Office";
     case "learner":
       return "Learner";
+    case "candidate":
+      return "Applicant";
     default:
       return "No role";
   }
@@ -63,6 +66,8 @@ export function dashboardPathForRole(role: UserRole | null): string {
       return "/org";
     case "learner":
       return "/learn";
+    case "candidate":
+      return "/my-application";
     default:
       // Authenticated but no profile/role yet (e.g. self-signup before invite).
       return "/dashboard";
@@ -208,6 +213,13 @@ export async function requireActiveUser(): Promise<UserContext> {
     await requireAdminMfa();
   }
   await assertActiveMember(context);
+  return context;
+}
+
+/** Require a candidate: someone signed in to follow their own application. */
+export async function requireCandidate(): Promise<UserContext> {
+  const context = await requireUser();
+  if (context.role !== "candidate") redirect(dashboardPathForRole(context.role));
   return context;
 }
 

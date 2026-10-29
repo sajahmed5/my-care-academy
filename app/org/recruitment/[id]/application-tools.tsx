@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { sendApplicationFormAction } from "../actions";
+import { inviteCandidateAction, sendApplicationFormAction } from "../actions";
 
 /** The online application: send the form, or read what they sent. */
 export function ApplicationTools({
@@ -12,11 +12,13 @@ export function ApplicationTools({
   status,
   hasEmail,
   sentAt,
+  hasLogin,
 }: {
   candidateId: string;
   status: "none" | "draft" | "submitted";
   hasEmail: boolean;
   sentAt: string | null;
+  hasLogin: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -49,6 +51,25 @@ export function ApplicationTools({
           {status === "draft" ? "Send the link again" : "Email them the form"}
         </Button>
       )}
+      <span className="w-full" />
+      <span className="font-medium">Their login</span>
+      <span className="text-muted-foreground">
+        {hasLogin ? "They have one: they can follow their application and upload documents." : "None yet. They get one when they send their application, or you can send it now."}
+      </span>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={pending || !hasEmail}
+        onClick={() =>
+          start(async () => {
+            const r = await inviteCandidateAction(candidateId);
+            setMessage(r.ok ? "Sent. They'll get an email to set their password." : (r.error ?? "That didn't work."));
+            router.refresh();
+          })
+        }
+      >
+        {hasLogin ? "Send their sign-in link again" : "Give them a login"}
+      </Button>
       {message && <span role="status" className="w-full text-sm">{message}</span>}
     </div>
   );

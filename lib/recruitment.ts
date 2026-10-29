@@ -31,6 +31,8 @@ export interface StepDef {
   tracksExpiry?: boolean;
   /** A company can switch this step off in its settings. */
   canSwitchOff?: boolean;
+  /** The candidate uploads this themselves, from their own page. */
+  candidateUploads?: boolean;
 }
 
 /**
@@ -45,15 +47,15 @@ export const RECRUITMENT_STEPS: StepDef[] = [
   { key: "interview", stage: 2, label: "Interview", hint: "The interview record and overall score." },
 
   { key: "starter_form", stage: 3, label: "Health, equality and DBS form", hint: "Filled in after the offer: health questions can't be asked before one.", canSwitchOff: true },
-  { key: "proof_id", stage: 3, label: "Proof of ID", hint: "Passport or photo driving licence." },
-  { key: "proof_address_1", stage: 3, label: "Proof of address 1", hint: "A bank statement or utility bill from the last 3 months." },
-  { key: "proof_address_2", stage: 3, label: "Proof of address 2", hint: "A second one, from a different source." },
-  { key: "proof_ni", stage: 3, label: "Proof of National Insurance number", hint: "A payslip, P60 or HMRC letter." },
-  { key: "share_code", stage: 3, label: "Right to work share code", hint: "The Home Office check result.", optionalNote: "only without a UK or Irish passport", tracksExpiry: true },
+  { key: "proof_id", stage: 3, candidateUploads: true, label: "Proof of ID", hint: "Passport or photo driving licence." },
+  { key: "proof_address_1", stage: 3, candidateUploads: true, label: "Proof of address 1", hint: "A bank statement or utility bill from the last 3 months." },
+  { key: "proof_address_2", stage: 3, candidateUploads: true, label: "Proof of address 2", hint: "A second one, from a different source." },
+  { key: "proof_ni", stage: 3, candidateUploads: true, label: "Proof of National Insurance number", hint: "A payslip, P60 or HMRC letter." },
+  { key: "share_code", stage: 3, candidateUploads: true, label: "Right to work share code", hint: "The Home Office check result.", optionalNote: "only without a UK or Irish passport", tracksExpiry: true },
   { key: "reference_1", stage: 3, label: "Reference 1", hint: "From their most recent employer." },
   { key: "reference_2", stage: 3, label: "Reference 2", hint: "A second employer, or a character reference." },
   { key: "reference_3", stage: 3, label: "Reference 3", hint: "Needed if they've never been employed, or if your company asks for three.", optionalNote: "only if never employed" },
-  { key: "dbs", stage: 3, label: "DBS", hint: "The enhanced DBS certificate, or the Update Service check.", tracksExpiry: true },
+  { key: "dbs", stage: 3, candidateUploads: true, label: "DBS", hint: "The enhanced DBS certificate, or the Update Service check.", tracksExpiry: true },
   { key: "dbs_risk_assessment", stage: 3, label: "DBS risk assessment", hint: "Because the DBS shows a conviction." },
   { key: "training", stage: 3, label: "Training organised", hint: "Their induction booked." },
 

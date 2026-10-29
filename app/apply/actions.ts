@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeatureForOrg } from "@/lib/entitlements";
 import { rateLimit } from "@/lib/rate-limit";
 import { applicationForToken, emailApplicationLink, issueApplicationLink } from "@/lib/candidate-links";
+import { inviteCandidate } from "@/lib/candidate-account";
 import {
   sanitiseAnswers,
   validateApplication,
@@ -187,5 +188,9 @@ export async function submitApplicationAction(
     },
     { onConflict: "candidate_id,doc_type" },
   );
+  // A login to follow it from here, if they haven't one: best effort — the
+  // office can send it again from the candidate's page.
+  const { data: c } = await admin.from("candidates").select("user_id").eq("id", app.candidate_id as string).maybeSingle();
+  if (c && !c.user_id) await inviteCandidate(admin, app.candidate_id as string).catch(() => null);
   return { ok: true };
 }
