@@ -1,10 +1,12 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { ukDay, ukLocalToDate } from "@/lib/face-to-face";
+import { emailBookings } from "@/lib/face-to-face-email";
 import type { SaveState } from "@/app/platform/actions";
 
 /**
@@ -94,17 +96,40 @@ export async function updateSessionAction(_prev: SaveState, formData: FormData):
   if (typeof fields === "string") return { ok: false, error: fields };
 
   const admin = createAdminClient();
-  const { data: before } = await admin.from("face_to_face_sessions").select("starts_at, cancelled_at").eq("id", id).maybeSingle();
+  const { data: before } = await admin.from("face_to_face_sessions").select("starts_at, ends_at, cancelled_at").eq("id", id).maybeSingle();
   if (!before) return { ok: false, error: "That session no longer exists." };
   if (before.cancelled_at) return { ok: false, error: "That session was cancelled." };
-  if (fields.starts_at !== before.starts_at && new Date(fields.starts_at) <= new Date()) {
+  // The database writes times as +00:00, the form as Z: compare instants.
+  const same = (a: string, b: string) => new Date(a).getTime() === new Date(b).getTime();
+  const moved = !same(fields.starts_at, before.starts_at as string) || !same(fields.ends_at, before.ends_at as string);
+  if (!same(fields.starts_at, before.starts_at as string) && new Date(fields.starts_at) <= new Date()) {
     return { ok: false, error: "Move the session to a time still to come." };
   }
   const clash = await closedDayClash(admin, fields.starts_at);
   if (clash) return { ok: false, error: clash };
+  const { count } = await admin
+    .from("face_to_face_bookings")
+    .select("id", { count: "exact", head: true })
+    .eq("session_id", id)
+    .neq("status", "cancelled");
+  if ((count ?? 0) > fields.places) {
+    return { ok: false, error: `${count} people are booked, so it needs at least ${count} places.` };
+  }
 
   const { error } = await admin.from("face_to_face_sessions").update(fields).eq("id", id);
   if (error) return { ok: false, error: error.message };
+
+  // Moved: everyone booked is told the new time, and reminded again for it.
+  if (moved) {
+    const { data: rebooked } = await admin
+      .from("face_to_face_bookings")
+      .update({ reminder_sent_at: null })
+      .eq("session_id", id)
+      .eq("status", "booked")
+      .select("id");
+    const ids = (rebooked ?? []).map((b) => b.id as string);
+    if (ids.length > 0) after(() => emailBookings(admin, "changed", ids));
+  }
 
   await logAudit({ context, action: "face_to_face.session_updated", entity: "face_to_face_session", entityId: id, detail: { ...fields } });
   revalidatePath("/platform/face-to-face");
@@ -112,7 +137,10 @@ export async function updateSessionAction(_prev: SaveState, formData: FormData):
   return { ok: true };
 }
 
-/** Take a session off the list. Kept as cancelled, so its history stays. */
+/**
+ * Take a session off the list. Kept as cancelled, so its history stays;
+ * everyone booked on it loses the place and is told by email.
+ */
 export async function cancelSessionAction(id: string): Promise<SaveState> {
   const context = await requireRole("platform_admin");
   const admin = createAdminClient();
@@ -122,9 +150,41 @@ export async function cancelSessionAction(id: string): Promise<SaveState> {
     .eq("id", id)
     .is("cancelled_at", null);
   if (error) return { ok: false, error: error.message };
-  await logAudit({ context, action: "face_to_face.session_cancelled", entity: "face_to_face_session", entityId: id });
+  const { data: dropped } = await admin
+    .from("face_to_face_bookings")
+    .update({ status: "cancelled", cancelled_at: new Date().toISOString(), cancelled_by: context.userId })
+    .eq("session_id", id)
+    .eq("status", "booked")
+    .select("id");
+  const ids = (dropped ?? []).map((b) => b.id as string);
+  if (ids.length > 0) after(() => emailBookings(admin, "session_cancelled", ids));
+
+  await logAudit({ context, action: "face_to_face.session_cancelled", entity: "face_to_face_session", entityId: id, detail: { bookingsCancelled: ids.length } });
   revalidatePath("/platform/face-to-face");
   revalidatePath(`/platform/face-to-face/${id}`);
+  return { ok: true };
+}
+
+/**
+ * Cancel one person's place from our side — when a company rings us inside
+ * the 48 hours, say. They're emailed as for any cancelled place.
+ */
+export async function removeBookingAction(bookingId: string): Promise<SaveState> {
+  const context = await requireRole("platform_admin");
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("face_to_face_bookings")
+    .update({ status: "cancelled", cancelled_at: new Date().toISOString(), cancelled_by: context.userId })
+    .eq("id", bookingId)
+    .eq("status", "booked")
+    .select("session_id")
+    .maybeSingle();
+  if (error) return { ok: false, error: error.message };
+  if (!data) return { ok: false, error: "That place isn't booked any more." };
+  after(() => emailBookings(admin, "cancelled", [bookingId]));
+  await logAudit({ context, action: "face_to_face.booking_cancelled", entity: "face_to_face_booking", entityId: bookingId });
+  revalidatePath(`/platform/face-to-face/${data.session_id}`);
+  revalidatePath("/platform/face-to-face");
   return { ok: true };
 }
 

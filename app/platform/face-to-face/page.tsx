@@ -28,8 +28,9 @@ interface SessionRow {
 export default async function FaceToFacePage() {
   const context = await requireRole("platform_admin");
   const supabase = await createClient();
-  const now = new Date().toISOString();
-  const [{ data: upcoming }, { data: past }, { data: courses }, { data: closed }] = await Promise.all([
+  const today = new Date();
+  const now = today.toISOString();
+  const [{ data: upcoming }, { data: past }, { data: courses }, { data: closed }, { data: taken }] = await Promise.all([
     supabase
       .from("face_to_face_sessions")
       .select("id, kind, starts_at, ends_at, trainer_name, places, cancelled_at, course:courses (title)")
@@ -44,7 +45,9 @@ export default async function FaceToFacePage() {
       .limit(50),
     supabase.from("courses").select("id, title").order("title"),
     supabase.from("face_to_face_closed_days").select("day, reason").gte("day", ukDay(now)).order("day"),
+    supabase.rpc("face_to_face_places_taken", { p_from: new Date(today.getTime() - 2 * 365 * 86400_000).toISOString() }),
   ]);
+  const booked = new Map(((taken ?? []) as { session_id: string; taken: number }[]).map((t) => [t.session_id, t.taken]));
 
   const closedDays = Object.fromEntries((closed ?? []).map((d) => [d.day as string, (d.reason as string | null) ?? null]));
 
@@ -62,7 +65,7 @@ export default async function FaceToFacePage() {
             <CardTitle>Coming up</CardTitle>
           </CardHeader>
           <CardContent>
-            <SessionTable rows={(upcoming ?? []) as SessionRow[]} empty="No sessions set up yet." />
+            <SessionTable rows={(upcoming ?? []) as SessionRow[]} booked={booked} empty="No sessions set up yet." />
           </CardContent>
         </Card>
 
@@ -86,7 +89,7 @@ export default async function FaceToFacePage() {
           <details className="rounded-xl border bg-card p-4">
             <summary className="cursor-pointer text-sm font-medium">Past sessions</summary>
             <div className="mt-3">
-              <SessionTable rows={(past ?? []) as SessionRow[]} empty="" />
+              <SessionTable rows={(past ?? []) as SessionRow[]} booked={booked} empty="" />
             </div>
           </details>
         )}
@@ -95,7 +98,7 @@ export default async function FaceToFacePage() {
   );
 }
 
-function SessionTable({ rows, empty }: { rows: SessionRow[]; empty: string }) {
+function SessionTable({ rows, booked, empty }: { rows: SessionRow[]; booked: Map<string, number>; empty: string }) {
   if (rows.length === 0) return <p className="text-sm text-muted-foreground">{empty}</p>;
   return (
     <div className="overflow-x-auto">
@@ -105,7 +108,7 @@ function SessionTable({ rows, empty }: { rows: SessionRow[]; empty: string }) {
             <th className="py-2 pr-3 font-medium">When</th>
             <th className="py-2 pr-3 font-medium">Session</th>
             <th className="py-2 pr-3 font-medium">Trainer</th>
-            <th className="py-2 pr-3 text-right font-medium">Places</th>
+            <th className="py-2 pr-3 text-right font-medium">Booked</th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -124,7 +127,9 @@ function SessionTable({ rows, empty }: { rows: SessionRow[]; empty: string }) {
                 {s.cancelled_at && <span className="ml-2 text-xs no-underline">cancelled</span>}
               </td>
               <td className="py-2 pr-3">{s.trainer_name ?? "—"}</td>
-              <td className="py-2 pr-3 text-right tabular-nums">{s.places}</td>
+              <td className="py-2 pr-3 text-right tabular-nums">
+                {booked.get(s.id) ?? 0} of {s.places}
+              </td>
             </tr>
           ))}
         </tbody>

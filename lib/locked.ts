@@ -141,6 +141,16 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
       "On the same training matrix as the online courses",
     ],
   },
+  "training.face_to_face": {
+    area: "Face-to-face training",
+    home: "/org/face-to-face",
+    heading: "Book your staff onto our training in Stockport",
+    bullets: [
+      "Sessions for every course in our library, plus induction and annual refresher training",
+      "At our training office in Stockport, included in the price with no limit on places",
+      "Each person gets a confirmation email and a reminder the day before",
+    ],
+  },
   "platform.white_label": {
     area: "Account",
     home: "/org/billing",

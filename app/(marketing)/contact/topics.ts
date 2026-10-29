@@ -16,6 +16,9 @@ export const TOPICS = {
   billing: "Billing and payment details",
   "mock-inspection": "Mock CQC inspection",
   "care-certificate": "Care Certificate",
+  // From the face-to-face booking page's "ask us": training somewhere other
+  // than Stockport, or a course on a date that isn't listed.
+  "face-to-face": "Face-to-face training",
   "management-support": "Management support",
   other: "Something else",
 } as const;
