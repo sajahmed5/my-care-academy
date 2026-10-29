@@ -278,7 +278,7 @@ export default async function StaffDetailPage({
 
   return (
     <DashboardShell title={name} context={context} back={{ href: "/org/learners#learners", label: "All learners" }}>
-      <div className="mx-auto max-w-6xl md:grid md:grid-cols-[15rem_minmax(0,1fr)] md:items-start md:gap-8">
+      <div className="md:grid md:grid-cols-[15rem_minmax(0,1fr)] md:items-start md:gap-8">
         {/* The person, and every section of their file, down the left. Across
             the top as tabs, most sections were off the edge and it was not
             apparent there was more than Training (Saj, 27 Oct 2026). */}

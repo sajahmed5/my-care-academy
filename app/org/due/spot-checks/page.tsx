@@ -39,7 +39,7 @@ export default async function SpotChecksDuePage() {
   );
   return (
     <DashboardShell title="Spot checks due" context={context}>
-      <div className="mx-auto max-w-6xl space-y-4">
+      <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
           Every current carer and when their next spot check falls — the soonest across the areas they are checked in.
         </p>

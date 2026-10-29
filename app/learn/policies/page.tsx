@@ -63,7 +63,7 @@ export default async function LearnerPoliciesPage() {
 
   return (
     <DashboardShell title="Policies" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <p className="text-sm text-muted-foreground">
           {org?.name ?? "Your organisation"}&apos;s policies. Read each one and
           accept it — your acceptance is recorded against you, with the date and

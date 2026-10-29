@@ -34,7 +34,7 @@ export default async function NotificationsPage() {
   return (
     <DashboardShell title="Notifications" context={context}>
       <AutoMarkRead />
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         {/* The page title already says Notifications; the card said it again. */}
         <p className="text-sm text-muted-foreground">
           Assignments, new certificates and expiry reminders.

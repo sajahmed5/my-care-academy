@@ -45,7 +45,7 @@ export default async function AccountPage() {
 
   return (
     <DashboardShell title="My account" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6 *:max-w-2xl">
+      <div className="space-y-6 *:max-w-2xl">
         <Card>
           <CardHeader>
             <CardTitle>Your sign-in details</CardTitle>

@@ -37,7 +37,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
 
   return (
     <DashboardShell title={kind?.label ?? "Audit"} context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Link href="/org/audits" className="text-sm text-muted-foreground hover:underline">
           ← Audits
         </Link>

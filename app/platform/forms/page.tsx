@@ -31,7 +31,7 @@ export default async function PlatformFormsPage() {
 
   return (
     <DashboardShell title="Forms library" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <p className="text-sm text-muted-foreground">
           {rows.length} form{rows.length === 1 ? "" : "s"},{" "}
           {rows.filter((r) => r.status === "published").length} published. Organisations

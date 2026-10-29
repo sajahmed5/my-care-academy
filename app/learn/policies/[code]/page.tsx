@@ -56,7 +56,7 @@ export default async function LearnerPolicyPage({
 
   return (
     <DashboardShell title={doc.title} context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Link href="/learn/policies" className="text-sm text-muted-foreground hover:underline">
           ← All policies
         </Link>

@@ -36,7 +36,7 @@ export function CertWallet({ certs }: { certs: WalletCert[] }) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
       {certs.map((c) => {
         const theme = topicTheme(c.topic);
         const flag = FLAG_STYLE[c.flag];

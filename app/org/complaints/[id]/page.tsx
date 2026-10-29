@@ -64,7 +64,7 @@ export default async function ComplaintPage({
 
   return (
     <DashboardShell title={complaint.reference} context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Link href="/org/complaints" className="text-sm text-muted-foreground hover:underline">
             ← All complaints

@@ -22,7 +22,7 @@ export default async function PlatformBillingPage() {
 
   return (
     <DashboardShell title="Billing" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Subscriptions</CardTitle>

@@ -15,7 +15,7 @@ function Section({ title, items }: { title: string; items: Enrolment[] }) {
       <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {items.map((e) => (
           <CourseCard
             key={e.id}
@@ -53,7 +53,7 @@ export default async function AssignedModulesPage() {
 
   return (
     <DashboardShell title="Training" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <ModulesTabs />
 
         {outstanding.length === 0 && (

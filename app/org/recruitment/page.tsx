@@ -41,7 +41,7 @@ export default async function RecruitmentPage() {
 
   return (
     <DashboardShell title="Recruitment" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         {/* Folded away until it's wanted: open on every visit, the form sat
             above the tracker and pushed the people you came to see below
             the fold. Adding one opens their page, so it never needs closing. */}

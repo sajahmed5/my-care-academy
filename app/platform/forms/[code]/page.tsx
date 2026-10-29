@@ -20,7 +20,7 @@ export default async function PlatformFormPage({
 
   return (
     <DashboardShell title={template.title} context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Link href="/platform/forms" className="text-sm text-muted-foreground hover:underline">
           ← Forms library
         </Link>

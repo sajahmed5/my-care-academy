@@ -14,7 +14,7 @@ export default async function OrganisationsPage() {
 
   return (
     <DashboardShell title="Organisations" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Link href="/platform" className="text-sm text-muted-foreground hover:underline">
           ← Overview
         </Link>

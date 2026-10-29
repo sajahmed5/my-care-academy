@@ -29,7 +29,7 @@ export default async function LearnerAssessmentPage({
 
   return (
     <DashboardShell title="Care Certificate assessment" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Link
           href="/org/observations"
           className="text-sm text-muted-foreground hover:underline"

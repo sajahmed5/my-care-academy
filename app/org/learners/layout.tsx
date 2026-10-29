@@ -14,7 +14,7 @@ export default async function LearnersLayout({
   const context = await requireConsole();
   return (
     <DashboardShell title="Learners" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">{children}</div>
+      <div className="space-y-6">{children}</div>
     </DashboardShell>
   );
 }

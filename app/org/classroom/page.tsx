@@ -39,7 +39,7 @@ export default async function ClassroomPage() {
 
   return (
     <DashboardShell title="Classroom sessions" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <p className="text-sm text-muted-foreground">
           Training your own trainers deliver face to face. Record each session and who attended; if it covers one of our
           courses, everyone who attended completes it and gets a certificate, so it shows in the matrix like any other.

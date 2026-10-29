@@ -29,7 +29,7 @@ export default async function ProfilePage() {
 
   return (
     <DashboardShell title="Profile" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6 *:max-w-2xl">
+      <div className="space-y-6 *:max-w-2xl">
         <Card>
           <CardHeader>
             <CardTitle>Account</CardTitle>

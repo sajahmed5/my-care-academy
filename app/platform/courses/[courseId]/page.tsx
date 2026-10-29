@@ -48,7 +48,7 @@ export default async function CourseQuestionsPage({
 
   return (
     <DashboardShell title={`${course.title} — questions`} context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Link
           href="/platform/courses"
           className="text-sm text-muted-foreground hover:underline"

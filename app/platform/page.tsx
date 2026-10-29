@@ -45,7 +45,7 @@ export default async function PlatformDashboard() {
 
   return (
     <DashboardShell title="Platform console" context={context}>
-      <div className="mx-auto max-w-6xl space-y-8">
+      <div className="space-y-8">
         <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           <StatTile label="Organisations" value={totals.orgs} icon={Building2} color="#0284c7" href="/platform/organisations" />
           <StatTile label="Active" value={totals.activeOrgs} icon={Activity} color="#10b981" />

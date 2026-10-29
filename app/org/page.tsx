@@ -149,7 +149,7 @@ export default async function OrgDashboard() {
           single line under eleven equal tiles, so "2 overdue" weighed the same
           as "0 completed late" and the one thing to act on sat at the bottom.
           Tiles that read zero now step back (StatTile dims them). */}
-      <div className="mx-auto max-w-6xl space-y-8">
+      <div className="space-y-8">
         <section className="space-y-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-lg font-semibold tracking-tight">

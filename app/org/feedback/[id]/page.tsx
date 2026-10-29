@@ -47,7 +47,7 @@ export default async function SurveyResultsPage({ params }: { params: Promise<{ 
 
   return (
     <DashboardShell title={(survey.title as string | null) || kind.label} context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Link href="/org/feedback" className="text-sm text-muted-foreground hover:underline">
           ← Feedback
         </Link>

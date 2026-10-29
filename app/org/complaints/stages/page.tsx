@@ -23,7 +23,7 @@ export default async function StagesPage() {
 
   return (
     <DashboardShell title="The complaints process" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Link href="/org/complaints" className="text-sm text-muted-foreground hover:underline">
           ← Back to complaints
         </Link>

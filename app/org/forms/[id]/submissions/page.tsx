@@ -47,7 +47,7 @@ export default async function SubmissionsPage({
 
   return (
     <DashboardShell title={`${form.title} — submissions`} context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Link href="/org/forms" className="text-sm text-muted-foreground hover:underline">
           ← All forms
         </Link>

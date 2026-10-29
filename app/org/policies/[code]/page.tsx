@@ -88,7 +88,7 @@ export default async function PolicyPage({
 
   return (
     <DashboardShell title={doc.title} context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Link
           href={doc.kind === "policy" ? "/org/policies" : "/org/policies?tab=documents"}
           className="text-sm text-muted-foreground hover:underline"

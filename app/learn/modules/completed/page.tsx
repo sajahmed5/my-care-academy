@@ -11,7 +11,7 @@ export default async function CompletedModulesPage() {
 
   return (
     <DashboardShell title="Training" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <ModulesTabs />
 
         {completed.length === 0 ? (
@@ -20,7 +20,7 @@ export default async function CompletedModulesPage() {
             see it here.
           </p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {completed.map((e) => (
               <CourseCard
                 key={e.id}

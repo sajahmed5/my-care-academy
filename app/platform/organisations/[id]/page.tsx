@@ -174,7 +174,7 @@ export default async function OrganisationDetailPage({
 
   return (
     <DashboardShell title={org.name} context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center justify-between gap-3">
           <Link
             href="/platform/organisations"

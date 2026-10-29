@@ -58,7 +58,7 @@ export default async function ProgrammePage({
 
   return (
     <DashboardShell title={programme.title} context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         {/* Header: intro + overall progress ring */}
         <div className="flex flex-col items-center gap-6 rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-6 sm:flex-row sm:justify-between">
           <div>

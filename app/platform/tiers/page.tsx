@@ -47,7 +47,7 @@ export default async function TiersPage() {
 
   return (
     <DashboardShell title="Packages" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>What each package includes</CardTitle>

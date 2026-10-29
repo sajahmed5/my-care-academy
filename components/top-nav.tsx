@@ -270,7 +270,9 @@ export function TopNav({
 
   return (
     <div ref={ref} data-print="hide" className="sticky top-0 z-30 bg-sidebar text-sidebar-foreground">
-      <div className="flex h-14 items-center gap-3 px-3 sm:px-4">
+      {/* Padding so the logo's own edge (it has px-1) and the tab labels
+          (px-3) fall on the page's edge below: 16px, 24px from sm up. */}
+      <div className="flex h-14 items-center gap-3 px-3 sm:px-5">
         {/* Our logo in white straight on the bar; in a white box it looked
             pasted on. An organisation's uploaded logo keeps the box — its
             colours are unknown and may not show on the dark bar. */}
@@ -399,7 +401,7 @@ export function TopNav({
           aria-label={`${current.label} pages`}
           className="border-b bg-card text-foreground"
         >
-          <div ref={subRef} className="flex min-w-0 gap-1 overflow-x-auto px-3 sm:px-4">
+          <div ref={subRef} className="flex min-w-0 gap-1 overflow-x-auto px-1 sm:px-3">
             {current.children.map((c) => {
               const active = linkActive(pathname, c);
               return (

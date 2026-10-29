@@ -50,7 +50,7 @@ export default async function OrgCertificatesPage({
 
   return (
     <DashboardShell title="Certificates" context={context}>
-      <div className="mx-auto max-w-6xl space-y-4">
+      <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
           {rows.length === 0
             ? "No certificates have been issued yet."

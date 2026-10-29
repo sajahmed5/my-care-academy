@@ -22,7 +22,7 @@ export default async function FeedbackPage() {
 
   return (
     <DashboardShell title="Feedback" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <p className="text-sm text-muted-foreground">
           Send a survey link to the people you care for and their families, or to your staff. They answer anonymously,
           without an account, and the results are averaged and trended here — evidence of listening that inspectors ask

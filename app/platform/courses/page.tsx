@@ -28,7 +28,7 @@ export default async function CoursesAdminPage() {
 
   return (
     <DashboardShell title="Courses & question banks" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Course catalogue</CardTitle>

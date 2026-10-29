@@ -22,7 +22,7 @@ export default async function ObservationsPage() {
   if (!(await hasFeature(context, "training.observations"))) {
     return (
       <DashboardShell title="Care Certificate assessment" context={context}>
-        <div className="mx-auto max-w-6xl space-y-6 *:max-w-2xl">
+        <div className="space-y-6 *:max-w-2xl">
           <Card>
             <CardHeader>
               <div className="mb-2 flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -59,7 +59,7 @@ export default async function ObservationsPage() {
 
   return (
     <DashboardShell title="Care Certificate assessment" context={context}>
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Workplace observation &amp; sign-off</CardTitle>
