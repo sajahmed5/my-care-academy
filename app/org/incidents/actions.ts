@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { requireConsole } from "@/lib/auth";
@@ -184,7 +185,7 @@ export async function assignSuggestedTrainingAction(
     .from("users")
     .select("id")
     .eq("id", userId)
-    .eq("role", "learner")
+    .in("role", STAFF_ROLES)
     .eq("status", "active")
     .maybeSingle();
   if (!target) {

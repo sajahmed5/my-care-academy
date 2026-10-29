@@ -1,3 +1,4 @@
+import { STAFF_ROLES } from "@/lib/roles";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
@@ -30,7 +31,7 @@ export default async function CoursesAdminPage() {
           .from("users")
           .select("id, full_name, email")
           .eq("organisation_id", context.organisationId!)
-          .eq("role", "learner")
+          .in("role", STAFF_ROLES)
           .eq("status", "active")
           .order("full_name", { ascending: true })
           .order("id")

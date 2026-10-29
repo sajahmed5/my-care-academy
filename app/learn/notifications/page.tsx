@@ -6,7 +6,7 @@ import {
   AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { loadBadgeData } from "@/lib/learner-data";
 import { deriveNotifications, type NotifType } from "@/lib/notifications";
 import { tint } from "@/lib/topic-theme";
@@ -23,7 +23,7 @@ const STYLE: Record<NotifType, { icon: LucideIcon; color: string }> = {
 };
 
 export default async function NotificationsPage() {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   // The same per-request reads the shell's unread badge uses — one load.
   const data = await loadBadgeData(context.userId);
 
@@ -32,7 +32,7 @@ export default async function NotificationsPage() {
   const readAt = data.readAt ? +new Date(data.readAt) : 0;
 
   return (
-    <DashboardShell title="Notifications" context={context}>
+    <DashboardShell learn title="Notifications" context={context}>
       <AutoMarkRead />
       <div className="space-y-6">
         {/* The page title already says Notifications; the card said it again. */}

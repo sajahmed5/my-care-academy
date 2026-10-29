@@ -1,5 +1,6 @@
 "use client";
 
+import { isStaff } from "@/lib/roles";
 import { useActionState } from "react";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import type { SaveState } from "@/app/platform/actions";
 export function PeopleNamed({ complaint, staff, disabled }: { complaint: Complaint; staff: StaffOption[]; disabled: boolean }) {
   const [state, action, pending] = useActionState<SaveState, FormData>(setPeopleAction, {});
   const named = new Set(complaint.people.map((p) => p.user_id));
-  const candidates = pickable(staff).filter((s) => s.role === "learner" && !named.has(s.value));
+  const candidates = pickable(staff).filter((s) => isStaff(s.role) && !named.has(s.value));
   return (
     <div className="space-y-2 text-sm">
       <div className="flex flex-wrap items-center gap-2">

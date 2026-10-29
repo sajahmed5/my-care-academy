@@ -1,5 +1,7 @@
 "use server";
 
+import { isStaff } from "@/lib/roles";
+import { STAFF_ROLES } from "@/lib/roles";
 import { requireConsole } from "@/lib/auth";
 import { siteOrigin } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -108,7 +110,7 @@ export async function nudgeLearnerAction(userId: string): Promise<NudgeResult> {
     .maybeSingle();
   if (
     !learner ||
-    learner.role !== "learner" ||
+    !isStaff(learner.role as string) ||
     learner.organisation_id !== context.organisationId ||
     !learner.email
   ) {
@@ -274,7 +276,7 @@ async function nudgeNeverSignedIn(
     .from("users")
     .select("id, full_name, email")
     .eq("organisation_id", organisationId)
-    .eq("role", "learner")
+    .in("role", STAFF_ROLES)
     .eq("status", "active")
     .is("last_seen_at", null);
 
@@ -339,7 +341,7 @@ export async function neverSignedInCount(): Promise<number> {
     .from("users")
     .select("id", { count: "exact", head: true })
     .eq("organisation_id", context.organisationId)
-    .eq("role", "learner")
+    .in("role", STAFF_ROLES)
     .neq("status", "deactivated")
     .is("last_seen_at", null);
   return count ?? 0;

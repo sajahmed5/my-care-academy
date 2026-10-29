@@ -1,3 +1,4 @@
+import { isStaff } from "@/lib/roles";
 import { NextResponse } from "next/server";
 import { getUserContext } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 /** Download a one-page training record (all certificates) as a PDF. */
 export async function GET() {
   const context = await getUserContext();
-  if (!context || context.role !== "learner") {
+  if (!context || !isStaff(context.role)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

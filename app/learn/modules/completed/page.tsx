@@ -1,16 +1,16 @@
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { loadEnrolments } from "@/lib/learner-data";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ModulesTabs } from "../modules-tabs";
 import { CourseCard } from "../course-card";
 
 export default async function CompletedModulesPage() {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const enrolments = await loadEnrolments(context.userId);
   const completed = enrolments.filter((e) => e.status === "completed");
 
   return (
-    <DashboardShell title="Training" context={context}>
+    <DashboardShell learn title="Training" context={context}>
       <div className="space-y-6">
         <ModulesTabs />
 

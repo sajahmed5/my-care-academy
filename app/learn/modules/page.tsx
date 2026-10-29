@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { loadEnrolments, type Enrolment } from "@/lib/learner-data";
 import { byUrgency } from "@/lib/learner-stats";
 import { isOverdue } from "@/lib/engine-logic";
@@ -36,7 +36,7 @@ function Section({ title, items }: { title: string; items: Enrolment[] }) {
 }
 
 export default async function AssignedModulesPage() {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const enrolments = await loadEnrolments(context.userId);
 
   // Overdue gets its own section at the top, whatever its status, and every
@@ -53,7 +53,7 @@ export default async function AssignedModulesPage() {
   const notStarted = rest.filter((e) => e.status === "not_started");
 
   return (
-    <DashboardShell title="Training" context={context}>
+    <DashboardShell learn title="Training" context={context}>
       <div className="space-y-6">
         <ModulesTabs />
 

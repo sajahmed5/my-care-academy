@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Check, ShieldCheck } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -16,7 +16,7 @@ import { byCategory, loadCopies, loadLibrary } from "@/lib/policy-library";
  * reason a carer opens it.
  */
 export default async function LearnerPoliciesPage() {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   await requireFeature(context, "documents.library", "/learn");
 
   const supabase = await createClient();
@@ -62,7 +62,7 @@ export default async function LearnerPoliciesPage() {
   const done = policies.filter(isAccepted);
 
   return (
-    <DashboardShell title="Policies" context={context}>
+    <DashboardShell learn title="Policies" context={context}>
       <div className="space-y-6">
         <p className="text-sm text-muted-foreground">
           {org?.name ?? "Your organisation"}&apos;s policies. Read each one and

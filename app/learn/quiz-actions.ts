@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { issueCertificate } from "@/lib/issue-certificate";
@@ -38,7 +38,7 @@ function shuffle<T>(arr: T[]): T[] {
 export async function startQuizAction(
   courseId: string,
 ): Promise<StartQuizResult> {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
 
   // Confirm the learner is actually enrolled (RLS scopes to their own row;
   // the user_id filter lets it use the index). The bank's ids are read in the
@@ -119,7 +119,7 @@ export async function submitQuizAction(
   attemptId: string,
   answers: Record<string, unknown>,
 ): Promise<SubmitQuizResult> {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const admin = createAdminClient();
 
   const { data: attempt } = await admin
@@ -262,7 +262,7 @@ export async function awardContentStarAction({
   courseId: string;
   questionKey: string;
 }): Promise<{ delta: 0 | 1 }> {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   if (!courseId || !questionKey) return { delta: 0 };
 
   // Must be enrolled in the course (RLS scopes this select to the learner;
@@ -298,7 +298,7 @@ export async function awardContentStarAction({
 export async function getCertificateUrlAction(
   certificateId: string,
 ): Promise<{ url?: string; error?: string }> {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
 
   // RLS ensures the learner can only read their own certificate.
   const supabase = await createClient();

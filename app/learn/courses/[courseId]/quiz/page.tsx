@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { QuizRunner } from "./quiz-runner";
@@ -9,7 +9,7 @@ export default async function QuizPage({
 }: {
   params: Promise<{ courseId: string }>;
 }) {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const { courseId } = await params;
 
   const supabase = await createClient();
@@ -28,7 +28,7 @@ export default async function QuizPage({
   if (!course) notFound();
 
   return (
-    <DashboardShell title={course.title} context={context}>
+    <DashboardShell learn title={course.title} context={context}>
       <QuizRunner courseId={courseId} courseTitle={course.title} />
     </DashboardShell>
   );

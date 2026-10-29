@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { loadCertificates, loadEnrolments } from "@/lib/learner-data";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -10,7 +10,7 @@ export default async function AllCoursesPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const { q } = await searchParams;
   const supabase = await createClient();
 
@@ -50,7 +50,7 @@ export default async function AllCoursesPage({
   }));
 
   return (
-    <DashboardShell title="Training" context={context}>
+    <DashboardShell learn title="Training" context={context}>
       <div className="space-y-6">
         <ModulesTabs />
         <p className="text-sm text-muted-foreground">

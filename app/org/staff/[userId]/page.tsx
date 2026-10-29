@@ -1,3 +1,4 @@
+import { isStaff } from "@/lib/roles";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookOpen, Clock, CheckCircle2, AlertTriangle, Download, FileArchive } from "lucide-react";
@@ -374,7 +375,7 @@ export default async function StaffDetailPage({
               </a>
             )}
 
-            {profile.role === "learner" && profile.status !== "deactivated" && (
+            {isStaff(profile.role as string) && profile.status !== "deactivated" && (
               <AssignToPerson
                 userId={userId}
                 name={name}

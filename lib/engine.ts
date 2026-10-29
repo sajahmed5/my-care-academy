@@ -1,3 +1,4 @@
+import { isStaff } from "@/lib/roles";
 import { emailLayout } from "./email-layout";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmailBatch } from "@/lib/email";
@@ -120,8 +121,9 @@ export async function loadEngineRefs(admin: Admin): Promise<EngineRefs> {
   };
 }
 
+// Every member of staff, office staff and managers included (29 Oct 2026).
 const isActiveLearner = (u: { role: string; status: string } | undefined) =>
-  !!u && u.role === "learner" && u.status === "active";
+  !!u && isStaff(u.role) && u.status === "active";
 
 function orgAdminEmails(refs: EngineRefs, orgId: string | null): string[] {
   if (!orgId) return [];

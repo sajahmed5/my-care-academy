@@ -1,5 +1,5 @@
 import { Download } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { loadCertificates } from "@/lib/learner-data";
 import { expiryFlag } from "@/lib/engine-logic";
 import { formatDate } from "@/lib/dates";
@@ -10,7 +10,7 @@ import { CertWallet, type WalletCert } from "./cert-wallet";
 const nowMs = () => Date.now();
 
 export default async function CertificatesPage() {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const now = new Date(nowMs());
   const certificates = await loadCertificates(context.userId);
 
@@ -37,7 +37,7 @@ export default async function CertificatesPage() {
   }));
 
   return (
-    <DashboardShell title="Certificates" context={context}>
+    <DashboardShell learn title="Certificates" context={context}>
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">

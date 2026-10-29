@@ -1,3 +1,4 @@
+import { STAFF_ROLES } from "@/lib/roles";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAll } from "@/lib/fetch-all";
 import {
@@ -206,7 +207,7 @@ export async function loadOrgTraining(
       let q = supabase
         .from("users")
         .select("id, full_name, email, status, last_seen_at")
-        .eq("role", "learner");
+        .in("role", STAFF_ROLES);
       if (orgId) q = q.eq("organisation_id", orgId);
       return q.order("id").range(f, t);
     }),

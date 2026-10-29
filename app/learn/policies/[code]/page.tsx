@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -20,7 +20,7 @@ export default async function LearnerPolicyPage({
 }: {
   params: Promise<{ code: string }>;
 }) {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   await requireFeature(context, "documents.library", "/learn");
   const { code } = await params;
 
@@ -55,7 +55,7 @@ export default async function LearnerPolicyPage({
   const branding = await orgBranding(context.organisationId);
 
   return (
-    <DashboardShell title={doc.title} context={context}>
+    <DashboardShell learn title={doc.title} context={context}>
       <div className="space-y-6">
         <Link href="/learn/policies" className="text-sm text-muted-foreground hover:underline">
           ← All policies

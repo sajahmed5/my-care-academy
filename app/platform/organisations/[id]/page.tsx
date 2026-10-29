@@ -1,3 +1,4 @@
+import { STAFF_ROLES } from "@/lib/roles";
 import Link from "next/link";
 import { tierLabel } from "@/lib/organisations";
 import { formatDate } from "@/lib/dates";
@@ -95,12 +96,12 @@ export default async function OrganisationDetailPage({
             .from("users")
             .select("id", { count: "exact", head: true })
             .eq("organisation_id", id)
-            .eq("role", "learner"),
+            .in("role", STAFF_ROLES),
           supabase
             .from("users")
             .select("id", { count: "exact", head: true })
             .eq("organisation_id", id)
-            .eq("role", "learner")
+            .in("role", STAFF_ROLES)
             .neq("status", "deactivated"),
         ]).then(([all, cur]) => ({ all: all.count ?? 0, current: cur.count ?? 0 })),
   ]);

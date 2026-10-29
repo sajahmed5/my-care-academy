@@ -1,3 +1,4 @@
+import { STAFF_ROLES } from "@/lib/roles";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hasOutgrownBand } from "@/lib/organisations";
 
@@ -71,13 +72,13 @@ export async function loadOrgEngagement(
     .select(
       "id, name, package_tier, status, size_band, created_at, learners:users(count), staff:users(count), seen:users(last_seen_at), assigned:enrolments(count), overdue:enrolments(count), completed:certificates(count)",
     )
-    .eq("learners.role", "learner")
+    .in("learners.role", STAFF_ROLES)
     // Bands are measured against current staff, as on the organisation's own
     // page — a leaver kept for their training history is not a seat.
-    .eq("staff.role", "learner")
+    .in("staff.role", STAFF_ROLES)
     .neq("staff.status", "deactivated")
     // Most recent learner sign-in: the newest one only.
-    .eq("seen.role", "learner")
+    .in("seen.role", STAFF_ROLES)
     .not("seen.last_seen_at", "is", null)
     .order("last_seen_at", { referencedTable: "seen", ascending: false })
     .limit(1, { referencedTable: "seen" })

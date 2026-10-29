@@ -1,3 +1,4 @@
+import { isStaff } from "@/lib/roles";
 import Link from "next/link";
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
@@ -25,7 +26,7 @@ export default async function NewPipPage({
       ? supabase.from("complaints").select("reference").eq("id", complaint).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
-  const staff = allStaff.filter((s) => s.role === "learner");
+  const staff = allStaff.filter((s) => isStaff(s.role));
 
   return (
     <DashboardShell title="Start a performance plan" context={context}>

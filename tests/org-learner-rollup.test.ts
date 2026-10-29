@@ -128,7 +128,8 @@ async function bothWays(client: SupabaseClient, org: string) {
 describe("org_learner_rollup", () => {
   it("matches the Node rollup on every edge, read as the manager", async () => {
     const { fromNode, fromDb } = await bothWays(managerA, orgA);
-    expect(fromDb.length).toBe(4);
+    // Four carers and the manager: managers have training too (29 Oct 2026).
+    expect(fromDb.length).toBe(5);
     expect(fromDb).toEqual(fromNode);
 
     const one = fromDb.find((r) => r.id === learnerOne)!;
@@ -144,9 +145,11 @@ describe("org_learner_rollup", () => {
     expect(one.stats.overallPct).toBe(Math.round((100 + 40 + 0 + 100 + 100) / 5));
     expect(one.lastRemindedAt).not.toBeNull();
 
-    // Same name sorts by id; no name sorts last; the manager is not a row.
+    // Same name sorts by id; no name sorts last. The manager is a row since
+    // 29 Oct 2026 (everyone is staff).
     expect(fromDb.map((r) => r.name).slice(0, 2)).toEqual(["Alex Same", "Alex Same"]);
-    expect(fromDb[3].name).toBe(email("unnamed"));
+    expect(fromDb[fromDb.length - 1].name).toBe(email("unnamed"));
+    expect(fromDb.filter((r) => r.name === email("manager"))).toHaveLength(1);
     const twin = fromDb.find((r) => r.name === "Alex Same" && r.id !== learnerOne)!;
     expect(twin.stats.overdue).toBe(1);
     expect(twin.lastSeenAt).not.toBeNull();

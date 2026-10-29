@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Award, Info } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { loadProgramme } from "@/lib/programmes";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -13,7 +13,7 @@ export default async function ProgrammePage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const { slug } = await params;
 
   const supabase = await createClient();
@@ -57,7 +57,7 @@ export default async function ProgrammePage({
     : 0;
 
   return (
-    <DashboardShell title={programme.title} context={context}>
+    <DashboardShell learn title={programme.title} context={context}>
       <div className="space-y-6">
         {/* Header: intro + overall progress ring */}
         <div className="flex flex-col items-center gap-6 rounded-3xl border bg-gradient-to-br from-primary/10 via-card to-card p-6 sm:flex-row sm:justify-between">

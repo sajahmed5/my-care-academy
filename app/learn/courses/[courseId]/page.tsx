@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { parseBlocks, allH5P } from "@/lib/content";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -11,7 +11,7 @@ export default async function CoursePage({
 }: {
   params: Promise<{ courseId: string }>;
 }) {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const { courseId } = await params;
 
   const supabase = await createClient();
@@ -53,7 +53,7 @@ export default async function CoursePage({
   }
 
   return (
-    <DashboardShell title={course.title} context={context}>
+    <DashboardShell learn title={course.title} context={context}>
       {h5pPages ? (
         <H5PCoursePlayer
           enrolmentId={enrolment.id}

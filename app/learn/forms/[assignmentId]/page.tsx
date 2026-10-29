@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,14 +14,14 @@ export default async function LearnerFormPage({
 }: {
   params: Promise<{ assignmentId: string }>;
 }) {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const { assignmentId } = await params;
   const supabase = await createClient();
   const assignment = await loadAssignment(supabase, assignmentId);
   if (!assignment || assignment.user_id !== context.userId) notFound();
 
   return (
-    <DashboardShell title={assignment.template_title} context={context}>
+    <DashboardShell learn title={assignment.template_title} context={context}>
       <div className="space-y-6 *:max-w-2xl">
         <Link href="/learn/forms" className="text-sm text-muted-foreground hover:underline">
           ← All forms

@@ -12,7 +12,7 @@ import {
   Flame,
   type LucideIcon,
 } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import {
   learnerStats,
@@ -53,7 +53,7 @@ const BADGE_ICON: Record<string, LucideIcon> = {
 };
 
 export default async function LearnerDashboard() {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const now = new Date(nowMs());
   const supabase = await createClient();
 
@@ -108,7 +108,7 @@ export default async function LearnerDashboard() {
   ).slice(0, 4);
 
   return (
-    <DashboardShell title="Dashboard" context={context}>
+    <DashboardShell learn title="Dashboard" context={context}>
       {/* Warm the shared H5P runtime at low priority so the first course the
           learner opens loads from cache (cached long-term via next.config). */}
       <link rel="prefetch" href="/h5p/assets/frame.bundle.js" as="script" />

@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { EmptyState } from "@/components/learner-ui";
@@ -26,7 +26,7 @@ const fmt = (d: string) => formatDate(d, { day: "numeric", month: "long", year: 
  * carer never reads a supervision, spot check or complaint (CARER-FILE.md §9).
  */
 export default async function MyActionsPage() {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const supabase = await createClient();
   const { data } = await supabase
     .from("record_actions")
@@ -44,7 +44,7 @@ export default async function MyActionsPage() {
   const detailOf = (d: string | null) => (d ?? "").replace(/^\[(meeting:\d|plan)\]\s*/, "") || null;
 
   return (
-    <DashboardShell title="My actions" context={context}>
+    <DashboardShell learn title="My actions" context={context}>
       <div className="space-y-6">
         <p className="text-sm text-muted-foreground">
           Things you have agreed to do, or been asked to do, by your manager. Your manager ticks each one off when it is done.

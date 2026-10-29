@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { cellText } from "@/lib/matrix";
@@ -50,7 +51,7 @@ export async function exportTrainingMatrixAction(
       let q = supabase
         .from("users")
         .select("id, full_name, email, status")
-        .eq("role", "learner");
+        .in("role", STAFF_ROLES);
       if (orgId) q = q.eq("organisation_id", orgId);
       return q.order("id").range(f, t);
     }),

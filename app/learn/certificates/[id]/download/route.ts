@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -18,7 +18,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const { id } = await params;
 
   const supabase = await createClient();

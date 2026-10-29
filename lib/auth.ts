@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isStaff } from "@/lib/roles";
 
 export type UserRole = "platform_admin" | "org_admin" | "org_office" | "learner";
 
@@ -14,6 +15,12 @@ export const CONSOLE_ROLES: readonly UserRole[] = ["org_admin", "org_office"];
 
 export function isConsoleRole(role: UserRole | null): boolean {
   return role !== null && CONSOLE_ROLES.includes(role);
+}
+
+export { STAFF_ROLES } from "@/lib/roles";
+
+export function isStaffRole(role: UserRole | null): boolean {
+  return isStaff(role);
 }
 
 /**
@@ -200,6 +207,19 @@ export async function requireActiveUser(): Promise<UserContext> {
   if (context.role && MFA_REQUIRED_ROLES.includes(context.role)) {
     await requireAdminMfa();
   }
+  await assertActiveMember(context);
+  return context;
+}
+
+/**
+ * Require a member of staff — anyone with a company, for their own training
+ * (/learn). A manager or office worker passes too, with the same MFA step
+ * their console asks for, since it's the same session.
+ */
+export async function requireStaff(): Promise<UserContext> {
+  const context = await requireUser();
+  if (!isStaffRole(context.role) || !context.organisationId) redirect(dashboardPathForRole(context.role));
+  if (isConsoleRole(context.role)) await requireAdminMfa();
   await assertActiveMember(context);
   return context;
 }

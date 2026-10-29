@@ -1,3 +1,4 @@
+import { isStaff } from "@/lib/roles";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
@@ -32,7 +33,7 @@ export default async function PipPage({ params }: { params: Promise<{ id: string
             <FileDown className="size-4" /> Plan PDF
           </a>
         </div>
-        <PipView pip={pip} steps={steps} next={next} staff={staff.filter((s) => s.role === "learner")} today={today} />
+        <PipView pip={pip} steps={steps} next={next} staff={staff.filter((s) => isStaff(s.role))} today={today} />
       </div>
     </DashboardShell>
   );

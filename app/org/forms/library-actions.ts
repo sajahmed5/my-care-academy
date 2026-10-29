@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
@@ -65,7 +66,7 @@ export async function assignFormAction(
       .select("id")
       .eq("organisation_id", orgId)
       .eq("status", "active")
-      .eq("role", "learner")
+      .in("role", STAFF_ROLES)
       .limit(1000),
     supabase
       .from("form_assignments")

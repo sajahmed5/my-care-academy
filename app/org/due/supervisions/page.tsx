@@ -14,7 +14,7 @@ export default async function SupervisionsDuePage() {
   const supabase = await createClient();
   const orgId = context.organisationId!;
   const [people, records] = await Promise.all([
-    loadCurrentCarers(supabase, orgId),
+    loadCurrentCarers(supabase, orgId, { withOffice: true }),
     fetchAll((f, t) =>
       supabase
         .from("supervisions")

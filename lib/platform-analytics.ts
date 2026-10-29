@@ -1,3 +1,4 @@
+import { STAFF_ROLES } from "@/lib/roles";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PACKAGE_TIERS, type PackageTier } from "@/lib/organisations";
 import { LIST_PRICE_GBP } from "@/lib/pricing";
@@ -78,7 +79,7 @@ export async function loadPlatformAnalytics(
     supabase
       .from("users")
       .select("id", { count: "exact", head: true })
-      .eq("role", "learner"),
+      .in("role", STAFF_ROLES),
     supabase.from("certificates").select("id", { count: "exact", head: true }),
     fetchAll<{ issued_at: string }>((from, to) =>
       supabase

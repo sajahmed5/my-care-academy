@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { requireConsole } from "@/lib/auth";
@@ -390,6 +391,7 @@ export async function assignTrainingAction(
         .from("users")
         .select("id")
         .eq("organisation_id", context.organisationId!)
+        // "All carers" means the carers: office staff are picked by name.
         .eq("role", "learner")
         .eq("status", "active")
         .order("id")
@@ -400,9 +402,9 @@ export async function assignTrainingAction(
     if (selectedUserIds.length === 0) {
       return { ok: false, error: "Select at least one carer, or tick 'all carers'." };
     }
-    // Same role guard as the "all carers" branch above. Without it the picker
-    // was the only thing stopping an admin being enrolled, and a filtered
-    // <select> is not a permission check (issues #35, #36).
+    // Members of staff only, checked here: a filtered <select> is not a
+    // permission check (issues #35, #36). Since 29 Oct 2026 that includes
+    // office staff and managers, who have training too.
     // Checked a hundred at a time: the ids travel in the URL, and a long
     // enough list is refused outright.
     userIds = [];
@@ -412,7 +414,7 @@ export async function assignTrainingAction(
         .select("id")
         .eq("organisation_id", context.organisationId)
         .in("id", chunk)
-        .eq("role", "learner")
+        .in("role", STAFF_ROLES)
         .eq("status", "active");
       userIds.push(...(orgUsers ?? []).map((u) => u.id as string));
     }
@@ -522,7 +524,7 @@ export async function bulkAssignTrainingAction(
         .from("users")
         .select("id, email")
         .eq("organisation_id", context.organisationId!)
-        .eq("role", "learner")
+        .in("role", STAFF_ROLES)
         .order("id")
         .range(f, t),
     ).then((data) => ({ data })),

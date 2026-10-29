@@ -1,3 +1,4 @@
+import { STAFF_ROLES } from "@/lib/roles";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
@@ -44,7 +45,7 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
       .from("users")
       .select("id, full_name, email")
       .eq("status", "active")
-      .eq("role", "learner")
+      .in("role", STAFF_ROLES)
       .order("full_name")
       .limit(1000),
   ]);

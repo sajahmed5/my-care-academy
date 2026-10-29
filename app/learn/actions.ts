@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -19,7 +19,7 @@ export interface SaveProgressInput {
 export async function saveProgressAction(
   input: SaveProgressInput,
 ): Promise<{ ok: boolean }> {
-  await requireRole("learner");
+  await requireStaff();
   const supabase = await createClient();
 
   const { data: enrolment } = await supabase
@@ -61,7 +61,7 @@ export async function saveProgressAction(
 export async function selfEnrolAction(
   courseId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   if (!context.organisationId) {
     return { ok: false, error: "Your account has no organisation." };
   }
@@ -96,7 +96,7 @@ export async function selfEnrolAction(
 
 /** Mark the learner's notifications as read (updates notifications_read_at). */
 export async function markNotificationsReadAction(): Promise<{ ok: boolean }> {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const admin = createAdminClient();
   await admin
     .from("users")

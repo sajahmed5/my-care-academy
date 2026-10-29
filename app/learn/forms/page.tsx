@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { EmptyState } from "@/components/learner-ui";
@@ -21,14 +21,14 @@ function fmtDate(d: string | null): string {
  * returns only this person's own.
  */
 export default async function LearnerFormsPage() {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const supabase = await createClient();
   const all = await loadAssignmentsForPerson(supabase, context.userId);
   const open = all.filter((a) => !a.completed_at);
   const done = all.filter((a) => a.completed_at);
 
   return (
-    <DashboardShell title="Forms" context={context}>
+    <DashboardShell learn title="Forms" context={context}>
       <div className="space-y-6">
         <section className="space-y-2">
           <h3 className="text-sm font-semibold text-muted-foreground">To complete ({open.length})</h3>

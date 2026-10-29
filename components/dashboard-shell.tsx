@@ -8,13 +8,14 @@ import { deriveNotifications, unreadCount } from "@/lib/notifications";
 import { VERSION_LABEL } from "@/lib/version";
 import { StarBank } from "@/components/star-bank";
 import { ReportWidget } from "@/components/report-widget";
-import { memberStatus, roleLabel, type UserContext } from "@/lib/auth";
+import { isStaffRole, memberStatus, roleLabel, type UserContext } from "@/lib/auth";
 import { enabledMap } from "@/lib/entitlements";
 
 async function learnerBadges(
   context: UserContext,
+  learn: boolean,
 ): Promise<Record<string, number>> {
-  if (context.role !== "learner") return {};
+  if (!learn) return {};
   try {
     const data = await loadBadgeData(context.userId);
     const notifs = deriveNotifications(data.enrolments, data.certificates, new Date());
@@ -24,8 +25,8 @@ async function learnerBadges(
   }
 }
 
-async function learnerStarTotal(context: UserContext): Promise<number> {
-  if (context.role !== "learner") return 0;
+async function learnerStarTotal(context: UserContext, learn: boolean): Promise<number> {
+  if (!learn) return 0;
   return loadStarTotal(context.userId);
 }
 
@@ -70,17 +71,21 @@ export async function DashboardShell({
   title,
   context,
   back,
+  learn = false,
   children,
 }: {
   title: string;
   context: UserContext;
+  /** A page of someone's own training (/learn). Every member of staff has
+   *  one since 29 Oct 2026, managers and office workers included. */
+  learn?: boolean;
   /** A way back above the title, e.g. a carer's file to All learners. */
   back?: { href: string; label: string };
   children?: React.ReactNode;
 }) {
   const [badges, starTotal, addOns, , branding, member] = await Promise.all([
-    learnerBadges(context),
-    learnerStarTotal(context),
+    learnerBadges(context, learn || context.role === "learner"),
+    learnerStarTotal(context, learn || context.role === "learner"),
     orgAddOns(context),
     touchLastSeen(context),
     // The organisation's own logo in place of ours, with white-label.
@@ -88,7 +93,9 @@ export async function DashboardShell({
     // Already read by the active-member gate this request (cached).
     context.role === "platform_admin" ? null : memberStatus(context.userId, context.organisationId),
   ]);
-  const learner = context.role === "learner";
+  // A manager or office worker has training too; the search and stars show
+  // while they're on it.
+  const learner = (learn && isStaffRole(context.role)) || context.role === "learner";
   return (
     <div className="flex min-h-svh w-full flex-col">
       {/* The menu across the top — every role, every signed-in page. It was a

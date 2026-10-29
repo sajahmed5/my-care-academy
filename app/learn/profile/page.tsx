@@ -1,4 +1,4 @@
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { loadProfile } from "@/lib/learner-data";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -14,7 +14,7 @@ import { updateMyNameAction } from "@/app/account/actions";
 import { PrivacyData } from "../privacy-data";
 
 export default async function ProfilePage() {
-  const context = await requireRole("learner");
+  const context = await requireStaff();
   const supabase = await createClient();
   const [{ fullName }, { data: org }] = await Promise.all([
     loadProfile(context.userId),
@@ -28,7 +28,7 @@ export default async function ProfilePage() {
   ]);
 
   return (
-    <DashboardShell title="Profile" context={context}>
+    <DashboardShell learn title="Profile" context={context}>
       <div className="space-y-6 *:max-w-2xl">
         <Card>
           <CardHeader>

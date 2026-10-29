@@ -1,5 +1,6 @@
 "use server";
 
+import { STAFF_ROLES } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
@@ -104,7 +105,7 @@ export async function savePlanAction(_prev: SaveState, formData: FormData): Prom
   }
 
   // The carer must be one of theirs and a learner: a form field is not a permission check.
-  const { data: target } = await supabase.from("users").select("id").eq("id", userId).eq("role", "learner").maybeSingle();
+  const { data: target } = await supabase.from("users").select("id").eq("id", userId).in("role", STAFF_ROLES).maybeSingle();
   if (!target) return { ok: false, error: "That person is not a member of staff in your organisation." };
 
   const weeks = weeksFor(startDate, durationWeeks);

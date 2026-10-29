@@ -47,7 +47,7 @@ interface MenuItem {
 const ORG_MENU: MenuItem[] = [
   { label: "Overview", href: "/org" },
   {
-    label: "Learners",
+    label: "Staff",
     also: ["/org/staff"],
     children: [
       // A carer's file is reached from this list, so it lights up here too —
@@ -130,17 +130,29 @@ const MENUS: Record<string, MenuItem[]> = {
 
 /**
  * The person menu, on the right. Account (billing, and who has console
- * access) is the one page an office worker does not get.
+ * access) is the one page an office worker does not get. A manager or office
+ * worker is a member of staff too (29 Oct 2026), so they can step across to
+ * their own training, and back.
  */
-function personLinks(role: UserRole | null): MenuLink[] {
+function personLinks(role: UserRole | null, learnView: boolean): MenuLink[] {
   if (role === "learner") return [{ href: "/learn/profile", label: "Profile" }];
+  const across = learnView
+    ? { href: "/org", label: "Back to the console", exact: true }
+    : { href: "/learn", label: "My training", exact: true };
   if (role === "org_admin") {
     return [
+      across,
       { href: "/account", label: "My account" },
       { href: "/org/billing", label: "Account" },
     ];
   }
+  if (role === "org_office") return [across, { href: "/account", label: "My account" }];
   return [{ href: "/account", label: "My account" }];
+}
+
+/** The console roles, who see their own training under /learn. */
+function hasConsole(role: UserRole | null): boolean {
+  return role === "org_admin" || role === "org_office";
 }
 
 /** Section roots that only highlight on an exact match. */
@@ -261,10 +273,17 @@ export function TopNav({
   stars?: React.ReactNode;
 }) {
   const { open, setOpen, ref, pathname } = useOpenMenu();
-  const menu = role ? (MENUS[role] ?? []) : [];
-  const items =
-    role === "org_admin" || role === "org_office" ? withLocks(menu, enabled) : withoutGated(menu, enabled);
-  const person = personLinks(role);
+  // A manager or office worker on their own training gets the carer's menu,
+  // with the console one click away at the end of it.
+  const learnView = hasConsole(role) && (pathname === "/learn" || pathname.startsWith("/learn/"));
+  const menu = learnView
+    ? [...withoutGated(MENUS.learner, enabled), { label: "Console", href: "/org" }]
+    : role
+      ? (MENUS[role] ?? [])
+      : [];
+  const items = hasConsole(role) && !learnView ? withLocks(menu, enabled) : withoutGated(menu, enabled);
+  const person = personLinks(role, learnView);
+  const showLearnerBits = role === "learner" || learnView;
   const current = items.find((item) => itemActive(pathname, item));
 
   // On a phone the sub-page row scrolls sideways; bring the open page into it.
@@ -367,8 +386,8 @@ export function TopNav({
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          {search && <div className="hidden xl:block">{search}</div>}
-          {stars}
+          {showLearnerBits && search && <div className="hidden xl:block">{search}</div>}
+          {showLearnerBits && stars}
 
           {/* Person menu, wide screens */}
           <div className="relative hidden lg:block">
@@ -453,7 +472,7 @@ export function TopNav({
           aria-label="Main"
           className="max-h-[calc(100svh-3.5rem)] overflow-y-auto border-t border-sidebar-border px-3 pb-4 pt-2 lg:hidden"
         >
-          {search && <div className="py-2">{search}</div>}
+          {showLearnerBits && search && <div className="py-2">{search}</div>}
           {items.map((item, i) =>
             item.href ? (
               // A plain link after a drop-down's list would read as part of it.
