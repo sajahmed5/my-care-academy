@@ -100,3 +100,25 @@ describe("the Next line during Triage", () => {
     expect(nextStep(buildSteps(complaint, entries, false), entries, rec, "2026-09-30").text).toMatch(/give each check an owner and a date/);
   });
 });
+
+describe("the steps of an accident or a near miss", () => {
+  const accident = [
+    { id: "ar", name: "Accident Report", kind: "accident_report" },
+    { id: "ia", name: "Actions and Training", kind: "incident_actions" },
+    { id: "other", name: "Other", kind: "document" },
+  ];
+
+  it("is what happened, then actions, then close", () => {
+    expect(buildSteps(accident, [], false).map((s) => `${s.n} ${s.title}`)).toEqual([
+      "1 What happened", "2 Actions and training", "3 Follow-up and close",
+    ]);
+  });
+
+  it("asks for the report first, then the actions", () => {
+    const steps = buildSteps(accident, [], false);
+    expect(nextStep(steps, [], { ...rec, completeBy: null }, "2026-09-30").text).toMatch(/^Finish the Accident Report/);
+    const reported = [e("ar", "done")];
+    const after = buildSteps(accident, reported, false);
+    expect(nextStep(after, reported, { ...rec, completeBy: null }, "2026-09-30").step).toBe("actions");
+  });
+});

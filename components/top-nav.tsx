@@ -82,8 +82,7 @@ const ORG_MENU: MenuItem[] = [
     children: [
       { href: "/org/audits", label: "Audits", feature: "quality.audits" },
       { href: "/org/feedback", label: "Feedback", feature: "quality.feedback" },
-      { href: "/org/complaints", label: "Complaints", feature: "complaints.register" },
-      { href: "/org/incidents", label: "Incidents & accidents", feature: "complaints.register" },
+      { href: "/org/complaints", label: "Complaints & safeguarding", feature: "complaints.register" },
       { href: "/org/pips", label: "Performance plans", feature: "complaints.register" },
     ],
   },

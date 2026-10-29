@@ -1,13 +1,16 @@
 /**
  * The questions on each stage of a complaint.
  *
- * Five forms, each tied to a stage kind:
+ * The forms, each tied to a stage kind:
  *
  *   complaint_form     what was raised, by whom, and about what.
  *   meeting_minutes    Triage, Findings or Follow-up, by the stage's number.
  *   action_plan        an issue's plan — findings and actions, no meeting.
  *   monitoring_review  did the plan work, and is it resolved.
  *   acknowledgement    not a form: the letter, and the date it went.
+ *   accident_report    an accident: what happened, who was hurt, first aid.
+ *   near_miss_report   a near miss: what happened, and what would have.
+ *   incident_actions   after either: why, and what will stop it again.
  *
  * Question ids are prefixed by their stage (cf_, mm1_, mm2_, mm3_, mr_) and
  * are the keys answers are stored under, so they are never renamed — a tidier
@@ -255,6 +258,112 @@ export const monitoringReviewSchema: StageForm = {
 };
 
 /**
+ * An accident: what happened, who was hurt and how, and the first aid given.
+ * Ids are prefixed ar_ and never renamed, as above.
+ */
+export const accidentReportSchema: StageForm = {
+  sections: [
+    {
+      id: "accident",
+      title: "What happened",
+      order: 1,
+      questions: [
+        { id: "ar_date", text: "Date it happened", type: "date", required: true },
+        { id: "ar_time", text: "About what time", type: "text" },
+        { id: "ar_where", text: "Where it happened", type: "text", required: true, help: "The client's home and which room, the street, the office…" },
+        { id: "ar_what", text: "What happened", type: "long_text", required: true },
+        { id: "ar_witnesses", text: "Who saw it", type: "text" },
+      ],
+    },
+    {
+      id: "hurt",
+      title: "Who was hurt, and how",
+      order: 2,
+      questions: [
+        {
+          id: "ar_who",
+          text: "Who was hurt",
+          type: "select",
+          required: true,
+          options: [
+            { value: "client", label: "The person receiving care" },
+            { value: "staff", label: "A member of staff" },
+            { value: "visitor", label: "A relative or visitor" },
+            { value: "other", label: "Someone else" },
+          ],
+        },
+        { id: "ar_who_name", text: "Their name", type: "text" },
+        { id: "ar_injuries", text: "Their injuries", type: "long_text", required: true, help: "Where on the body, and how bad. \"None seen\" is an answer." },
+        { id: "ar_first_aid", text: "Was first aid given?", type: "yes_no", required: true },
+        {
+          id: "ar_first_aid_detail",
+          text: "What first aid, and by whom",
+          type: "long_text",
+          showWhen: { questionId: "ar_first_aid", equals: true },
+        },
+        {
+          id: "ar_treatment",
+          text: "Further treatment",
+          type: "select",
+          required: true,
+          options: [
+            { value: "none", label: "None needed" },
+            { value: "gp", label: "GP or 111" },
+            { value: "ambulance", label: "Ambulance called, treated at home" },
+            { value: "hospital", label: "Taken to hospital" },
+          ],
+        },
+        { id: "ar_family_told", text: "Were the family or next of kin told?", type: "yes_no" },
+      ],
+    },
+  ],
+};
+
+/** A near miss: what happened, and what would have. Ids prefixed nm_. */
+export const nearMissReportSchema: StageForm = {
+  sections: [
+    {
+      id: "near_miss",
+      title: "What happened",
+      order: 1,
+      questions: [
+        { id: "nm_date", text: "Date it happened", type: "date", required: true },
+        { id: "nm_where", text: "Where it happened", type: "text", required: true },
+        { id: "nm_what", text: "What happened", type: "long_text", required: true },
+        { id: "nm_would_have", text: "What would have happened if it had not been caught", type: "long_text", required: true },
+        { id: "nm_caught", text: "What stopped it", type: "long_text" },
+      ],
+    },
+  ],
+};
+
+/**
+ * After an accident or a near miss: why it happened and what will stop it
+ * happening again. The actions themselves, and any training, sit under the
+ * form, each with an owner and a date. Ids prefixed ia_.
+ */
+export const incidentActionsSchema: StageForm = {
+  sections: [
+    {
+      id: "actions",
+      title: "Actions and training",
+      order: 1,
+      questions: [
+        { id: "ia_cause", text: "Why it happened", type: "long_text", required: true },
+        { id: "ia_prevent", text: "What will stop it happening again", type: "long_text", required: true },
+        { id: "ia_plans", text: "Does a risk assessment or care plan need updating?", type: "yes_no", required: true },
+        {
+          id: "ia_plans_detail",
+          text: "Which, and who is updating it",
+          type: "long_text",
+          showWhen: { questionId: "ia_plans", equals: true },
+        },
+      ],
+    },
+  ],
+};
+
+/**
  * Which of the three meetings a stage is, read from its name.
  *
  * The stages were "Meeting Minutes 1/2/3" and are now Triage, Findings and
@@ -291,6 +400,12 @@ export function formForStage(stage: { name: string; kind: string }): StageForm |
       return actionPlanSchema;
     case "monitoring_review":
       return monitoringReviewSchema;
+    case "accident_report":
+      return accidentReportSchema;
+    case "near_miss_report":
+      return nearMissReportSchema;
+    case "incident_actions":
+      return incidentActionsSchema;
     default:
       return null;
   }

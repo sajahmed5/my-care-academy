@@ -32,7 +32,7 @@ export const PACK_SECTIONS: PackSectionDef[] = [
   { key: "actions", label: "Outstanding actions", feature: null },
   { key: "supervisions", label: "Supervisions & appraisals", feature: "people.supervisions" },
   { key: "competency", label: "Spot checks & competency", feature: "people.competency" },
-  { key: "complaints", label: "Complaints & incidents", feature: "complaints.register" },
+  { key: "complaints", label: "Concerns", feature: "complaints.register" },
   // What they filled in from the forms library, answer by answer (ROADMAP §1).
   { key: "forms", label: "Completed forms", feature: "forms.builder" },
 ];

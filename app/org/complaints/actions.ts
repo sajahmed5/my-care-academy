@@ -14,10 +14,15 @@ import {
   DEFAULT_STAGES,
   RAISED_BY_ROLES,
   STAGE_KINDS,
+  UNTRIAGED,
   completeByFor,
+  isComplaintKind,
+  isUntriaged,
   kindOf,
   stagesFor,
+  type ComplaintKind,
 } from "@/lib/complaints/stages";
+import { CONCERN_CATEGORIES } from "@/lib/complaints/categories";
 import { loadCloseCheck, loadStages, nextReference } from "@/lib/complaints/data";
 import { actionTagFor, computeStageStatus, isTriageStage, holdsFindings } from "@/lib/complaints/compute";
 import { cleanConcernFindings, CONCERN_FINDINGS_KEY, type ConcernFinding } from "@/lib/complaints/findings";
@@ -31,6 +36,7 @@ import { closeGaps, closeGapsMessage } from "@/lib/complaints/close";
 import { emailAssignees } from "@/lib/assignment-email";
 import { COMPLAINT_NATURES } from "@/lib/complaints/forms";
 import { siteOrigin } from "@/lib/site-url";
+import { STAFF_ROLES } from "@/lib/roles";
 
 /**
  * The complaint process. Written through the RLS-scoped client, so the
@@ -189,21 +195,67 @@ export async function deleteStageAction(_prev: SaveState, formData: FormData): P
 // The record
 // ---------------------------------------------------------------------------
 
+/**
+ * What a new record already knows, written into the first stages of its
+ * type's process so nobody types it twice: the Triage meeting starts with the
+ * type and the concern, and an accident or near miss report with what was
+ * said to have happened. Only stages with nothing on them yet are touched.
+ */
+async function prefillStages(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  complaintId: string,
+  kind: string,
+  record: { reportedOn: string; occurredOn: string | null; description: string },
+  userId: string,
+) {
+  const [allStages, { data: existing }] = await Promise.all([
+    loadStages(supabase),
+    supabase.from("complaint_stage_entries").select("stage_id").eq("complaint_id", complaintId),
+  ]);
+  const have = new Set((existing ?? []).map((e) => e.stage_id as string));
+  const happened = record.occurredOn || record.reportedOn;
+  for (const stage of stagesFor(allStages, kind)) {
+    if (have.has(stage.id)) continue;
+    let answers: Record<string, unknown> | null = null;
+    if (isTriageStage(stage)) {
+      answers = {
+        ...(["complaint", "safeguarding", "issue"].includes(kind) ? { tri_type: kind } : {}),
+        mm1_issue: record.description,
+        mm1_when_received: record.reportedOn,
+      };
+    } else if (stage.kind === "accident_report") {
+      answers = { ar_date: happened, ar_what: record.description };
+    } else if (stage.kind === "near_miss_report") {
+      answers = { nm_date: happened, nm_what: record.description };
+    }
+    if (answers) await recompute(supabase, complaintId, stage, answers, userId);
+  }
+}
+
+/**
+ * A concern, raised through the front door. It may be triaged on the spot —
+ * the office often knows an accident is an accident — or left as a concern
+ * for someone to triage.
+ */
 export async function createComplaintAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
   const context = await requireComplaints();
   if (!context) return { ok: false, error: NOT_IN_PLAN };
 
-  const kind = kindOf(str(formData, "kind"));
+  const kind = kindOf(str(formData, "kind") || UNTRIAGED);
   const raisedByName = str(formData, "raisedByName");
   const raisedByRole = str(formData, "raisedByRole");
-  const aboutName = str(formData, "aboutName");
+  let aboutName = str(formData, "aboutName");
+  const clientId = str(formData, "clientId");
+  const category = str(formData, "category");
+  const personId = str(formData, "personId");
   const reportedOn = str(formData, "reportedOn") || today();
   const occurredOn = str(formData, "occurredOn");
   const description = str(formData, "description");
   const desiredOutcome = str(formData, "desiredOutcome");
   const nature = str(formData, "nature");
 
-  if (!COMPLAINT_NATURES.some((n) => n.value === nature)) return { ok: false, error: "Say what it is about." };
+  if (!COMPLAINT_NATURES.some((n) => n.value === nature)) return { ok: false, error: "Say who or what it is about." };
+  if (category && !CONCERN_CATEGORIES.some((c) => c.value === category)) return { ok: false, error: "Pick what it was about." };
   if (!description) return { ok: false, error: "Say what was raised." };
   if (description.length > 10000) return { ok: false, error: "Keep it under 10,000 characters." };
   if (!/^\d{4}-\d{2}-\d{2}$/.test(reportedOn)) return { ok: false, error: "Say when it reached you." };
@@ -212,12 +264,17 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
   }
 
   const supabase = await createClient();
-  const [allStages, reference] = await Promise.all([
+  const [allStages, reference, client] = await Promise.all([
     loadStages(supabase, context.organisationId),
     nextReference(supabase, kind, reportedOn),
+    clientId
+      ? supabase.from("clients").select("id, full_name").eq("id", clientId).maybeSingle().then((r) => r.data)
+      : Promise.resolve(null),
   ]);
-  const stages = stagesFor(allStages, kind);
-  if (stages.length === 0) return { ok: false, error: "Set up the process first: the organisation has no stages yet." };
+  if (allStages.length === 0) return { ok: false, error: "Set up the process first: the organisation has no stages yet." };
+  if (clientId && !client) return { ok: false, error: "That client is not on your client list." };
+  if (client && !aboutName) aboutName = client.full_name as string;
+  const triaged = !isUntriaged(kind);
 
   const { data: row, error } = await supabase
     .from("complaints")
@@ -228,14 +285,18 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
       raised_by_name: raisedByName || null,
       raised_by_role: raisedByRole || null,
       about_name: aboutName || null,
+      client_id: client ? clientId : null,
+      category: category || null,
       reported_on: reportedOn,
       occurred_on: occurredOn || null,
       // Only a complaint carries the 28-day clock. An issue or a safeguarding
       // concern has no statutory response date, and a fabricated one would
-      // show up red for no reason.
+      // show up red for no reason. A concern gets it when triaged as one.
       complete_by: kind === "complaint" ? completeByFor(reportedOn) : null,
       description,
       desired_outcome: desiredOutcome || null,
+      triaged_at: triaged ? new Date().toISOString() : null,
+      triaged_by: triaged ? context.userId : null,
       created_by: context.userId,
     })
     .select("id")
@@ -243,10 +304,17 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
   if (error) return { ok: false, error: error.message };
   const complaintId = row.id as string;
 
+  // Raised from a member of staff's file: they are named on it from the start.
+  if (personId) {
+    await supabase.from("complaint_people").insert({ complaint_id: complaintId, user_id: personId, involvement: "involved" });
+  }
+
   // What was typed here IS the complaint form, so the first stage starts
-  // filled in rather than asking for the same facts a second time.
-  const form = stages.find((s) => s.kind === "complaint_form");
-  if (form) {
+  // filled in rather than asking for the same facts a second time. Written
+  // for a concern not yet triaged too: it is what was raised, whatever it
+  // turns out to be. An accident or near miss has its own report instead.
+  const form = allStages.find((s) => s.kind === "complaint_form" && s.enabled);
+  if (form && !["accident", "near_miss"].includes(kind)) {
     const answers: Record<string, unknown> = {
       // "Date raised" on the stage is when it reached us, as on Record one.
       cf_date: reportedOn,
@@ -260,6 +328,9 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
     };
     await recompute(supabase, complaintId, form, answers, context.userId);
   }
+  if (triaged) {
+    await prefillStages(supabase, complaintId, kind, { reportedOn, occurredOn: occurredOn || null, description }, context.userId);
+  }
 
   await logAudit({
     context,
@@ -270,7 +341,111 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
   });
 
   revalidatePath("/org/complaints");
+  if (personId) revalidatePath(`/org/staff/${personId}`);
   redirect(`/org/complaints/${complaintId}`);
+}
+
+/**
+ * Set what a record is, and the clock that goes with it: a complaint is due a
+ * response 28 days from when it reached us; nothing else has that clock.
+ */
+async function setKind(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  id: string,
+  kind: ComplaintKind,
+  userId: string,
+): Promise<{ error?: string; record?: { reportedOn: string; occurredOn: string | null; description: string; was: string } }> {
+  const { data: row } = await supabase
+    .from("complaints")
+    .select("kind, reported_on, occurred_on, description, complete_by, triaged_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (!row) return { error: "That record is no longer there." };
+  const reportedOn = row.reported_on as string;
+  const { error } = await supabase
+    .from("complaints")
+    .update({
+      kind,
+      complete_by: kind === "complaint" ? ((row.complete_by as string | null) ?? completeByFor(reportedOn)) : null,
+      triaged_at: (row.triaged_at as string | null) ?? new Date().toISOString(),
+      triaged_by: userId,
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+  return {
+    record: {
+      reportedOn,
+      occurredOn: (row.occurred_on as string | null) ?? null,
+      description: row.description as string,
+      was: row.kind as string,
+    },
+  };
+}
+
+/**
+ * Triage: decide which of the five types a concern is, which decides the
+ * process it follows. Also how an open record is moved to another type when
+ * the facts say it was triaged wrongly — what is already on it is kept.
+ */
+export async function triageConcernAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
+  const context = await requireComplaints();
+  if (!context) return { ok: false, error: NOT_IN_PLAN };
+  const id = str(formData, "complaintId");
+  const kind = str(formData, "kind");
+  if (!isComplaintKind(kind)) return { ok: false, error: "Pick what this is." };
+
+  const supabase = await createClient();
+  const result = await setKind(supabase, id, kind, context.userId);
+  if (result.error || !result.record) return { ok: false, error: result.error };
+  await prefillStages(supabase, id, kind, result.record, context.userId);
+
+  await logAudit({
+    context,
+    action: "complaint.triaged",
+    entity: "complaint",
+    entityId: id,
+    detail: { from: result.record.was, to: kind },
+  });
+  revalidatePath(`/org/complaints/${id}`);
+  revalidatePath("/org/complaints");
+  return { ok: true };
+}
+
+/** Which client a concern is about, from the client list. */
+export async function setClientAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
+  const context = await requireComplaints();
+  if (!context) return { ok: false, error: NOT_IN_PLAN };
+  const id = str(formData, "complaintId");
+  const clientId = str(formData, "clientId");
+  const supabase = await createClient();
+  let name: string | null = null;
+  if (clientId) {
+    const { data: client } = await supabase.from("clients").select("full_name").eq("id", clientId).maybeSingle();
+    if (!client) return { ok: false, error: "That client is not on your client list." };
+    name = client.full_name as string;
+  }
+  const { error } = await supabase
+    .from("complaints")
+    .update({ client_id: clientId || null, ...(name ? { about_name: name } : {}) })
+    .eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/org/complaints/${id}`);
+  if (clientId) revalidatePath(`/org/clients/${clientId}`);
+  return { ok: true };
+}
+
+/** What a concern is about, which drives the training it suggests and the trends. */
+export async function setCategoryAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
+  const context = await requireComplaints();
+  if (!context) return { ok: false, error: NOT_IN_PLAN };
+  const id = str(formData, "complaintId");
+  const category = str(formData, "category");
+  if (category && !CONCERN_CATEGORIES.some((c) => c.value === category)) return { ok: false, error: "Pick what it was about." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("complaints").update({ category: category || null }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/org/complaints/${id}`);
+  return { ok: true };
 }
 
 /** Open, withdrawn or cancelled. Closing is its own action, with its own rules. */
@@ -315,7 +490,9 @@ export async function closeComplaintAction(_prev: SaveState, formData: FormData)
 
   const gaps = closeGaps(stages, complaint.stageEntries);
   const triage = stages.find(isTriageStage);
-  const triaged = !triage || complaint.stageEntries.some((e) => e.stageId === triage.id && e.status !== "pending");
+  const triaged =
+    !isUntriaged(complaint.kind) &&
+    (!triage || complaint.stageEntries.some((e) => e.stageId === triage.id && e.status !== "pending"));
   const message = closeGapsMessage(gaps, !triaged, {
     openActions: complaint.openActions,
     openPlans: complaint.openPlans,
@@ -427,6 +604,18 @@ export async function saveStageFormAction(_prev: SaveState, formData: FormData):
   }
   const err = await recompute(supabase, complaintId, stage, { ...kept, ...answers }, context.userId);
   if (err) return { ok: false, error: err };
+  // The Triage meeting's "Type" is the record's type: changing it there
+  // moves the record, as Change type does, rather than leaving the two to
+  // disagree.
+  const triType = answers.tri_type;
+  if (isTriageStage(stage) && typeof triType === "string" && isComplaintKind(triType)) {
+    const { data: cur } = await supabase.from("complaints").select("kind").eq("id", complaintId).maybeSingle();
+    if (cur && cur.kind !== triType) {
+      const moved = await setKind(supabase, complaintId, triType, context.userId);
+      if (moved.error) return { ok: false, error: moved.error };
+      await logAudit({ context, action: "complaint.triaged", entity: "complaint", entityId: complaintId, detail: { from: cur.kind, to: triType } });
+    }
+  }
   revalidatePath(`/org/complaints/${complaintId}`);
   revalidatePath("/org/complaints");
   return { ok: true };
@@ -695,6 +884,87 @@ export async function deleteDocumentAction(_prev: SaveState, formData: FormData)
   const { error } = await supabase.from("complaint_documents").delete().eq("id", documentId);
   if (error) return { ok: false, error: error.message };
   await createAdminClient().storage.from(BUCKET).remove([doc.file_path as string]);
+  revalidatePath(`/org/complaints/${complaintId}`);
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Suggested training
+// ---------------------------------------------------------------------------
+
+/**
+ * Assign a suggested course, because a manager decided to.
+ *
+ * This is the whole reason suggestions are suggestions. The enrolment is
+ * created the same way the bulk assign creates one, and complaint_training
+ * records who decided and why — so the record reads "the manager reviewed it
+ * and assigned refresher training on the 3rd", not "the system assigned
+ * training on receipt of a complaint".
+ */
+export async function assignConcernTrainingAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
+  const context = await requireComplaints();
+  if (!context) return { ok: false, error: NOT_IN_PLAN };
+
+  const complaintId = str(formData, "complaintId");
+  const userId = str(formData, "userId");
+  const courseId = str(formData, "courseId");
+  const reason = str(formData, "reason");
+  const dueDate = str(formData, "dueDate");
+  if (!complaintId || !userId || !courseId) return { ok: false, error: "Missing the record, the person or the course." };
+  if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return { ok: false, error: "Give the date as a date." };
+
+  const supabase = await createClient();
+  // One of theirs, and active: the same guard the bulk assign uses, because
+  // a form field is not a permission check.
+  const { data: target } = await supabase
+    .from("users")
+    .select("id")
+    .eq("id", userId)
+    .in("role", STAFF_ROLES)
+    .eq("status", "active")
+    .maybeSingle();
+  if (!target) return { ok: false, error: "That person is not an active member of staff in your organisation." };
+
+  const { error: enrolError } = await supabase.from("enrolments").upsert(
+    { organisation_id: context.organisationId, user_id: userId, course_id: courseId, due_date: dueDate || null },
+    { onConflict: "user_id,course_id" },
+  );
+  if (enrolError) return { ok: false, error: enrolError.message };
+
+  const { error: linkError } = await supabase.from("complaint_training").insert({
+    complaint_id: complaintId,
+    user_id: userId,
+    course_id: courseId,
+    reason: reason || null,
+    assigned_by: context.userId,
+  });
+  // The training is assigned either way; a duplicate link is not a failure
+  // worth showing a manager.
+  if (linkError && !linkError.message.includes("duplicate")) return { ok: false, error: linkError.message };
+
+  // Told like any other training assignment.
+  const origin = await siteOrigin();
+  const organisationId = context.organisationId!;
+  after(async () => {
+    const admin = createAdminClient();
+    const { data: course } = await admin.from("courses").select("title").eq("id", courseId).maybeSingle();
+    await emailAssignees(
+      admin,
+      "training_assigned",
+      [{ userId, title: (course?.title as string | undefined) ?? "A course", dueDate: dueDate || null, href: "/learn/modules" }],
+      { organisationId, assignedBy: context.userId, origin },
+    );
+  });
+
+  await logAudit({
+    context,
+    action: "complaint.training_assigned",
+    entity: "complaint",
+    entityId: complaintId,
+    detail: { userId, courseId, reason: reason || null, dueDate: dueDate || null },
+  });
+
+  revalidatePath(`/org/staff/${userId}`);
   revalidatePath(`/org/complaints/${complaintId}`);
   return { ok: true };
 }

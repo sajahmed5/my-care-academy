@@ -7,7 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import type { Complaint, StaffOption } from "@/lib/complaints/data";
 import type { ComplaintStage } from "@/lib/complaints/stages";
-import { kindLabel, statusLabel } from "@/lib/complaints/stages";
+import { isUntriaged, kindLabel, statusLabel } from "@/lib/complaints/stages";
+import type { Suggestion } from "@/lib/complaints/categories";
 import type { ComplaintStep, NextStep } from "@/lib/complaints/steps";
 import { isOptionalStage } from "@/lib/complaints/steps";
 import { LETTER_KINDS } from "@/lib/complaints/compute";
@@ -15,6 +16,8 @@ import { formForStage } from "@/lib/complaints/forms";
 import { fmtDate } from "../complaint-row";
 import { StagePanel } from "./stage-panel";
 import { CloseRecord, PeopleNamed } from "./record-panels";
+import { ChangeType, RecordFacts, TriagePanel } from "./triage";
+import type { ClientOption } from "../new-complaint";
 
 const STATE_STYLE: Record<ComplaintStep["state"], string> = {
   done: "border-green-200 bg-green-50",
@@ -50,6 +53,8 @@ export function ComplaintProcess({
   senderName,
   today,
   initialStageId,
+  clients,
+  training,
 }: {
   complaint: Complaint;
   stages: ComplaintStage[];
@@ -61,11 +66,14 @@ export function ComplaintProcess({
   senderName: string | null;
   today: string;
   initialStageId: string | null;
+  clients: ClientOption[] | null;
+  training: { userId: string; name: string | null; suggestions: Suggestion[] }[];
 }) {
   const [openId, setOpenId] = useState<string | null>(initialStageId);
   const entryOf = (stageId: string) => complaint.stageEntries.find((e) => e.stageId === stageId);
   const openStage = stages.find((s) => s.id === openId) ?? null;
   const closed = complaint.status !== "open";
+  const untriaged = isUntriaged(complaint.kind);
 
   return (
     <div className="space-y-6">
@@ -73,10 +81,13 @@ export function ComplaintProcess({
         <CardContent className="space-y-3 pt-6">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <p className="text-lg font-semibold">
-                {kindLabel(complaint.kind)}
-                {complaint.aboutName ? ` about ${complaint.aboutName}'s care` : ""}
-              </p>
+              <div className="flex flex-wrap items-baseline gap-x-3">
+                <p className="text-lg font-semibold">
+                  {untriaged ? "Concern waiting for triage" : kindLabel(complaint.kind)}
+                  {complaint.aboutName ? ` about ${complaint.aboutName}` : ""}
+                </p>
+                {!untriaged && !closed && <ChangeType complaint={complaint} />}
+              </div>
               <p className="text-sm text-muted-foreground">
                 Reported {fmtDate(complaint.reportedOn)}
                 {complaint.raisedByName ? ` by ${complaint.raisedByName}` : ""}
@@ -93,6 +104,7 @@ export function ComplaintProcess({
               {complaint.closedOn ? ` ${fmtDate(complaint.closedOn)}` : ""}
             </span>
           </div>
+          <RecordFacts complaint={complaint} clients={clients} disabled={closed} />
           <p className="whitespace-pre-line text-sm">{complaint.description}</p>
           {complaint.desiredOutcome && (
             <p className="text-sm text-muted-foreground">
@@ -100,10 +112,12 @@ export function ComplaintProcess({
             </p>
           )}
           <PeopleNamed complaint={complaint} staff={staff} disabled={closed} />
-          <div className={`rounded-lg p-3 text-sm ${next.late ? "bg-rose-50 text-rose-800" : "bg-indigo-50 text-indigo-900"}`}>
-            <span className="font-medium">Next: </span>
-            {next.text}
-          </div>
+          {!untriaged && (
+            <div className={`rounded-lg p-3 text-sm ${next.late ? "bg-rose-50 text-rose-800" : "bg-indigo-50 text-indigo-900"}`}>
+              <span className="font-medium">Next: </span>
+              {next.text}
+            </div>
+          )}
           {complaint.outcomeSummary && (
             <div className="rounded-lg bg-muted/40 p-3 text-sm">
               <p><span className="font-medium">Outcome:</span> {complaint.outcomeSummary}</p>
@@ -113,6 +127,12 @@ export function ComplaintProcess({
         </CardContent>
       </Card>
 
+      {untriaged ? (
+        <div className="space-y-6">
+          {!closed && <TriagePanel complaint={complaint} />}
+          <CloseRecord complaint={complaint} stages={stages} closeMessage={closeMessage} onOpenStage={setOpenId} />
+        </div>
+      ) : (
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         <ol className="space-y-2">
           {steps.map((step) => (
@@ -191,6 +211,7 @@ export function ComplaintProcess({
                   senderName={senderName}
                   today={today}
                   disabled={closed}
+                  training={openStage.kind === "incident_actions" ? training : []}
                 />
               </CardContent>
             </Card>
@@ -216,6 +237,7 @@ export function ComplaintProcess({
           )}
         </div>
       </div>
+      )}
     </div>
   );
 }

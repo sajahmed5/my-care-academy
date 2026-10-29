@@ -4,7 +4,19 @@ Agreed with Saj on 29 Oct 2026. Nothing below is built yet beyond what's
 marked as today's. Complaints & safeguarding is in Pro and up (see
 PACKAGES.md).
 
-## Today
+## Built
+
+- **One front door** (29 Oct 2026, migration 20261029213100) — "Raise a
+  concern" at `/org/complaints/new`; the type is chosen then or left for
+  triage (CON- references until triaged, kept after). Five types, each with
+  its own stages; accident and near miss have a report and an actions stage
+  with suggested training. "Change type" moves an open record. The incidents
+  register is merged in: `/org/incidents` redirects, its rows are copied by an
+  idempotent statement in the migration (re-run it after release to catch
+  anything recorded in between), and `incidents` stays readable until then.
+  The carer's file and evidence pack read concerns.
+
+## Before the front door
 
 - **Complaints** (`/org/complaints`, migration 20261024100000) — a seven-step
   process (concern raised, triage, acknowledge, investigate, findings,

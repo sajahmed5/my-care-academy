@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
-import { kindLabel, statusLabel } from "@/lib/complaints/stages";
+import { isUntriaged, kindLabel, statusLabel } from "@/lib/complaints/stages";
+import { categoryLabel } from "@/lib/complaints/categories";
 import type { ComplaintSummary } from "@/lib/complaints/data";
 import type { NextStep } from "@/lib/complaints/steps";
 
@@ -39,10 +40,14 @@ export function ComplaintRow({
             <p className="font-medium">
               <span className="font-mono text-xs text-muted-foreground">{complaint.reference}</span>{" "}
               · {kindLabel(complaint.kind)}
+              {complaint.category ? ` · ${categoryLabel(complaint.category)}` : ""}
               {complaint.aboutName ? ` · ${complaint.aboutName}` : ""}
             </p>
             <div className="flex items-center gap-2 text-xs">
               {stepLabel && <span className="text-muted-foreground">{stepLabel}</span>}
+              {isUntriaged(complaint.kind) && complaint.status === "open" && (
+                <span className="rounded-full bg-violet-100 px-2 py-0.5 font-medium text-violet-700">Waiting for triage</span>
+              )}
               <span className={`rounded-full px-2 py-0.5 font-medium ${STATUS_STYLE[complaint.status] ?? ""}`}>
                 {statusLabel(complaint.status)}
               </span>

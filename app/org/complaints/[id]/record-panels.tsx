@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { pickable, type Complaint, type ComplaintAction, type StaffOption } from "@/lib/complaints/data";
 import type { ComplaintStage } from "@/lib/complaints/stages";
-import { actionTagFor } from "@/lib/complaints/compute";
+import { actionTagFor, holdsActions } from "@/lib/complaints/compute";
 import { closeComplaintAction, setActionDoneAction, setComplaintStatusAction, setPeopleAction } from "../actions";
 import { selectClass, textareaClass } from "../new-complaint";
 import { fmtDate } from "../complaint-row";
@@ -92,7 +92,7 @@ export function CloseRecord({
   const openActions = complaint.actions.filter((a) => !a.completedAt);
   // Where each action was agreed, so the list can say so and open that stage.
   const agreedAt = (a: ComplaintAction) =>
-    stages.find((s) => (s.kind === "meeting_minutes" || s.kind === "action_plan") && actionTagFor(s) === a.stageTag) ?? null;
+    stages.find((s) => holdsActions(s) && actionTagFor(s) === a.stageTag) ?? null;
 
   return (
     <Card>

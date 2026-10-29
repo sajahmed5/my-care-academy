@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  INCIDENT_CATEGORIES,
-  categoryLabel,
-  kindLabel,
-  statusLabel,
-  suggestionsFor,
-  type CourseRef,
-} from "../lib/incidents";
+import { CONCERN_CATEGORIES, categoryLabel, suggestionsFor, type CourseRef } from "../lib/complaints/categories";
+import { kindLabel, kindOf, prefixFor, statusLabel } from "../lib/complaints/stages";
 
 const CATALOGUE: CourseRef[] = [
   { id: "c-med", slug: "medication-awareness", title: "Medication Awareness" },
@@ -64,14 +58,14 @@ describe("suggestionsFor", () => {
 
 describe("the category map", () => {
   it("never suggests a course twice for one category", () => {
-    for (const category of INCIDENT_CATEGORIES) {
+    for (const category of CONCERN_CATEGORIES) {
       const slugs = [...category.courses];
       expect(new Set(slugs).size, `duplicates in ${category.value}`).toBe(slugs.length);
     }
   });
 
   it("has a label for every category", () => {
-    for (const category of INCIDENT_CATEGORIES) {
+    for (const category of CONCERN_CATEGORIES) {
       expect(category.label.length).toBeGreaterThan(0);
     }
   });
@@ -80,13 +74,31 @@ describe("the category map", () => {
 describe("labels", () => {
   it("read as a manager would say them", () => {
     expect(kindLabel("near_miss")).toBe("Near miss");
+    expect(kindLabel("concern")).toBe("Concern");
     expect(categoryLabel("missed_visit")).toBe("Missed or late visit");
-    expect(statusLabel("investigating")).toBe("Investigating");
+    expect(statusLabel("withdrawn")).toBe("Withdrawn");
   });
 
   it("fall back to the raw value for anything unknown", () => {
     expect(kindLabel("mystery")).toBe("mystery");
     expect(categoryLabel("mystery")).toBe("mystery");
     expect(statusLabel("mystery")).toBe("mystery");
+  });
+
+  it("say so when no category was given", () => {
+    expect(categoryLabel(null)).toBe("Not said");
+  });
+});
+
+describe("the five types", () => {
+  it("reads every type the register held, and keeps an untriaged concern as one", () => {
+    for (const k of ["complaint", "safeguarding", "issue", "accident", "near_miss", "concern"]) expect(kindOf(k)).toBe(k);
+    expect(kindOf("mystery")).toBe("complaint");
+  });
+
+  it("gives each its own reference prefix, CON- until triaged", () => {
+    expect(["concern", "complaint", "safeguarding", "issue", "accident", "near_miss"].map(prefixFor)).toEqual([
+      "CON", "COM", "SAF", "ISS", "ACC", "NM",
+    ]);
   });
 });

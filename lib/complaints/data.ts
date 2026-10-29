@@ -10,7 +10,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ComplaintStage } from "./stages";
-import { COMPLAINT_KINDS, kindOf } from "./stages";
+import { kindOf, prefixFor } from "./stages";
 
 export interface ComplaintPerson {
   user_id: string;
@@ -48,7 +48,7 @@ export interface ComplaintAction {
   ownerName: string | null;
   dueDate: string | null;
   completedAt: string | null;
-  /** Which stage it was agreed at: "meeting:1", "meeting:2", "plan". Kept in detail. */
+  /** Which stage it was agreed at: "meeting:1", "meeting:2", "plan", "actions". Kept in detail. */
   stageTag: string | null;
 }
 
@@ -63,11 +63,22 @@ export interface ComplaintSummary {
   completeBy: string | null;
   closedOn: string | null;
   description: string;
+  category: string | null;
+  /** The client it is about, from the client list, when one was chosen. */
+  client: ComplaintClient | null;
+}
+
+export interface ComplaintClient {
+  id: string;
+  name: string;
+  funderType: string;
+  /** The council or other funder, as the client list has it. */
+  funderName: string | null;
 }
 
 export interface Complaint extends ComplaintSummary {
   raisedByRole: string | null;
-  category: string | null;
+  triagedAt: string | null;
   occurredOn: string | null;
   desiredOutcome: string | null;
   outcomeSummary: string | null;
@@ -130,6 +141,19 @@ export function pickable(staff: StaffOption[], keep: Iterable<string | null | un
   return staff.filter((s) => s.active || kept.has(s.value));
 }
 
+const CLIENT_EMBED = "client:clients (id, full_name, funder_type, funder_name)";
+
+function clientOf(raw: unknown): ComplaintClient | null {
+  const c = (Array.isArray(raw) ? raw[0] : raw) as Record<string, unknown> | null | undefined;
+  if (!c) return null;
+  return {
+    id: c.id as string,
+    name: c.full_name as string,
+    funderType: c.funder_type as string,
+    funderName: (c.funder_name as string | null) ?? null,
+  };
+}
+
 const summary = (r: Record<string, unknown>): ComplaintSummary => ({
   id: r.id as string,
   reference: r.reference as string,
@@ -141,6 +165,8 @@ const summary = (r: Record<string, unknown>): ComplaintSummary => ({
   completeBy: (r.complete_by as string | null) ?? null,
   closedOn: (r.closed_on as string | null) ?? null,
   description: r.description as string,
+  category: (r.category as string | null) ?? null,
+  client: clientOf(r.client),
 });
 
 /**
@@ -168,7 +194,7 @@ export async function loadComplaintList(
   const { data } = await supabase
     .from("complaints")
     .select(
-      `id, reference, kind, status, raised_by_name, about_name, reported_on, complete_by, closed_on, description, complaint_stage_entries (${LIST_ENTRY_SELECT})`,
+      `id, reference, kind, status, raised_by_name, about_name, reported_on, complete_by, closed_on, description, category, ${CLIENT_EMBED}, complaint_stage_entries (${LIST_ENTRY_SELECT})`,
     )
     .eq("organisation_id", organisationId)
     .order("reported_on", { ascending: false })
@@ -230,7 +256,7 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
   const { data: row } = await supabase
     .from("complaints")
     .select(
-      "id, reference, kind, status, raised_by_name, raised_by_role, about_name, category, occurred_on, reported_on, complete_by, closed_on, description, desired_outcome, outcome_summary, lessons_learned, created_at",
+      `id, reference, kind, status, raised_by_name, raised_by_role, about_name, category, occurred_on, reported_on, complete_by, closed_on, description, desired_outcome, outcome_summary, lessons_learned, created_at, triaged_at, ${CLIENT_EMBED}`,
     )
     .eq("id", id)
     .maybeSingle();
@@ -267,7 +293,7 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
   return {
     ...summary(row as Record<string, unknown>),
     raisedByRole: (row.raised_by_role as string | null) ?? null,
-    category: (row.category as string | null) ?? null,
+    triagedAt: (row.triaged_at as string | null) ?? null,
     occurredOn: (row.occurred_on as string | null) ?? null,
     desiredOutcome: (row.desired_outcome as string | null) ?? null,
     outcomeSummary: (row.outcome_summary as string | null) ?? null,
@@ -288,7 +314,7 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
     })),
     actions: (actions ?? []).map((a) => {
       const detail = (a.detail as string | null) ?? null;
-      const tag = detail?.match(/^\[(meeting:\d|plan)\]\s*/);
+      const tag = detail?.match(/^\[(meeting:\d|plan|actions)\]\s*/);
       return {
         id: a.id as string,
         title: a.title as string,
@@ -360,11 +386,11 @@ export async function loadCloseCheck(
 
 /**
  * The next reference for a record: COM-20261024-001, counted within the day
- * and the organisation. Read through the same client, so the count is of
+ * and the organisation. A concern not yet triaged is CON-, and keeps it. Read through the same client, so the count is of
  * what the organisation can see — which is all of its own.
  */
 export async function nextReference(supabase: SupabaseClient, kind: string, today: string): Promise<string> {
-  const prefix = COMPLAINT_KINDS.find((k) => k.value === kindOf(kind))!.prefix;
+  const prefix = prefixFor(kindOf(kind));
   const stem = `${prefix}-${today.replace(/-/g, "")}-`;
   const { data } = await supabase
     .from("complaints")
