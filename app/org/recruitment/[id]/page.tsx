@@ -8,6 +8,7 @@ import { currentStage, outstandingSteps, progress, settingsFromRow, STAGES, type
 import { DashboardShell } from "@/components/dashboard-shell";
 import { StepRow, type StepView } from "../step-row";
 import { CandidateActions, DbsConviction } from "./candidate-detail";
+import { ApplicationTools } from "./application-tools";
 
 /**
  * One candidate (RECRUITMENT.md): the four stages, each step with where it
@@ -20,7 +21,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   const { id } = await params;
 
   const supabase = await createClient();
-  const [{ data: candidate }, { data: docs }, { data: settingsRow }] = await Promise.all([
+  const [{ data: candidate }, { data: docs }, { data: settingsRow }, { data: application }] = await Promise.all([
     supabase
       .from("candidates")
       .select("id, full_name, email, phone, postcode, entry_date, status, role_applied, source, dbs_conviction, hired_at, rejected_at")
@@ -31,6 +32,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
       .select("id, doc_type, file_name, file_path, expires_at, not_required, not_required_reason, review_status, review_note, uploaded_by_candidate")
       .eq("candidate_id", id),
     supabase.from("recruitment_settings").select("*").eq("organisation_id", context.organisationId!).maybeSingle(),
+    supabase.from("candidate_applications").select("status, sent_at").eq("candidate_id", id).maybeSingle(),
   ]);
   if (!candidate) notFound();
 
@@ -82,6 +84,16 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
               {steps.map((st) => (
                 <StepRow key={st.key} candidateId={id} step={st} />
               ))}
+              {s.stage === 1 && !s.locked && (
+                <li className="border-t bg-muted/30 px-5 py-3.5">
+                  <ApplicationTools
+                    candidateId={id}
+                    status={(application?.status as "draft" | "submitted" | undefined) ?? "none"}
+                    hasEmail={!!candidate.email}
+                    sentAt={application?.sent_at ? formatDate(application.sent_at as string) : null}
+                  />
+                </li>
+              )}
               {s.stage === 3 && !s.locked && (
                 <li className="border-t bg-muted/30 px-5 py-3.5">
                   <DbsConviction candidateId={id} conviction={candidate.dbs_conviction === true} />

@@ -1,0 +1,55 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { sendApplicationFormAction } from "../actions";
+
+/** The online application: send the form, or read what they sent. */
+export function ApplicationTools({
+  candidateId,
+  status,
+  hasEmail,
+  sentAt,
+}: {
+  candidateId: string;
+  status: "none" | "draft" | "submitted";
+  hasEmail: boolean;
+  sentAt: string | null;
+}) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [message, setMessage] = useState<string | null>(null);
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+      <span className="font-medium">Online application</span>
+      <span className="text-muted-foreground">
+        {status === "submitted" ? "Sent in." : status === "draft" ? `Started${sentAt ? `, link sent ${sentAt}` : ""}.` : "Not sent yet."}
+      </span>
+      {status !== "none" && (
+        <Link href={`/org/recruitment/${candidateId}/application`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+          {status === "submitted" ? "Read their application" : "See what they've filled in"}
+        </Link>
+      )}
+      {status !== "submitted" && (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={pending || !hasEmail}
+          title={hasEmail ? undefined : "Add their email address first"}
+          onClick={() =>
+            start(async () => {
+              const r = await sendApplicationFormAction(candidateId);
+              setMessage(r.ok ? "Sent. They'll get an email with their link." : (r.error ?? "That didn't work."));
+              router.refresh();
+            })
+          }
+        >
+          {status === "draft" ? "Send the link again" : "Email them the form"}
+        </Button>
+      )}
+      {message && <span role="status" className="w-full text-sm">{message}</span>}
+    </div>
+  );
+}

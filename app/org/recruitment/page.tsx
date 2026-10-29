@@ -15,6 +15,7 @@ import {
 import { DashboardShell } from "@/components/dashboard-shell";
 import { EmptyState } from "@/components/learner-ui";
 import { AddCandidateForm } from "./add-candidate-form";
+import { ApplyLink } from "./apply-link";
 
 const FILTERS = [
   { key: "in_progress", label: "Everyone in progress" },
@@ -82,6 +83,7 @@ export default async function RecruitmentPage({ searchParams }: { searchParams: 
   return (
     <DashboardShell title="Recruitment" context={context}>
       <div className="space-y-5">
+        <ApplyLink />
         <details className="group rounded-2xl border bg-card">
           <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-4 text-sm font-medium text-primary [&::-webkit-details-marker]:hidden">
             <Plus className="size-4 transition-transform group-open:rotate-45" aria-hidden="true" />

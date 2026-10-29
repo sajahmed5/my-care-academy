@@ -8,6 +8,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createInvite } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
 import { requireFeature } from "@/lib/entitlements";
+import { siteOrigin } from "@/lib/site-url";
+import { emailApplicationLink, issueApplicationLink, newToken } from "@/lib/candidate-links";
 import {
   RECRUITMENT_STEPS,
   notReadyMessage,
@@ -208,6 +210,74 @@ export async function sendBackStepAction(
     .from("candidate_documents")
     .update({ review_status: "sent_back", review_note: trimmed, reviewed_by: context.userId, reviewed_at: new Date().toISOString() })
     .eq("id", existing.id as string);
+  // An online application goes back to them to change, with the note, by email.
+  if (docType === "application") {
+    const { data: app } = await admin
+      .from("candidate_applications")
+      .update({ status: "draft", office_note: trimmed })
+      .eq("candidate_id", candidateId)
+      .select("id")
+      .maybeSingle();
+    if (app && loaded.candidate.email) {
+      const link = await issueApplicationLink(admin, app.id as string);
+      await emailApplicationLink({ to: loaded.candidate.email as string, firstName: null, company: await orgName(admin, context.organisationId!), link, note: trimmed });
+    }
+  }
+  done(candidateId);
+  return { ok: true };
+}
+
+async function orgName(admin: Admin, orgId: string): Promise<string> {
+  const { data } = await admin.from("organisations").select("name").eq("id", orgId).maybeSingle();
+  return (data?.name as string | undefined) ?? "the company";
+}
+
+/**
+ * The company's apply link, for job adverts: made the first time it's asked
+ * for, and the same link from then on.
+ */
+export async function getApplyLinkAction(): Promise<{ link?: string; error?: string }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const admin = createAdminClient();
+  const { data } = await admin.from("recruitment_settings").select("apply_token").eq("organisation_id", context.organisationId!).maybeSingle();
+  let token = data?.apply_token as string | null | undefined;
+  if (!token) {
+    token = newToken();
+    const { error } = await admin
+      .from("recruitment_settings")
+      .upsert({ organisation_id: context.organisationId, apply_token: token }, { onConflict: "organisation_id" });
+    if (error) return { error: "The link couldn't be made. Try again." };
+  }
+  return { link: `${await siteOrigin()}/apply/${token}` };
+}
+
+/** Email a candidate the online application form (a new link each time). */
+export async function sendApplicationFormAction(candidateId: string): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  const email = loaded.candidate.email as string | null;
+  if (!email) return { ok: false, error: "Add their email address first." };
+  const { data: existing } = await admin.from("candidate_applications").select("id, status").eq("candidate_id", candidateId).maybeSingle();
+  if (existing?.status === "submitted") return { ok: false, error: "They've already sent their application." };
+  let id = existing?.id as string | undefined;
+  if (!id) {
+    const [first, ...rest] = String(loaded.candidate.full_name ?? "").split(" ");
+    const { data } = await admin
+      .from("candidate_applications")
+      .insert({ organisation_id: context.organisationId, candidate_id: candidateId, answers: { firstName: first, surname: rest.join(" "), email } })
+      .select("id")
+      .single();
+    id = data?.id as string | undefined;
+  }
+  if (!id) return { ok: false, error: "The form couldn't be sent. Try again." };
+  const link = await issueApplicationLink(admin, id);
+  const sent = await emailApplicationLink({ to: email, firstName: null, company: await orgName(admin, context.organisationId!), link });
+  if (!sent) return { ok: false, error: "The email couldn't be sent. Try again." };
+  await logAudit({ context, action: "candidate.application_sent", entity: "candidate", entityId: candidateId });
   done(candidateId);
   return { ok: true };
 }
