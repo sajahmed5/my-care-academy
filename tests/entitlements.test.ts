@@ -130,6 +130,7 @@ describe("tier contents", () => {
       "documents.compliance_pack": "core_recruitment",
       "training.observations": "full",
       "training.classroom": "full",
+      "training.face_to_face": "full",
       "platform.white_label": "full",
       "platform.portal_api": "full",
     };

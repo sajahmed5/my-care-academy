@@ -67,6 +67,15 @@ export const FEATURES = [
     label: "Classroom sessions",
     isCore: false,
   },
+  // Sessions at our Stockport office, booked by the company and included in
+  // the Enterprise price (FACE-TO-FACE.md, 29 Oct 2026).
+  {
+    key: "training.face_to_face",
+    category: "training",
+    label: "Face-to-face training",
+    isCore: false,
+    hint: "Our sessions in Stockport, set up under Face to face in the platform menu.",
+  },
   {
     key: "recruitment.tracker",
     category: "recruitment",
