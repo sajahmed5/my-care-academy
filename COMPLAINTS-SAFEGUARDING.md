@@ -33,6 +33,19 @@ PACKAGES.md).
   `/concern/<token>`: no account, five an hour from one address, a honeypot,
   and it lands as a concern waiting for triage with the person's contact
   details and a reference they are shown.
+- **Trends and MyRoster's newer parts** (29 Oct 2026, migration
+  20261029213400) — `/org/complaints/trends` counts concerns by type,
+  category, staff, client and month (12 or 24 months). From MyRoster, ported
+  to this site's server-side PDFs: the **readiness check** on the Outcome
+  Letter (warns, never blocks; also flags what changed since the letter was
+  saved), the **interim update** PDF (done and still-to-come worked out from
+  the record, "found so far" in the manager's words, kept in
+  `complaints.interim_findings`), the **evidence bundle** ZIP (lead document,
+  each finished stage, files numbered as the response lists them, a
+  Contents.txt naming anything missing), and the **guidance** PDF in the
+  company's name with its clients' councils. AI drafting, precedent and
+  council tracking from MyRoster are not built: AI arrives with recruitment's
+  AI release and slots into the letter panel (comment in `stage-panel.tsx`).
 
 ## Before the front door
 

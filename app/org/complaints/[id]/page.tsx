@@ -11,6 +11,7 @@ import { isUntriaged, stagesFor } from "@/lib/complaints/stages";
 import { suggestionsFor } from "@/lib/complaints/categories";
 import { loadConcernTraining } from "@/lib/complaints/person";
 import { readConfirmations, remindersFor } from "@/lib/complaints/reminders";
+import { findReadinessGaps } from "@/lib/complaints/readiness";
 import { buildSteps, nextStep } from "@/lib/complaints/steps";
 import { closeGaps, closeGapsMessage } from "@/lib/complaints/close";
 import { isTriageStage } from "@/lib/complaints/compute";
@@ -111,6 +112,10 @@ export default async function ComplaintPage({
   const council = complaint.client?.funderType === "council" ? complaint.client.funderName : null;
   const reminders = remindersFor(complaint.kind, byKind, readConfirmations(complaint.reminders), { council });
 
+  // What is still missing before the response goes: shown on the Outcome
+  // Letter while it has not been sent.
+  const readiness = findReadinessGaps(complaint, stages);
+
   const triage = stages.find(isTriageStage);
   const triaged = !isUntriaged(complaint.kind) && (!triage || complaint.stageEntries.some((e) => e.stageId === triage.id && e.status !== "pending"));
   const closeMessage = closeGapsMessage(closeGaps(stages, complaint.stageEntries), !triaged, {
@@ -151,6 +156,7 @@ export default async function ComplaintPage({
           training={training}
           reminders={reminders}
           clientConcerns={clientConcerns}
+          readiness={readiness}
         />
       </div>
     </DashboardShell>

@@ -6,6 +6,7 @@ import { formForStage, meetingLabel } from "./forms";
 import { formatAnswer, visibleQuestions, type AnswerMap } from "./schema";
 import { concernFindingLines, findingLabel, recordFindings, type ConcernFinding } from "./findings";
 import { LETTER_KINDS } from "./compute";
+import type { ComplaintGuidance } from "./guidance";
 
 /**
  * The complaint as paper: one stage at a time, or the whole response.
@@ -266,8 +267,9 @@ export function renderResponsePdf(ctx: PdfContext): Promise<Buffer> {
         {docs.length > 0 && (
           <>
             <Text style={styles.heading}>Documents held on file</Text>
-            {docs.map((d) => (
-              <Text key={d.id} style={styles.bullet}>• {d.fileName} — {stages.find((s) => s.id === d.stageId)?.name ?? "record"}, {ukDate(d.uploadedAt)}</Text>
+            {/* Numbered as the evidence bundle numbers its files. */}
+            {docs.map((d, i) => (
+              <Text key={d.id} style={styles.bullet}>• Document {String(i + 1).padStart(2, "0")}: {d.fileName} — {stages.find((s) => s.id === d.stageId)?.name ?? "record"}, {ukDate(d.uploadedAt)}</Text>
             ))}
           </>
         )}
@@ -284,6 +286,136 @@ export function renderResponsePdf(ctx: PdfContext): Promise<Buffer> {
           <Footer left={footer} />
         </Page>
       ))}
+    </Document>,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Brought across from MyRoster (29 Oct 2026): the interim update and the
+// "what to do" guidance. MyRoster drew them with jsPDF in the browser; here
+// they are rendered on the server like the rest of the record.
+// ---------------------------------------------------------------------------
+
+/**
+ * The letter that goes on top when a council wants the file before the
+ * enquiry is finished: it says plainly the review is not done, what is
+ * enclosed, what is still to come and by when. The lists are worked out
+ * from the file (lib/complaints/interim.ts); only "what we have found so
+ * far" is written by a person.
+ */
+export function renderInterimPdf(
+  ctx: PdfContext,
+  opts: { done: string[]; outstanding: { label: string; because: string }[]; findings: string | null; preparedBy: string | null; targetDays: number },
+): Promise<Buffer> {
+  const { complaint } = ctx;
+  const due = complaint.completeBy ? ukDate(complaint.completeBy) : "the date we have given you";
+  const footer = `${ctx.organisationName} — ${complaint.reference} — interim update — confidential`;
+  return renderToBuffer(
+    <Document title={`${complaint.reference} — interim update`} author={ctx.organisationName}>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.brand}>{ctx.organisationName.toUpperCase()}</Text>
+        <Text style={styles.title}>{kindLabel(complaint.kind)}: interim update</Text>
+        <Text style={styles.subtitle}>Reference {complaint.reference}</Text>
+        <Meta label="Person concerned" value={complaint.aboutName} />
+        <Meta label="Received" value={ukDate(complaint.reportedOn)} />
+        <Meta label="Full response due" value={complaint.completeBy ? ukDate(complaint.completeBy) : null} />
+
+        <Text style={[styles.para, { marginTop: 12 }]}>
+          Thank you for your patience while we look into this. Our enquiry is not finished and this is not our final response, but we know you need to see what we hold, so we are sending it now and will follow it with the rest.
+        </Text>
+        {complaint.completeBy && (
+          <Text style={styles.para}>
+            We look into complaints over {opts.targetDays} days from the day they reach us. This one came in on {ukDate(complaint.reportedOn)}, so our full written response is due by {due}. That time is what lets us speak to everyone involved, look at the records properly, and give a fair account rather than a quick one.
+          </Text>
+        )}
+
+        {opts.findings && (
+          <>
+            <Text style={styles.heading}>What we have found so far</Text>
+            {opts.findings.split(/\n/).map((line, i) => (
+              <Text key={i} style={line.trim() ? styles.para : { height: 4 }}>{line}</Text>
+            ))}
+          </>
+        )}
+
+        {opts.done.length > 0 && (
+          <>
+            <Text style={styles.heading}>What is enclosed</Text>
+            {opts.done.map((d) => (
+              <Text key={d} style={styles.bullet}>• {d}</Text>
+            ))}
+          </>
+        )}
+
+        {opts.outstanding.length > 0 ? (
+          <>
+            <Text style={styles.heading}>What is still to come</Text>
+            {opts.outstanding.map((o) => (
+              <View key={o.label} wrap={false} style={{ marginBottom: 5 }}>
+                <Text style={[styles.bullet, { fontFamily: "Helvetica-Bold" }]}>{o.label}</Text>
+                <Text style={[styles.bullet, { color: "#4b5563", paddingLeft: 16 }]}>{o.because}</Text>
+              </View>
+            ))}
+            <Text style={[styles.para, { marginTop: 6 }]}>
+              We will send each of these as soon as it is complete, and in any event with our full response by {due}. If anything in it changes what we are telling you now, we will say so.
+            </Text>
+          </>
+        ) : (
+          <Text style={[styles.para, { marginTop: 8 }]}>Everything we hold on this is enclosed. Our full written response follows by {due}.</Text>
+        )}
+
+        <Text style={styles.heading}>If you need anything sooner</Text>
+        <Text style={styles.para}>If there is something in particular you need before then, or you would like to talk any of it through, please contact us and we will get it to you.</Text>
+        <Text style={[styles.para, { marginTop: 14 }]}>Yours sincerely</Text>
+        <Text style={[styles.para, { fontFamily: "Helvetica-Bold", marginTop: 18 }]}>{opts.preparedBy ?? ctx.organisationName}</Text>
+        {opts.preparedBy && <Text style={styles.small}>{ctx.organisationName}</Text>}
+        <Footer left={footer} />
+      </Page>
+    </Document>,
+  );
+}
+
+/** "What to do", as a PDF to hand to a client, a council or CQC. */
+export function renderGuidancePdf(g: ComplaintGuidance, organisationName: string): Promise<Buffer> {
+  const list = (items: string[]) => items.map((p) => <Text key={p} style={styles.bullet}>• {p}</Text>);
+  return renderToBuffer(
+    <Document title={g.title} author={organisationName}>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.brand}>{organisationName.toUpperCase()}</Text>
+        <Text style={styles.title}>{g.title}</Text>
+        {g.intro.map((p) => (
+          <Text key={p} style={styles.para}>{p}</Text>
+        ))}
+        <Text style={styles.heading}>Timescales</Text>
+        {g.timescales.map((t) => (
+          <Meta key={t.label} label={t.label} value={t.value} />
+        ))}
+        {g.steps.map((s) => (
+          <View key={s.title} wrap={false}>
+            <Text style={styles.heading}>{s.title}</Text>
+            {list(s.points)}
+          </View>
+        ))}
+        <View wrap={false}>
+          <Text style={styles.heading}>If someone may be at risk</Text>
+          {list(g.safeguarding)}
+        </View>
+        <View wrap={false}>
+          <Text style={styles.heading}>What we do not investigate as a complaint</Text>
+          {list(g.doNotInvestigate)}
+        </View>
+        <View wrap={false}>
+          <Text style={styles.heading}>If you are not satisfied</Text>
+          {list(g.escalation)}
+        </View>
+        <View wrap={false}>
+          <Text style={styles.heading}>Contacts</Text>
+          {g.contacts.map((c) => (
+            <Meta key={c.name} label={c.name} value={c.detail} />
+          ))}
+        </View>
+        <Footer left={`${organisationName} — how we handle complaints`} />
+      </Page>
     </Document>,
   );
 }

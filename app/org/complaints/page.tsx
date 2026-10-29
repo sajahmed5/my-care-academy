@@ -6,7 +6,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatTile } from "@/components/learner-ui";
-import { AlertTriangle, Clock, FolderOpen, Heart, Inbox, Link2, Plus, Settings2 } from "lucide-react";
+import { AlertTriangle, BarChart3, Clock, FolderOpen, Heart, Inbox, Link2, Plus, Settings2 } from "lucide-react";
 import { loadComplaintList, loadStages } from "@/lib/complaints/data";
 import { COMPLAINT_KINDS, UNTRIAGED, isUntriaged, stagesFor } from "@/lib/complaints/stages";
 import { buildSteps, nextStep } from "@/lib/complaints/steps";
@@ -72,6 +72,10 @@ export default async function ComplaintsPage({
             </Link>
           )}
           <div className="ml-auto flex flex-wrap gap-2">
+            <Link href="/org/complaints/trends" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+              <BarChart3 className="size-4" />
+              Trends
+            </Link>
             <Link href="/org/complaints/compliments" className={buttonVariants({ variant: "ghost", size: "sm" })}>
               <Heart className="size-4" />
               Compliments

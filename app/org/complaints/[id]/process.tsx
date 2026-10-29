@@ -18,6 +18,8 @@ import { StagePanel } from "./stage-panel";
 import { CloseRecord, PeopleNamed } from "./record-panels";
 import { ChangeType, RecordFacts, TriagePanel } from "./triage";
 import { Reminders } from "./reminders";
+import { Papers } from "./papers";
+import type { ReadinessGap } from "@/lib/complaints/readiness";
 import type { Reminder } from "@/lib/complaints/reminders";
 import type { ClientOption } from "../new-complaint";
 
@@ -59,6 +61,7 @@ export function ComplaintProcess({
   training,
   reminders,
   clientConcerns,
+  readiness,
 }: {
   complaint: Complaint;
   stages: ComplaintStage[];
@@ -74,6 +77,7 @@ export function ComplaintProcess({
   training: { userId: string; name: string | null; suggestions: Suggestion[] }[];
   reminders: Reminder[];
   clientConcerns: number;
+  readiness: ReadinessGap[];
 }) {
   const [openId, setOpenId] = useState<string | null>(initialStageId);
   const entryOf = (stageId: string) => complaint.stageEntries.find((e) => e.stageId === stageId);
@@ -222,6 +226,7 @@ export function ComplaintProcess({
                   today={today}
                   disabled={closed}
                   training={openStage.kind === "incident_actions" ? training : []}
+                  readiness={openStage.kind === "outcome_letter" ? readiness : undefined}
                 />
               </CardContent>
             </Card>
@@ -248,6 +253,8 @@ export function ComplaintProcess({
         </div>
       </div>
       )}
+
+      {!untriaged && <Papers complaint={complaint} />}
     </div>
   );
 }

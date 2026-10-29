@@ -39,6 +39,8 @@ import { fmtDate } from "../complaint-row";
 import { StageForm } from "./stage-form";
 import { SuggestedTraining } from "../suggested-training";
 import type { Suggestion } from "@/lib/complaints/categories";
+import type { ReadinessGap } from "@/lib/complaints/readiness";
+import { Readiness } from "./papers";
 import type { SaveState } from "@/app/platform/actions";
 import { formatDate, formatDateTime } from "@/lib/dates";
 
@@ -53,6 +55,8 @@ interface PanelProps {
   disabled: boolean;
   /** The training suggested for each person named, on an accident's or near miss's actions. */
   training?: { userId: string; name: string | null; suggestions: Suggestion[] }[];
+  /** What is still missing before the response goes, on the Outcome Letter. */
+  readiness?: ReadinessGap[];
 }
 
 /** What a stage opens, by its kind. */
@@ -185,8 +189,13 @@ function NotNeeded({ complaint, stage, entry, disabled }: PanelProps) {
 // Letters: acknowledgement, outcome, duty of candour
 // ---------------------------------------------------------------------------
 
-function LetterPanel({ complaint, stage, entry, organisationName, senderName, today, disabled }: PanelProps) {
+function LetterPanel({ complaint, stage, entry, organisationName, senderName, today, disabled, readiness }: PanelProps) {
   const a = (entry?.formAnswers ?? {}) as Record<string, unknown>;
+  // AI drafting (COMPLAINTS-SAFEGUARDING.md) is not built yet. When it comes
+  // with recruitment's AI release it offers a draft here — acknowledgement,
+  // outcome letter, and the interim update's "found so far" — from what is
+  // on the record only, shaped by how similar closed complaints were handled
+  // but never their facts; a person always checks and sends it.
   const draft =
     stage.kind === "acknowledgement"
       ? acknowledgementLetter({
@@ -217,6 +226,7 @@ function LetterPanel({ complaint, stage, entry, organisationName, senderName, to
           {ack.sentOn ? `Sent ${fmtDate(ack.sentOn)}.` : `Due by ${fmtDate(ack.dueBy)} — three working days from when it reached us.`}
         </p>
       )}
+      {stage.kind === "outcome_letter" && !sentOn && readiness && <Readiness gaps={readiness} />}
       {stage.kind === "outcome_letter" && !sentOn && (
         <p className="text-sm text-muted-foreground">
           What we found and what we will do, written to whoever raised it. The findings on each concern are on the Findings stage; the letter is yours to write from them.
