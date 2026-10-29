@@ -149,6 +149,7 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
       "Sessions for every course in our library, plus induction and annual refresher training",
       "At our training office in Stockport, included in the price with no limit on places",
       "Each person gets a confirmation email and a reminder the day before",
+      "A practical assessment on the day, and a certificate on the same training matrix",
     ],
   },
   "platform.white_label": {
