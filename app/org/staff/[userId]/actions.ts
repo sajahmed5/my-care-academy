@@ -4,15 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
-import { hasFeature } from "@/lib/entitlements";
-import { parseAgreedActions } from "@/lib/records";
-import { COMPETENCY_AREAS, COMPETENCY_OUTCOMES } from "@/lib/competency";
 import type { SaveState } from "@/app/platform/actions";
-
-/** A save that can also say how many agreed actions it created. */
-export interface SupervisionState extends SaveState {
-  count?: number;
-}
 
 /**
  * Actions on a carer's file — the written-down half of their task list.
@@ -125,103 +117,4 @@ export async function setPersonActionDoneAction(
 
   if (userId) revalidatePath(`/org/staff/${userId}`);
   return { ok: true };
-}
-
-/**
- * Record a spot check.
- *
- * The same shape as a supervision — dated, by somebody, about somebody, with
- * what follows from it becoming actions — and deliberately so: a manager who
- * has recorded one has learned how to record the other.
- *
- * The area is whatever the UI offered (lib/competency.ts), not a database
- * enum, so an organisation that checks something we have not thought of is
- * not stuck. The outcome is constrained, because reports count it.
- */
-export async function addCompetencyCheckAction(
-  _prev: SupervisionState,
-  formData: FormData,
-): Promise<SupervisionState> {
-  const context = await requireConsole();
-
-  const userId = String(formData.get("userId") ?? "");
-  const area = String(formData.get("area") ?? "").trim();
-  const outcome = String(formData.get("outcome") ?? "");
-  const checkedOn = String(formData.get("checkedOn") ?? "").trim();
-  const notes = String(formData.get("notes") ?? "").trim();
-  const nextDue = String(formData.get("nextDue") ?? "").trim();
-  const agreed = parseAgreedActions(String(formData.get("agreed") ?? ""));
-  const actionsDue = String(formData.get("actionsDue") ?? "").trim();
-
-  if (!checkedOn) return { ok: false, error: "Say when it was checked." };
-  if (!COMPETENCY_AREAS.some((a) => a.value === area)) {
-    return { ok: false, error: "Pick what was checked." };
-  }
-  if (!COMPETENCY_OUTCOMES.some((o) => o.value === outcome)) {
-    return { ok: false, error: "Pick how it went." };
-  }
-  if (notes.length > 5000) {
-    return { ok: false, error: "Keep the notes under 5000 characters." };
-  }
-
-  if (!(await hasFeature(context, "people.competency"))) {
-    return { ok: false, error: "Spot checks are not included in your plan." };
-  }
-
-  const supabase = await createClient();
-
-  const { data: target } = await supabase
-    .from("users")
-    .select("id")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!target) return { ok: false, error: "That person is not in your organisation." };
-
-  const { data: row, error } = await supabase
-    .from("competency_checks")
-    .insert({
-      organisation_id: context.organisationId,
-      user_id: userId,
-      assessor_id: context.userId,
-      area,
-      outcome,
-      checked_on: checkedOn,
-      notes: notes || null,
-      next_due: nextDue || null,
-      created_by: context.userId,
-    })
-    .select("id")
-    .single();
-  if (error) return { ok: false, error: error.message };
-
-  if (agreed.length) {
-    const { error: actionError } = await supabase.from("record_actions").insert(
-      agreed.map((title) => ({
-        organisation_id: context.organisationId,
-        user_id: userId,
-        title,
-        due_date: actionsDue || null,
-        source_type: "competency",
-        source_id: row.id,
-        created_by: context.userId,
-      })),
-    );
-    if (actionError) {
-      return {
-        ok: false,
-        error: `Saved the check, but the actions did not save: ${actionError.message}`,
-      };
-    }
-  }
-
-  await logAudit({
-    context,
-    action: "competency.recorded",
-    entity: "user",
-    entityId: userId,
-    detail: { area, outcome, checkedOn, actions: agreed.length },
-  });
-
-  revalidatePath(`/org/staff/${userId}`);
-  return { ok: true, count: agreed.length };
 }

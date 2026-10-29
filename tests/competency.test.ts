@@ -17,6 +17,7 @@ function check(over: Partial<CompetencyCheck> = {}): CompetencyCheck {
     notes: null,
     next_due: null,
     assessor_name: "A Manager",
+    criteria: [],
     ...over,
   };
 }
@@ -85,7 +86,7 @@ describe("areasOfConcern", () => {
 
 describe("labels", () => {
   it("read as a manager would say them", () => {
-    expect(areaLabel("moving_handling")).toBe("Moving & handling");
+    expect(areaLabel("moving_people")).toBe("Moving and handling people");
     expect(outcomeLabel("developing")).toBe("Needs support");
     expect(outcomeLabel("not_met")).toBe("Not competent");
   });

@@ -20,7 +20,13 @@ import { UnassignButton } from "../../unassign-button";
 import { AssignToPerson } from "./assign-to-person";
 import { buildPersonTasks, loadPersonActions } from "@/lib/person-tasks";
 import { loadAssignmentsForPerson } from "@/lib/form-library";
-import { loadCompetencyChecks } from "@/lib/competency";
+import {
+  loadAuditTraining,
+  loadCompetencyChecks,
+  loadSpotChecks,
+  suggestionsFromSlugs,
+} from "@/lib/competency";
+import { COMPETENCY_FORMS, SPOT_CHECK_FORM, competencyForm, suggestedSlugs } from "@/lib/audit-forms";
 import {
   loadIncidentTraining,
   loadIncidentsForPerson,
@@ -119,7 +125,8 @@ export default async function StaffDetailPage({
     // section, so the Actions tab reads them too (ROADMAP §3).
     const wantsStaffDocs = recruitmentOpen || (wantsTasks && enabled["recruitment.tracker"]);
     const supervisionsOpen = section.key === "supervisions" && state === "open";
-    const [supervisions, bookings, holders, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs] = await Promise.all([
+    const competencyOpen = section.key === "competency" && state === "open";
+    const [supervisions, bookings, holders, competencyChecks, spotChecks, auditTraining, actionRows, formAsks, staffDocs, applicationDocs] = await Promise.all([
       supervisionsOpen ? loadSupervisions(supabase, userId) : Promise.resolve([]),
       supervisionsOpen ? loadBookings(supabase, userId) : Promise.resolve([]),
       // Who can hold one: anyone with console access (STAFF-AUDITS.md).
@@ -136,9 +143,9 @@ export default async function StaffDetailPage({
               (r.data ?? []).map((u) => ({ id: u.id as string, name: (u.full_name as string | null) || (u.email as string) })),
             )
         : Promise.resolve([] as { id: string; name: string }[]),
-      section.key === "competency" && state === "open"
-        ? loadCompetencyChecks(supabase, userId)
-        : Promise.resolve([]),
+      competencyOpen ? loadCompetencyChecks(supabase, userId) : Promise.resolve([]),
+      competencyOpen ? loadSpotChecks(supabase, userId) : Promise.resolve([]),
+      competencyOpen ? loadAuditTraining(supabase, userId) : Promise.resolve(new Map<string, Map<string, string | null>>()),
       // The written-down half of the task list, on the tab that shows it. The
       // derived half comes from the training record.
       wantsTasks ? loadPersonActions(supabase, userId) : Promise.resolve([]),
@@ -154,11 +161,11 @@ export default async function StaffDetailPage({
         : Promise.resolve([] as StaffDoc[]),
       recruitmentOpen ? loadApplicationDocs(supabase, userId) : Promise.resolve([] as ApplicationDoc[]),
     ]);
-    return { enabled, state, supervisions, bookings, holders, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs };
+    return { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditTraining, actionRows, formAsks, staffDocs, applicationDocs };
   });
   const [
     { profile, enrolments, certificates, assessments },
-    { enabled, state, supervisions, bookings, holders, competencyChecks, actionRows, formAsks, staffDocs, applicationDocs },
+    { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditTraining, actionRows, formAsks, staffDocs, applicationDocs },
     { data: libraryRows },
     { data: classroomRows },
   ] = await Promise.all([
@@ -277,6 +284,29 @@ export default async function StaffDetailPage({
         courses: catalogue,
         assigned: assignedByIncident.get(incident.id) ?? new Map(),
       });
+    }
+  }
+
+  // What a spot check or competency that fell short suggests, for the
+  // manager to confirm (STAFF-AUDITS.md). The catalogue is read only when
+  // something did fall short.
+  const auditSuggestions: Record<string, Suggestion[]> = {};
+  const shortfalls = [
+    ...spotChecks
+      .filter((c) => c.outcome !== "met")
+      .map((c) => ({ key: `spot_check:${c.id}`, slugs: suggestedSlugs(SPOT_CHECK_FORM, c.outcome, c.items) })),
+    ...competencyChecks
+      .filter((c) => c.outcome !== "met")
+      .map((c) => {
+        const form = competencyForm(c.area, COMPETENCY_FORMS);
+        return { key: `competency:${c.id}`, slugs: form ? suggestedSlugs(form, c.outcome, c.criteria) : [] };
+      }),
+  ].filter((s) => s.slugs.length > 0);
+  if (shortfalls.length) {
+    const { data: courseRows } = await supabase.from("courses").select("id, slug, title").order("title");
+    const catalogue = (courseRows ?? []).map((c) => ({ id: c.id as string, slug: c.slug as string, title: c.title as string }));
+    for (const s of shortfalls) {
+      auditSuggestions[s.key] = suggestionsFromSlugs(s.slugs, catalogue, auditTraining.get(s.key) ?? new Map());
     }
   }
 
@@ -690,7 +720,13 @@ export default async function StaffDetailPage({
 
         {section.key === "competency" && state === "open" && (
           <div id="competency" className="scroll-mt-24 space-y-2">
-            <CompetencyList userId={userId} checks={competencyChecks} />
+            <CompetencyList
+              userId={userId}
+              isCarer={profile.role === "learner"}
+              checks={competencyChecks}
+              spotChecks={spotChecks}
+              suggestions={auditSuggestions}
+            />
           </div>
         )}
 

@@ -42,12 +42,12 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
   "people.competency": {
     area: "Spot checks",
     home: "/org/due/spot-checks",
-    heading: "Spot checks and competency, area by area",
+    heading: "Spot checks and competency, done on your phone",
     bullets: [
-      "Medication, moving and handling, infection control and more",
-      "Each result recorded, with what was seen",
-      "Anything short of competent shown at the top of their file",
-      "Who's due next, across the whole team",
+      "Unannounced spot checks in the client's home, the client picked from your list",
+      "Medication, hoist, moving and handling and more, each against its own criteria",
+      "The carer signs on your phone; anything short suggests training for you to confirm",
+      "Who's due next, per skill, across the whole team",
     ],
   },
   "clients.list": {

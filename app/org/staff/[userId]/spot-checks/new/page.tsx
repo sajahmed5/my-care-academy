@@ -1,0 +1,46 @@
+import { notFound } from "next/navigation";
+import { requireConsole } from "@/lib/auth";
+import { hasFeature, requireFeature } from "@/lib/entitlements";
+import { createClient } from "@/lib/supabase/server";
+import { DashboardShell } from "@/components/dashboard-shell";
+import { SPOT_CHECK_FORM } from "@/lib/audit-forms";
+import { CheckForm, type ClientOption } from "../../check-form";
+
+/**
+ * A spot check, done on a phone in the client's home (STAFF-AUDITS.md).
+ * Unannounced: nothing is booked and the carer is not told beforehand.
+ */
+export default async function NewSpotCheckPage({ params }: { params: Promise<{ userId: string }> }) {
+  const context = await requireConsole();
+  await requireFeature(context, "people.competency");
+  const { userId } = await params;
+  const supabase = await createClient();
+  const withClients = await hasFeature(context, "clients.list");
+  const [{ data: person }, clients] = await Promise.all([
+    supabase.from("users").select("id, full_name, email, role").eq("id", userId).maybeSingle(),
+    withClients
+      ? supabase
+          .from("clients")
+          .select("id, full_name, region")
+          .eq("organisation_id", context.organisationId!)
+          .eq("status", "active")
+          .order("full_name")
+          .limit(1000)
+          .then((r) =>
+            (r.data ?? []).map((c): ClientOption => ({
+              id: c.id as string,
+              name: c.full_name as string,
+              region: (c.region as string | null) ?? null,
+            })),
+          )
+      : Promise.resolve(null),
+  ]);
+  // Carers only: spot checks happen in clients' homes.
+  if (!person || person.role !== "learner") notFound();
+  const name = (person.full_name as string | null) || (person.email as string);
+  return (
+    <DashboardShell title={`Spot check — ${name}`} context={context} back={{ href: `/org/staff/${userId}?section=competency`, label: name }}>
+      <CheckForm mode="spot_check" userId={userId} personName={name} forms={[SPOT_CHECK_FORM]} clients={clients} />
+    </DashboardShell>
+  );
+}

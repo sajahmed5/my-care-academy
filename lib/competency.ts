@@ -12,22 +12,15 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { COMPETENCY_FORMS, type CheckAnswer } from "./audit-forms";
+import type { CourseRef, Suggestion } from "./incidents";
 
 /**
- * What gets checked. UI copy, not a database constraint: this list grows with
- * the market, and the column is deliberately free text so adding one is a code
- * change rather than a migration.
+ * The skill areas, from the competency forms (lib/audit-forms.ts). The column
+ * is free text, so a company's own areas (part 3) need no migration; a
+ * record's label falls back to its key if an area is later removed.
  */
-export const COMPETENCY_AREAS = [
-  { value: "medication", label: "Medication administration" },
-  { value: "moving_handling", label: "Moving & handling" },
-  { value: "infection_control", label: "Infection prevention & control" },
-  { value: "personal_care", label: "Personal care & dignity" },
-  { value: "safeguarding", label: "Safeguarding in practice" },
-  { value: "record_keeping", label: "Record keeping" },
-  { value: "nutrition", label: "Food, fluids & nutrition" },
-  { value: "lone_working", label: "Lone working" },
-] as const;
+export const COMPETENCY_AREAS = COMPETENCY_FORMS.map((f) => ({ value: f.key, label: f.label }));
 
 /**
  * A closed set, and constrained in the database as such: this is what reports
@@ -49,6 +42,17 @@ export function outcomeLabel(value: string): string {
   return COMPETENCY_OUTCOMES.find((o) => o.value === value)?.label ?? value;
 }
 
+/** The same three outcomes, as a spot check says them. */
+export const SPOT_CHECK_OUTCOMES = [
+  { value: "met", label: "Met the standard" },
+  { value: "developing", label: "Some concerns" },
+  { value: "not_met", label: "Did not meet the standard" },
+] as const;
+
+export function spotOutcomeLabel(value: string): string {
+  return SPOT_CHECK_OUTCOMES.find((o) => o.value === value)?.label ?? value;
+}
+
 export interface CompetencyCheck {
   id: string;
   area: string;
@@ -57,6 +61,8 @@ export interface CompetencyCheck {
   notes: string | null;
   next_due: string | null;
   assessor_name: string | null;
+  /** The area's criteria as assessed (STAFF-AUDITS.md). */
+  criteria: CheckAnswer[];
 }
 
 /**
@@ -102,7 +108,7 @@ export async function loadCompetencyChecks(
   const { data } = await supabase
     .from("competency_checks")
     .select(
-      "id, area, outcome, checked_on, notes, next_due, assessor:users!competency_checks_assessor_id_fkey (full_name, email)",
+      "id, area, outcome, checked_on, notes, next_due, criteria, assessor:users!competency_checks_assessor_id_fkey (full_name, email)",
     )
     .eq("user_id", userId)
     .order("checked_on", { ascending: false })
@@ -123,6 +129,93 @@ export async function loadCompetencyChecks(
       notes: (row.notes as string | null) ?? null,
       next_due: (row.next_due as string | null) ?? null,
       assessor_name: assessor?.full_name ?? assessor?.email ?? null,
+      criteria: Array.isArray(row.criteria) ? (row.criteria as CheckAnswer[]) : [],
     };
   });
+}
+
+// ---------------------------------------------------------------- spot checks
+
+export interface SpotCheck {
+  id: string;
+  checked_on: string;
+  client_id: string | null;
+  client_name: string | null;
+  items: CheckAnswer[];
+  outcome: string;
+  notes: string | null;
+  next_due: string | null;
+  assessor_name: string | null;
+  carer_signature: string | null;
+  carer_signed_name: string | null;
+  carer_signed_at: string | null;
+  carer_unsigned_reason: string | null;
+}
+
+/** One carer's spot checks, newest first. */
+export async function loadSpotChecks(supabase: SupabaseClient, userId: string): Promise<SpotCheck[]> {
+  const { data } = await supabase
+    .from("spot_checks")
+    .select(
+      "id, checked_on, client_id, client_name, items, outcome, notes, next_due, carer_signature, carer_signed_name, carer_signed_at, carer_unsigned_reason, assessor:users!spot_checks_assessor_id_fkey (full_name, email)",
+    )
+    .eq("user_id", userId)
+    .order("checked_on", { ascending: false })
+    .limit(100);
+  return (data ?? []).map((row) => {
+    const raw = (row as { assessor?: unknown }).assessor;
+    const assessor = (Array.isArray(raw) ? raw[0] : raw) as { full_name?: string | null; email?: string | null } | undefined;
+    return {
+      id: row.id as string,
+      checked_on: row.checked_on as string,
+      client_id: (row.client_id as string | null) ?? null,
+      client_name: (row.client_name as string | null) ?? null,
+      items: Array.isArray(row.items) ? (row.items as CheckAnswer[]) : [],
+      outcome: row.outcome as string,
+      notes: (row.notes as string | null) ?? null,
+      next_due: (row.next_due as string | null) ?? null,
+      assessor_name: assessor?.full_name ?? assessor?.email ?? null,
+      carer_signature: (row.carer_signature as string | null) ?? null,
+      carer_signed_name: (row.carer_signed_name as string | null) ?? null,
+      carer_signed_at: (row.carer_signed_at as string | null) ?? null,
+      carer_unsigned_reason: (row.carer_unsigned_reason as string | null) ?? null,
+    };
+  });
+}
+
+/** Courses already assigned off each record, for one person: "type:id" → course_id → reason. */
+export async function loadAuditTraining(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<Map<string, Map<string, string | null>>> {
+  const { data } = await supabase
+    .from("staff_audit_training")
+    .select("source_type, source_id, course_id, reason")
+    .eq("user_id", userId)
+    .limit(500);
+  const out = new Map<string, Map<string, string | null>>();
+  for (const r of data ?? []) {
+    const key = `${r.source_type}:${r.source_id}`;
+    const m = out.get(key) ?? new Map<string, string | null>();
+    m.set(r.course_id as string, (r.reason as string | null) ?? null);
+    out.set(key, m);
+  }
+  return out;
+}
+
+/**
+ * Suggested courses for one record, in the order the form lists them, each
+ * flagged if already assigned off it — kept rather than hidden, because the
+ * decision trail is the point (as suggestionsFor() does for incidents).
+ */
+export function suggestionsFromSlugs(
+  slugs: string[],
+  courses: CourseRef[],
+  assigned: Map<string, string | null>,
+): Suggestion[] {
+  const bySlug = new Map(courses.map((c) => [c.slug, c]));
+  return slugs
+    .map((slug) => bySlug.get(slug))
+    .filter((c): c is CourseRef => !!c)
+    .map((course) => ({ course, assigned: assigned.has(course.id), reason: assigned.get(course.id) ?? null }));
 }

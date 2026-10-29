@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { adminClient, cleanup, createOrg, createUser, setFeature, signIn } from "./helpers";
+import { COMPETENCY_FORMS, SPOT_CHECK_FORM } from "../lib/audit-forms";
 
 /**
  * What a carer sees of Staff Audits (STAFF-AUDITS.md, CARER-FILE.md §6): their
@@ -25,6 +26,7 @@ beforeAll(async () => {
   const admin = adminClient();
   orgId = await createOrg(`Staff audits ${RUN}`);
   await setFeature(orgId, "people.supervisions", true);
+  await setFeature(orgId, "people.competency", true);
   managerId = await createUser({ email: email("manager"), password: PW, role: "org_admin", organisationId: orgId });
   carerId = await createUser({ email: email("carer"), password: PW, role: "learner", organisationId: orgId });
   otherId = await createUser({ email: email("other"), password: PW, role: "learner", organisationId: orgId });
@@ -48,11 +50,13 @@ beforeAll(async () => {
   saId = sa.id;
   await admin.from("staff_audit_bookings").insert({ organisation_id: orgId, user_id: otherId, kind: "supervision", booked_on: "2030-01-02" });
   await admin.from("supervisions").insert({ organisation_id: orgId, user_id: carerId, kind: "supervision", held_on: "2026-10-01", summary: "manager's notes" });
+  await admin.from("spot_checks").insert({ organisation_id: orgId, user_id: carerId, checked_on: "2026-10-01", outcome: "developing", client_name: "A client" });
 }, 60_000);
 
 afterAll(async () => {
   const admin = adminClient();
   await admin.from("supervisions").delete().eq("organisation_id", orgId);
+  await admin.from("spot_checks").delete().eq("organisation_id", orgId);
   await admin.from("staff_audit_bookings").delete().eq("organisation_id", orgId);
   await cleanup(userIds, [orgId]);
 });
@@ -66,6 +70,13 @@ describe("a carer and Staff Audits", () => {
   it("never reads a supervision record", async () => {
     const { data } = await carer.from("supervisions").select("id");
     expect(data).toEqual([]);
+  });
+
+  it("never reads a spot check, unannounced or not", async () => {
+    const { data } = await carer.from("spot_checks").select("id");
+    expect(data).toEqual([]);
+    const { data: seen } = await manager.from("spot_checks").select("id");
+    expect(seen?.length).toBe(1);
   });
 
   it("fills in their own self-assessment", async () => {
@@ -105,5 +116,15 @@ describe("a carer and Staff Audits", () => {
     const { data } = await carer.from("staff_audit_bookings").select("id");
     await setFeature(orgId, "people.supervisions", true);
     expect(data).toEqual([]);
+  });
+});
+
+describe("suggested training", () => {
+  it("names only courses that exist", async () => {
+    const slugs = new Set(
+      [SPOT_CHECK_FORM, ...COMPETENCY_FORMS].flatMap((f) => Object.values(f.courses).flat()),
+    );
+    const { data } = await adminClient().from("courses").select("slug").in("slug", [...slugs]);
+    expect(new Set((data ?? []).map((c) => c.slug))).toEqual(slugs);
   });
 });
