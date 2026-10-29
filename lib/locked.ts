@@ -49,6 +49,16 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
       "Who's due next, across the whole team",
     ],
   },
+  "clients.list": {
+    area: "Clients",
+    home: "/org/clients",
+    heading: "Your clients, in one list",
+    bullets: [
+      "Uploaded from a spreadsheet, or added one by one",
+      "Who funds each client, and whether you help with their medication",
+      "Linked to the spot checks, QAs and concerns about them",
+    ],
+  },
   "complaints.register": {
     area: "Complaints",
     home: "/org/complaints",

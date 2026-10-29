@@ -118,6 +118,15 @@ export const FEATURES = [
     isCore: false,
     hint: "Appears on each carer's file (Staff, then open a person), not in the menu.",
   },
+  // The people the service cares for, so spot checks, QAs, audits and
+  // concerns link to the same person (PACKAGES.md, Clients, 29 Oct 2026).
+  {
+    key: "clients.list",
+    category: "people",
+    label: "Client list",
+    isCore: false,
+    hint: "Clients, under Clients in the menu: uploaded from a spreadsheet or added one by one.",
+  },
   // How the service checks itself (ROADMAP §4).
   {
     key: "quality.audits",

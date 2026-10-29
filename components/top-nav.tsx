@@ -68,6 +68,7 @@ const ORG_MENU: MenuItem[] = [
     ],
   },
   { label: "Certificates", href: "/org/certificates" },
+  { label: "Clients", href: "/org/clients", feature: "clients.list" },
   {
     label: "Who's due",
     children: [
