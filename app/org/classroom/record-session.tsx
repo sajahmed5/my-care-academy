@@ -6,13 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ChoiceButtons, PRACTICAL_OPTIONS } from "@/components/choice-buttons";
 import { recordClassroomSessionAction, type ClassroomState } from "./actions";
 
 const selectClass = "flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm";
 const textareaClass =
   "flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
 
-/** Record a face-to-face session: what, when, who ran it, who was there. */
+/**
+ * Record a face-to-face session after the fact: what, when, who ran it, who
+ * was there, and each person's practical result (29 Oct 2026). Passed is the
+ * starting answer, as most people do; change it for anyone who didn't.
+ */
 export function RecordSession({
   courses,
   staff,
@@ -23,9 +28,13 @@ export function RecordSession({
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [results, setResults] = useState<Record<string, string>>({});
   const [state, action, pending] = useActionState<ClassroomState, FormData>(async (prev, fd) => {
     const r = await recordClassroomSessionAction(prev, fd);
-    if (r.ok) setPicked(new Set());
+    if (r.ok) {
+      setPicked(new Set());
+      setResults({});
+    }
     return r;
   }, {});
   const today = new Date().toISOString().slice(0, 10);
@@ -72,7 +81,7 @@ export function RecordSession({
                   <option key={c.id} value={c.id}>{c.title}</option>
                 ))}
               </select>
-              <p className="text-xs text-muted-foreground">Pick one and each attendee completes it, with a certificate.</p>
+              <p className="text-xs text-muted-foreground">Pick one and each attendee who passed completes it, with a certificate.</p>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-4">
@@ -111,6 +120,27 @@ export function RecordSession({
               <input key={id} type="hidden" name="attendee" value={id} />
             ))}
           </div>
+          {picked.size > 0 && (
+            <div className="space-y-2">
+              <Label>Practical result</Label>
+              <ul className="divide-y rounded-lg border">
+                {staff
+                  .filter((p) => picked.has(p.id))
+                  .map((p) => (
+                    <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
+                      {p.name}
+                      <ChoiceButtons
+                        name={`practical:${p.id}`}
+                        value={results[p.id] ?? "passed"}
+                        onChange={(v) => setResults((prev) => ({ ...prev, [p.id]: v }))}
+                        options={PRACTICAL_OPTIONS}
+                      />
+                    </li>
+                  ))}
+              </ul>
+              <p className="text-xs text-muted-foreground">Only those who passed get a certificate.</p>
+            </div>
+          )}
           <div className="space-y-1">
             <Label htmlFor="cs-notes">Notes (optional)</Label>
             <textarea id="cs-notes" name="notes" rows={2} className={textareaClass} />

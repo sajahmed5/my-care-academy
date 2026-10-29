@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { GraduationCap, MapPin, Phone, ShieldCheck } from "lucide-react";
+import { GraduationCap, MapPin, Phone, ShieldCheck, Users } from "lucide-react";
 import { CARE_COURSES, COURSE_COUNT } from "@/lib/courses";
+import { OFFICE_ADDRESS } from "@/lib/face-to-face";
 import { Arrow, CtaBand, H2, PillLink, Section } from "../ui";
 import { BreadcrumbLd, FaqLd, LocalBusinessLd } from "@/components/structured-data";
 
@@ -12,13 +13,17 @@ import { BreadcrumbLd, FaqLd, LocalBusinessLd } from "@/components/structured-da
  * eyebrow and the footer address.
  *
  * Everything here is checkable: the address, trading since 2002, the course
- * list, and that the training is online so location only matters for who we
- * are, not for who can use it. No invented client names or numbers.
+ * list, and that the online training works anywhere. No invented client names
+ * or numbers.
+ *
+ * 29 Oct 2026: face-to-face training at our Stockport training office is part
+ * of Enterprise (FACE-TO-FACE.md), so the page no longer says the training is
+ * online only. Sessions are in Stockport; anywhere else is "ask us".
  */
 export const metadata: Metadata = {
   title: "Care training in Manchester & Stockport | My Care Academy",
   description:
-    "Online care training for home care agencies and care homes across Greater Manchester. 59 CQC-aligned courses, verifiable certificates. Stockport-based since 2002.",
+    "Online and face-to-face care training for home care agencies and care homes across Greater Manchester. 59 CQC-aligned courses, verifiable certificates, sessions at our Stockport training office. Stockport-based since 2002.",
   alternates: { canonical: "/care-training-manchester-stockport" },
 };
 
@@ -36,11 +41,11 @@ const WHO = [
 const FAQ: [string, string][] = [
   [
     "Do you deliver training across Greater Manchester?",
-    "Yes. The courses are online, so your staff can take them anywhere — Stockport, Manchester, Salford, Trafford, Tameside, Oldham, Rochdale, Bury, Bolton, Wigan and the Cheshire and Derbyshire borders. We are based in Stockport, on Wellington Road.",
+    "Yes. The courses are online, so your staff can take them anywhere — Stockport, Manchester, Salford, Trafford, Tameside, Oldham, Rochdale, Bury, Bolton, Wigan and the Cheshire and Derbyshire borders. Face-to-face sessions run at our training office in Stockport; for training anywhere else, ask us.",
   ],
   [
     "Is this classroom training or online?",
-    "Online. Every course runs in a browser on a phone, tablet or computer, and most are finished in about 20 minutes. Mock CQC inspections and management support are arranged separately — ask us and we will talk it through.",
+    "Both. Every course runs online in a browser on a phone, tablet or computer, and most are finished in about 20 minutes. On the Enterprise package your staff can also come to face-to-face sessions at our Stockport training office — every course in the library, plus induction and annual refresher training — included in the price with no limit on places. Mock CQC inspections and management support are arranged separately.",
   ],
   [
     "How quickly can new starters be training?",
@@ -79,7 +84,8 @@ export default function CareTrainingManchesterStockportPage() {
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-[#0f2f3c]/65">
             {COURSE_COUNT} CQC-aligned courses for home care agencies, care
-            homes and supported living across Greater Manchester. Written by a
+            homes and supported living across Greater Manchester — online, and
+            face to face at our Stockport training office. Written by a
             Stockport care company that has been delivering home care since
             2002 — and still does.
           </p>
@@ -121,9 +127,9 @@ export default function CareTrainingManchesterStockportPage() {
               day, and an inspector who wants evidence rather than a promise.
             </p>
             <p className="mt-4 text-[#0f2f3c]/70">
-              Because the training is online, where you are only decides how
-              easy we are to get hold of. Everything below is available to any
-              UK provider.
+              The online training works anywhere in the UK. Being local adds a
+              classroom: face-to-face sessions at our training office in
+              Stockport, for providers on the Enterprise package.
             </p>
             <h3 className="font-display mt-8 text-lg font-semibold">Areas we work with</h3>
             <ul className="mt-3 flex flex-wrap gap-2">
@@ -157,6 +163,56 @@ export default function CareTrainingManchesterStockportPage() {
               Delivering home care in Stockport since 2002.
             </p>
           </address>
+        </div>
+      </Section>
+
+      <Section className="pt-0">
+        <div className="grid items-start gap-10 rounded-[1.75rem] bg-white p-6 ring-1 ring-[#134f63]/10 sm:p-10 lg:grid-cols-[1.1fr_1fr]">
+          <div>
+            <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#1d6f8a]">
+              <Users className="size-4" /> Enterprise
+            </div>
+            <H2>Face-to-face training in Stockport</H2>
+            <p className="mt-4 text-[#0f2f3c]/70">
+              Some things are better learned in a room — moving and handling,
+              first aid, a new starter&apos;s induction. On the Enterprise
+              package your staff come to our training office for sessions run
+              by our own trainers, included in the price with no limit on
+              places.
+            </p>
+            <ul className="mt-5 space-y-2 text-sm text-[#0f2f3c]/80">
+              {[
+                `A session for every course in the library — all ${COURSE_COUNT} — plus induction and annual refresher training`,
+                "You book named staff online; each gets a confirmation and a reminder the day before",
+                "A practical assessment on the day, and a certificate on the same training matrix as the online courses",
+                "Online or face to face, or both: nobody has to finish the online course first",
+              ].map((line) => (
+                <li key={line} className="flex gap-2">
+                  <span aria-hidden className="text-[#b7791f]">·</span>
+                  {line}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <PillLink href="/training/pricing">Enterprise pricing <Arrow /></PillLink>
+              <PillLink href="/contact?topic=face-to-face" tone="ghost">Ask about face-to-face training</PillLink>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-[#f3f8f9] p-6">
+            <h3 className="font-display text-lg font-semibold">Where the sessions are</h3>
+            <p className="mt-3 flex gap-3 text-[#0f2f3c]/75">
+              <MapPin className="mt-0.5 size-4 shrink-0 text-[#1d6f8a]" />
+              {OFFICE_ADDRESS}
+            </p>
+            <p className="mt-4 text-sm text-[#0f2f3c]/65">
+              Sessions run in Stockport. Need training somewhere else in
+              Greater Manchester, or on a date that isn&apos;t listed?{" "}
+              <Link href="/contact?topic=face-to-face" className="font-semibold text-[#1d6f8a] hover:underline">
+                Ask us
+              </Link>
+              .
+            </p>
+          </div>
         </div>
       </Section>
 
@@ -195,7 +251,7 @@ export default function CareTrainingManchesterStockportPage() {
 
       <CtaBand
         title="Training for your service, wherever you are in Greater Manchester"
-        body="Tell us about your service and we will talk through what would help most: the e-learning, a mock CQC inspection, or hands-on management support."
+        body="Tell us about your service and we will talk through what would help most: the e-learning, face-to-face sessions in Stockport, a mock CQC inspection, or hands-on management support."
       />
     </>
   );

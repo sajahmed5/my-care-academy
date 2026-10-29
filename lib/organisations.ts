@@ -71,8 +71,9 @@ export const TIER_DETAILS: Record<
     tagline: "For larger and growing providers.",
     features: [
       "Everything in Pro",
+      "Face-to-face training at our Stockport office, with unlimited places",
       "Care Certificate workplace assessment",
-      "Classroom session records on the training matrix",
+      "Your own classroom sessions, with QR sign-in, on the training matrix",
       "Your own logo on certificates, the portal and your policies",
       "Rostering system integration (MyRoster)",
       "Priority support",

@@ -137,7 +137,8 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
     heading: "Record your own classroom training",
     bullets: [
       "Each session: what, when, who ran it and who came",
-      "A session covering one of our courses completes it, with a certificate",
+      "People sign in by scanning a QR code on the trainer's screen",
+      "A practical result for each person, and a certificate when they pass one of our courses",
       "On the same training matrix as the online courses",
     ],
   },
