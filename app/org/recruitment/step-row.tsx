@@ -91,7 +91,9 @@ export function StepRow({ candidateId, step }: { candidateId: string; step: Step
       ? `Not needed${step.doc?.not_required_reason ? `: ${step.doc.not_required_reason}` : ""}`
       : step.state === "sent_back"
         ? `Sent back: "${step.doc?.review_note ?? ""}"`
-        : step.doc?.file_name
+        : !step.doc?.file_name && step.doc?.uploaded_by_candidate && step.doc.review_note
+          ? `Online: ${step.doc.review_note}`
+          : step.doc?.file_name
           ? `${step.doc.file_name}${step.doc.uploaded_by_candidate ? ", from the candidate" : ""}${
               step.doc.expires_at ? ` · ${step.state === "expired" ? "expired" : "expires"} ${formatDate(step.doc.expires_at)}` : ""
             }`

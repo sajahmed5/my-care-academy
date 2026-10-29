@@ -9,6 +9,10 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { StepRow, type StepView } from "../step-row";
 import { CandidateActions, DbsConviction } from "./candidate-detail";
 import { ApplicationTools } from "./application-tools";
+import { LiteracyPanel, type AttemptView } from "./literacy-panel";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { latestAttempt } from "@/lib/literacy-attempts";
+import { markLiteracy, sanitiseLiteracyAnswers } from "@/lib/literacy-test";
 
 /**
  * One candidate (RECRUITMENT.md): the four stages, each step with where it
@@ -36,6 +40,22 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   ]);
   if (!candidate) notFound();
 
+  // The latest literacy attempt, marked here (the key never leaves the server).
+  const a = await latestAttempt(createAdminClient(), id);
+  const attempt: AttemptView | null = a
+    ? {
+        attemptNo: a.attempt_no as number,
+        mode: a.mode as string,
+        status: a.status as string,
+        score: (a.score as number | null) ?? null,
+        max: (a.max_score as number | null) ?? null,
+        percent: (a.percent as number | null) ?? null,
+        passed: (a.passed as boolean | null) ?? null,
+        leftPage: (a.left_page_count as number) ?? 0,
+        endedByTime: a.ended_by === "time",
+        marked: a.status === "submitted" ? markLiteracy(sanitiseLiteracyAnswers(a.answers)).questions : [],
+      }
+    : null;
   const settings = settingsFromRow(settingsRow);
   const stages = progress((docs ?? []) as CandidateDocRecord[], settings, { dbsConviction: candidate.dbs_conviction === true });
   const now = currentStage(stages);
@@ -93,6 +113,11 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
                     sentAt={application?.sent_at ? formatDate(application.sent_at as string) : null}
                     hasLogin={!!candidate.user_id}
                   />
+                </li>
+              )}
+              {s.stage === 1 && !s.locked && s.steps.some((st) => st.key === "literacy") && (
+                <li className="border-t bg-muted/30 px-5 py-3.5">
+                  <LiteracyPanel candidateId={id} hasEmail={!!candidate.email} attempt={attempt} />
                 </li>
               )}
               {s.stage === 3 && !s.locked && (

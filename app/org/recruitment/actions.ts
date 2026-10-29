@@ -11,6 +11,7 @@ import { requireFeature } from "@/lib/entitlements";
 import { siteOrigin } from "@/lib/site-url";
 import { emailApplicationLink, issueApplicationLink, newToken } from "@/lib/candidate-links";
 import { inviteCandidate, makeCandidateStaff } from "@/lib/candidate-account";
+import { unlockAttempt } from "@/lib/literacy-attempts";
 import { sendEmail } from "@/lib/email";
 import { emailButton, emailLayout, esc } from "@/lib/email-layout";
 import {
@@ -176,7 +177,8 @@ export async function confirmStepAction(
   const { error } = existing
     ? await admin
         .from("candidate_documents")
-        .update({ review_status: "confirmed", review_note: trimmed, reviewed_by: context.userId, reviewed_at: new Date().toISOString() })
+        // Confirming keeps what's on the step (an online score, say) unless a note replaces it.
+        .update({ review_status: "confirmed", review_note: trimmed ?? existing.review_note ?? null, reviewed_by: context.userId, reviewed_at: new Date().toISOString() })
         .eq("id", existing.id as string)
     : await admin.from("candidate_documents").insert({
         candidate_id: candidateId,
@@ -248,6 +250,52 @@ export async function sendBackStepAction(
 
 function stepLabel(key: string): string {
   return RECRUITMENT_STEPS.find((s) => s.key === key)?.label ?? key;
+}
+
+/**
+ * Unlock the literacy test: a QR code to scan here in the office (15 minutes
+ * to start), or a link by email to take it at home (3 days). A retake only
+ * when the office asks for one.
+ */
+export async function unlockLiteracyAction(
+  candidateId: string,
+  mode: "office" | "remote",
+  retake: boolean,
+): Promise<{ ok: boolean; link?: string; error?: string }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  const step = openStep(loaded.stages, "literacy");
+  if (typeof step === "string") return { ok: false, error: step };
+  const email = loaded.candidate.email as string | null;
+  if (mode === "remote" && !email) return { ok: false, error: "Add their email address first, or run the test here in the office." };
+  const r = await unlockAttempt(admin, { candidateId, orgId: context.organisationId!, mode, by: context.userId, retake });
+  if ("error" in r) return { ok: false, error: r.error };
+  if (retake) {
+    // A retake puts the step back to not started until the new result is in.
+    await admin.from("candidate_documents").delete().eq("candidate_id", candidateId).eq("doc_type", "literacy").is("file_path", null);
+  }
+  if (mode === "remote") {
+    const company = await orgName(admin, context.organisationId!);
+    const sent = await sendEmail({
+      to: email!,
+      subject: `Your reading and writing test for ${company}`,
+      html: emailLayout({
+        heading: "Your reading and writing test",
+        body: `<p>${esc(company)} has sent you a short reading and writing test: about everyday things a carer reads and writes.</p>
+          <p>It takes 20 minutes, and the clock starts when you press Begin, so open it when you have the time free.</p>
+          ${emailButton(r.link, "Open the test")}
+          <p>The link works for 3 days.</p>`,
+        footer: `Sent for ${esc(company)} by My Care Academy.`,
+      }),
+    });
+    if (!sent) return { ok: false, error: "The email couldn't be sent. Try again." };
+  }
+  await logAudit({ context, action: "candidate.literacy_unlocked", entity: "candidate", entityId: candidateId, detail: { mode, retake } });
+  done(candidateId);
+  return { ok: true, link: mode === "office" ? r.link : undefined };
 }
 
 /** Give a candidate a login to follow their application, by email. */
