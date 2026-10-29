@@ -28,19 +28,15 @@ import {
 } from "@/lib/competency";
 import { competencyForm, suggestedSlugs } from "@/lib/audit-forms";
 import { loadAuditForms } from "@/lib/audit-forms-data";
-import {
-  loadIncidentTraining,
-  loadIncidentsForPerson,
-  suggestionsFor,
-  type Suggestion,
-} from "@/lib/incidents";
+import { suggestionsFor, type Suggestion } from "@/lib/complaints/categories";
+import { loadConcernTraining, loadConcernsForPerson } from "@/lib/complaints/person";
 import { loadBookings, loadSupervisions } from "@/lib/supervisions";
 import { SectionPanel } from "./section-panel";
 import { SectionRail, SectionTabs, SectionTabsAfter, type SectionCount } from "./section-tabs";
 import { sectionByKey, sectionState } from "./sections";
 import { CompetencyList } from "./competency-list";
 import { EvidencePackButton } from "./evidence-pack-button";
-import { IncidentList } from "./incident-list";
+import { ConcernList } from "./concern-list";
 import { SupervisionList } from "./supervision-list";
 import { StaffDocuments, type ApplicationDoc } from "./staff-documents";
 import { staffDocTasks, type StaffDoc } from "@/lib/staff-documents";
@@ -258,20 +254,20 @@ export default async function StaffDetailPage({
   });
   const doneActions = actionRows.filter((a) => a.completed_at);
 
-  // Complaints this person is named in, and what each one suggests. The
+  // Concerns this person is named in, and what each one suggests. The
   // suggestion needs the catalogue and what has already been assigned off
   // that record — both only on this tab, and only when entitled.
-  const incidents =
+  const concerns =
     section.key === "complaints" && state === "open"
-      ? await loadIncidentsForPerson(supabase, userId)
+      ? await loadConcernsForPerson(supabase, userId)
       : [];
   const suggestions: Record<string, Suggestion[]> = {};
-  if (incidents.length) {
-    const [{ data: courseRows }, assignedByIncident] = await Promise.all([
+  if (concerns.length) {
+    const [{ data: courseRows }, assignedByConcern] = await Promise.all([
       supabase.from("courses").select("id, slug, title").order("title"),
-      loadIncidentTraining(
+      loadConcernTraining(
         supabase,
-        incidents.map((i) => i.id),
+        concerns.map((c) => c.id),
         userId,
       ),
     ]);
@@ -280,11 +276,11 @@ export default async function StaffDetailPage({
       slug: c.slug as string,
       title: c.title as string,
     }));
-    for (const incident of incidents) {
-      suggestions[incident.id] = suggestionsFor({
-        category: incident.category,
+    for (const concern of concerns) {
+      suggestions[concern.id] = suggestionsFor({
+        category: concern.category,
         courses: catalogue,
-        assigned: assignedByIncident.get(incident.id) ?? new Map(),
+        assigned: assignedByConcern.get(concern.id) ?? new Map(),
       });
     }
   }
@@ -737,9 +733,9 @@ export default async function StaffDetailPage({
 
         {section.key === "complaints" && state === "open" && (
           <div id="complaints" className="scroll-mt-24 space-y-2">
-            <IncidentList
+            <ConcernList
               userId={userId}
-              incidents={incidents}
+              concerns={concerns}
               suggestions={suggestions}
             />
           </div>

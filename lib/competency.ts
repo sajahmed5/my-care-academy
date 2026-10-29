@@ -13,7 +13,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { COMPETENCY_FORMS, type CheckAnswer } from "./audit-forms";
-import type { CourseRef, Suggestion } from "./incidents";
+import type { CourseRef, Suggestion } from "./complaints/categories";
 
 /**
  * The skill areas, from the competency forms (lib/audit-forms.ts). The column

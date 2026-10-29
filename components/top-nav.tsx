@@ -89,8 +89,7 @@ const ORG_MENU: MenuItem[] = [
       { href: "/org/audits", label: "Audits", feature: "quality.audits" },
       { href: "/org/due/audits", label: "Audits due", feature: "quality.audits" },
       { href: "/org/feedback", label: "Feedback", feature: "quality.feedback" },
-      { href: "/org/complaints", label: "Complaints", feature: "complaints.register" },
-      { href: "/org/incidents", label: "Incidents & accidents", feature: "complaints.register" },
+      { href: "/org/complaints", label: "Complaints & safeguarding", feature: "complaints.register" },
     ],
   },
   {

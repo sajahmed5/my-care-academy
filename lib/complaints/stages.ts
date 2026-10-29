@@ -5,18 +5,40 @@
  * Pure: safe in client components.
  */
 
-export type ComplaintKind = "complaint" | "safeguarding" | "issue";
+/**
+ * The five types a concern is triaged into (COMPLAINTS-SAFEGUARDING.md, agreed
+ * 29 Oct 2026). Everything comes in through one front door as a concern; until
+ * someone decides which of these it is, its kind is UNTRIAGED.
+ */
+export type ComplaintKind = "complaint" | "safeguarding" | "issue" | "accident" | "near_miss";
+export type RecordKind = ComplaintKind | "concern";
+
+/** Raised, not yet triaged. Its CON- reference is kept once it is. */
+export const UNTRIAGED = "concern" as const;
 
 export const COMPLAINT_KINDS: { value: ComplaintKind; label: string; plural: string; prefix: string; hint: string }[] = [
-  { value: "complaint", label: "Complaint", plural: "Complaints", prefix: "COM", hint: "Investigated, with a written response" },
-  { value: "safeguarding", label: "Safeguarding concern", plural: "Safeguarding", prefix: "SAF", hint: "May need a referral to the local authority" },
+  { value: "complaint", label: "Complaint", plural: "Complaints", prefix: "COM", hint: "Investigated, with a written response in 28 days" },
+  { value: "safeguarding", label: "Safeguarding concern", plural: "Safeguarding", prefix: "SAF", hint: "Someone may be at risk of abuse or neglect: keep them safe, refer to the council" },
   { value: "issue", label: "Issue", plural: "Issues", prefix: "ISS", hint: "Put right, recorded and monitored" },
+  { value: "accident", label: "Accident", plural: "Accidents", prefix: "ACC", hint: "Someone was hurt: what happened, and the first aid given" },
+  { value: "near_miss", label: "Near miss", plural: "Near misses", prefix: "NM", hint: "Nobody was hurt, but could have been" },
 ];
 
-export const kindOf = (value: string | null | undefined): ComplaintKind =>
-  value === "safeguarding" || value === "issue" ? value : "complaint";
+export const isComplaintKind = (value: string | null | undefined): value is ComplaintKind =>
+  COMPLAINT_KINDS.some((k) => k.value === value);
 
-export const kindLabel = (value: string) => COMPLAINT_KINDS.find((k) => k.value === value)?.label ?? value;
+/** A record's kind, read safely: anything unknown is a complaint, as it always was. */
+export const kindOf = (value: string | null | undefined): RecordKind =>
+  value === UNTRIAGED ? UNTRIAGED : isComplaintKind(value) ? value : "complaint";
+
+export const isUntriaged = (value: string | null | undefined) => value === UNTRIAGED;
+
+export const kindLabel = (value: string) =>
+  value === UNTRIAGED ? "Concern" : COMPLAINT_KINDS.find((k) => k.value === value)?.label ?? value;
+
+/** The reference prefix for a new record: CON- until it is triaged. */
+export const prefixFor = (value: string) =>
+  value === UNTRIAGED ? "CON" : COMPLAINT_KINDS.find((k) => k.value === value)?.prefix ?? "COM";
 
 export type StageKind =
   | "document"
@@ -26,7 +48,10 @@ export type StageKind =
   | "action_plan"
   | "outcome_letter"
   | "duty_of_candour"
-  | "monitoring_review";
+  | "monitoring_review"
+  | "accident_report"
+  | "near_miss_report"
+  | "incident_actions";
 
 /**
  * What a stage opens. A stage whose kind is wrong falls back to the plain
@@ -42,6 +67,9 @@ export const STAGE_KINDS: { value: StageKind; label: string; hint: string }[] = 
   { value: "outcome_letter", label: "Outcome letter", hint: "What we found and what we will do, and when it went" },
   { value: "duty_of_candour", label: "Duty of candour letter", hint: "The letter, when it went, and to whom" },
   { value: "monitoring_review", label: "Monitoring review", hint: "What has changed, and whether it is resolved" },
+  { value: "accident_report", label: "Accident report", hint: "What happened, who was hurt and how, first aid given" },
+  { value: "near_miss_report", label: "Near miss report", hint: "What happened, and what would have happened" },
+  { value: "incident_actions", label: "Actions and training", hint: "What is being done so it does not happen again" },
 ];
 
 export const stageKindLabel = (value: string) => STAGE_KINDS.find((k) => k.value === value)?.label ?? value;
@@ -74,6 +102,7 @@ export function completeByFor(reportedOn: string): string {
 
 const ALL: ComplaintKind[] = ["complaint", "safeguarding", "issue"];
 const COM_SAF: ComplaintKind[] = ["complaint", "safeguarding"];
+const INCIDENTS: ComplaintKind[] = ["accident", "near_miss"];
 
 /**
  * The stages an organisation starts with. The order is the order the work
@@ -100,7 +129,10 @@ export const DEFAULT_STAGES: { name: string; kind: StageKind; appliesTo: Complai
   { name: "Outcome Letter", kind: "outcome_letter", appliesTo: ALL },
   { name: "Duty of Candour Letter", kind: "duty_of_candour", appliesTo: ["complaint", "safeguarding"] },
   { name: "Council Correspondence", kind: "document", appliesTo: COM_SAF },
-  { name: "Other", kind: "document", appliesTo: ALL },
+  { name: "Accident Report", kind: "accident_report", appliesTo: ["accident"] },
+  { name: "Near Miss Report", kind: "near_miss_report", appliesTo: ["near_miss"] },
+  { name: "Actions and Training", kind: "incident_actions", appliesTo: INCIDENTS },
+  { name: "Other", kind: "document", appliesTo: [...ALL, ...INCIDENTS] },
 ];
 
 export interface ComplaintStage {

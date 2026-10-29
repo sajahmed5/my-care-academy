@@ -7,12 +7,9 @@ import { loadOrgLearnerTraining } from "@/lib/org-learner";
 import { loadPersonActions } from "@/lib/person-tasks";
 import { loadSupervisions, kindLabel } from "@/lib/supervisions";
 import { areaLabel, loadCompetencyChecks, loadSpotChecks, outcomeLabel, spotOutcomeLabel } from "@/lib/competency";
-import {
-  categoryLabel,
-  kindLabel as incidentKindLabel,
-  loadIncidentsForPerson,
-  statusLabel,
-} from "@/lib/incidents";
+import { kindLabel as concernKindLabel, statusLabel } from "@/lib/complaints/stages";
+import { categoryLabel } from "@/lib/complaints/categories";
+import { loadConcernsForPerson } from "@/lib/complaints/person";
 import { packContents, since } from "@/lib/evidence-pack";
 import { responseRows, type FormTemplateRecord } from "@/lib/form-library";
 import { renderEvidencePack, type PackSectionData } from "@/lib/evidence-pack-pdf";
@@ -76,7 +73,7 @@ export async function GET(
     { profile, enrolments, certificates },
     { data: org },
     actions,
-    [supervisions, checks, incidents, formResponses, spotChecks],
+    [supervisions, checks, concerns, formResponses, spotChecks],
     { data: classroomRows },
   ] = await Promise.all([
     enabledRead,
@@ -88,7 +85,7 @@ export async function GET(
         on["people.supervisions"] ? loadSupervisions(supabase, userId) : Promise.resolve([]),
         on["people.competency"] ? loadCompetencyChecks(supabase, userId) : Promise.resolve([]),
         on["complaints.register"]
-          ? loadIncidentsForPerson(supabase, userId)
+          ? loadConcernsForPerson(supabase, userId)
           : Promise.resolve([]),
         // Their completed library forms, with the questions to read them by.
         on["forms.builder"]
@@ -130,7 +127,7 @@ export async function GET(
   const supervisionRows = since(supervisions, (s) => s.held_on, from);
   const checkRows = since(checks, (c) => c.checked_on, from);
   const spotRows = since(spotChecks, (c) => c.checked_on, from);
-  const incidentRows = since(incidents, (i) => i.occurred_on, from);
+  const concernRows = since(concerns, (c) => c.occurredOn, from);
   const formRows = since(formResponses, (f) => f.submitted_at as string, from);
 
   const contents = packContents({
@@ -141,7 +138,7 @@ export async function GET(
       actions: actionRows.length,
       supervisions: supervisionRows.length,
       competency: checkRows.length + spotRows.length,
-      complaints: incidentRows.length,
+      complaints: concernRows.length,
       forms: formRows.length,
     },
   });
@@ -223,11 +220,11 @@ export async function GET(
     ]
       .sort((a, b) => b.sort.localeCompare(a.sort))
       .map((r) => ({ when: r.when, what: r.what, detail: r.detail, status: r.status })),
-    complaints: incidentRows.map((i) => ({
-      when: fmt(i.occurred_on),
-      what: `${incidentKindLabel(i.kind)} — ${categoryLabel(i.category)}`,
-      detail: i.outcome ? `${i.summary}\nOutcome: ${i.outcome}` : i.summary,
-      status: statusLabel(i.status),
+    complaints: concernRows.map((c) => ({
+      when: fmt(c.occurredOn),
+      what: `${c.reference} ${concernKindLabel(c.kind)}${c.category ? ` — ${categoryLabel(c.category)}` : ""}`,
+      detail: c.outcome ? `${c.description}\nOutcome: ${c.outcome}` : c.description,
+      status: statusLabel(c.status),
     })),
     forms: formRows.map((f) => {
       const t = (Array.isArray(f.template) ? f.template[0] : f.template) as Pick<FormTemplateRecord, "title" | "fields"> | null;

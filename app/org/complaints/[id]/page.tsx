@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
-import { requireFeature } from "@/lib/entitlements";
+import { hasFeature, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
 import { loadComplaint, loadStages, loadStaffOptions } from "@/lib/complaints/data";
-import { stagesFor } from "@/lib/complaints/stages";
+import { isUntriaged, stagesFor } from "@/lib/complaints/stages";
+import { suggestionsFor } from "@/lib/complaints/categories";
+import { loadConcernTraining } from "@/lib/complaints/person";
 import { buildSteps, nextStep } from "@/lib/complaints/steps";
 import { closeGaps, closeGapsMessage } from "@/lib/complaints/close";
 import { isTriageStage } from "@/lib/complaints/compute";
@@ -32,13 +34,47 @@ export default async function ComplaintPage({
   const { stage: openStage } = await searchParams;
 
   const supabase = await createClient();
-  const [complaint, allStages, staff, { data: org }] = await Promise.all([
+  const orgId = context.organisationId!;
+  const [complaint, allStages, staff, { data: org }, clients] = await Promise.all([
     loadComplaint(supabase, id),
     loadStages(supabase, context.organisationId),
     loadStaffOptions(supabase, context.organisationId),
-    supabase.from("organisations").select("name").eq("id", context.organisationId!).maybeSingle(),
+    supabase.from("organisations").select("name").eq("id", orgId).maybeSingle(),
+    // Null when the client list is not in their package: the picker is not offered.
+    hasFeature(context, "clients.list").then(async (on) => {
+      if (!on) return null;
+      const { data } = await supabase
+        .from("clients")
+        .select("id, full_name, status")
+        .eq("organisation_id", orgId)
+        .order("full_name")
+        .limit(1000);
+      return (data ?? []).map((c) => ({ id: c.id as string, name: `${c.full_name as string}${c.status === "ended" ? " (ended)" : ""}` }));
+    }),
   ]);
   if (!complaint) notFound();
+
+  // The training an accident's or near miss's category suggests, for each
+  // member of staff named on it, shown under its actions.
+  const training: { userId: string; name: string | null; suggestions: ReturnType<typeof suggestionsFor> }[] = [];
+  if (["accident", "near_miss"].includes(complaint.kind) && complaint.category && complaint.people.length) {
+    const [{ data: courseRows }, assigned] = await Promise.all([
+      supabase.from("courses").select("id, slug, title").order("title"),
+      loadConcernTraining(supabase, [complaint.id]),
+    ]);
+    const catalogue = (courseRows ?? []).map((c) => ({ id: c.id as string, slug: c.slug as string, title: c.title as string }));
+    for (const p of complaint.people) {
+      training.push({
+        userId: p.user_id,
+        name: p.name,
+        suggestions: suggestionsFor({
+          category: complaint.category,
+          courses: catalogue,
+          assigned: assigned.get(`${complaint.id}:${p.user_id}`) ?? new Map(),
+        }),
+      });
+    }
+  }
 
   const stages = stagesFor(allStages, complaint.kind);
   const closed = complaint.status !== "open";
@@ -54,7 +90,7 @@ export default async function ComplaintPage({
   );
 
   const triage = stages.find(isTriageStage);
-  const triaged = !triage || complaint.stageEntries.some((e) => e.stageId === triage.id && e.status !== "pending");
+  const triaged = !isUntriaged(complaint.kind) && (!triage || complaint.stageEntries.some((e) => e.stageId === triage.id && e.status !== "pending"));
   const closeMessage = closeGapsMessage(closeGaps(stages, complaint.stageEntries), !triaged, {
     openActions: complaint.actions.filter((a) => !a.completedAt).map((a) => `${a.title}${a.ownerName ? ` — ${a.ownerName}` : ""}`),
     openPlans: complaint.pips
@@ -67,14 +103,14 @@ export default async function ComplaintPage({
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Link href="/org/complaints" className="text-sm text-muted-foreground hover:underline">
-            ← All complaints
+            ← Complaints & safeguarding
           </Link>
           <a
             href={`/org/complaints/${complaint.id}/pdf`}
             className={buttonVariants({ variant: "outline", size: "sm" })}
           >
             <FileDown className="size-4" />
-            Response PDF
+            {complaint.kind === "complaint" ? "Response PDF" : "Record PDF"}
           </a>
         </div>
 
@@ -89,6 +125,8 @@ export default async function ComplaintPage({
           senderName={context.email}
           today={today}
           initialStageId={openStage ?? null}
+          clients={clients}
+          training={training}
         />
       </div>
     </DashboardShell>

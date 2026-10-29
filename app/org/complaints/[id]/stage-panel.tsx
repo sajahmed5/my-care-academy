@@ -9,7 +9,7 @@ import { pickable, type Complaint, type ComplaintAction, type StageEntry, type S
 import type { ComplaintStage } from "@/lib/complaints/stages";
 import { formForStage } from "@/lib/complaints/forms";
 import type { AnswerMap } from "@/lib/complaints/schema";
-import { LETTER_KINDS, actionTagFor, holdsFindings, isTriageStage } from "@/lib/complaints/compute";
+import { LETTER_KINDS, actionTagFor, holdsActions, holdsFindings, isTriageStage } from "@/lib/complaints/compute";
 import { acknowledgementLetter, acknowledgementState } from "@/lib/complaints/acknowledgement";
 import {
   FINDINGS_ACTIONS,
@@ -37,6 +37,8 @@ import {
 import { selectClass, textareaClass } from "../new-complaint";
 import { fmtDate } from "../complaint-row";
 import { StageForm } from "./stage-form";
+import { SuggestedTraining } from "../suggested-training";
+import type { Suggestion } from "@/lib/complaints/categories";
 import type { SaveState } from "@/app/platform/actions";
 import { formatDate, formatDateTime } from "@/lib/dates";
 
@@ -49,6 +51,8 @@ interface PanelProps {
   senderName: string | null;
   today: string;
   disabled: boolean;
+  /** The training suggested for each person named, on an accident's or near miss's actions. */
+  training?: { userId: string; name: string | null; suggestions: Suggestion[] }[];
 }
 
 /** What a stage opens, by its kind. */
@@ -75,9 +79,17 @@ export function StagePanel(props: PanelProps) {
           {(formId) => (
             <>
               {holdsFindings(stage) && <FindingsEditor {...props} formId={formId} />}
-              {(stage.kind === "meeting_minutes" || stage.kind === "action_plan") && (
-                <ActionsEditor {...props} tag={tag} />
-              )}
+              {holdsActions(stage) && <ActionsEditor {...props} tag={tag} />}
+              {(props.training ?? []).map((t) => (
+                <SuggestedTraining
+                  key={t.userId}
+                  complaintId={props.complaint.id}
+                  userId={t.userId}
+                  personName={t.name}
+                  suggestions={t.suggestions}
+                  disabled={props.disabled}
+                />
+              ))}
               <DocumentsBox {...props} />
             </>
           )}

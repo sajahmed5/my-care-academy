@@ -72,13 +72,13 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
     ],
   },
   "complaints.register": {
-    area: "Complaints",
+    area: "Complaints & safeguarding",
     home: "/org/complaints",
-    heading: "Complaints, safeguarding and incidents in one place",
+    heading: "Every concern through one front door",
     bullets: [
+      "Raised once, then triaged: complaint, safeguarding, issue, accident or near miss",
       "A step-by-step complaint process, with the 3-day and 28-day deadlines kept",
-      "Accidents, near misses and safeguarding concerns recorded",
-      "The staff involved named, with suggested training",
+      "Accidents and near misses with actions, and the staff involved named with suggested training",
       "Performance plans for staff who need support",
     ],
   },

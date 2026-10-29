@@ -112,10 +112,13 @@ export function StageForm({
 function QuestionField({ q, value, onChange, disabled }: { q: Question; value: AnswerValue; onChange: (v: AnswerValue) => void; disabled: boolean }) {
   const id = `q-${q.id}`;
   const label = (
-    <Label htmlFor={id}>
-      {q.text}
-      {q.required && <span className="text-rose-600"> *</span>}
-    </Label>
+    <>
+      <Label htmlFor={id}>
+        {q.text}
+        {q.required && <span className="text-rose-600"> *</span>}
+      </Label>
+      {q.help && <p className="text-xs text-muted-foreground">{q.help}</p>}
+    </>
   );
   switch (q.type) {
     case "text":

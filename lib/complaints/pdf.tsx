@@ -155,7 +155,7 @@ export interface PdfContext {
 }
 
 const tagFor = (stage: ComplaintStage) =>
-  stage.kind === "action_plan" ? "plan" : stage.kind === "meeting_minutes" ? `meeting:${meetingLabel(stage.name) === "Triage" ? 1 : meetingLabel(stage.name) === "Findings" ? 2 : 3}` : null;
+  stage.kind === "incident_actions" ? "actions" : stage.kind === "action_plan" ? "plan" : stage.kind === "meeting_minutes" ? `meeting:${meetingLabel(stage.name) === "Triage" ? 1 : meetingLabel(stage.name) === "Findings" ? 2 : 3}` : null;
 
 /** One stage: the form as filled in, its findings and actions. */
 export function renderStagePdf(ctx: PdfContext, stage: ComplaintStage): Promise<Buffer> {

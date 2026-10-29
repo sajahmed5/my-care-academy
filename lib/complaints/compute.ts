@@ -30,9 +30,11 @@ export function holdsFindings(stage: { name: string; kind: string }): boolean {
 /**
  * The tag an action agreed at this stage carries at the front of its detail,
  * which is how an action knows where it was agreed: "meeting:1" is Triage,
- * "meeting:2" Findings, "plan" the action plan.
+ * "meeting:2" Findings, "plan" the action plan, "actions" an accident's or a
+ * near miss's actions.
  */
 export function actionTagFor(stage: { name: string; kind: string }): string {
+  if (stage.kind === "incident_actions") return "actions";
   return stage.kind === "action_plan" ? "plan" : isTriageStage(stage) ? "meeting:1" : holdsFindings(stage) ? "meeting:2" : "meeting:3";
 }
 
@@ -55,3 +57,7 @@ export function computeStageStatus(
   if (holdsFindings(stage) && findingsOutstanding(readConcernFindings(answers)).length > 0) return "pending";
   return "done";
 }
+
+/** The stages that hold actions, each with an owner and a date. */
+export const holdsActions = (stage: { kind: string }) =>
+  stage.kind === "meeting_minutes" || stage.kind === "action_plan" || stage.kind === "incident_actions";

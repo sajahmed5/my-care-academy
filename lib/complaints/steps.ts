@@ -17,7 +17,7 @@ import { meetingNumber } from "./forms";
 import { acknowledgementState } from "./acknowledgement";
 import { readTriageNa, triageChecksUnassigned } from "./stage-status";
 
-export type StepKey = "raised" | "triage" | "acknowledge" | "investigate" | "findings" | "outcome" | "close";
+export type StepKey = "raised" | "report" | "triage" | "acknowledge" | "investigate" | "findings" | "outcome" | "actions" | "close";
 
 export interface StepStage { id: string; name: string; kind: string }
 export interface StepEntry { stageId: string; status?: string | null; formAnswers?: Record<string, unknown> | null }
@@ -36,14 +36,19 @@ export interface ComplaintStep<S extends StepStage = StepStage> {
 
 const TITLES: Record<StepKey, string> = {
   raised: "Concern raised",
+  report: "What happened",
   triage: "Triage",
   acknowledge: "Acknowledge",
   investigate: "Investigate",
   findings: "Findings",
   outcome: "Outcome",
+  actions: "Actions and training",
   close: "Follow-up and close",
 };
-const ORDER: StepKey[] = ["raised", "triage", "acknowledge", "investigate", "findings", "outcome", "close"];
+// An accident or a near miss has only "What happened" and "Actions and
+// training" of these, so the same list serves every type: a step with no
+// stages for the record's type is left out.
+const ORDER: StepKey[] = ["raised", "report", "triage", "acknowledge", "investigate", "findings", "outcome", "actions", "close"];
 
 /**
  * The step a stage belongs to, from its kind. Kinds this project does not
@@ -65,6 +70,9 @@ export function stepOfStage(stage: StepStage): StepKey {
     case "la_referral":
     case "cqc_notification": return "outcome";
     case "monitoring_review": return "close";
+    case "accident_report":
+    case "near_miss_report": return "report";
+    case "incident_actions": return "actions";
     default: return "investigate"; // statements, evidence, documents
   }
 }
@@ -76,8 +84,16 @@ const finished = (status?: string | null) => status === "done" || status === "na
 export function buildSteps<S extends StepStage>(stages: S[], entries: StepEntry[], closed: boolean): ComplaintStep<S>[] {
   const statusOf = (id: string) => entries.find((e) => e.stageId === id)?.status;
   const steps: ComplaintStep<S>[] = [];
+  // A step holding nothing but "Other" (an accident has no investigation
+  // stages) is not a step: its box moves to the end, beside closing.
+  const spare: S[] = [];
   for (const key of ORDER) {
-    const mine = stages.filter((s) => stepOfStage(s) === key);
+    let mine = stages.filter((s) => stepOfStage(s) === key);
+    if (key !== "close" && mine.length > 0 && mine.every(isOptionalStage)) {
+      spare.push(...mine);
+      continue;
+    }
+    if (key === "close") mine = [...mine, ...spare];
     // The record is always closed at the end, whether or not a stage sits there.
     if (mine.length === 0 && key !== "close") continue;
     const counted = mine.filter((s) => !isOptionalStage(s));
@@ -117,7 +133,10 @@ export function nextStep(
   const list = names.length > 3 ? `${names.slice(0, 3).join(", ")} and ${names.length - 3} more` : names.join(", ");
   switch (cur.key) {
     case "raised":
+    case "report":
       return { step: cur.key, text: `Finish the ${names[0] || "form"}: some required answers are missing.` };
+    case "actions":
+      return { step: cur.key, text: "Say why it happened and what will stop it happening again, and give each action an owner and a date." };
     case "triage": {
       // Say what is actually missing once Triage has been started.
       const a = (entries.find((e) => e.stageId === cur.stages[0]?.id)?.formAnswers ?? {}) as Record<string, unknown>;

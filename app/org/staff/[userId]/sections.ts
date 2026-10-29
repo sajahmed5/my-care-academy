@@ -103,9 +103,9 @@ export const SECTIONS: SectionDef[] = [
   },
   {
     key: "complaints",
-    label: "Complaints & incidents",
+    label: "Concerns",
     blurb:
-      "Complaints, accidents and safeguarding concerns this person was named in, what came of them, and the training they suggest.",
+      "Complaints, safeguarding concerns, issues, accidents and near misses this person was named in, what came of them, and the training they suggest.",
     feature: "complaints.register",
     built: true,
   },

@@ -18,7 +18,7 @@ import {
   type CompetencyCheck,
   type SpotCheck,
 } from "@/lib/competency";
-import type { Suggestion } from "@/lib/incidents";
+import type { Suggestion } from "@/lib/complaints/categories";
 import type { SaveState } from "@/app/platform/actions";
 import { assignAuditTrainingAction } from "./check-actions";
 import { formatDate } from "@/lib/dates";
