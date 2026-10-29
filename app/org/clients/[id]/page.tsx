@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
-import { requireFeature } from "@/lib/entitlements";
+import { hasFeature, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ClientForm, type ClientValues } from "../client-form";
+import { ClientConcerns } from "./concerns";
 
 /**
  * One client. Their details today; the QAs, audits, concerns and compliments
@@ -14,7 +15,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   await requireFeature(context, "clients.list");
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: client }, { data: regionRows }] = await Promise.all([
+  const [{ data: client }, { data: regionRows }, concernsOn] = await Promise.all([
     supabase
       .from("clients")
       .select("full_name, date_of_birth, region, postcode, funder_type, funder_name, medication_support, start_date, status")
@@ -26,12 +27,16 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
       .eq("organisation_id", context.organisationId!)
       .not("region", "is", null)
       .limit(1000),
+    hasFeature(context, "complaints.register"),
   ]);
   if (!client) notFound();
   const regions = [...new Set((regionRows ?? []).map((r) => r.region as string))].sort();
   return (
     <DashboardShell title={client.full_name as string} context={context} back={{ href: "/org/clients", label: "Clients" }}>
-      <ClientForm id={id} values={client as ClientValues} regions={regions} />
+      <div className="space-y-8">
+        <ClientForm id={id} values={client as ClientValues} regions={regions} />
+        {concernsOn && <ClientConcerns supabase={supabase} clientId={id} />}
+      </div>
     </DashboardShell>
   );
 }

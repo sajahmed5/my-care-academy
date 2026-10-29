@@ -23,6 +23,16 @@ PACKAGES.md).
   looks reportable). A reminder is ticked by its stage's answers or by a
   manager's confirmation, kept in `complaints.reminders`; nothing is filed.
   The client's council is filled in on the referral.
+- **Clients, compliments, the public link** (29 Oct 2026, migration
+  20261029213300) — a concern shows "N concerns about this client this year"
+  and the client's funder; the client's page lists its concerns and
+  compliments. Compliments (`compliments`, `compliment_people`) are logged at
+  `/org/complaints/compliments` and show on the carer's file; Staff Audits can
+  read them into an appraisal. The raise-a-concern link
+  (`/org/complaints/link`, one per company, `concern_links`) opens
+  `/concern/<token>`: no account, five an hour from one address, a honeypot,
+  and it lands as a concern waiting for triage with the person's contact
+  details and a reference they are shown.
 
 ## Before the front door
 

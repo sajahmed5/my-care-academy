@@ -78,6 +78,10 @@ export interface ComplaintClient {
 
 export interface Complaint extends ComplaintSummary {
   raisedByRole: string | null;
+  /** How it reached us: the office, or the public raise-a-concern link. */
+  raisedVia: string;
+  /** How to reach whoever raised it online: they are not a user here. */
+  raisedByContact: string | null;
   triagedAt: string | null;
   /** complaints.reminders: the legal reminders a manager has confirmed. */
   reminders: unknown;
@@ -258,7 +262,7 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
   const { data: row } = await supabase
     .from("complaints")
     .select(
-      `id, reference, kind, status, raised_by_name, raised_by_role, about_name, category, occurred_on, reported_on, complete_by, closed_on, description, desired_outcome, outcome_summary, lessons_learned, created_at, triaged_at, reminders, ${CLIENT_EMBED}`,
+      `id, reference, kind, status, raised_by_name, raised_by_role, about_name, category, occurred_on, reported_on, complete_by, closed_on, description, desired_outcome, outcome_summary, lessons_learned, created_at, triaged_at, reminders, raised_via, raised_by_contact, ${CLIENT_EMBED}`,
     )
     .eq("id", id)
     .maybeSingle();
@@ -296,6 +300,8 @@ export async function loadComplaint(supabase: SupabaseClient, id: string): Promi
     ...summary(row as Record<string, unknown>),
     raisedByRole: (row.raised_by_role as string | null) ?? null,
     triagedAt: (row.triaged_at as string | null) ?? null,
+    raisedVia: (row.raised_via as string | null) ?? "office",
+    raisedByContact: (row.raised_by_contact as string | null) ?? null,
     reminders: row.reminders ?? {},
     occurredOn: (row.occurred_on as string | null) ?? null,
     desiredOutcome: (row.desired_outcome as string | null) ?? null,
@@ -392,12 +398,18 @@ export async function loadCloseCheck(
  * and the organisation. A concern not yet triaged is CON-, and keeps it. Read through the same client, so the count is of
  * what the organisation can see — which is all of its own.
  */
-export async function nextReference(supabase: SupabaseClient, kind: string, today: string): Promise<string> {
+export async function nextReference(
+  supabase: SupabaseClient,
+  kind: string,
+  today: string,
+  /** Needed when the client is the service role, which sees every organisation. */
+  organisationId?: string,
+): Promise<string> {
   const prefix = prefixFor(kindOf(kind));
   const stem = `${prefix}-${today.replace(/-/g, "")}-`;
-  const { data } = await supabase
-    .from("complaints")
-    .select("reference")
+  let q = supabase.from("complaints").select("reference");
+  if (organisationId) q = q.eq("organisation_id", organisationId);
+  const { data } = await q
     .like("reference", `${stem}%`)
     .order("reference", { ascending: false })
     .limit(1);
