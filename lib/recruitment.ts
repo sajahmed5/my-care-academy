@@ -45,6 +45,7 @@ export const RECRUITMENT_STEPS: StepDef[] = [
   { key: "literacy", stage: 1, label: "Literacy test", hint: "20 minutes, 80% to pass." },
 
   { key: "interview", stage: 2, label: "Interview", hint: "The interview record and overall score." },
+  { key: "offer", stage: 2, label: "Conditional offer", hint: "The offer letter, sent after a successful interview." },
 
   { key: "starter_form", stage: 3, label: "Health, equality and DBS form", hint: "Filled in after the offer: health questions can't be asked before one.", canSwitchOff: true },
   { key: "proof_id", stage: 3, candidateUploads: true, label: "Proof of ID", hint: "Passport or photo driving licence." },

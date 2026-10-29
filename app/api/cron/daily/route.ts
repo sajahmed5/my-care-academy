@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { chaseReferences } from "@/lib/reference-requests";
 import {
   loadEngineRefs,
   loadSettings,
@@ -40,6 +41,8 @@ export async function GET(req: NextRequest) {
   const reminders = await processReminders(settings, now, dryRun, refs);
   const engagement = await processEngagement(settings, now, dryRun, refs);
   const faceToFace = await processFaceToFaceReminders(admin, now, dryRun);
+  // Referees who haven't answered: a reminder after 3 days, twice at most.
+  const references = await chaseReferences(admin, now, dryRun);
 
   return NextResponse.json({
     ok: true,
@@ -48,5 +51,6 @@ export async function GET(req: NextRequest) {
     ...reminders,
     ...engagement,
     ...faceToFace,
+    referenceReminders: references,
   });
 }

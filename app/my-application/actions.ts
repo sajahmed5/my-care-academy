@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireCandidate } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { progress, settingsFromRow, type CandidateDocRecord } from "@/lib/recruitment";
+import { STARTER_DOC_NOTE, sanitiseStarter, validateStarter } from "@/lib/recruitment-starter";
+import type { FieldError } from "@/lib/recruitment-application";
 
 /**
  * A candidate uploads a document from their own page (RECRUITMENT.md, release
@@ -95,5 +97,90 @@ export async function finishCandidateUploadAction(
   const old = own.previous?.file_path as string | null | undefined;
   if (old && old !== path) await admin.storage.from("candidate-docs").remove([old]);
   revalidatePath("/my-application");
+  return { ok: true };
+}
+
+/**
+ * The health, equality and DBS form (RECRUITMENT.md, release 5): only once
+ * the offer has opened stage 3, saved as they go, and sent in once — which
+ * puts the step in front of the office. Health and equality answers are read
+ * by the company's office and no one else.
+ */
+async function ownStarter(admin: Admin, userId: string, candidateId: string) {
+  const { data: c } = await admin
+    .from("candidates")
+    .select("id, organisation_id, user_id, status, dbs_conviction")
+    .eq("id", candidateId)
+    .maybeSingle();
+  if (!c || c.user_id !== userId || c.status !== "candidate") return "That isn't one of your applications.";
+  const [{ data: docs }, { data: settingsRow }, { data: form }] = await Promise.all([
+    admin.from("candidate_documents").select("doc_type, file_path, expires_at, not_required, review_status, review_note").eq("candidate_id", candidateId),
+    admin.from("recruitment_settings").select("*").eq("organisation_id", c.organisation_id as string).maybeSingle(),
+    admin.from("candidate_starter_forms").select("status, answers").eq("candidate_id", candidateId).maybeSingle(),
+  ]);
+  const stages = progress((docs ?? []) as CandidateDocRecord[], settingsFromRow(settingsRow), { dbsConviction: c.dbs_conviction === true });
+  const s = stages.flatMap((x) => x.steps).find((x) => x.key === "starter_form");
+  if (!s) return "Your company doesn't use this form.";
+  if (s.locked) return "This form opens once you've been offered the job.";
+  const reopened = s.state === "sent_back";
+  if (form?.status === "submitted" && !reopened) return "You've sent this in. Contact the office if something needs changing.";
+  if (s.state === "confirmed" || s.state === "not_needed") return "The office already has this.";
+  return { candidate: c, form, note: reopened ? (s.doc?.review_note ?? null) : null };
+}
+
+export async function loadStarterAction(candidateId: string) {
+  const context = await requireCandidate();
+  const own = await ownStarter(createAdminClient(), context.userId, candidateId);
+  if (typeof own === "string") return { error: own };
+  return { answers: sanitiseStarter(own.form?.answers ?? {}), note: own.note };
+}
+
+export async function saveStarterAction(candidateId: string, raw: unknown): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireCandidate();
+  const admin = createAdminClient();
+  const own = await ownStarter(admin, context.userId, candidateId);
+  if (typeof own === "string") return { ok: false, error: own };
+  const { error } = await admin.from("candidate_starter_forms").upsert(
+    { candidate_id: candidateId, organisation_id: own.candidate.organisation_id, status: "draft", answers: sanitiseStarter(raw) },
+    { onConflict: "candidate_id" },
+  );
+  return error ? { ok: false, error: "Your answers couldn't be saved. Try again." } : { ok: true };
+}
+
+export async function submitStarterAction(
+  candidateId: string,
+  raw: unknown,
+): Promise<{ ok: boolean; error?: string; problems?: Record<string, FieldError[]> }> {
+  const context = await requireCandidate();
+  const admin = createAdminClient();
+  const own = await ownStarter(admin, context.userId, candidateId);
+  if (typeof own === "string") return { ok: false, error: own };
+  const answers = sanitiseStarter(raw);
+  const problems = validateStarter(answers, new Date().toISOString().slice(0, 10));
+  if (Object.keys(problems).length) return { ok: false, error: "Some answers still need attention.", problems };
+  const now = new Date().toISOString();
+  const { error } = await admin.from("candidate_starter_forms").upsert(
+    { candidate_id: candidateId, organisation_id: own.candidate.organisation_id, status: "submitted", answers, submitted_at: now },
+    { onConflict: "candidate_id" },
+  );
+  if (error) return { ok: false, error: "Your form couldn't be sent. Try again: your answers are saved." };
+  await admin.from("candidate_documents").upsert(
+    {
+      candidate_id: candidateId,
+      organisation_id: own.candidate.organisation_id,
+      doc_type: "starter_form",
+      file_path: null,
+      file_name: null,
+      not_required: false,
+      review_status: "submitted",
+      review_note: STARTER_DOC_NOTE,
+      uploaded_by_candidate: true,
+      reviewed_by: null,
+      reviewed_at: null,
+    },
+    { onConflict: "candidate_id,doc_type" },
+  );
+  revalidatePath("/my-application");
+  revalidatePath(`/org/recruitment/${candidateId}`);
   return { ok: true };
 }

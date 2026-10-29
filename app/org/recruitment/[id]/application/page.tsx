@@ -5,39 +5,14 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/dates";
 import {
   APPLICATION_SECTIONS,
-  CURRENT,
+  answerText,
   employmentGaps,
-  formatMonth,
   isShown,
-  monthIndex,
   type Answers,
   type Entry,
   type FormField,
 } from "@/lib/recruitment-application";
 import { DashboardShell } from "@/components/dashboard-shell";
-
-/** One answer as a line of text, whatever kind of question it was. */
-function show(field: FormField, value: unknown): string {
-  if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) return "—";
-  if (field.type === "yesno") return value === "yes" ? "Yes" : value === "no" ? "No" : String(value);
-  if (field.type === "checkbox") return value === true ? "Agreed" : "—";
-  if (field.type === "month") {
-    if (value === CURRENT) return field.allowCurrent ?? "Now";
-    const i = monthIndex(value);
-    return i === null ? String(value) : formatMonth(i);
-  }
-  if (field.type === "date" && typeof value === "string") return formatDate(value);
-  if (field.type === "matrix" && Array.isArray(value)) {
-    const byRow = new Map<string, string[]>();
-    for (const cell of value as string[]) {
-      const [row, col] = cell.split("|");
-      byRow.set(row, [...(byRow.get(row) ?? []), col]);
-    }
-    return (field.matrix?.rows ?? []).filter((r) => byRow.has(r)).map((r) => `${r}: ${byRow.get(r)!.join(", ")}`).join("; ");
-  }
-  if (Array.isArray(value)) return (value as string[]).join(", ");
-  return String(value);
-}
 
 /**
  * A candidate's application as the office reads it: every section, the
@@ -91,7 +66,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                             {(f.fields ?? []).filter((sub) => isShown(sub, entry)).map((sub) => (
                               <div key={sub.id}>
                                 <dt className="text-xs text-muted-foreground">{sub.label}</dt>
-                                <dd className="whitespace-pre-line">{show(sub, entry[sub.id])}</dd>
+                                <dd className="whitespace-pre-line">{answerText(sub, entry[sub.id])}</dd>
                               </div>
                             ))}
                           </dl>
@@ -102,7 +77,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                 ) : (
                   <div key={f.id} className="grid gap-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] sm:gap-4">
                     <dt className="text-muted-foreground">{f.label}</dt>
-                    <dd className="whitespace-pre-line">{show(f, answers[f.id])}</dd>
+                    <dd className="whitespace-pre-line">{answerText(f, answers[f.id])}</dd>
                   </div>
                 ),
               )}

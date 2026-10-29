@@ -15,7 +15,7 @@ const facts = { dbsConviction: false };
 const TODAY = "2026-10-29";
 
 const stage1 = ["application", "literacy"].map(ok);
-const stage2 = [ok("interview")];
+const stage2 = ["interview", "offer"].map(ok);
 const stage3 = ["starter_form", "proof_id", "proof_address_1", "proof_address_2", "proof_ni", "reference_1", "reference_2", "dbs", "training"].map(ok);
 const stage4 = ["role_acceptance", "contract", "refund_training", "shadowing"].map(ok);
 
@@ -69,5 +69,14 @@ describe("progress", () => {
     expect(nextMove(progress([sent], DEFAULT_SETTINGS, facts, TODAY))).toEqual({ who: "us", text: "Review application form" });
     const back: CandidateDocRecord = { ...ok("application"), review_status: "sent_back" };
     expect(nextMove(progress([back], DEFAULT_SETTINGS, facts, TODAY)).who).toBe("them");
+  });
+});
+
+describe("the conditional offer", () => {
+  it("keeps stage 3, and with it the health form, locked until the offer is sent", () => {
+    const before = progress([...stage1, ok("interview")], DEFAULT_SETTINGS, facts, TODAY);
+    expect(before[2].locked).toBe(true);
+    const after = progress([...stage1, ...stage2], DEFAULT_SETTINGS, facts, TODAY);
+    expect(after[2].locked).toBe(false);
   });
 });
