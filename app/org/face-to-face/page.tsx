@@ -28,15 +28,18 @@ interface Booking {
   user_id: string;
   status: string;
   practical_passed: boolean | null;
+  certificate_id: string | null;
   person: unknown;
 }
 
-const STATUS_LABEL: Record<string, string> = {
-  booked: "Booked",
-  attended: "Attended",
-  no_show: "Didn't come",
-  cancelled: "Cancelled",
-};
+/** How one person's place stands, once the register is taken. */
+function resultLabel(b: { status: string; practical_passed: boolean | null; certificate_id: string | null }): string {
+  if (b.status === "cancelled") return "Cancelled";
+  if (b.status === "no_show") return "Didn't come";
+  if (b.status !== "attended") return "Booked";
+  if (b.practical_passed === false) return "Came, practical not passed: book them again";
+  return b.certificate_id ? "Came and passed, certificate issued" : "Came and passed";
+}
 
 /**
  * Face-to-face training at our office (FACE-TO-FACE.md, 29 Oct 2026): the
@@ -65,7 +68,7 @@ export default async function FaceToFaceBookingPage() {
     supabase
       .from("face_to_face_bookings")
       .select(
-        "id, session_id, user_id, status, practical_passed, person:users!face_to_face_bookings_user_id_fkey (full_name, email), session:face_to_face_sessions (id, kind, starts_at, ends_at, trainer_name, places, notes, cancelled_at, course:courses (title))",
+        "id, session_id, user_id, status, practical_passed, certificate_id, person:users!face_to_face_bookings_user_id_fkey (full_name, email), session:face_to_face_sessions (id, kind, starts_at, ends_at, trainer_name, places, notes, cancelled_at, course:courses (title))",
       )
       .eq("organisation_id", orgId)
       .order("created_at")
@@ -226,7 +229,7 @@ export default async function FaceToFaceBookingPage() {
                   <ul className="grid gap-1 text-sm sm:grid-cols-2">
                     {rows.map((r) => (
                       <li key={r.id}>
-                        {nameOf(r)} <span className="text-xs text-muted-foreground">— {STATUS_LABEL[r.status] ?? r.status}</span>
+                        {nameOf(r)} <span className="text-xs text-muted-foreground">— {resultLabel(r)}</span>
                       </li>
                     ))}
                   </ul>

@@ -7,6 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { ukDay, ukLocalToDate } from "@/lib/face-to-face";
 import { emailBookings } from "@/lib/face-to-face-email";
+import { completeInPerson } from "@/lib/in-person-completion";
+import { formatDate } from "@/lib/dates";
 import type { SaveState } from "@/app/platform/actions";
 
 /**
@@ -229,4 +231,106 @@ export async function removeClosedDayAction(day: string): Promise<SaveState> {
   await logAudit({ context, action: "face_to_face.closed_day_removed", entity: "face_to_face_closed_day", detail: { day } });
   revalidatePath("/platform/face-to-face");
   return { ok: true };
+}
+
+export interface RegisterState extends SaveState {
+  certificates?: number;
+}
+
+/**
+ * Take the register (FACE-TO-FACE.md): each person booked came or didn't,
+ * and each who came passed the practical or didn't. Someone who came and
+ * passed a session covering a library course completes it, with a
+ * certificate dated the day, as the classroom sessions do. A no-show still
+ * used the place.
+ *
+ * Saved as often as the trainer likes during the day; a certificate, once
+ * issued, fixes that person's line, so a second save never issues another.
+ */
+export async function saveRegisterAction(_prev: RegisterState, formData: FormData): Promise<RegisterState> {
+  const context = await requireRole("platform_admin");
+  const sessionId = String(formData.get("sessionId") ?? "");
+  const admin = createAdminClient();
+  const [{ data: s }, { data: bookings }] = await Promise.all([
+    admin
+      .from("face_to_face_sessions")
+      .select("id, kind, course_id, starts_at, trainer_name, cancelled_at")
+      .eq("id", sessionId)
+      .maybeSingle(),
+    admin
+      .from("face_to_face_bookings")
+      .select("id, organisation_id, user_id, status, certificate_id")
+      .eq("session_id", sessionId)
+      .neq("status", "cancelled"),
+  ]);
+  if (!s || s.cancelled_at) return { ok: false, error: "That session was cancelled." };
+  if (ukDay(s.starts_at as string) > ukDay(new Date())) return { ok: false, error: "The register opens on the day of the session." };
+
+  // Read every line first: a half-marked register isn't saved.
+  const lines = [];
+  for (const b of bookings ?? []) {
+    if (b.certificate_id) continue;
+    const came = String(formData.get(`came:${b.id}`) ?? "");
+    const practical = String(formData.get(`practical:${b.id}`) ?? "");
+    if (came !== "yes" && came !== "no") return { ok: false, error: "Mark everyone as here or not here." };
+    if (came === "yes" && practical !== "passed" && practical !== "not_passed") {
+      return { ok: false, error: "Give the practical result for everyone who came." };
+    }
+    lines.push({ booking: b, came: came === "yes", passed: came === "yes" ? practical === "passed" : null });
+  }
+
+  for (const l of lines) {
+    const { error } = await admin
+      .from("face_to_face_bookings")
+      .update({ status: l.came ? "attended" : "no_show", practical_passed: l.passed })
+      .eq("id", l.booking.id);
+    if (error) return { ok: false, error: error.message };
+  }
+
+  let certificates = 0;
+  if (s.kind === "course" && s.course_id) {
+    const heldOn = ukDay(s.starts_at as string);
+    const trainer = s.trainer_name as string | null;
+    const note = `Completed face to face at My Care Academy, Stockport, on ${formatDate(`${heldOn}T12:00:00Z`, { day: "numeric", month: "long", year: "numeric" })}${trainer ? ` with ${trainer}` : ""}. Practical assessment passed.`;
+    // Grouped by company: each certificate is the company's record.
+    const byOrg = new Map<string, typeof lines>();
+    for (const l of lines.filter((x) => x.came && x.passed)) {
+      const org = l.booking.organisation_id as string;
+      byOrg.set(org, [...(byOrg.get(org) ?? []), l]);
+    }
+    for (const [organisationId, group] of byOrg) {
+      const issued = await completeInPerson({
+        admin,
+        organisationId,
+        userIds: group.map((l) => l.booking.user_id as string),
+        courseId: s.course_id as string,
+        heldOn,
+        note,
+      });
+      for (const l of group) {
+        const certificateId = issued.get(l.booking.user_id as string);
+        if (!certificateId) continue;
+        certificates++;
+        await admin.from("face_to_face_bookings").update({ certificate_id: certificateId }).eq("id", l.booking.id);
+        revalidatePath(`/org/staff/${l.booking.user_id}`);
+      }
+    }
+  }
+
+  await logAudit({
+    context,
+    action: "face_to_face.register_taken",
+    entity: "face_to_face_session",
+    entityId: sessionId,
+    detail: {
+      attended: lines.filter((l) => l.came).length,
+      noShows: lines.filter((l) => !l.came).length,
+      passed: lines.filter((l) => l.passed).length,
+      certificates,
+    },
+  });
+  revalidatePath(`/platform/face-to-face/${sessionId}`);
+  revalidatePath(`/platform/face-to-face/${sessionId}/register`);
+  revalidatePath("/org/face-to-face");
+  return { ok: true, certificates };
 }

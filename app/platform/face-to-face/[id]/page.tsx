@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ClipboardCheck } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -11,11 +12,13 @@ import { SessionForm } from "../session-form";
 import { CancelSession } from "./cancel-session";
 import { RemoveBooking } from "./remove-booking";
 
-const STATUS_LABEL: Record<string, string> = {
-  booked: "Booked",
-  attended: "Attended",
-  no_show: "Didn't come",
-};
+/** How one person's place stands, register and all. */
+function resultLabel(status: string, passed: boolean | null, certificate: boolean): string {
+  if (status === "no_show") return "Didn't come";
+  if (status !== "attended") return "Booked";
+  if (passed === false) return "Came · practical not passed";
+  return certificate ? "Came · passed · certificate issued" : "Came · passed";
+}
 
 const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
 
@@ -35,7 +38,7 @@ export default async function FaceToFaceSessionPage({ params }: { params: Promis
     supabase
       .from("face_to_face_bookings")
       .select(
-        "id, status, created_at, person:users!face_to_face_bookings_user_id_fkey (full_name, email), booker:users!face_to_face_bookings_booked_by_fkey (full_name, email), org:organisations (name)",
+        "id, status, practical_passed, certificate_id, created_at, person:users!face_to_face_bookings_user_id_fkey (full_name, email), booker:users!face_to_face_bookings_booked_by_fkey (full_name, email), org:organisations (name)",
       )
       .eq("session_id", id)
       .neq("status", "cancelled")
@@ -62,6 +65,12 @@ export default async function FaceToFaceSessionPage({ params }: { params: Promis
             <p className="text-sm text-rose-700">Cancelled {formatDateTime(s.cancelled_at as string)}.</p>
           )}
         </div>
+        {!s.cancelled_at && ukDay(s.starts_at as string) <= ukDay(new Date()) && (bookings ?? []).length > 0 && (
+          <Link href={`/platform/face-to-face/${s.id}/register`} className={buttonVariants({ size: "lg" })}>
+            <ClipboardCheck className="size-4" />
+            Take the register
+          </Link>
+        )}
 
         <Card>
           <CardHeader>
@@ -94,7 +103,9 @@ export default async function FaceToFaceSessionPage({ params }: { params: Promis
                           <td className="py-2 pr-3 font-medium">{name}</td>
                           <td className="py-2 pr-3">{one(b.org as unknown as { name: string } | null)?.name ?? "—"}</td>
                           <td className="py-2 pr-3 text-muted-foreground">{booker?.full_name || booker?.email || "—"}</td>
-                          <td className="py-2 pr-3">{STATUS_LABEL[b.status as string] ?? (b.status as string)}</td>
+                          <td className="py-2 pr-3">
+                            {resultLabel(b.status as string, b.practical_passed as boolean | null, !!b.certificate_id)}
+                          </td>
                           <td className="py-2 text-right">
                             {b.status === "booked" && !ended && <RemoveBooking id={b.id as string} name={name} />}
                           </td>

@@ -6,7 +6,7 @@ import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
-import { issueCertificate } from "@/lib/issue-certificate";
+import { completeInPerson } from "@/lib/in-person-completion";
 import { formatDate } from "@/lib/dates";
 import type { SaveState } from "@/app/platform/actions";
 
@@ -79,41 +79,15 @@ export async function recordClassroomSessionAction(_prev: ClassroomState, formDa
   let certificates = 0;
   if (courseId) {
     const admin = createAdminClient();
-    const issuedAt = new Date(`${heldOn}T12:00:00Z`);
     const note = `Completed in a classroom session on ${formatDate(heldOn, { day: "numeric", month: "long", year: "numeric" })}${trainer ? ` with ${trainer}` : ""}.`;
-    const { data: existing } = await admin
-      .from("enrolments")
-      .select("id, user_id, completion_count")
-      .eq("course_id", courseId)
-      .in("user_id", valid);
-    const byUser = new Map((existing ?? []).map((e) => [e.user_id as string, e]));
-    for (const userId of valid) {
-      const prior = byUser.get(userId);
-      if (prior) {
-        await admin
-          .from("enrolments")
-          .update({ status: "completed", progress: 100, completion_count: ((prior.completion_count as number) ?? 0) + 1 })
-          .eq("id", prior.id);
-      } else {
-        await admin.from("enrolments").insert({
-          organisation_id: orgId,
-          user_id: userId,
-          course_id: courseId,
-          status: "completed",
-          progress: 100,
-          completion_count: 1,
-          due_date: heldOn,
-        });
-      }
-      const certificateId = await issueCertificate({ admin, userId, organisationId: orgId, courseId, issuedAt, note });
-      if (certificateId) {
-        certificates++;
-        await admin
-          .from("classroom_attendance")
-          .update({ certificate_id: certificateId })
-          .eq("session_id", session.id)
-          .eq("user_id", userId);
-      }
+    const issued = await completeInPerson({ admin, organisationId: orgId, userIds: valid, courseId, heldOn, note });
+    for (const [userId, certificateId] of issued) {
+      certificates++;
+      await admin
+        .from("classroom_attendance")
+        .update({ certificate_id: certificateId })
+        .eq("session_id", session.id)
+        .eq("user_id", userId);
     }
   }
 
