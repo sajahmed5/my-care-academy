@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" aria-hidden="true">
+  <rect width="960" height="420" fill="#e6f5ea"/>
+  <circle cx="600" cy="240" r="232" fill="#cdebd5"/>
+  <circle cx="140" cy="360" r="92" fill="#dbf0e1"/>
+  <circle cx="880" cy="78" r="42" fill="#dbf0e1"/>
+  <g fill="#16a34a" opacity=".22"><circle cx="262" cy="96" r="7"/><circle cx="292" cy="126" r="4"/><circle cx="852" cy="318" r="6"/><circle cx="884" cy="292" r="4"/></g>
+
+  <path d="M325 420 C325 330 365 296 430 296 C495 296 535 330 535 420 Z" fill="#7aa6c2"/>
+  <rect x="416" y="262" width="28" height="42" rx="10" fill="#e7b896"/>
+  <path d="M407 297 L430 330 L453 297 Z" fill="#e7b896"/>
+  
+  <circle cx="430" cy="228" r="50" fill="#f6d2b6"/>
+  <path d="M380 226 L384 188 L400 194 L408 170 L426 186 L440 166 L452 186 L470 178 L470 200 L482 222 C460 206 400 206 380 226 Z" fill="#b5562b"/>
+  <circle cx="413" cy="236" r="4.5" fill="#0f2a2e"/><circle cx="447" cy="236" r="4.5" fill="#0f2a2e"/>
+  <circle cx="402" cy="252" r="8" fill="#e07a5f" opacity=".32"/><circle cx="458" cy="252" r="8" fill="#e07a5f" opacity=".32"/>
+  <path d="M414 251 Q430 271 446 251 Z" fill="#0f2a2e"/>
+  <path d="M500 328 Q530 100 560 150" stroke="#7aa6c2" stroke-width="30" fill="none" stroke-linecap="round"/>
+  <ellipse cx="560" cy="150" rx="16" ry="20" fill="#f6d2b6"/>
+  <path d="M585 420 C585 330 625 296 690 296 C755 296 795 330 795 420 Z" fill="#16a34a"/>
+  <rect x="676" y="262" width="28" height="42" rx="10" fill="#73441b"/>
+  <path d="M667 297 L690 330 L713 297 Z" fill="#73441b"/>
+  <rect x="720" y="340" width="34" height="20" rx="4" fill="#ffffff" opacity=".9"/>
+  
+  <circle cx="690" cy="228" r="50" fill="#8d5524"/>
+  <path d="M639 230 A51 51 0 0 1 741 230 C734 206 702 198 672 201 C652 204 642 216 639 230 Z" fill="#2b1d14"/>
+  <circle cx="673" cy="236" r="4.5" fill="#0f2a2e"/><circle cx="707" cy="236" r="4.5" fill="#0f2a2e"/>
+  <circle cx="662" cy="252" r="8" fill="#e07a5f" opacity=".32"/><circle cx="718" cy="252" r="8" fill="#e07a5f" opacity=".32"/>
+  <path d="M674 251 Q690 271 706 251 Z" fill="#0f2a2e"/>
+  <path d="M620 328 Q605 100 590 150" stroke="#16a34a" stroke-width="30" fill="none" stroke-linecap="round"/>
+  <ellipse cx="590" cy="150" rx="16" ry="20" fill="#8d5524"/>
+  <path d="M575 82 Q575 100 593 100 Q575 100 575 118 Q575 100 557 100 Q575 100 575 82 Z" fill="#fcbf49"/><polygon points="800,90 805.3,102.7 819,103.8 808.6,112.8 811.8,126.2 800,119 788.2,126.2 791.4,112.8 781,103.8 794.7,102.7" fill="#fcbf49" stroke="#fcbf49" stroke-width="3.6" stroke-linejoin="round"/><polygon points="320,104 324.2,114.2 335.2,115.1 326.8,122.2 329.4,132.9 320,127.2 310.6,132.9 313.2,122.2 304.8,115.1 315.8,114.2" fill="#fcbf49" stroke="#fcbf49" stroke-width="2.9" stroke-linejoin="round"/>
+</svg>

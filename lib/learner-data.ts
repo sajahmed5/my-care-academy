@@ -5,6 +5,7 @@ import { computeStarTotal } from "@/lib/stars";
 
 interface JoinedCourse {
   title?: string;
+  slug?: string;
   topics?: { title?: string } | null;
 }
 
@@ -29,7 +30,7 @@ export const loadEnrolments = cache(
     const { data } = await supabase
       .from("enrolments")
       .select(
-        "id, course_id, status, progress, due_date, assigned_at, attempt_count, completion_count, courses(title, topics(title))",
+        "id, course_id, status, progress, due_date, assigned_at, attempt_count, completion_count, courses(title, slug, topics(title))",
       )
       .eq("user_id", userId)
       .order("assigned_at", { ascending: false });
@@ -46,6 +47,7 @@ export const loadEnrolments = cache(
         completion_count: e.completion_count ?? 0,
         title: c.title ?? "Course",
         topic: c.topics?.title ?? null,
+        slug: c.slug ?? null,
       };
     });
   },

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" aria-hidden="true">
+  <rect width="960" height="420" fill="#e5f1fa"/>
+  <circle cx="600" cy="240" r="232" fill="#cfe4f5"/>
+  <circle cx="140" cy="360" r="92" fill="#dcecf8"/>
+  <circle cx="880" cy="78" r="42" fill="#dcecf8"/>
+  <g fill="#0284c7" opacity=".22"><circle cx="262" cy="96" r="7"/><circle cx="292" cy="126" r="4"/><circle cx="852" cy="318" r="6"/><circle cx="884" cy="292" r="4"/></g>
+
+  <rect x="400" y="100" width="300" height="280" rx="16" fill="#0284c7"/><g transform="rotate(0 555 241)"><rect x="420" y="112" width="270" height="258" rx="12" fill="#ffffff"/><rect x="440" y="134" width="135" height="11" rx="5.5" fill="#5eb4e6"/><rect x="440" y="160" width="230" height="8" rx="4" fill="#e3ebe9"/><rect x="440" y="186" width="161" height="8" rx="4" fill="#e3ebe9"/><rect x="440" y="212" width="230" height="8" rx="4" fill="#e3ebe9"/><rect x="440" y="238" width="161" height="8" rx="4" fill="#e3ebe9"/><rect x="440" y="264" width="230" height="8" rx="4" fill="#e3ebe9"/><rect x="440" y="290" width="161" height="8" rx="4" fill="#e3ebe9"/><rect x="440" y="316" width="230" height="8" rx="4" fill="#e3ebe9"/><rect x="440" y="342" width="161" height="8" rx="4" fill="#e3ebe9"/></g>
+  <g fill="#0284c7"><circle cx="410" cy="136" r="8"/><circle cx="410" cy="180" r="8"/><circle cx="410" cy="224" r="8"/><circle cx="410" cy="268" r="8"/><circle cx="410" cy="312" r="8"/><circle cx="410" cy="356" r="8"/></g>
+  <g transform="rotate(40 740 220)"><rect x="680" y="208" width="160" height="24" rx="8" fill="#fcbf49"/><path d="M840 208 l34 12 l-34 12 Z" fill="#f3d9b1"/><path d="M864 216 l10 4 l-10 4 Z" fill="#0f2a2e"/><rect x="680" y="208" width="28" height="24" rx="8" fill="#f07167"/></g>
+  <circle cx="300" cy="180" r="52" fill="#ffffff" stroke="#2b2d42" stroke-width="8.3"/><path d="M300 180 V148.8 M300 180 L323.4 190.4" stroke="#0284c7" stroke-width="6.2" stroke-linecap="round"/><circle cx="300" cy="180" r="5.2" fill="#0284c7"/>
+</svg>

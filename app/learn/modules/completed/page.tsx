@@ -28,6 +28,7 @@ export default async function CompletedModulesPage() {
                   courseId: e.course_id,
                   title: e.title,
                   topic: e.topic,
+                  slug: e.slug,
                   status: e.status,
                   progress: 100,
                 }}

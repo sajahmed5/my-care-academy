@@ -14,13 +14,14 @@ export default async function AllCoursesPage({
   const { q } = await searchParams;
   const supabase = await createClient();
 
-  // The catalogue list needs no content: title, description and topic only.
+  // The catalogue list needs no content: title, slug (for the cover),
+  // description and topic only.
   const [enrolments, certificates, { data: courses }] = await Promise.all([
     loadEnrolments(context.userId),
     loadCertificates(context.userId),
     supabase
       .from("courses")
-      .select("id, title, description, topics(title)")
+      .select("id, title, slug, description, topics(title)")
       .order("sort_order"),
   ]);
 
@@ -43,6 +44,7 @@ export default async function AllCoursesPage({
   const catalogue: CatalogueCourse[] = (courses ?? []).map((c) => ({
     id: c.id,
     title: c.title,
+    slug: c.slug,
     description: c.description,
     topic: (c.topics as unknown as { title: string } | null)?.title ?? null,
   }));

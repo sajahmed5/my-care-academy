@@ -16,6 +16,7 @@ export interface CourseCardData {
   courseId: string;
   title: string;
   topic: string | null;
+  slug?: string | null;
   status?: string;
   progress?: number;
   dueDate?: string | null;
@@ -56,7 +57,7 @@ export function CourseCard({ c }: { c: CourseCardData }) {
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm transition-shadow hover:shadow-md">
-      <CourseThumb topic={c.topic} />
+      <CourseThumb topic={c.topic} slug={c.slug} />
 
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium text-muted-foreground">

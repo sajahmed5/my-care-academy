@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" aria-hidden="true">
+  <rect width="960" height="420" fill="#fdf2e2"/>
+  <circle cx="600" cy="240" r="232" fill="#f8dfba"/>
+  <circle cx="140" cy="360" r="92" fill="#fbe8cc"/>
+  <circle cx="880" cy="78" r="42" fill="#fbe8cc"/>
+  <g fill="#d97706" opacity=".22"><circle cx="262" cy="96" r="7"/><circle cx="292" cy="126" r="4"/><circle cx="852" cy="318" r="6"/><circle cx="884" cy="292" r="4"/></g>
+
+  <path d="M420 60 v60 h80" stroke="#8d99ae" stroke-width="18" fill="none" stroke-linejoin="round"/><path d="M460 120 h120 a20 20 0 0 1 -20 26 h-80 a20 20 0 0 1 -20 -26 Z" fill="#8d99ae"/>
+  <g stroke="#4cc9f0" stroke-width="7" stroke-linecap="round"><path d="M484 168 l-6 70"/><path d="M480 262 l-8 60"/><path d="M504 168 l-8 70"/><path d="M500 262 l-10 60"/><path d="M524 168 l-10 70"/><path d="M520 262 l-12 60"/><path d="M544 168 l-12 70"/><path d="M540 262 l-14 60"/><path d="M564 168 l-14 70"/><path d="M560 262 l-16 60"/></g>
+  <rect x="700" y="110" width="44" height="210" rx="22" fill="#ffffff"/><rect x="712" y="150" width="20" height="160" rx="10" fill="#e63946"/><circle cx="722" cy="320" r="38" fill="#e63946"/>
+  <text x="780" y="160" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="800" fill="#d97706">60°C</text>
+</svg>

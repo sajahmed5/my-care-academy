@@ -1,4 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
+import { COURSE_COVERS } from "@/lib/course-covers";
 import { AlertTriangle, CheckCircle2, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { topicTheme, tint } from "@/lib/topic-theme";
@@ -6,25 +8,41 @@ import { topicTheme, tint } from "@/lib/topic-theme";
 /** Gradient "cover" for a course card (topic colour + icon watermark). */
 export function CourseThumb({
   topic,
-  height = 112,
+  slug,
 }: {
   topic?: string | null;
-  height?: number;
+  /** The course's slug: with a cover photo, the card shows it. */
+  slug?: string | null;
 }) {
   const t = topicTheme(topic);
   const Icon = t.icon;
-  // A strip on a phone, the full picture from a tablet up: at full height
+  // An illustration of the course (29 Oct 2026): the plain colour blocks made
+  // every card in a topic look the same. The topic's colour stays in the
+  // illustration's wash, the icon tile and the progress bar.
+  const cover = slug && COURSE_COVERS.has(slug) ? `/course-covers/${slug}.svg` : null;
+  // A strip on a phone, the full picture from a tablet up — 16:7, the
+  // illustrations' own shape, so nothing is cropped however wide the card: at full height
   // four cards took four screens of scrolling before a carer saw the fourth
-  // course's name. The picture carries no information the card doesn't.
+  // course's name. The picture carries no information the card doesn't, so
+  // its alt text is empty.
   return (
     <div
-      className="relative h-14 overflow-hidden rounded-xl sm:h-[var(--thumb-h)]"
+      className="relative h-14 overflow-hidden rounded-xl sm:aspect-[16/7] sm:h-auto"
       style={{
-        "--thumb-h": `${height}px`,
         background: `linear-gradient(135deg, ${t.color}, ${t.color}aa)`,
       } as React.CSSProperties}
     >
-      <Icon className="absolute -bottom-5 -right-4 size-20 text-white/15 sm:size-32" />
+      {cover ? (
+        <Image
+          src={cover}
+          alt=""
+          fill
+          unoptimized
+          className="object-cover"
+        />
+      ) : (
+        <Icon className="absolute -bottom-5 -right-4 size-20 text-white/15 sm:size-32" />
+      )}
       <div
         className="absolute left-3 top-1/2 flex size-9 -translate-y-1/2 items-center justify-center rounded-lg bg-white shadow-sm sm:top-3 sm:translate-y-0"
         style={{ color: t.color }}

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" aria-hidden="true">
+  <rect width="960" height="420" fill="#fdf2e2"/>
+  <circle cx="600" cy="240" r="232" fill="#f8dfba"/>
+  <circle cx="140" cy="360" r="92" fill="#fbe8cc"/>
+  <circle cx="880" cy="78" r="42" fill="#fbe8cc"/>
+  <g fill="#d97706" opacity=".22"><circle cx="262" cy="96" r="7"/><circle cx="292" cy="126" r="4"/><circle cx="852" cy="318" r="6"/><circle cx="884" cy="292" r="4"/></g>
+
+  <path d="M415 420 C415 330 455 296 520 296 C585 296 625 330 625 420 Z" fill="#7aa6c2"/>
+  <rect x="506" y="262" width="28" height="42" rx="10" fill="#e7b896"/>
+  <path d="M497 297 L520 330 L543 297 Z" fill="#e7b896"/>
+  
+  <circle cx="520" cy="228" r="50" fill="#f6d2b6"/>
+  <path d="M469 230 A51 51 0 0 1 571 230 C564 206 532 198 502 201 C482 204 472 216 469 230 Z" fill="#6b4226"/>
+  <circle cx="503" cy="236" r="4.5" fill="#0f2a2e"/><circle cx="537" cy="236" r="4.5" fill="#0f2a2e"/>
+  <circle cx="492" cy="252" r="8" fill="#e07a5f" opacity=".32"/><circle cx="548" cy="252" r="8" fill="#e07a5f" opacity=".32"/>
+  <path d="M508 259 Q514 253 520 258 Q526 263 532 257" stroke="#0f2a2e" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M494 218 L510 222 M546 218 L530 222" stroke="#0f2a2e" stroke-width="3.5" stroke-linecap="round"/>
+  <g transform="rotate(-28 542 206)"><rect x="524" y="198" width="36" height="15" rx="6" fill="#f3d9b1"/><rect x="535" y="198" width="14" height="15" fill="#e8c592"/></g>
+  <polygon points="430,92 434.8,103.4 447.1,104.4 437.7,112.5 440.6,124.6 430,118.1 419.4,124.6 422.3,112.5 412.9,104.4 425.2,103.4" fill="#fcbf49" stroke="#fcbf49" stroke-width="3.2" stroke-linejoin="round"/><polygon points="600,72 603.7,80.9 613.3,81.7 606,87.9 608.2,97.3 600,92.3 591.8,97.3 594,87.9 586.7,81.7 596.3,80.9" fill="#fcbf49" stroke="#fcbf49" stroke-width="2.5" stroke-linejoin="round"/><polygon points="640,128 643.2,135.6 651.4,136.3 645.1,141.7 647.1,149.7 640,145.4 632.9,149.7 634.9,141.7 628.6,136.3 636.8,135.6" fill="#fcbf49" stroke="#fcbf49" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M410 120 C430 70 610 60 650 120" stroke="#f2b25c" stroke-width="5" fill="none" stroke-dasharray="4 14" stroke-linecap="round"/>
+  <g transform="rotate(-12 765 270)"><rect x="690" y="220" width="150" height="100" rx="30" fill="#9fd3f2"/><g stroke="#ffffff" stroke-width="7" stroke-linecap="round"><path d="M765 238 v64"/><path d="M737 254 l56 32"/><path d="M737 286 l56 -32"/></g></g>
+</svg>

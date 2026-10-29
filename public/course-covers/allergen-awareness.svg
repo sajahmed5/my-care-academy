@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" aria-hidden="true">
+  <rect width="960" height="420" fill="#f1ebfb"/>
+  <circle cx="600" cy="240" r="232" fill="#e3d7f7"/>
+  <circle cx="140" cy="360" r="92" fill="#ebe2f9"/>
+  <circle cx="880" cy="78" r="42" fill="#ebe2f9"/>
+  <g fill="#7c3aed" opacity=".22"><circle cx="262" cy="96" r="7"/><circle cx="292" cy="126" r="4"/><circle cx="852" cy="318" r="6"/><circle cx="884" cy="292" r="4"/></g>
+
+  <path d="M380 180 L410 140 H460 L490 180 V370 H380 Z" fill="#ffffff"/><path d="M410 140 H460 L490 180 H380 Z" fill="#cfe3f5"/><rect x="400" y="120" width="40" height="24" rx="4" fill="#5aa9e6"/><rect x="380" y="230" width="110" height="70" fill="#5aa9e6"/><path d="M405 280 c10 -30 50 -30 60 0" stroke="#ffffff" stroke-width="6" fill="none"/>
+  <path d="M560 380 V150" stroke="#d9b26f" stroke-width="8"/><ellipse cx="548" cy="170" rx="12" ry="22" fill="#e8c27a" transform="rotate(-25 548 170)"/><ellipse cx="572" cy="170" rx="12" ry="22" fill="#e8c27a" transform="rotate(25 572 170)"/><ellipse cx="548" cy="210" rx="12" ry="22" fill="#e8c27a" transform="rotate(-25 548 210)"/><ellipse cx="572" cy="210" rx="12" ry="22" fill="#e8c27a" transform="rotate(25 572 210)"/><ellipse cx="548" cy="250" rx="12" ry="22" fill="#e8c27a" transform="rotate(-25 548 250)"/><ellipse cx="572" cy="250" rx="12" ry="22" fill="#e8c27a" transform="rotate(25 572 250)"/><ellipse cx="548" cy="290" rx="12" ry="22" fill="#e8c27a" transform="rotate(-25 548 290)"/><ellipse cx="572" cy="290" rx="12" ry="22" fill="#e8c27a" transform="rotate(25 572 290)"/>
+  <ellipse cx="700" cy="280" rx="56" ry="72" fill="#ffffff"/><ellipse cx="686" cy="260" rx="14" ry="22" fill="#fdfaf3"/>
+  <g transform="rotate(12 820 160)"><rect x="770" y="120" width="110" height="64" rx="12" fill="#fcbf49"/><circle cx="790" cy="152" r="9" fill="#0f2a2e"/><rect x="806" y="140" width="58" height="9" rx="4.5" fill="#0f2a2e" opacity=".6"/><rect x="806" y="156" width="40" height="9" rx="4.5" fill="#0f2a2e" opacity=".6"/></g>
+</svg>

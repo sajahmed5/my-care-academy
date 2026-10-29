@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" aria-hidden="true">
+  <rect width="960" height="420" fill="#e4f3ef"/>
+  <circle cx="600" cy="240" r="232" fill="#cfe9e2"/>
+  <circle cx="140" cy="360" r="92" fill="#d9efe9"/>
+  <circle cx="880" cy="78" r="42" fill="#d9efe9"/>
+  <g fill="#0f8178" opacity=".22"><circle cx="262" cy="96" r="7"/><circle cx="292" cy="126" r="4"/><circle cx="852" cy="318" r="6"/><circle cx="884" cy="292" r="4"/></g>
+
+  <rect x="520" y="70" width="190" height="350" rx="10" fill="#ffffff"/><rect x="540" y="90" width="150" height="330" rx="6" fill="#5fb3a6"/><circle cx="670" cy="260" r="9" fill="#fcbf49"/>
+  <rect x="566" y="130" width="98" height="40" rx="8" fill="#ffffff"/><text x="615" y="157" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="#0f8178">Knock</text>
+  <circle cx="380" cy="158" r="24" fill="#2b1d14"/>
+  <path d="M275 420 C275 330 315 296 380 296 C445 296 485 330 485 420 Z" fill="#0f8178"/>
+  <rect x="366" y="262" width="28" height="42" rx="10" fill="#c48a5f"/>
+  <path d="M357 297 L380 330 L403 297 Z" fill="#c48a5f"/>
+  <rect x="410" y="340" width="34" height="20" rx="4" fill="#ffffff" opacity=".9"/>
+  
+  <circle cx="380" cy="228" r="50" fill="#d9a074"/>
+  <path d="M327 232 C320 174 358 162 380 162 C415 162 442 178 433 232 C424 202 402 191 380 191 C358 191 336 202 327 232 Z" fill="#2b1d14"/>
+  <circle cx="363" cy="236" r="4.5" fill="#0f2a2e"/><circle cx="397" cy="236" r="4.5" fill="#0f2a2e"/>
+  <circle cx="352" cy="252" r="8" fill="#e07a5f" opacity=".32"/><circle cx="408" cy="252" r="8" fill="#e07a5f" opacity=".32"/>
+  <path d="M366 253 Q380 265 394 253" stroke="#0f2a2e" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M450 328 Q487 180 524 210" stroke="#0f8178" stroke-width="30" fill="none" stroke-linecap="round"/>
+  <ellipse cx="524" cy="210" rx="18" ry="14" fill="#d9a074"/>
+  <path d="M760 420 V170 M800 420 V170 M840 420 V170" stroke="#ffffff" stroke-width="10" opacity=".7"/>
+  <path d="M740 170 h120 v250 h-120 Z" fill="#ffffff" opacity=".55"/>
+  <path transform="translate(810 110) scale(0.6)" d="M0 35 C-40 5 -45 -25 -22 -35 C-8 -41 0 -31 0 -23 C0 -31 8 -41 22 -35 C45 -25 40 5 0 35 Z" fill="#f07167" opacity="1"/>
+</svg>

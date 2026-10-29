@@ -168,6 +168,7 @@ export default async function LearnerDashboard() {
                     courseId: e.course_id,
                     title: e.title,
                     topic: e.topic,
+                    slug: e.slug,
                     status: e.status,
                     progress: e.progress,
                     dueDate: e.due_date,

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" aria-hidden="true">
+  <rect width="960" height="420" fill="#f1ebfb"/>
+  <circle cx="600" cy="240" r="232" fill="#e3d7f7"/>
+  <circle cx="140" cy="360" r="92" fill="#ebe2f9"/>
+  <circle cx="880" cy="78" r="42" fill="#ebe2f9"/>
+  <g fill="#7c3aed" opacity=".22"><circle cx="262" cy="96" r="7"/><circle cx="292" cy="126" r="4"/><circle cx="852" cy="318" r="6"/><circle cx="884" cy="292" r="4"/></g>
+
+  <g transform="translate(470 220) scale(1.1)"><rect x="-46" y="-86" width="92" height="172" rx="16" fill="#2b2d42"/><rect x="-38" y="-72" width="76" height="140" rx="8" fill="#e9f4f2"/><rect x="-14" y="-80" width="28" height="5" rx="2.5" fill="#4a4e69"/><text x="0" y="-12" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="36" font-weight="800" fill="#e63946">999</text><circle cx="0" cy="38" r="22" fill="#16a34a"/><path d="M-10 32 c4 10 10 16 20 18 l4 -6 l-8 -4 l-4 4 c-4 -2 -8 -6 -10 -10 l4 -4 l-4 -8 Z" fill="#ffffff"/></g>
+  <circle cx="680" cy="150" r="60" fill="#ffffff" stroke="#2b2d42" stroke-width="9.6"/><path d="M680 150 V114 M680 150 L707 162" stroke="#7c3aed" stroke-width="7.2" stroke-linecap="round"/><circle cx="680" cy="150" r="6" fill="#7c3aed"/>
+  <g font-family="Inter, Arial, sans-serif" font-size="30" font-weight="800" fill="#ffffff" text-anchor="middle">
+    <rect x="600" y="260" width="56" height="56" rx="14" fill="#7c3aed"/><text x="628" y="299">F</text><rect x="666" y="260" width="56" height="56" rx="14" fill="#7c3aed"/><text x="694" y="299">A</text><rect x="732" y="260" width="56" height="56" rx="14" fill="#7c3aed"/><text x="760" y="299">S</text><rect x="798" y="260" width="56" height="56" rx="14" fill="#e63946"/><text x="826" y="299">T</text>
+  </g>
+</svg>

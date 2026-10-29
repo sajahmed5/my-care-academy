@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" aria-hidden="true">
+  <rect width="960" height="420" fill="#eceefd"/>
+  <circle cx="600" cy="240" r="232" fill="#dadcfb"/>
+  <circle cx="140" cy="360" r="92" fill="#e3e5fc"/>
+  <circle cx="880" cy="78" r="42" fill="#e3e5fc"/>
+  <g fill="#4f46e5" opacity=".22"><circle cx="262" cy="96" r="7"/><circle cx="292" cy="126" r="4"/><circle cx="852" cy="318" r="6"/><circle cx="884" cy="292" r="4"/></g>
+
+  <g fill="none" stroke="#2b2d42" stroke-width="22">
+    <rect x="300" y="200" width="120" height="70" rx="35"/><rect x="390" y="200" width="120" height="70" rx="35" transform="rotate(-14 450 235)"/>
+    <rect x="640" y="190" width="120" height="70" rx="35" transform="rotate(12 700 225)"/><rect x="730" y="200" width="120" height="70" rx="35"/>
+  </g>
+  <path d="M570 144 Q570 170 596 170 Q570 170 570 196 Q570 170 544 170 Q570 170 570 144 Z" fill="#fcbf49"/><path d="M600 264 Q600 280 616 280 Q600 280 600 296 Q600 280 584 280 Q600 280 600 264 Z" fill="#fcbf49"/><path d="M545 240 Q545 250 555 250 Q545 250 545 260 Q545 250 535 250 Q545 250 545 240 Z" fill="#fcbf49"/>
+  <path transform="translate(580 80) scale(0.7)" d="M0 35 C-40 5 -45 -25 -22 -35 C-8 -41 0 -31 0 -23 C0 -31 8 -41 22 -35 C45 -25 40 5 0 35 Z" fill="#4f46e5" opacity="1"/>
+</svg>

@@ -18,6 +18,8 @@ export interface Enrolment {
   completion_count: number;
   title: string;
   topic: string | null;
+  /** The course's slug, which names its cover photo. */
+  slug?: string | null;
 }
 
 export interface Certificate {

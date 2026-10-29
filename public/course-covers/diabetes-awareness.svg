@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" aria-hidden="true">
+  <rect width="960" height="420" fill="#f1ebfb"/>
+  <circle cx="600" cy="240" r="232" fill="#e3d7f7"/>
+  <circle cx="140" cy="360" r="92" fill="#ebe2f9"/>
+  <circle cx="880" cy="78" r="42" fill="#ebe2f9"/>
+  <g fill="#7c3aed" opacity=".22"><circle cx="262" cy="96" r="7"/><circle cx="292" cy="126" r="4"/><circle cx="852" cy="318" r="6"/><circle cx="884" cy="292" r="4"/></g>
+
+  <rect x="440" y="120" width="160" height="240" rx="34" fill="#ffffff"/><rect x="462" y="148" width="116" height="80" rx="12" fill="#dff3ec"/><text x="520" y="203" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="800" fill="#7c3aed">5.8</text>
+  <circle cx="490" cy="282" r="18" fill="#a78bfa"/><circle cx="550" cy="282" r="18" fill="#a78bfa"/><rect x="500" y="320" width="40" height="44" rx="6" fill="#e3ebe9"/>
+  <path transform="translate(660 250) scale(0.7)" d="M0 -40 C14 -18 30 0 30 18 C30 36 16 48 0 48 C-16 48 -30 36 -30 18 C-30 0 -14 -18 0 -40 Z" fill="#e63946"/>
+  <circle cx="780" cy="290" r="62" fill="#e63946"/><path d="M780 228 c4 -20 16 -30 30 -30" stroke="#6b4226" stroke-width="7" fill="none"/><path d="M786 222 c30 -24 50 -10 50 -10 c-16 22 -36 22 -50 10 Z" fill="#5aa469"/><circle cx="760" cy="270" r="12" fill="#ff8a8f"/>
+  <g transform="rotate(-40 330 220)"><rect x="250" y="200" width="170" height="36" rx="18" fill="#a78bfa"/><rect x="380" y="200" width="40" height="36" rx="12" fill="#7c3aed"/><rect x="420" y="214" width="26" height="8" rx="4" fill="#8d99ae"/></g>
+</svg>

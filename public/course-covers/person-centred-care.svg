@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" aria-hidden="true">
+  <rect width="960" height="420" fill="#e4f3ef"/>
+  <circle cx="600" cy="240" r="232" fill="#cfe9e2"/>
+  <circle cx="140" cy="360" r="92" fill="#d9efe9"/>
+  <circle cx="880" cy="78" r="42" fill="#d9efe9"/>
+  <g fill="#0f8178" opacity=".22"><circle cx="262" cy="96" r="7"/><circle cx="292" cy="126" r="4"/><circle cx="852" cy="318" r="6"/><circle cx="884" cy="292" r="4"/></g>
+
+  <path d="M495 420 C495 330 535 296 600 296 C665 296 705 330 705 420 Z" fill="#e9a6a6"/>
+  <rect x="586" y="262" width="28" height="42" rx="10" fill="#c48a5f"/>
+  <path d="M577 297 L600 330 L623 297 Z" fill="#c48a5f"/>
+  
+  <circle cx="600" cy="228" r="50" fill="#d9a074"/>
+  <path d="M547 232 C540 174 578 162 600 162 C635 162 662 178 653 232 C644 202 622 191 600 191 C578 191 556 202 547 232 Z" fill="#e9e5df"/>
+  <circle cx="583" cy="236" r="4.5" fill="#0f2a2e"/><circle cx="617" cy="236" r="4.5" fill="#0f2a2e"/>
+  <g stroke="#0f2a2e" stroke-width="3.5" fill="none"><circle cx="583" cy="236" r="13"/><circle cx="617" cy="236" r="13"/><path d="M596 236 H604"/></g>
+  <circle cx="572" cy="252" r="8" fill="#e07a5f" opacity=".32"/><circle cx="628" cy="252" r="8" fill="#e07a5f" opacity=".32"/>
+  <path d="M586 253 Q600 265 614 253" stroke="#0f2a2e" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <circle cx="420" cy="150" r="46" fill="#ffffff"/><path d="M398 134 h36 v22 a18 16 0 0 1 -36 0 Z" fill="#0f8178"/><path d="M434 140 a10 10 0 0 1 0 20" stroke="#0f8178" stroke-width="5" fill="none"/><rect x="392" y="172" width="48" height="6" rx="3" fill="#0f8178"/>
+  <circle cx="790" cy="140" r="46" fill="#ffffff"/><path d="M780 118 v40 a10 8 0 1 1 -6 -8 v-28 l28 -6 v34 a10 8 0 1 1 -6 -8 v-22 Z" fill="#0f8178"/>
+  <circle cx="800" cy="290" r="40" fill="#ffffff"/><g fill="#f07167"><circle cx="800" cy="276" r="9"/><circle cx="813" cy="290" r="9"/><circle cx="800" cy="304" r="9"/><circle cx="787" cy="290" r="9"/></g><circle cx="800" cy="290" r="6" fill="#fcbf49"/>
+  <path transform="translate(600 60) scale(0.6)" d="M0 35 C-40 5 -45 -25 -22 -35 C-8 -41 0 -31 0 -23 C0 -31 8 -41 22 -35 C45 -25 40 5 0 35 Z" fill="#f07167" opacity="1"/>
+</svg>

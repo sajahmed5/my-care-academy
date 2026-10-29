@@ -23,6 +23,7 @@ function Section({ title, items }: { title: string; items: Enrolment[] }) {
               courseId: e.course_id,
               title: e.title,
               topic: e.topic,
+              slug: e.slug,
               status: e.status,
               progress: e.progress,
               dueDate: e.due_date,

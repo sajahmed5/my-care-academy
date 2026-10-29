@@ -14,6 +14,7 @@ import { formatDate } from "@/lib/dates";
 export interface CatalogueCourse {
   id: string;
   title: string;
+  slug: string | null;
   description: string | null;
   topic: string | null;
 }
@@ -113,7 +114,7 @@ export function AllCourses({
               key={c.id}
               className="flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm transition-shadow hover:shadow-md"
             >
-              <CourseThumb topic={c.topic} />
+              <CourseThumb topic={c.topic} slug={c.slug} />
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate text-xs font-medium text-muted-foreground">
                   {c.topic ?? "General"}
