@@ -2,7 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashToken, newToken } from "@/lib/candidate-links";
 import { siteOrigin } from "@/lib/site-url";
-import { markLiteracy, sanitiseLiteracyAnswers, type LiteracyResult } from "@/lib/literacy-test";
+import { markLiteracy, sanitiseLiteracyAnswers, sanitiseLiteracySettings, testFor, testOf, type LiteracyResult } from "@/lib/literacy-test";
 
 /**
  * Literacy attempts (RECRUITMENT.md, release 3), brought across from
@@ -16,7 +16,7 @@ const OFFICE_MS = 15 * 60_000;
 const REMOTE_MS = 3 * 86_400_000;
 
 export const ATTEMPT_COLUMNS =
-  "id, organisation_id, candidate_id, attempt_no, mode, status, token_expires_at, unlocked_at, started_at, deadline_at, submitted_at, ended_by, answers, score, max_score, percent, passed, left_page_count";
+  "id, organisation_id, candidate_id, attempt_no, mode, status, token_expires_at, unlocked_at, started_at, deadline_at, submitted_at, ended_by, answers, score, max_score, percent, passed, left_page_count, test";
 
 export async function latestAttempt(admin: Admin, candidateId: string) {
   const { data } = await admin
@@ -43,7 +43,10 @@ export async function unlockAttempt(
   if (latest?.status === "submitted" && !opts.retake) return { error: "They've already taken it. Allow a retake to unlock it again." };
   const raw = newToken();
   const expiresAt = new Date(Date.now() + (opts.mode === "office" ? OFFICE_MS : REMOTE_MS)).toISOString();
-  const row = { mode: opts.mode, token_hash: hashToken(raw), token_expires_at: expiresAt, unlocked_by: opts.by, unlocked_at: new Date().toISOString() };
+  // The company's test as it stands now goes onto the attempt: a later edit never changes how it's marked.
+  const { data: settings } = await admin.from("recruitment_settings").select("literacy_settings").eq("organisation_id", opts.orgId).maybeSingle();
+  const test = testFor(sanitiseLiteracySettings(settings?.literacy_settings));
+  const row = { mode: opts.mode, token_hash: hashToken(raw), token_expires_at: expiresAt, unlocked_by: opts.by, unlocked_at: new Date().toISOString(), test };
   if (latest?.status === "unlocked") {
     await admin.from("literacy_attempts").update(row).eq("id", latest.id as string);
   } else {
@@ -75,10 +78,11 @@ export async function attemptForToken(admin: Admin, raw: string) {
  */
 export async function finaliseAttempt(
   admin: Admin,
-  attempt: { id: string; organisation_id: string; candidate_id: string; answers: unknown; mode: string; attempt_no: number },
+  attempt: { id: string; organisation_id: string; candidate_id: string; answers: unknown; mode: string; attempt_no: number; test: unknown },
   endedBy: "candidate" | "time",
 ): Promise<LiteracyResult> {
-  const result = markLiteracy(sanitiseLiteracyAnswers(attempt.answers));
+  const test = testOf(attempt.test);
+  const result = markLiteracy(sanitiseLiteracyAnswers(attempt.answers, test), test);
   const now = new Date().toISOString();
   const { data: closed } = await admin
     .from("literacy_attempts")

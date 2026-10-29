@@ -153,8 +153,18 @@ export interface Letter {
   company: string;
 }
 
-export function buildOffer(args: { fields: OfferFields; candidateName: string; companyName: string; referees: number; todayIso: string }): Letter {
+/** What the offer is conditional on, unless the company has written its own list. */
+export const defaultConditions = (referees: number) => [
+  `satisfactory references from the ${referees === 3 ? "three" : "two"} people you named on your application`,
+  "a satisfactory enhanced DBS check",
+  "proof of your identity, your address and your right to work in the United Kingdom",
+  "a health declaration, so that we can make any adjustments you need",
+  "successful completion of your induction training",
+];
+
+export function buildOffer(args: { fields: OfferFields; candidateName: string; companyName: string; referees: number; todayIso: string; conditions?: string[] | null }): Letter {
   const { fields: f, candidateName, companyName, referees, todayIso } = args;
+  const conditions = args.conditions?.length ? args.conditions : defaultConditions(referees);
   const company = companyName || "us";
   return {
     subject: `${companyName ? `${companyName}: ` : ""}your offer of employment`,
@@ -166,13 +176,7 @@ export function buildOffer(args: { fields: OfferFields; candidateName: string; c
       {
         heading: "What happens next",
         paragraphs: ["This offer is conditional on the following, which we'll now work through with you:"],
-        list: [
-          `satisfactory references from the ${referees === 3 ? "three" : "two"} people you named on your application`,
-          "a satisfactory enhanced DBS check",
-          "proof of your identity, your address and your right to work in the United Kingdom",
-          "a health declaration, so that we can make any adjustments you need",
-          "successful completion of your induction training",
-        ],
+        list: conditions,
       },
       {
         paragraphs: [
@@ -223,13 +227,13 @@ export interface RejectionFields {
   signatoryTitle: string;
 }
 
-export function sanitiseRejection(raw: unknown): RejectionFields {
+export function sanitiseRejection(raw: unknown, reasons: RejectionReason[] = REJECTION_REASONS): RejectionFields {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const months = Number(r.reapplyMonths);
   const ticked = Array.isArray(r.reasons) ? r.reasons : [];
   return {
     // In the list's order, whatever order they were ticked in.
-    reasons: REJECTION_REASONS.map((x) => x.id).filter((id) => ticked.includes(id)),
+    reasons: reasons.map((x) => x.id).filter((id) => ticked.includes(id)),
     note: line(r.note, 600),
     reapplyMonths: (REAPPLY_MONTHS as readonly number[]).includes(months) ? months : 0,
     signatoryName: line(r.signatoryName, 80),
@@ -245,16 +249,17 @@ export function rejectionProblems(f: RejectionFields): string[] {
 }
 
 /** The reasons, as the office reads them later. */
-export function rejectionSummary(f: Pick<RejectionFields, "reasons" | "note">): string {
-  return [...REJECTION_REASONS.filter((x) => f.reasons.includes(x.id)).map((x) => x.label), f.note].filter(Boolean).join("; ");
+export function rejectionSummary(f: Pick<RejectionFields, "reasons" | "note">, reasons: RejectionReason[] = REJECTION_REASONS): string {
+  return [...reasons.filter((x) => f.reasons.includes(x.id)).map((x) => x.label), f.note].filter(Boolean).join("; ");
 }
 
-export function buildRejection(args: { fields: RejectionFields; candidateName: string; companyName: string; position?: string | null; todayIso: string }): Letter {
+export function buildRejection(args: { fields: RejectionFields; candidateName: string; companyName: string; position?: string | null; todayIso: string; reasons?: RejectionReason[] }): Letter {
   const { fields: f, candidateName, companyName, todayIso } = args;
+  const known = args.reasons ?? REJECTION_REASONS;
   const company = companyName || "us";
   const position = args.position || "carer";
   const reasons = [
-    ...REJECTION_REASONS.filter((x) => f.reasons.includes(x.id)).map((x) => x.sentence),
+    ...known.filter((x) => f.reasons.includes(x.id)).map((x) => x.sentence),
     ...(f.note ? [/[.!?]$/.test(f.note) ? f.note : `${f.note}.`] : []),
   ];
   const withdrew = f.reasons.length === 1 && f.reasons[0] === "withdrew" && !f.note;
@@ -288,6 +293,34 @@ export function buildRejection(args: { fields: RejectionFields; candidateName: s
     company: companyName,
   };
 }
+
+// ─── A company's own wording (release 7) ────────────────────────────────────
+
+/** Which of our reasons a company leaves out, its own reasons, and its own offer conditions. */
+export interface LetterSettings { reasonsOff: string[]; ownReasons: RejectionReason[]; conditions: string[] }
+export const DEFAULT_LETTER_SETTINGS: LetterSettings = { reasonsOff: [], ownReasons: [], conditions: [] };
+
+export function sanitiseLetterSettings(raw: unknown): LetterSettings {
+  if (!raw || typeof raw !== "object") return DEFAULT_LETTER_SETTINGS;
+  const r = raw as Record<string, unknown>;
+  const ours = new Set(REJECTION_REASONS.map((x) => x.id));
+  const ownReasons: RejectionReason[] = [];
+  for (const item of Array.isArray(r.ownReasons) ? r.ownReasons.slice(0, 20) : []) {
+    const o = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+    const id = typeof o.id === "string" && /^own_[a-z0-9]{6,12}$/.test(o.id) ? o.id : null;
+    const label = line(o.label, 120);
+    const sentence = line(o.sentence, 400);
+    if (id && label && sentence) ownReasons.push({ id, label, sentence });
+  }
+  return {
+    reasonsOff: (Array.isArray(r.reasonsOff) ? r.reasonsOff : []).filter((x): x is string => typeof x === "string" && ours.has(x)),
+    ownReasons,
+    conditions: (Array.isArray(r.conditions) ? r.conditions : []).map((c) => line(c, 300)).filter(Boolean).slice(0, 12),
+  };
+}
+
+/** The reasons the office ticks from: ours it uses, then its own. */
+export const reasonsFor = (s: LetterSettings): RejectionReason[] => [...REJECTION_REASONS.filter((x) => !s.reasonsOff.includes(x.id)), ...s.ownReasons];
 
 // ─── As sent ────────────────────────────────────────────────────────────────
 

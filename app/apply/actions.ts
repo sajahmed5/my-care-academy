@@ -7,11 +7,23 @@ import { rateLimit } from "@/lib/rate-limit";
 import { applicationForToken, emailApplicationLink, issueApplicationLink } from "@/lib/candidate-links";
 import { inviteCandidate } from "@/lib/candidate-account";
 import {
+  applicationSections,
   sanitiseAnswers,
   validateApplication,
   type Answers,
   type FieldError,
+  type FormSection,
 } from "@/lib/recruitment-application";
+import { companyQuestions } from "@/lib/company-questions";
+import { APPLICATION_CUSTOM_TITLE, customSection } from "@/lib/custom-questions";
+
+type Admin = ReturnType<typeof createAdminClient>;
+
+/** The company's own questions as a section of the form, if it has any. */
+async function companySection(admin: Admin, orgId: string): Promise<FormSection | null> {
+  const { custom } = await companyQuestions(admin, orgId);
+  return customSection(custom.application, { title: APPLICATION_CUSTOM_TITLE });
+}
 
 /**
  * The application form's server side (RECRUITMENT.md, release 2a). Nobody is
@@ -105,6 +117,8 @@ export interface LoadedApplication {
   answers: Answers;
   officeNote: string | null;
   firstName: string;
+  /** The company's own questions, shown before the declaration. */
+  company_questions: FormSection | null;
 }
 
 export async function loadApplicationAction(token: string): Promise<LoadedApplication | { error: string }> {
@@ -118,6 +132,7 @@ export async function loadApplicationAction(token: string): Promise<LoadedApplic
     answers,
     officeNote: (app.office_note as string | null) ?? null,
     firstName: typeof answers.firstName === "string" ? answers.firstName : "",
+    company_questions: await companySection(admin, app.organisation_id as string),
   };
 }
 
@@ -126,7 +141,8 @@ export async function saveApplicationAction(token: string, raw: unknown): Promis
   const admin = createAdminClient();
   const app = await applicationForToken(admin, token);
   if (!app || app.status !== "draft") return { ok: false };
-  await admin.from("candidate_applications").update({ answers: sanitiseAnswers(raw) }).eq("id", app.id as string);
+  const sections = applicationSections(await companySection(admin, app.organisation_id as string));
+  await admin.from("candidate_applications").update({ answers: sanitiseAnswers(raw, sections) }).eq("id", app.id as string);
   return { ok: true };
 }
 
@@ -144,8 +160,9 @@ export async function submitApplicationAction(
   const app = await applicationForToken(admin, token);
   if (!app) return { ok: false, error: "This link has expired. Ask the company to send you a new one." };
   if (app.status === "submitted") return { ok: true };
-  const answers = sanitiseAnswers(raw);
-  const problems = validateApplication(answers, todayIso());
+  const sections = applicationSections(await companySection(admin, app.organisation_id as string));
+  const answers = sanitiseAnswers(raw, sections);
+  const problems = validateApplication(answers, todayIso(), sections);
   if (Object.keys(problems).length) return { ok: false, error: "Some sections still need attention.", problems };
   const dataUrl = typeof signature?.dataUrl === "string" ? signature.dataUrl : "";
   const signedName = typeof signature?.signedName === "string" ? signature.signedName.trim().slice(0, 120) : "";

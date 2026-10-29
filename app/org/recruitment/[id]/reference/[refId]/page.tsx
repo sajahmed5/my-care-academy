@@ -4,7 +4,10 @@ import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/dates";
 import { answerText, isShown, type Answers } from "@/lib/recruitment-application";
-import { REFERENCE_SECTIONS, kindForType, referenceFlags } from "@/lib/recruitment-references";
+import { kindForType, referenceFlags, referenceSections } from "@/lib/recruitment-references";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { companyQuestions } from "@/lib/company-questions";
+import { REFERENCE_CUSTOM_TITLE, customSection } from "@/lib/custom-questions";
 import { DashboardShell } from "@/components/dashboard-shell";
 
 /** A reference as the referee sent it, with anything worth a second look first. */
@@ -25,6 +28,8 @@ export default async function ReferencePage({ params }: { params: Promise<{ id: 
   const kind = kindForType(ref.referee_type as string);
   const answers = ref.answers as Answers;
   const flags = referenceFlags(kind, answers);
+  const { custom } = await companyQuestions(createAdminClient(), context.organisationId!);
+  const sections = referenceSections(kind, customSection(custom.reference, { title: REFERENCE_CUSTOM_TITLE, forRecord: true }));
   return (
     <DashboardShell
       title={`Reference ${ref.position}: ${ref.referee_name as string}`}
@@ -42,7 +47,7 @@ export default async function ReferencePage({ params }: { params: Promise<{ id: 
             <ul className="mt-1 list-disc pl-5">{flags.map((f) => <li key={f}>{f}</li>)}</ul>
           </div>
         )}
-        {REFERENCE_SECTIONS[kind].map((s) => (
+        {sections.map((s) => (
           <section key={s.id} aria-labelledby={`r-${s.id}`} className="rounded-2xl border bg-card p-5">
             <h2 id={`r-${s.id}`} className="font-semibold">{s.title}</h2>
             <dl className="mt-3 space-y-2.5 text-sm">

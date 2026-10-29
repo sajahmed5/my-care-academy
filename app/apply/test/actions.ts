@@ -5,9 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/rate-limit";
 import { attemptForToken, finaliseAttempt } from "@/lib/literacy-attempts";
 import {
-  LITERACY_MAX,
-  LITERACY_MINUTES,
-  LITERACY_QUESTIONS,
+  maxMarks,
+  testOf,
   acceptsAnswers,
   deadlineFor,
   hasRunOut,
@@ -62,7 +61,9 @@ export async function literacyAction(
     answers: attempt.answers,
     mode: attempt.mode as string,
     attempt_no: attempt.attempt_no as number,
+    test: attempt.test,
   };
+  const test = testOf(attempt.test);
 
   if (hasRunOut(timing, now)) {
     await finaliseAttempt(admin, toFinalise, "time");
@@ -72,13 +73,13 @@ export async function literacyAction(
   if (attempt.status === "cancelled" || candidate?.status !== "candidate") return { status: "bad", error: BAD_LINK };
   const fresh = !!attempt.token_expires_at && Date.parse(attempt.token_expires_at as string) > now;
   const running = (a: typeof timing, answers: unknown): LiteracyReply => ({
-    status: "running", company, firstName, questions: publicQuestions(), answers: (answers ?? {}) as Record<string, unknown>, secondsLeft: secondsLeft(a, Date.now()),
+    status: "running", company, firstName, questions: publicQuestions(test), answers: (answers ?? {}) as Record<string, unknown>, secondsLeft: secondsLeft(a, Date.now()),
   });
 
   if (action === "load") {
     if (attempt.status === "in_progress") return running(timing, attempt.answers);
     if (!fresh) return { status: "bad", error: BAD_LINK };
-    return { status: "ready", company, firstName, minutes: LITERACY_MINUTES, questionCount: LITERACY_QUESTIONS.length, marks: LITERACY_MAX };
+    return { status: "ready", company, firstName, minutes: test.minutes, questionCount: test.questions.length, marks: maxMarks(test) };
   }
 
   if (action === "begin") {
@@ -87,7 +88,7 @@ export async function literacyAction(
     const startedAt = new Date(now).toISOString();
     const { data: begun } = await admin
       .from("literacy_attempts")
-      .update({ status: "in_progress", started_at: startedAt, deadline_at: deadlineFor(now) })
+      .update({ status: "in_progress", started_at: startedAt, deadline_at: deadlineFor(now, test.minutes) })
       .eq("id", attempt.id as string)
       .eq("status", "unlocked")
       .select("status, started_at, deadline_at, answers")
@@ -110,7 +111,7 @@ export async function literacyAction(
   }
 
   if (acceptsAnswers(timing, now)) {
-    const answers = sanitiseLiteracyAnswers(rawAnswers);
+    const answers = sanitiseLiteracyAnswers(rawAnswers, test);
     const { data: saved } = await admin
       .from("literacy_attempts")
       .update({ answers })

@@ -52,7 +52,7 @@ export const LITERACY_QUESTIONS: LiteracyQuestion[] = [
   { id: "q2", type: "choice", marks: 1, passage: CARE_PLAN, prompt: "Who has milk in their drink?", options: ["Mrs Khan", "Mr Jones", "Mrs Khan and Mr Jones", "Miss Patel"], answer: "Mrs Khan" },
   { id: "q3", type: "choice", marks: 1, passage: CARE_PLAN, prompt: "Mr Jones asks you for a glass of grapefruit juice. What does the care plan tell you?", options: ["He can have it with two sugars", "He must not have it, because of his tablets", "He can only have it with water", "It does not say anything about it"], answer: "He must not have it, because of his tablets" },
 
-  { id: "q4", type: "tapWords", marks: 2, prompt: "A Care Assistant wrote this visit note. Tap the TWO words that are spelt wrongly.", text: "Mrs Smith ate all the brekfast and had a cup of tea. She said that her left knee was painfull today.", wrong: ["brekfast", "painfull"] },
+  { id: "q4", type: "tapWords", marks: 2, prompt: "A carer wrote this visit note. Tap the TWO words that are spelt wrongly.", text: "Mrs Smith ate all the brekfast and had a cup of tea. She said that her left knee was painfull today.", wrong: ["brekfast", "painfull"] },
   { id: "q5", type: "spell", marks: 2, prompt: "Now type each word with the correct spelling.", words: [{ shown: "brekfast", accept: ["breakfast"] }, { shown: "painfull", accept: ["painful"] }] },
 
   { id: "q6", type: "order", marks: 2, prompt: "Tap the words in order to make a sentence for a visit note.", tiles: ["her", "Mrs Lee", "tablets.", "has", "morning", "taken"], answer: ["Mrs Lee", "has", "taken", "her", "morning", "tablets."], joinWith: " " },
@@ -74,9 +74,70 @@ export const LITERACY_QUESTIONS: LiteracyQuestion[] = [
 
 export const LITERACY_MAX = LITERACY_QUESTIONS.reduce((n, q) => n + q.marks, 0);
 
+// ─── A company's own test (release 7) ───────────────────────────────────────
+
+/** The test an attempt is taken and marked on: frozen onto it when it's unlocked. */
+export interface LiteracyTest { questions: LiteracyQuestion[]; minutes: number; passPercent: number }
+export const DEFAULT_TEST: LiteracyTest = { questions: LITERACY_QUESTIONS, minutes: LITERACY_MINUTES, passPercent: LITERACY_PASS_PERCENT };
+
+/** A company's own question: tap one answer, one mark (so marking stays automatic). */
+export interface OwnQuestion { id: string; prompt: string; options: string[]; answer: string }
+/** What a company sets: the time, the pass mark, which of our questions it leaves out, and its own. */
+export interface LiteracySettings { minutes: number; passPercent: number; off: string[]; own: OwnQuestion[] }
+export const DEFAULT_LITERACY_SETTINGS: LiteracySettings = { minutes: LITERACY_MINUTES, passPercent: LITERACY_PASS_PERCENT, off: [], own: [] };
+export const MIN_MARKS = 8;
+
+const lineOf = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "");
+
+export function sanitiseLiteracySettings(raw: unknown): LiteracySettings {
+  if (!raw || typeof raw !== "object") return DEFAULT_LITERACY_SETTINGS;
+  const r = raw as Record<string, unknown>;
+  const minutes = Math.round(Number(r.minutes));
+  const pass = Math.round(Number(r.passPercent));
+  const ours = new Set(LITERACY_QUESTIONS.map((q) => q.id));
+  const own: OwnQuestion[] = [];
+  for (const item of Array.isArray(r.own) ? r.own.slice(0, 20) : []) {
+    const q = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+    const id = typeof q.id === "string" && /^own_[a-z0-9]{6,12}$/.test(q.id) ? q.id : null;
+    const options = [...new Set((Array.isArray(q.options) ? q.options : []).map((o) => lineOf(o, 200)).filter(Boolean))].slice(0, 6);
+    const answer = lineOf(q.answer, 200);
+    const prompt = lineOf(q.prompt, 400);
+    if (id && prompt && options.length >= 2 && options.includes(answer)) own.push({ id, prompt, options, answer });
+  }
+  return {
+    minutes: minutes >= 5 && minutes <= 60 ? minutes : LITERACY_MINUTES,
+    passPercent: pass >= 30 && pass <= 100 ? pass : LITERACY_PASS_PERCENT,
+    off: (Array.isArray(r.off) ? r.off : []).filter((x): x is string => typeof x === "string" && ours.has(x)),
+    own,
+  };
+}
+
+/** The test a company's settings make. */
+export function testFor(settings: LiteracySettings): LiteracyTest {
+  const questions: LiteracyQuestion[] = [
+    ...LITERACY_QUESTIONS.filter((q) => !settings.off.includes(q.id)),
+    ...settings.own.map((q): LiteracyQuestion => ({ id: q.id, type: "choice", marks: 1, prompt: q.prompt, options: q.options, answer: q.answer })),
+  ];
+  return { questions, minutes: settings.minutes, passPercent: settings.passPercent };
+}
+
+export const maxMarks = (test: LiteracyTest) => test.questions.reduce((n, q) => n + q.marks, 0);
+
+/** What stops a company's test being used: too few marks to mean anything. */
+export function literacySettingsProblems(settings: LiteracySettings): string[] {
+  const marks = maxMarks(testFor(settings));
+  return marks < MIN_MARKS ? [`The test needs at least ${MIN_MARKS} marks; it has ${marks}. Switch some of ours back on, or add your own.`] : [];
+}
+
+/** An attempt's frozen test, or ours for an attempt made before companies had their own. */
+export function testOf(stored: unknown): LiteracyTest {
+  const t = stored as LiteracyTest | null | undefined;
+  return t && Array.isArray(t.questions) && t.questions.length && Number(t.minutes) > 0 && Number(t.passPercent) > 0 ? t : DEFAULT_TEST;
+}
+
 /** What the candidate's browser is sent: the questions, and nothing that answers them. */
-export function publicQuestions() {
-  return LITERACY_QUESTIONS.map((q) => {
+export function publicQuestions(test: LiteracyTest = DEFAULT_TEST) {
+  return test.questions.map((q) => {
     const base = { id: q.id, type: q.type, marks: q.marks, prompt: q.prompt, passage: q.passage ?? null };
     if (q.type === "choice") return { ...base, options: q.options };
     // Each token carries the bare word to send back, so the page and the
@@ -94,11 +155,11 @@ const bare = (token: string) => token.replace(/[.,!?;:"“”]/g, "");
 const words = (text: string) => text.split(/\s+/).map(bare).filter(Boolean);
 
 /** Only shapes the test expects, capped — the browser's answers are never trusted as-is. */
-export function sanitiseLiteracyAnswers(raw: unknown): LiteracyAnswers {
+export function sanitiseLiteracyAnswers(raw: unknown, test: LiteracyTest = DEFAULT_TEST): LiteracyAnswers {
   const out: LiteracyAnswers = {};
   if (!raw || typeof raw !== "object") return out;
   const src = raw as Record<string, unknown>;
-  for (const q of LITERACY_QUESTIONS) {
+  for (const q of test.questions) {
     const v = src[q.id];
     if (q.type === "choice") { if (typeof v === "string" && q.options.includes(v)) out[q.id] = v; continue; }
     if (!Array.isArray(v)) continue;
@@ -113,8 +174,8 @@ export function sanitiseLiteracyAnswers(raw: unknown): LiteracyAnswers {
 export interface MarkedQuestion { id: string; prompt: string; marks: number; awarded: number; given: string; correct: string }
 export interface LiteracyResult { score: number; max: number; percent: number; passed: boolean; questions: MarkedQuestion[] }
 
-export function markLiteracy(answers: LiteracyAnswers): LiteracyResult {
-  const questions: MarkedQuestion[] = LITERACY_QUESTIONS.map((q) => {
+export function markLiteracy(answers: LiteracyAnswers, test: LiteracyTest = DEFAULT_TEST): LiteracyResult {
+  const questions: MarkedQuestion[] = test.questions.map((q) => {
     const a = answers[q.id];
     let awarded = 0, given = "—", correct = "";
     if (q.type === "choice") {
@@ -141,8 +202,9 @@ export function markLiteracy(answers: LiteracyAnswers): LiteracyResult {
     return { id: q.id, prompt: q.prompt, marks: q.marks, awarded, given, correct };
   });
   const score = questions.reduce((n, q) => n + q.awarded, 0);
-  const percent = Math.round((score / LITERACY_MAX) * 100);
-  return { score, max: LITERACY_MAX, percent, passed: percent >= LITERACY_PASS_PERCENT, questions };
+  const max = maxMarks(test);
+  const percent = max ? Math.round((score / max) * 100) : 0;
+  return { score, max, percent, passed: percent >= test.passPercent, questions };
 }
 
 // ─── Timing ─────────────────────────────────────────────────────────────────
@@ -151,7 +213,7 @@ export function markLiteracy(answers: LiteracyAnswers): LiteracyResult {
 
 export interface AttemptTiming { status: string; started_at: string | null; deadline_at: string | null }
 
-export const deadlineFor = (startedAtMs: number) => new Date(startedAtMs + LITERACY_MINUTES * 60_000).toISOString();
+export const deadlineFor = (startedAtMs: number, minutes: number = LITERACY_MINUTES) => new Date(startedAtMs + minutes * 60_000).toISOString();
 
 /** Seconds left on a running attempt (0 once over). */
 export function secondsLeft(a: AttemptTiming, now: number): number {

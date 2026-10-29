@@ -4,14 +4,16 @@ import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/dates";
 import {
-  APPLICATION_SECTIONS,
   answerText,
+  applicationSections,
   employmentGaps,
   isShown,
   type Answers,
   type Entry,
-  type FormField,
 } from "@/lib/recruitment-application";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { companyQuestions } from "@/lib/company-questions";
+import { APPLICATION_CUSTOM_TITLE, customSection } from "@/lib/custom-questions";
 import { DashboardShell } from "@/components/dashboard-shell";
 
 /**
@@ -29,6 +31,9 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
   ]);
   if (!candidate || !app) notFound();
   const answers = (app.answers ?? {}) as Answers;
+  // The company's questions, retired ones too, so an earlier answer still shows.
+  const { custom } = await companyQuestions(createAdminClient(), context.organisationId!);
+  const sections = applicationSections(customSection(custom.application, { title: APPLICATION_CUSTOM_TITLE, forRecord: true }));
   const gaps = employmentGaps(answers, new Date().toISOString().slice(0, 10));
   const signature = app.signature as { dataUrl?: string; signedName?: string; signedAt?: string } | null;
 
@@ -44,7 +49,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
             ? `Sent in on ${formatDate(app.submitted_at as string)}.`
             : "Not sent in yet: this is what they've filled in so far."}
         </p>
-        {APPLICATION_SECTIONS.map((section) => (
+        {sections.map((section) => (
           <section key={section.id} aria-labelledby={`s-${section.id}`} className="rounded-2xl border bg-card p-5">
             <h2 id={`s-${section.id}`} className="font-semibold">{section.title}</h2>
             {section.id === "employment" && gaps.length > 0 && (

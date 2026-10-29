@@ -12,7 +12,7 @@ import { ApplicationTools } from "./application-tools";
 import { LiteracyPanel, type AttemptView } from "./literacy-panel";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { latestAttempt } from "@/lib/literacy-attempts";
-import { markLiteracy, sanitiseLiteracyAnswers } from "@/lib/literacy-test";
+import { markLiteracy, sanitiseLiteracyAnswers, sanitiseLiteracySettings, testOf } from "@/lib/literacy-test";
 import { importReferees } from "@/lib/reference-requests";
 import { isFreeWebmail } from "@/lib/recruitment-references";
 import Link from "next/link";
@@ -89,7 +89,8 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
         passed: (a.passed as boolean | null) ?? null,
         leftPage: (a.left_page_count as number) ?? 0,
         endedByTime: a.ended_by === "time",
-        marked: a.status === "submitted" ? markLiteracy(sanitiseLiteracyAnswers(a.answers)).questions : [],
+        passPercent: testOf(a.test).passPercent,
+        marked: a.status === "submitted" ? markLiteracy(sanitiseLiteracyAnswers(a.answers, testOf(a.test)), testOf(a.test)).questions : [],
       }
     : null;
   const settings = settingsFromRow(settingsRow);
@@ -156,7 +157,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
               )}
               {s.stage === 1 && !s.locked && s.steps.some((st) => st.key === "literacy") && (
                 <li className="border-t bg-muted/30 px-5 py-3.5">
-                  <LiteracyPanel candidateId={id} hasEmail={!!candidate.email} attempt={attempt} />
+                  <LiteracyPanel candidateId={id} hasEmail={!!candidate.email} attempt={attempt} minutes={sanitiseLiteracySettings(settingsRow?.literacy_settings).minutes} />
                 </li>
               )}
               {s.stage === 2 && !s.locked && (

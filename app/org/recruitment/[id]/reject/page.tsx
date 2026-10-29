@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { letterDefaultsFromRow, sanitiseRejection } from "@/lib/recruitment-letters";
+import { letterDefaultsFromRow, reasonsFor, sanitiseLetterSettings, sanitiseRejection } from "@/lib/recruitment-letters";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { RejectForm } from "./reject-form";
 
@@ -27,7 +27,8 @@ export default async function RejectPage({ params }: { params: Promise<{ id: str
     admin.from("recruitment_settings").select("*").eq("organisation_id", context.organisationId!).maybeSingle(),
   ]);
   const d = letterDefaultsFromRow(settingsRow);
-  const initial = sanitiseRejection(letter?.fields ?? { signatoryName: d.signatoryName, signatoryTitle: d.signatoryTitle, reapplyMonths: 6 });
+  const reasons = reasonsFor(sanitiseLetterSettings(settingsRow?.letter_settings));
+  const initial = sanitiseRejection(letter?.fields ?? { signatoryName: d.signatoryName, signatoryTitle: d.signatoryTitle, reapplyMonths: 6 }, reasons);
   return (
     <DashboardShell
       title={`Not taking forward: ${c.full_name as string}`}
@@ -41,6 +42,7 @@ export default async function RejectPage({ params }: { params: Promise<{ id: str
         position={(c.role_applied as string | null) ?? null}
         email={(c.email as string | null) ?? null}
         initial={initial}
+        reasons={reasons}
         closed={c.status !== "candidate"}
       />
     </DashboardShell>

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { REAPPLY_MONTHS, REJECTION_REASONS, buildRejection, rejectionProblems, type RejectionFields } from "@/lib/recruitment-letters";
+import { REAPPLY_MONTHS, buildRejection, rejectionProblems, type RejectionFields, type RejectionReason } from "@/lib/recruitment-letters";
 import { sendRejectionAction } from "../../letter-actions";
 import { LetterPreview } from "../letter-preview";
 
@@ -16,6 +16,7 @@ export function RejectForm({
   position,
   email,
   initial,
+  reasons,
   closed,
 }: {
   candidateId: string;
@@ -24,6 +25,7 @@ export function RejectForm({
   position: string | null;
   email: string | null;
   initial: RejectionFields;
+  reasons: RejectionReason[];
   closed: boolean;
 }) {
   const router = useRouter();
@@ -34,7 +36,7 @@ export function RejectForm({
   const toggle = (id: string) =>
     set("reasons", fields.reasons.includes(id) ? fields.reasons.filter((r) => r !== id) : [...fields.reasons, id]);
 
-  const letter = buildRejection({ fields, candidateName, companyName, position, todayIso: new Date().toISOString().slice(0, 10) });
+  const letter = buildRejection({ fields, candidateName, companyName, position, todayIso: new Date().toISOString().slice(0, 10), reasons });
   const problems = rejectionProblems(fields);
 
   const close = (sendLetter: boolean) => {
@@ -61,7 +63,7 @@ export function RejectForm({
             nationality, and nothing that says what a DBS or a referee said.
           </p>
           <div className="mt-3 space-y-2">
-            {REJECTION_REASONS.map((r) => (
+            {reasons.map((r) => (
               <label key={r.id} className="flex gap-2.5 text-sm">
                 <input type="checkbox" checked={fields.reasons.includes(r.id)} onChange={() => toggle(r.id)} className="mt-0.5 size-4 shrink-0" />
                 {r.label}

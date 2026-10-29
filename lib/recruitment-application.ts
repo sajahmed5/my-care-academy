@@ -420,9 +420,9 @@ export function validateSection(section: FormSection, answers: Answers, todayIso
   return errors;
 }
 
-export function validateApplication(answers: Answers, todayIso: string): Record<string, FieldError[]> {
+export function validateApplication(answers: Answers, todayIso: string, sections: FormSection[] = APPLICATION_SECTIONS): Record<string, FieldError[]> {
   const out: Record<string, FieldError[]> = {};
-  for (const s of APPLICATION_SECTIONS) {
+  for (const s of sections) {
     const errors = validateSection(s, answers, todayIso);
     if (errors.length) out[s.id] = errors;
   }
@@ -437,8 +437,15 @@ const allowedIds = (s: FormSection) => new Set(s.fields.map((f) => f.id));
  * What may be STORED from what a browser sent: only ids the form defines, only
  * the shapes it expects, with long text capped.
  */
-export function sanitiseAnswers(raw: unknown): Answers {
-  return sanitiseWith(APPLICATION_SECTIONS, raw);
+export function sanitiseAnswers(raw: unknown, sections: FormSection[] = APPLICATION_SECTIONS): Answers {
+  return sanitiseWith(sections, raw);
+}
+
+/** Our sections with a company's own questions before the declaration (release 7). */
+export function applicationSections(company: FormSection | null): FormSection[] {
+  if (!company) return APPLICATION_SECTIONS;
+  const at = APPLICATION_SECTIONS.findIndex((s) => s.id === "declaration");
+  return [...APPLICATION_SECTIONS.slice(0, at), company, ...APPLICATION_SECTIONS.slice(at)];
 }
 
 /** The same rule for any form built from these field types (the referee form uses it). */

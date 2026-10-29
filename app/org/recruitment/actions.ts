@@ -13,8 +13,10 @@ import { emailApplicationLink, issueApplicationLink, newToken } from "@/lib/cand
 import { inviteCandidate, makeCandidateStaff } from "@/lib/candidate-account";
 import { copyToStaffFile, sendWelcomePack, startInduction } from "@/lib/hire";
 import { unlockAttempt } from "@/lib/literacy-attempts";
-import { overallScore, sanitiseInterview, validateInterview } from "@/lib/recruitment-interview";
-import type { FieldError } from "@/lib/recruitment-application";
+import { interviewSections, overallScore, sanitiseInterview, validateInterview } from "@/lib/recruitment-interview";
+import { companyQuestions } from "@/lib/company-questions";
+import { INTERVIEW_CUSTOM_TITLE, customSection } from "@/lib/custom-questions";
+import type { Answers, FieldError } from "@/lib/recruitment-application";
 import { sendReferenceRequest } from "@/lib/reference-requests";
 import { sanitiseShadowing, shadowingNote, validateShadowing } from "@/lib/recruitment-shadowing";
 import { DEFAULT_WELCOME_GUIDE, MAX_CONTACTS, MAX_GUIDE_CHARS, sanitiseContacts } from "@/lib/welcome-pack";
@@ -647,9 +649,15 @@ export async function saveInterviewAction(
   if (!loaded) return { ok: false, error: "Candidate not found." };
   const step = openStep(loaded.stages, "interview");
   if (typeof step === "string") return { ok: false, error: step };
-  const answers = sanitiseInterview(raw);
+  const [{ custom, interviewHidden }, { data: existing }] = await Promise.all([
+    companyQuestions(admin, context.organisationId!),
+    admin.from("candidate_interviews").select("answers").eq("candidate_id", candidateId).maybeSingle(),
+  ]);
+  const before = (existing?.answers ?? null) as Answers | null;
+  const sections = interviewSections(customSection(custom.interview, { title: INTERVIEW_CUSTOM_TITLE, answered: before }), interviewHidden, before);
+  const answers = sanitiseInterview(raw, sections);
   if (finish) {
-    const problems = validateInterview(answers, new Date().toISOString().slice(0, 10));
+    const problems = validateInterview(answers, new Date().toISOString().slice(0, 10), sections);
     if (Object.keys(problems).length) return { ok: false, error: "Some answers still need filling in.", problems };
   }
   const score = overallScore(answers);

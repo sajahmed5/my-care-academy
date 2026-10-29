@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { aiStatus } from "@/lib/ai";
 import { formatDate } from "@/lib/dates";
 import { progress, settingsFromRow, type CandidateDocRecord } from "@/lib/recruitment";
-import { letterDefaultsFromRow, sanitiseOffer, type OfferFields } from "@/lib/recruitment-letters";
+import { letterDefaultsFromRow, sanitiseLetterSettings, sanitiseOffer, type OfferFields } from "@/lib/recruitment-letters";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { OfferForm } from "./offer-form";
 
@@ -51,6 +51,7 @@ export default async function OfferPage({ params }: { params: Promise<{ id: stri
         companyName={(c.organisations as unknown as { name: string } | null)?.name ?? ""}
         email={(c.email as string | null) ?? null}
         initial={initial}
+        conditions={sanitiseLetterSettings(settingsRow?.letter_settings).conditions}
         referees={steps.some((s) => s.key === "reference_3" && s.required) ? 3 : 2}
         sent={letter?.sent_at ? `Sent to ${letter.sent_to} on ${formatDate(letter.sent_at as string)}.` : null}
         blocked={

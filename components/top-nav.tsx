@@ -92,6 +92,7 @@ const ORG_MENU: MenuItem[] = [
     also: ["/org/recruitment"],
     children: [
       { href: "/org/recruitment", label: "Candidates", exact: true, feature: "recruitment.tracker" },
+      { href: "/org/recruitment/forms", label: "Forms and test", feature: "recruitment.tracker" },
       { href: "/org/recruitment/documents", label: "Documents to sign", feature: "recruitment.tracker" },
       { href: "/org/recruitment/settings", label: "Settings", feature: "recruitment.tracker" },
     ],

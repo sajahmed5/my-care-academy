@@ -42,7 +42,7 @@ export interface StepDef {
  */
 export const RECRUITMENT_STEPS: StepDef[] = [
   { key: "application", stage: 1, label: "Application form", hint: "Their application, with ten years of work history and gaps explained." },
-  { key: "literacy", stage: 1, label: "Literacy test", hint: "20 minutes, 80% to pass." },
+  { key: "literacy", stage: 1, label: "Literacy test", hint: "Timed, and marked automatically against your pass mark." },
 
   { key: "interview", stage: 2, label: "Interview", hint: "The interview record and overall score." },
   { key: "offer", stage: 2, label: "Conditional offer", hint: "The offer letter, sent after a successful interview." },

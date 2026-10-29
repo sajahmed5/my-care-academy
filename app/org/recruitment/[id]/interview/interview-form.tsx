@@ -4,19 +4,20 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/recruit/application-fields";
-import { isShown, type Answers, type FieldError } from "@/lib/recruitment-application";
-import { INTERVIEW_SECTIONS } from "@/lib/recruitment-interview";
+import { isShown, type Answers, type FieldError, type FormSection } from "@/lib/recruitment-application";
 import { saveInterviewAction } from "../../actions";
 
 /** One long page, saved as you go: an interview isn't a form to page through. */
 export function InterviewForm({
   candidateId,
+  sections,
   initial,
   complete,
   whyCare,
   experience,
 }: {
   candidateId: string;
+  sections: FormSection[];
   initial: Answers;
   complete: boolean;
   whyCare: string | null;
@@ -60,7 +61,7 @@ export function InterviewForm({
       <p className="text-sm text-muted-foreground">
         Type what they actually did and said: these notes are what the offer letter is written from. The candidate never sees this page.
       </p>
-      {INTERVIEW_SECTIONS.map((section) => (
+      {sections.map((section) => (
         <section key={section.id} aria-labelledby={`iv-${section.id}`} className="rounded-2xl border bg-card p-5">
           <h2 id={`iv-${section.id}`} className="font-semibold">{section.title}</h2>
           {section.intro && <p className="mt-1 text-sm text-muted-foreground">{section.intro}</p>}

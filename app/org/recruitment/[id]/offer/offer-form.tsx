@@ -16,6 +16,7 @@ export function OfferForm({
   companyName,
   email,
   initial,
+  conditions,
   referees,
   sent,
   blocked,
@@ -27,6 +28,7 @@ export function OfferForm({
   companyName: string;
   email: string | null;
   initial: OfferFields;
+  conditions: string[];
   referees: number;
   sent: string | null;
   blocked: string | null;
@@ -48,7 +50,7 @@ export function OfferForm({
     timer.current = setTimeout(() => void saveLetterDraftAction(candidateId, "offer", next), 1500);
   };
 
-  const letter = buildOffer({ fields, candidateName, companyName, referees, todayIso: new Date().toISOString().slice(0, 10) });
+  const letter = buildOffer({ fields, candidateName, companyName, referees, todayIso: new Date().toISOString().slice(0, 10), conditions });
   const problems = offerProblems(fields);
 
   const draft = async () => {

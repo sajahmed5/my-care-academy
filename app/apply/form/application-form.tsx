@@ -17,8 +17,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SignaturePad } from "@/app/org/forms/[id]/fill/signature-pad";
 import {
-  APPLICATION_SECTIONS, employmentGaps, isShown, refereesRequired, validateApplication, validateSection,
-  type Answers, type Entry, type FieldError,
+  applicationSections, employmentGaps, isShown, refereesRequired, validateApplication, validateSection,
+  type Answers, type Entry, type FieldError, type FormSection,
 } from "@/lib/recruitment-application";
 import { Field, RepeatField } from "@/components/recruit/application-fields";
 import { loadApplicationAction, saveApplicationAction, submitApplicationAction } from "../actions";
@@ -34,6 +34,7 @@ export function ApplicationForm({ token }: { token: string }) {
   const [officeNote, setOfficeNote] = useState<string | null>(null);
   const [firstName, setFirstName] = useState("");
   const [answers, setAnswers] = useState<Answers>({});
+  const [companyQuestions, setCompanyQuestions] = useState<FormSection | null>(null);
   const [step, setStep] = useState(0); // APPLICATION_SECTIONS.length = review & sign
   const [errors, setErrors] = useState<FieldError[]>([]);
   const [problems, setProblems] = useState<Record<string, FieldError[]>>({});
@@ -56,6 +57,7 @@ export function ApplicationForm({ token }: { token: string }) {
         setCompany(json.company);
         setOfficeNote(typeof json.officeNote === "string" && json.officeNote.trim() ? json.officeNote : null);
         setFirstName(json.firstName ?? "");
+        setCompanyQuestions(json.company_questions ?? null);
         if (json.status === "submitted") { setState("submitted"); return; }
         latest.current = json.answers ?? {};
         setAnswers(latest.current);
@@ -104,7 +106,7 @@ export function ApplicationForm({ token }: { token: string }) {
     return () => { document.removeEventListener("visibilitychange", onHide); window.removeEventListener("beforeunload", onUnload); };
   }, [save]);
 
-  const sections = APPLICATION_SECTIONS;
+  const sections = useMemo(() => applicationSections(companyQuestions), [companyQuestions]);
   const onReview = step >= sections.length;
   const section = onReview ? null : sections[step];
   const gaps = useMemo(() => employmentGaps(answers, todayIso()), [answers]);
@@ -127,12 +129,12 @@ export function ApplicationForm({ token }: { token: string }) {
       first?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    if (step + 1 === sections.length) setProblems(validateApplication(answers, todayIso()));
+    if (step + 1 === sections.length) setProblems(validateApplication(answers, todayIso(), sections));
     await goTo(step + 1);
   };
 
   const submit = async () => {
-    const found = validateApplication(answers, todayIso());
+    const found = validateApplication(answers, todayIso(), sections);
     setProblems(found);
     if (Object.keys(found).length) { setSubmitError("Some sections still need attention — they are listed above."); return; }
     if (!signature?.dataUrl || !signature.signedName?.trim()) { setSubmitError("Please sign in the box and type your full name."); return; }

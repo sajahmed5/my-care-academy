@@ -5,6 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import type { Answers } from "@/lib/recruitment-application";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { InterviewForm } from "./interview-form";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { companyQuestions } from "@/lib/company-questions";
+import { INTERVIEW_CUSTOM_TITLE, customSection } from "@/lib/custom-questions";
+import { interviewSections } from "@/lib/recruitment-interview";
 
 /**
  * The interview record (RECRUITMENT.md, mock-up R5): the questions, what to
@@ -30,6 +34,9 @@ export default async function InterviewPage({ params }: { params: Promise<{ id: 
     interviewers: (me?.full_name as string | null) ?? "",
     heldHow: "In the office",
   };
+  const before = (interview?.answers as Answers | null) ?? null;
+  const { custom, interviewHidden } = await companyQuestions(createAdminClient(), context.organisationId!);
+  const sections = interviewSections(customSection(custom.interview, { title: INTERVIEW_CUSTOM_TITLE, answered: before }), interviewHidden, before);
   return (
     <DashboardShell
       title={`Interview: ${candidate.full_name as string}`}
@@ -38,6 +45,7 @@ export default async function InterviewPage({ params }: { params: Promise<{ id: 
     >
       <InterviewForm
         candidateId={id}
+        sections={sections}
         initial={start}
         complete={interview?.status === "complete"}
         whyCare={typeof fromApp.whyCarer === "string" ? fromApp.whyCarer : null}

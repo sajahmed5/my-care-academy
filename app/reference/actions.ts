@@ -6,7 +6,10 @@ import { rateLimit } from "@/lib/rate-limit";
 import { hashToken } from "@/lib/candidate-links";
 import { formatDate } from "@/lib/dates";
 import type { Answers, FieldError } from "@/lib/recruitment-application";
-import { kindForType, referenceFlags, sanitiseReference, validateReference, type ReferenceKind } from "@/lib/recruitment-references";
+import { kindForType, referenceFlags, referenceSections, sanitiseReference, validateReference, type ReferenceKind } from "@/lib/recruitment-references";
+import { companyQuestions } from "@/lib/company-questions";
+import { REFERENCE_CUSTOM_TITLE, customSection } from "@/lib/custom-questions";
+import type { FormSection } from "@/lib/recruitment-application";
 
 /**
  * The referee's side (RECRUITMENT.md, release 4). No account: the emailed
@@ -35,6 +38,8 @@ export interface LoadedReference {
   kind: ReferenceKind;
   received: boolean;
   prefill: Answers;
+  /** The company's own questions, if it has any. */
+  company_questions: FormSection | null;
 }
 
 export async function loadReferenceAction(token: string): Promise<LoadedReference | { error: string }> {
@@ -56,6 +61,7 @@ export async function loadReferenceAction(token: string): Promise<LoadedReferenc
       ...(r.employed_to ? { employedTo: r.employed_to as string } : {}),
       refereeName: (r.referee_name as string) ?? "",
     },
+    company_questions: customSection((await companyQuestions(admin, r.organisation_id as string)).custom.reference, { title: REFERENCE_CUSTOM_TITLE }),
   };
 }
 
@@ -77,8 +83,9 @@ export async function submitReferenceAction(
   const { admin, r } = found;
   if (r.status === "received") return { ok: true };
   const kind = kindForType(r.referee_type as string);
-  const answers = sanitiseReference(kind, raw);
-  const problems = validateReference(kind, answers, new Date().toISOString().slice(0, 10));
+  const sections = referenceSections(kind, customSection((await companyQuestions(admin, r.organisation_id as string)).custom.reference, { title: REFERENCE_CUSTOM_TITLE }));
+  const answers = sanitiseReference(kind, raw, sections);
+  const problems = validateReference(kind, answers, new Date().toISOString().slice(0, 10), sections);
   if (Object.keys(problems).length) return { ok: false, error: "Some answers still need filling in.", problems };
 
   const now = new Date().toISOString();

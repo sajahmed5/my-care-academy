@@ -5,7 +5,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/recruit/application-fields";
 import { isShown, type Answers, type FieldError } from "@/lib/recruitment-application";
-import { REFERENCE_SECTIONS } from "@/lib/recruitment-references";
+import { referenceSections } from "@/lib/recruitment-references";
 import { loadReferenceAction, submitReferenceAction, type LoadedReference } from "./actions";
 
 /** The reference form on one page: the candidate named at the top, the questions below. */
@@ -54,7 +54,7 @@ export function ReferenceForm({ token }: { token: string }) {
           people who may be vulnerable.
         </p>
       </header>
-      {REFERENCE_SECTIONS[loaded.kind].map((s) => (
+      {referenceSections(loaded.kind, loaded.company_questions).map((s) => (
         <section key={s.id} aria-labelledby={`r-${s.id}`} className="rounded-2xl border bg-card p-5">
           <h2 id={`r-${s.id}`} className="font-semibold">{s.title}</h2>
           {s.intro && <p className="mt-1 text-sm text-muted-foreground">{s.intro}</p>}

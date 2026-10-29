@@ -16,6 +16,7 @@ export interface AttemptView {
   passed: boolean | null;
   leftPage: number;
   endedByTime: boolean;
+  passPercent: number;
   marked: { prompt: string; marks: number; awarded: number; given: string; correct: string }[];
 }
 
@@ -25,7 +26,7 @@ export interface AttemptView {
  * them a link; then the result, how often they left the page, and their
  * answers marked.
  */
-export function LiteracyPanel({ candidateId, hasEmail, attempt }: { candidateId: string; hasEmail: boolean; attempt: AttemptView | null }) {
+export function LiteracyPanel({ candidateId, hasEmail, attempt, minutes }: { candidateId: string; hasEmail: boolean; attempt: AttemptView | null; minutes: number }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [qr, setQr] = useState<{ image: string; link: string } | null>(null);
@@ -53,7 +54,7 @@ export function LiteracyPanel({ candidateId, hasEmail, attempt }: { candidateId:
               ? "They're taking it now."
               : attempt.status === "unlocked"
                 ? `Unlocked ${attempt.mode === "office" ? "in the office" : "by email"}, not started.`
-                : `${attempt.score}/${attempt.max} (${attempt.percent}%), ${attempt.passed ? "passed" : "below the 80% pass mark"}${attempt.endedByTime ? ", ran out of time" : ""}${attempt.attemptNo > 1 ? `, attempt ${attempt.attemptNo}` : ""}.`}
+                : `${attempt.score}/${attempt.max} (${attempt.percent}%), ${attempt.passed ? "passed" : `below the ${attempt.passPercent}% pass mark`}${attempt.endedByTime ? ", ran out of time" : ""}${attempt.attemptNo > 1 ? `, attempt ${attempt.attemptNo}` : ""}.`}
         </span>
         {attempt?.status !== "in_progress" && (
           <>
@@ -75,7 +76,7 @@ export function LiteracyPanel({ candidateId, hasEmail, attempt }: { candidateId:
           <img src={qr.image} alt="QR code for the literacy test" width={200} height={200} className="rounded-lg" />
           <div className="max-w-sm">
             <p className="font-medium">Ask them to scan this with their phone&apos;s camera.</p>
-            <p className="mt-1 text-muted-foreground">They have 15 minutes to start, then 20 minutes once they press Begin. No help, and it should be on their own phone.</p>
+            <p className="mt-1 text-muted-foreground">They have 15 minutes to start, then {minutes} minutes once they press Begin. No help, and it should be on their own phone.</p>
             <p className="mt-2 break-all text-xs text-muted-foreground">If the code won&apos;t scan, they can type this in: <span className="select-all font-medium text-foreground">{qr.link}</span></p>
             <Button size="sm" variant="ghost" className="mt-2" onClick={() => setQr(null)}>Hide the code</Button>
           </div>

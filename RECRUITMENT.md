@@ -181,3 +181,11 @@ form exists, it works the paper way: the office uploads it and confirms it.
    taken online stay in the recruitment record rather than moving to the
    staff file, which only holds files.*
 7. **Editing** — each company's own questions, test, letters and documents.
+   *Built 29 Oct 2026 (v2.29.7), under Recruitment → Forms and test: a
+   company adds its own questions to the application, interview and
+   reference forms (ours stay, since the checks and the offer letter depend
+   on them), leaves out our general interview questions, sets the test's
+   time and pass mark, switches our test questions off and adds its own
+   tap-one-answer questions (frozen onto each attempt when it's unlocked),
+   and chooses its rejection reasons and offer conditions. Not yet: an
+   online DBS risk assessment form (it's an upload or held on paper).*

@@ -20,7 +20,9 @@ import {
   offerProblems,
   offerPrompt,
   rejectionProblems,
+  reasonsFor,
   rejectionSummary,
+  sanitiseLetterSettings,
   sanitiseOffer,
   sanitiseRejection,
 } from "@/lib/recruitment-letters";
@@ -45,6 +47,12 @@ async function load(admin: Admin, context: UserContext, candidateId: string) {
   return { ...c, company: (c.organisations as unknown as { name: string } | null)?.name ?? "" };
 }
 
+async function letterSettings(admin: Admin, orgId: string) {
+  const { data } = await admin.from("recruitment_settings").select("letter_settings").eq("organisation_id", orgId).maybeSingle();
+  return sanitiseLetterSettings(data?.letter_settings);
+}
+const companyReasons = async (admin: Admin, orgId: string) => reasonsFor(await letterSettings(admin, orgId));
+
 function done(candidateId: string) {
   revalidatePath(`/org/recruitment/${candidateId}`);
   revalidatePath("/org/recruitment");
@@ -57,7 +65,7 @@ export async function saveLetterDraftAction(candidateId: string, kind: "offer" |
   const admin = createAdminClient();
   const c = await load(admin, context, candidateId);
   if (!c) return { ok: false, error: "Candidate not found." };
-  const fields = kind === "offer" ? sanitiseOffer(raw) : sanitiseRejection(raw);
+  const fields = kind === "offer" ? sanitiseOffer(raw) : sanitiseRejection(raw, await companyReasons(admin, c.organisation_id as string));
   const { error } = await admin
     .from("candidate_letters")
     .upsert({ candidate_id: candidateId, organisation_id: c.organisation_id, kind, fields, updated_by: context.userId }, { onConflict: "candidate_id,kind" });
@@ -135,6 +143,7 @@ export async function sendOfferAction(candidateId: string, raw: unknown): Promis
     companyName: c.company,
     referees: steps.some((s) => s.key === "reference_3" && s.required) ? 3 : 2,
     todayIso: today(),
+    conditions: sanitiseLetterSettings(settingsRow?.letter_settings).conditions,
   });
   const html = letterHtml(letter);
   const sent = await sendEmail({ to: c.email as string, subject: letter.subject, html, replyTo: context.email ?? undefined });
@@ -182,13 +191,14 @@ export async function sendRejectionAction(candidateId: string, raw: unknown, sen
   const c = await load(admin, context, candidateId);
   if (!c) return { ok: false, error: "Candidate not found." };
   if (c.status === "hired") return { ok: false, error: "They've been hired." };
-  const fields = sanitiseRejection(raw);
+  const reasons = await companyReasons(admin, c.organisation_id as string);
+  const fields = sanitiseRejection(raw, reasons);
   let sentHtml: string | null = null;
   if (sendLetter) {
     if (!c.email) return { ok: false, error: "There's no email address for them. Close it without a letter." };
     const problems = rejectionProblems(fields);
     if (problems.length) return { ok: false, error: problems.join(" ") };
-    const letter = buildRejection({ fields, candidateName: c.full_name as string, companyName: c.company, position: c.role_applied as string | null, todayIso: today() });
+    const letter = buildRejection({ fields, candidateName: c.full_name as string, companyName: c.company, position: c.role_applied as string | null, todayIso: today(), reasons });
     sentHtml = letterHtml(letter);
     const sent = await sendEmail({ to: c.email as string, subject: letter.subject, html: sentHtml, replyTo: context.email ?? undefined });
     if (!sent) return { ok: false, error: "The email couldn't be sent. Try again." };
@@ -214,7 +224,7 @@ export async function sendRejectionAction(candidateId: string, raw: unknown, sen
     action: "candidate.rejected",
     entity: "candidate",
     entityId: candidateId,
-    detail: { letter: !!sentHtml, reasons: rejectionSummary(fields) },
+    detail: { letter: !!sentHtml, reasons: rejectionSummary(fields, reasons) },
   });
   done(candidateId);
   return { ok: true, message: sentHtml ? "Closed, and the letter has been sent." : "Closed without a letter." };

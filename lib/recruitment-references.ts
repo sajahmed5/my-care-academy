@@ -114,16 +114,24 @@ export const REFERENCE_SECTIONS: Record<ReferenceKind, FormSection[]> = {
   ],
 };
 
-export function validateReference(kind: ReferenceKind, answers: Answers, todayIso: string): Record<string, FieldError[]> {
+/** Our sections with the company's own questions before "About you" (release 7). */
+export function referenceSections(kind: ReferenceKind, company: FormSection | null): FormSection[] {
+  const ours = REFERENCE_SECTIONS[kind];
+  if (!company) return ours;
+  const at = ours.findIndex((s) => s.id === "refDeclaration");
+  return at < 0 ? [...ours, company] : [...ours.slice(0, at), company, ...ours.slice(at)];
+}
+
+export function validateReference(kind: ReferenceKind, answers: Answers, todayIso: string, sections: FormSection[] = REFERENCE_SECTIONS[kind]): Record<string, FieldError[]> {
   const out: Record<string, FieldError[]> = {};
-  for (const s of REFERENCE_SECTIONS[kind]) {
+  for (const s of sections) {
     const errors = validateSection(s, answers, todayIso);
     if (errors.length) out[s.id] = errors;
   }
   return out;
 }
 
-export const sanitiseReference = (kind: ReferenceKind, raw: unknown): Answers => sanitiseWith(REFERENCE_SECTIONS[kind], raw);
+export const sanitiseReference = (kind: ReferenceKind, raw: unknown, sections: FormSection[] = REFERENCE_SECTIONS[kind]): Answers => sanitiseWith(sections, raw);
 
 /** Anything in a received reference the office should look at first. */
 export function referenceFlags(kind: ReferenceKind, answers: Answers): string[] {

@@ -133,16 +133,36 @@ export const INTERVIEW_SECTIONS: FormSection[] = [
   },
 ];
 
-export function validateInterview(answers: Answers, todayIso: string): Record<string, FieldError[]> {
-  const out: Record<string, FieldError[]> = {};
+/**
+ * The interview with a company's own questions, and without the general
+ * questions it doesn't ask (release 7). The values questions always stay:
+ * the offer letter is written from them. A left-out question stays on a
+ * record that already answers it.
+ */
+export function interviewSections(company: FormSection | null, hidden: string[], answered?: Answers | null): FormSection[] {
+  const out: FormSection[] = [];
   for (const s of INTERVIEW_SECTIONS) {
+    if (s.id === "ivHistory" && company) out.push(company);
+    if (s.id !== "ivQuestions") { out.push(s); continue; }
+    const fields = s.fields.filter((f) => {
+      const q = f.id.replace(/Notes$/, "");
+      return !hidden.includes(q) || (typeof answered?.[f.id] === "string" && String(answered[f.id]).trim());
+    });
+    if (fields.length) out.push({ ...s, fields });
+  }
+  return out;
+}
+
+export function validateInterview(answers: Answers, todayIso: string, sections: FormSection[] = INTERVIEW_SECTIONS): Record<string, FieldError[]> {
+  const out: Record<string, FieldError[]> = {};
+  for (const s of sections) {
     const errors = validateSection(s, answers, todayIso);
     if (errors.length) out[s.id] = errors;
   }
   return out;
 }
 
-export const sanitiseInterview = (raw: unknown): Answers => sanitiseWith(INTERVIEW_SECTIONS, raw);
+export const sanitiseInterview = (raw: unknown, sections: FormSection[] = INTERVIEW_SECTIONS): Answers => sanitiseWith(sections, raw);
 
 /** "4 · Good" → 4. */
 export function overallScore(answers: Answers): number | null {
