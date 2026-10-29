@@ -170,7 +170,9 @@ form exists, it works the paper way: the office uploads it and confirms it.
 4. **Interview and references** — the interview record, references by link
    with reminders.
 5. **Offer, letters and AI** — offer and rejection letters, the AI switch and
-   usage billing, the health and equality form.
+   usage billing, the health and equality form. *Built 29 Oct 2026 (v2.29.5):
+   stage 2 ends with a "Conditional offer" step; the AI charge shows on the
+   Account page but is not yet added to the Stripe invoice automatically.*
 6. **Sign-up and hire** — signing online, shadowing, the welcome pack, and
    hire moving documents onto the staff file.
 7. **Editing** — each company's own questions, test, letters and documents.

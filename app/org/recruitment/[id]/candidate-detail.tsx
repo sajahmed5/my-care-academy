@@ -83,10 +83,7 @@ export function CandidateActions({
         variant="outline"
         size="lg"
         disabled={pending}
-        onClick={() => {
-          if (window.confirm("Not taking this candidate forward? You can bring them back later."))
-            start(async () => { await setCandidateOutcomeAction(candidateId, "rejected"); router.refresh(); });
-        }}
+        onClick={() => router.push(`/org/recruitment/${candidateId}/reject`)}
       >
         Not taking forward
       </Button>
