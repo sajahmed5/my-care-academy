@@ -154,10 +154,12 @@ because every add-on after them uses them.
 
 1. **Packages** — features regrouped into the new packages, new feature keys,
    the pricing page with the comparison table, the locked view and the
-   upgrade request.
-2. **Foundations** — staff logins (everyone is staff, console access on top),
-   the client list with CSV upload, and AI (switch, metering, monthly limit,
-   the usage line on the bill).
+   upgrade request. Built 29 Oct 2026 (v2.28.6).
+2. **Foundations** — staff logins (everyone is staff, console access on top)
+   and the client list with CSV upload. Built 29 Oct 2026 (v2.28.7, v2.28.8).
+   AI (switch, metering, monthly limit, the usage line on the bill) is built
+   with its first use, the offer letter in phase 3, so the switch never
+   appears with nothing behind it.
 3. **HR pack** — recruitment (from MyRoster), the documents page, probation,
    absence and return to work, holidays, disciplinary and grievance, leavers.
 4. **Staff Audits** — supervision, appraisal, spot check and competency forms,

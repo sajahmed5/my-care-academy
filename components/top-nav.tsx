@@ -87,7 +87,14 @@ const ORG_MENU: MenuItem[] = [
       { href: "/org/pips", label: "Performance plans", feature: "complaints.register" },
     ],
   },
-  { label: "Recruitment", href: "/org/recruitment", feature: "recruitment.tracker" },
+  {
+    label: "Recruitment",
+    also: ["/org/recruitment"],
+    children: [
+      { href: "/org/recruitment", label: "Candidates", exact: true, feature: "recruitment.tracker" },
+      { href: "/org/recruitment/settings", label: "Settings", feature: "recruitment.tracker" },
+    ],
+  },
   {
     label: "Documents",
     children: [

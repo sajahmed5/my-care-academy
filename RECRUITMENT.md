@@ -151,3 +151,26 @@ needs moving to the new model.
 Settled 29 Oct 2026 (MYROSTER.md): a company connected to MyRoster recruits
 in MyRoster. The recruitment page here shows MyRoster's candidates, read-only,
 with links to MyRoster to do the work.
+
+## Build order (29 Oct 2026)
+
+Recruitment ships in releases, each usable on its own. Until a step's online
+form exists, it works the paper way: the office uploads it and confirms it.
+
+1. **Stages and steps** — the four stages and every step, each step's state
+   (not started, waiting on us, sent back, confirmed, not needed), the office
+   uploading, confirming, sending back and marking not needed, the tracker
+   and candidate page as mocked, role and source, the company's recruitment
+   settings (stage order, steps switched off, a third reference, DBS before
+   start), and hiring. Step states live on candidate_documents, which already
+   holds each step's file.
+2. **The candidate's side** — the apply link, the online application form,
+   the candidate's login and page, and uploads from their phone.
+3. **Literacy test** — QR code in the office or a link by email.
+4. **Interview and references** — the interview record, references by link
+   with reminders.
+5. **Offer, letters and AI** — offer and rejection letters, the AI switch and
+   usage billing, the health and equality form.
+6. **Sign-up and hire** — signing online, shadowing, the welcome pack, and
+   hire moving documents onto the staff file.
+7. **Editing** — each company's own questions, test, letters and documents.

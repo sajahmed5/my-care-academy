@@ -1,84 +1,135 @@
-export interface RequiredDoc {
-  key: string;
-  label: string;
-  tracksExpiry?: boolean;
-}
+/**
+ * Recruitment in four stages (RECRUITMENT.md, agreed with Saj 29 Oct 2026),
+ * brought across from MyRoster's src/lib/recruitment/steps.ts.
+ *
+ * ONE set of functions says where a candidate is: the tracker, the
+ * candidate's page and the hire check all read it, so they can never
+ * disagree. A step's state comes from its row in candidate_documents (with or
+ * without a file); the company's settings decide which steps apply.
+ *
+ * Pure: no I/O, so it is tested directly.
+ */
 
-/** The document checklist shown as columns in the recruitment tracker. */
-export const REQUIRED_DOCS: RequiredDoc[] = [
-  { key: "application", label: "Application Form" },
-  { key: "proof_id", label: "Proof of ID" },
-  { key: "right_to_work", label: "Right to Work", tracksExpiry: true },
-  { key: "proof_ni", label: "Proof of NI" },
-  { key: "proof_address", label: "Proof of Address" },
-  { key: "references", label: "References" },
-  { key: "literacy", label: "Literacy Test" },
-  { key: "interview", label: "Interview" },
-  { key: "dbs", label: "DBS", tracksExpiry: true },
-  { key: "role_acceptance", label: "Role Acceptance" },
-  { key: "contract", label: "Contract" },
-  { key: "training", label: "Training" },
+export type Stage = 1 | 2 | 3 | 4;
+
+export const STAGES: { stage: Stage; label: string; short: string }[] = [
+  { stage: 1, label: "Application", short: "Application" },
+  { stage: 2, label: "Interview", short: "Interview" },
+  { stage: 3, label: "Checks", short: "Checks" },
+  { stage: 4, label: "Sign-up", short: "Sign-up" },
 ];
 
+export interface StepDef {
+  key: string;
+  stage: Stage;
+  label: string;
+  /** One line under the name: what's wanted. */
+  hint: string;
+  /** Optional steps: why it might not apply. */
+  optionalNote?: string;
+  /** Asks for an expiry date alongside the file. */
+  tracksExpiry?: boolean;
+  /** A company can switch this step off in its settings. */
+  canSwitchOff?: boolean;
+}
+
+/**
+ * Every step, in the order the office works through them. The conditional
+ * ones (share code, third reference, DBS risk assessment) are listed always
+ * and decided per candidate by stepsFor().
+ */
+export const RECRUITMENT_STEPS: StepDef[] = [
+  { key: "application", stage: 1, label: "Application form", hint: "Their application, with ten years of work history and gaps explained." },
+  { key: "literacy", stage: 1, label: "Literacy test", hint: "20 minutes, 80% to pass." },
+
+  { key: "interview", stage: 2, label: "Interview", hint: "The interview record and overall score." },
+
+  { key: "starter_form", stage: 3, label: "Health, equality and DBS form", hint: "Filled in after the offer: health questions can't be asked before one.", canSwitchOff: true },
+  { key: "proof_id", stage: 3, label: "Proof of ID", hint: "Passport or photo driving licence." },
+  { key: "proof_address_1", stage: 3, label: "Proof of address 1", hint: "A bank statement or utility bill from the last 3 months." },
+  { key: "proof_address_2", stage: 3, label: "Proof of address 2", hint: "A second one, from a different source." },
+  { key: "proof_ni", stage: 3, label: "Proof of National Insurance number", hint: "A payslip, P60 or HMRC letter." },
+  { key: "share_code", stage: 3, label: "Right to work share code", hint: "The Home Office check result.", optionalNote: "only without a UK or Irish passport", tracksExpiry: true },
+  { key: "reference_1", stage: 3, label: "Reference 1", hint: "From their most recent employer." },
+  { key: "reference_2", stage: 3, label: "Reference 2", hint: "A second employer, or a character reference." },
+  { key: "reference_3", stage: 3, label: "Reference 3", hint: "Needed if they've never been employed, or if your company asks for three.", optionalNote: "only if never employed" },
+  { key: "dbs", stage: 3, label: "DBS", hint: "The enhanced DBS certificate, or the Update Service check.", tracksExpiry: true },
+  { key: "dbs_risk_assessment", stage: 3, label: "DBS risk assessment", hint: "Because the DBS shows a conviction." },
+  { key: "training", stage: 3, label: "Training organised", hint: "Their induction booked." },
+
+  { key: "role_acceptance", stage: 4, label: "Role acceptance", hint: "The job description and code of conduct, signed." },
+  { key: "contract", stage: 4, label: "Contract", hint: "Signed by them and by you." },
+  { key: "refund_training", stage: 4, label: "Refund of training agreement", hint: "Signed.", canSwitchOff: true },
+  { key: "shadowing", stage: 4, label: "Shadowing", hint: "The mentor's feedback after shadowing.", canSwitchOff: true },
+];
+
+export function stepDef(key: string): StepDef | undefined {
+  return RECRUITMENT_STEPS.find((s) => s.key === key);
+}
+
+/** The label for a step key, including the keys of the old checklist. */
 export function docLabel(key: string): string {
-  return REQUIRED_DOCS.find((d) => d.key === key)?.label ?? key;
+  const legacy: Record<string, string> = {
+    proof_address: "Proof of address",
+    right_to_work: "Right to work",
+    references: "References",
+  };
+  return stepDef(key)?.label ?? legacy[key] ?? key;
 }
 
-/**
- * Where a candidate is, as one value (#58): Applied, Reviewing, then Hired or
- * Rejected. It used to be two dropdowns, a five-step Stage and a Status that
- * also offered "hired" beside the Mark hired button. It is still held in the
- * same two columns — stage for Applied/Reviewing, status for the outcome — so
- * nothing in the database changed. Older stages (Screening, Interview, Offer,
- * Onboarding) read as Reviewing.
- */
-export const CANDIDATE_PROGRESS = [
-  { value: "applied", label: "Applied" },
-  { value: "reviewing", label: "Reviewing" },
-  { value: "hired", label: "Hired" },
-  { value: "rejected", label: "Rejected" },
-] as const;
-
-export type CandidateProgress = (typeof CANDIDATE_PROGRESS)[number]["value"];
-
-export function progressOf(c: { stage: string | null; status: string }): CandidateProgress {
-  if (c.status === "hired") return "hired";
-  if (c.status === "rejected") return "rejected";
-  return (c.stage ?? "Applied").trim().toLowerCase() === "applied" ? "applied" : "reviewing";
+export interface RecruitmentSettings {
+  stagesInOrder: boolean;
+  stepsOff: string[];
+  thirdReference: boolean;
+  dbsBeforeStart: boolean;
 }
 
-export function progressLabel(p: CandidateProgress): string {
-  return CANDIDATE_PROGRESS.find((x) => x.value === p)?.label ?? p;
+export const DEFAULT_SETTINGS: RecruitmentSettings = {
+  stagesInOrder: true,
+  stepsOff: [],
+  thirdReference: false,
+  dbsBeforeStart: true,
+};
+
+export function settingsFromRow(row: Record<string, unknown> | null | undefined): RecruitmentSettings {
+  if (!row) return DEFAULT_SETTINGS;
+  return {
+    stagesInOrder: row.stages_in_order !== false,
+    stepsOff: Array.isArray(row.steps_off) ? (row.steps_off as string[]) : [],
+    thirdReference: row.third_reference === true,
+    dbsBeforeStart: row.dbs_before_start !== false,
+  };
 }
 
-/**
- * The columns to write for a progress chosen from the dropdown. Hired is not
- * one of them: hiring is Mark hired, which checks the documents, can create
- * the learner and writes the audit row.
- */
-export function progressPatch(p: Exclude<CandidateProgress, "hired">): { stage?: string; status: string } {
-  if (p === "rejected") return { status: "rejected" };
-  return { stage: p === "applied" ? "Applied" : "Reviewing", status: "candidate" };
-}
-
-/** What the database holds for one checklist item: a file, or a reasoned N/A. */
+/** What the database holds for one step. */
 export interface CandidateDocRecord {
   doc_type: string;
   file_path: string | null;
   expires_at: string | null;
   not_required: boolean;
+  review_status?: "submitted" | "sent_back" | "confirmed" | null;
+  review_note?: string | null;
 }
 
-/**
- * Where a checklist item stands. "held" and "not_required" are done; the other
- * two are outstanding. Expired is its own state because an expired DBS is a
- * file we hold that is no use — it shows in red, and it blocks a hire the same
- * as a missing one (issue #51).
- */
-export type DocState = "held" | "expired" | "not_required" | "missing";
+export type StepState = "not_started" | "submitted" | "sent_back" | "confirmed" | "not_needed" | "expired";
 
-export interface ChecklistItem extends RequiredDoc {
-  state: DocState;
+export interface CandidateFacts {
+  dbsConviction: boolean;
+}
+
+/** Which steps apply to this candidate, and whether each is required. */
+export function stepsFor(settings: RecruitmentSettings, facts: CandidateFacts): (StepDef & { required: boolean })[] {
+  return RECRUITMENT_STEPS.filter((s) => !(s.canSwitchOff && settings.stepsOff.includes(s.key)))
+    .filter((s) => s.key !== "dbs_risk_assessment" || facts.dbsConviction)
+    .map((s) => ({
+      ...s,
+      required:
+        s.key === "share_code"
+          ? false
+          : s.key === "reference_3"
+            ? settings.thirdReference
+            : true,
+    }));
 }
 
 /** Today as YYYY-MM-DD in local time, for comparing with a date column. */
@@ -89,39 +140,114 @@ export function isoToday(now = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
-export function docState(
-  doc: CandidateDocRecord | undefined,
-  today = isoToday(),
-): DocState {
-  if (!doc) return "missing";
-  if (doc.not_required) return "not_required";
+export function stepState(doc: CandidateDocRecord | undefined, today = isoToday()): StepState {
+  if (!doc) return "not_started";
+  if (doc.not_required) return "not_needed";
+  const status = doc.review_status ?? "confirmed";
+  if (status === "submitted") return "submitted";
+  if (status === "sent_back") return "sent_back";
   if (doc.expires_at && doc.expires_at < today) return "expired";
-  return "held";
+  return "confirmed";
 }
 
-/** Every checklist item with its state, in checklist order. */
-export function checklist(
+export const isDone = (s: StepState) => s === "confirmed" || s === "not_needed";
+
+export interface ResolvedStep extends StepDef {
+  required: boolean;
+  state: StepState;
+  doc?: CandidateDocRecord;
+  /** Locked because an earlier stage isn't finished and stages go in order. */
+  locked: boolean;
+}
+
+export interface StageProgress {
+  stage: Stage;
+  label: string;
+  steps: ResolvedStep[];
+  done: number;
+  total: number;
+  complete: boolean;
+  locked: boolean;
+}
+
+/**
+ * Where a candidate is: each stage with its steps and their state. A stage is
+ * complete when every required step in it is confirmed or not needed (the DBS
+ * excepted when the company lets people start before it's back). With stages
+ * in order, a stage stays locked until every stage before it is complete.
+ */
+export function progress(
   docs: CandidateDocRecord[],
+  settings: RecruitmentSettings,
+  facts: CandidateFacts,
   today = isoToday(),
-): ChecklistItem[] {
+): StageProgress[] {
   const byType = new Map(docs.map((d) => [d.doc_type, d]));
-  return REQUIRED_DOCS.map((d) => ({ ...d, state: docState(byType.get(d.key), today) }));
+  const steps = stepsFor(settings, facts);
+  let earlierIncomplete = false;
+  return STAGES.map(({ stage, label }) => {
+    const locked = settings.stagesInOrder && earlierIncomplete;
+    const resolved: ResolvedStep[] = steps
+      .filter((s) => s.stage === stage)
+      .map((s) => ({ ...s, state: stepState(byType.get(s.key), today), doc: byType.get(s.key), locked }));
+    const counted = resolved.filter((s) => s.required);
+    const done = counted.filter((s) => isDone(s.state)).length;
+    const complete = counted.every((s) => isDone(s.state) || dbsCanFollow(s, settings));
+    if (!complete) earlierIncomplete = true;
+    return { stage, label, steps: resolved, done, total: counted.length, complete, locked };
+  });
 }
 
-/** The items still standing between a candidate and "hired" (issue #51). */
-export function outstandingDocs(
-  docs: CandidateDocRecord[],
-  today = isoToday(),
-): ChecklistItem[] {
-  return checklist(docs, today).filter(
-    (i) => i.state === "missing" || i.state === "expired",
+/** The stage they're on: the first one not complete, or 4 when all are. */
+export function currentStage(stages: StageProgress[]): Stage {
+  return stages.find((s) => !s.complete)?.stage ?? 4;
+}
+
+/** A DBS still to come that doesn't hold up a start, when the company allows that. */
+function dbsCanFollow(step: ResolvedStep, settings: RecruitmentSettings): boolean {
+  return step.key === "dbs" && !settings.dbsBeforeStart && step.state !== "expired";
+}
+
+/** What's still standing between a candidate and being hired. */
+export function outstandingSteps(stages: StageProgress[], settings: RecruitmentSettings): ResolvedStep[] {
+  return stages.flatMap((s) =>
+    s.steps.filter((step) => step.required && !isDone(step.state) && !dbsCanFollow(step, settings)),
   );
 }
 
-/** The refusal a manager reads when Mark hired is pressed too soon. */
-export function notReadyMessage(outstanding: ChecklistItem[]): string {
-  const labels = outstanding.map((i) =>
-    i.state === "expired" ? `${i.label} (expired)` : i.label,
-  );
-  return `Not ready to hire — still outstanding: ${labels.join(", ")}. Upload each one, or mark it not needed.`;
+export function readyToHire(stages: StageProgress[]): boolean {
+  return stages.every((s) => s.complete);
 }
+
+/** The refusal a manager reads when Hire is pressed too soon. */
+export function notReadyMessage(outstanding: ResolvedStep[]): string {
+  const labels = outstanding.map((s) => (s.state === "expired" ? `${s.label} (expired)` : s.label));
+  return `Not ready to hire. Still to do: ${labels.join(", ")}.`;
+}
+
+/** Who the next move is with, for the tracker's last column. */
+export function nextMove(stages: StageProgress[]): { who: "us" | "them" | "done"; text: string } {
+  const open = stages.flatMap((s) => (s.locked ? [] : s.steps.filter((st) => st.required && !isDone(st.state))));
+  const review = open.find((s) => s.state === "submitted");
+  if (review) return { who: "us", text: `Review ${review.label.toLowerCase()}` };
+  const sentBack = open.find((s) => s.state === "sent_back");
+  if (sentBack) return { who: "them", text: `${sentBack.label}: sent back` };
+  const next = open.find((s) => s.state === "not_started" || s.state === "expired");
+  if (next) return { who: "us", text: next.label };
+  return { who: "done", text: "Ready to hire" };
+}
+
+/** Where a candidate is, as one word, for the tracker's filters. */
+export type CandidateProgress = "in_progress" | "hired" | "rejected";
+
+export function progressOf(c: { status: string }): CandidateProgress {
+  if (c.status === "hired") return "hired";
+  if (c.status === "rejected") return "rejected";
+  return "in_progress";
+}
+
+/** Where people heard about the job, offered when adding a candidate. */
+export const SOURCES = ["Indeed", "Facebook", "Referral", "Our website", "Job centre", "Walk-in", "Other"];
+
+/** The roles people apply for, offered when adding a candidate. */
+export const ROLES = ["Care assistant", "Senior carer", "Care coordinator", "Office staff"];

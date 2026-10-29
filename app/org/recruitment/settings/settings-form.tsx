@@ -1,0 +1,64 @@
+"use client";
+
+import { useActionState } from "react";
+import { Button } from "@/components/ui/button";
+import type { RecruitmentSettings } from "@/lib/recruitment";
+import { saveRecruitmentSettingsAction } from "../actions";
+
+function Option({ name, checked, title, children, disabled }: { name: string; checked: boolean; title: string; children: React.ReactNode; disabled: boolean }) {
+  return (
+    <label className="flex gap-3 rounded-xl border p-4">
+      <input type="checkbox" name={name} defaultChecked={checked} disabled={disabled} className="mt-0.5 size-4 shrink-0" />
+      <span>
+        <span className="block font-medium">{title}</span>
+        <span className="mt-0.5 block text-sm text-muted-foreground">{children}</span>
+      </span>
+    </label>
+  );
+}
+
+export function SettingsForm({
+  settings,
+  switchable,
+  canEdit,
+}: {
+  settings: RecruitmentSettings;
+  switchable: { key: string; label: string; hint: string }[];
+  canEdit: boolean;
+}) {
+  const [state, action, pending] = useActionState(saveRecruitmentSettingsAction, {});
+  return (
+    <form action={action} className="max-w-2xl space-y-6">
+      {!canEdit && (
+        <p className="rounded-xl bg-muted px-4 py-3 text-sm">Only a manager can change these.</p>
+      )}
+      <fieldset className="space-y-3">
+        <legend className="mb-2 font-semibold">How the stages run</legend>
+        <Option name="stages_in_order" checked={settings.stagesInOrder} title="Stages in order" disabled={!canEdit}>
+          Each stage stays locked until the one before it is done: no checks before the interview, no contract before the checks.
+        </Option>
+        <Option name="dbs_before_start" checked={settings.dbsBeforeStart} title="Not hired until the DBS is back" disabled={!canEdit}>
+          Untick to let someone be hired while their DBS is still on its way.
+        </Option>
+        <Option name="third_reference" checked={settings.thirdReference} title="Three references for everyone" disabled={!canEdit}>
+          Otherwise two, and a third only for someone who&apos;s never been employed.
+        </Option>
+      </fieldset>
+      <fieldset className="space-y-3">
+        <legend className="mb-2 font-semibold">Steps your company uses</legend>
+        {switchable.map((s) => (
+          <Option key={s.key} name={`step_${s.key}`} checked={!settings.stepsOff.includes(s.key)} title={s.label} disabled={!canEdit}>
+            {s.hint}
+          </Option>
+        ))}
+      </fieldset>
+      {canEdit && (
+        <div className="flex items-center gap-3">
+          <Button type="submit" size="lg" disabled={pending}>{pending ? "Saving…" : "Save settings"}</Button>
+          {state.ok && <p role="status" className="text-sm text-primary">Saved.</p>}
+          {state.error && <p role="alert" className="text-sm text-destructive">{state.error}</p>}
+        </div>
+      )}
+    </form>
+  );
+}

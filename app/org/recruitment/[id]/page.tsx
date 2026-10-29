@@ -1,75 +1,127 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CheckCircle2, Lock } from "lucide-react";
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
-import { buttonVariants } from "@/components/ui/button";
+import { formatDate } from "@/lib/dates";
+import { currentStage, outstandingSteps, progress, settingsFromRow, STAGES, type CandidateDocRecord } from "@/lib/recruitment";
 import { DashboardShell } from "@/components/dashboard-shell";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { CandidateDetail, type Doc } from "./candidate-detail";
+import { StepRow, type StepView } from "../step-row";
+import { CandidateActions, DbsConviction } from "./candidate-detail";
 
-export default async function CandidatePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+/**
+ * One candidate (RECRUITMENT.md): the four stages, each step with where it
+ * stands and what the office can do. Finished stages fold away; a stage
+ * locked behind an earlier one says so.
+ */
+export default async function CandidatePage({ params }: { params: Promise<{ id: string }> }) {
   const context = await requireConsole();
+  await requireFeature(context, "recruitment.tracker");
   const { id } = await params;
 
   const supabase = await createClient();
-  await requireFeature(context, "recruitment.tracker");
-
-  const [{ data: candidate }, { data: documents }] = await Promise.all([
+  const [{ data: candidate }, { data: docs }, { data: settingsRow }] = await Promise.all([
     supabase
       .from("candidates")
-      .select("id, full_name, email, phone, postcode, is_driver, entry_date, stage, status")
+      .select("id, full_name, email, phone, postcode, entry_date, status, role_applied, source, dbs_conviction, hired_at, rejected_at")
       .eq("id", id)
       .maybeSingle(),
     supabase
       .from("candidate_documents")
-      .select("id, doc_type, file_name, file_path, expires_at, not_required, not_required_reason")
+      .select("id, doc_type, file_name, file_path, expires_at, not_required, not_required_reason, review_status, review_note, uploaded_by_candidate")
       .eq("candidate_id", id),
+    supabase.from("recruitment_settings").select("*").eq("organisation_id", context.organisationId!).maybeSingle(),
   ]);
   if (!candidate) notFound();
 
+  const settings = settingsFromRow(settingsRow);
+  const stages = progress((docs ?? []) as CandidateDocRecord[], settings, { dbsConviction: candidate.dbs_conviction === true });
+  const now = currentStage(stages);
+  const outstanding = outstandingSteps(stages, settings);
+  const status = candidate.status as string;
+  const meta = [
+    candidate.role_applied,
+    candidate.source && `heard about us through ${candidate.source}`,
+    candidate.entry_date && `applied ${formatDate(candidate.entry_date as string)}`,
+  ].filter(Boolean).join(" · ");
+
   return (
-    <DashboardShell title={candidate.full_name} context={context}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Link href="/org/recruitment" className="text-sm text-muted-foreground hover:underline">
-            ← All candidates
-          </Link>
-          <a
-            href={`/org/recruitment/${id}/zip`}
-            className={buttonVariants({ size: "sm", variant: "outline" })}
-          >
-            Download ZIP
-          </a>
+    <DashboardShell title={candidate.full_name as string} context={context} back={{ href: "/org/recruitment", label: "Recruitment" }}>
+      <div className="max-w-5xl space-y-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
+            {status === "hired" ? "Hired" : status === "rejected" ? "Not taken forward" : `Stage ${now} · ${STAGES[now - 1].label}`}
+          </span>
+          {meta && <span className="text-sm text-muted-foreground">{meta}</span>}
+          {(candidate.email || candidate.phone) && (
+            <span className="text-sm text-muted-foreground">{[candidate.email, candidate.phone].filter(Boolean).join(" · ")}</span>
+          )}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{candidate.full_name}</CardTitle>
-            <CardDescription>
-              {[candidate.email, candidate.phone, candidate.postcode]
-                .filter(Boolean)
-                .join(" · ")}
-              {candidate.is_driver ? " · driver" : ""}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CandidateDetail
-              candidate={candidate}
-              documents={(documents ?? []) as Doc[]}
-            />
-          </CardContent>
-        </Card>
+        <CandidateActions
+          candidateId={id}
+          status={status}
+          hasEmail={!!candidate.email}
+          outstanding={outstanding.map((s) => (s.state === "expired" ? `${s.label} (expired)` : s.label))}
+        />
+
+        {stages.map((s) => {
+          const steps: StepView[] = s.steps.map((st) => ({
+            key: st.key,
+            label: st.label,
+            hint: st.hint,
+            optionalNote: st.optionalNote,
+            tracksExpiry: st.tracksExpiry,
+            required: st.required,
+            locked: st.locked,
+            state: st.state,
+            doc: (docs ?? []).find((d) => d.doc_type === st.key) as StepView["doc"],
+          }));
+          const body = (
+            <ul className="border-t">
+              {steps.map((st) => (
+                <StepRow key={st.key} candidateId={id} step={st} />
+              ))}
+              {s.stage === 3 && !s.locked && (
+                <li className="border-t bg-muted/30 px-5 py-3.5">
+                  <DbsConviction candidateId={id} conviction={candidate.dbs_conviction === true} />
+                </li>
+              )}
+            </ul>
+          );
+          if (s.locked) {
+            return (
+              <section key={s.stage} aria-label={`Stage ${s.stage}`} className="rounded-2xl border border-dashed bg-card/60 px-5 py-4">
+                <h2 className="flex items-center gap-2 font-semibold text-muted-foreground">
+                  <Lock className="size-4" aria-hidden="true" /> Stage {s.stage} · {s.label}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {s.steps.map((st) => st.label).join(", ")}. Opens when stage {s.stage - 1} is done: your company does the stages in order.
+                </p>
+              </section>
+            );
+          }
+          if (s.complete && s.stage !== now) {
+            return (
+              <details key={s.stage} className="rounded-2xl border bg-card">
+                <summary className="flex cursor-pointer items-center gap-2.5 px-5 py-4 font-semibold">
+                  <CheckCircle2 className="size-5 text-green-700" aria-hidden="true" /> Stage {s.stage} · {s.label}
+                  <span className="text-sm font-normal text-muted-foreground">{s.done} of {s.total} done</span>
+                </summary>
+                {body}
+              </details>
+            );
+          }
+          return (
+            <section key={s.stage} aria-labelledby={`stage-${s.stage}`} className={`overflow-hidden rounded-2xl border bg-card ${s.stage === now && status === "candidate" ? "border-primary" : ""}`}>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-4">
+                <h2 id={`stage-${s.stage}`} className="font-semibold">Stage {s.stage} · {s.label}</h2>
+                <span className="text-sm text-muted-foreground">{s.done} of {s.total} done</span>
+              </div>
+              {body}
+            </section>
+          );
+        })}
       </div>
     </DashboardShell>
   );

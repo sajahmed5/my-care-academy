@@ -2,19 +2,21 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { type UserContext, requireConsole } from "@/lib/auth";
+import { type UserContext, requireConsole, requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createInvite } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
 import { requireFeature } from "@/lib/entitlements";
 import {
-  REQUIRED_DOCS,
+  RECRUITMENT_STEPS,
   notReadyMessage,
-  outstandingDocs,
-  progressPatch,
+  outstandingSteps,
+  progress,
+  settingsFromRow,
   type CandidateDocRecord,
-  type ChecklistItem,
+  type RecruitmentSettings,
+  type ResolvedStep,
 } from "@/lib/recruitment";
 
 /** Recruitment is a paid add-on; block if the org isn't entitled. */
@@ -22,19 +24,43 @@ async function assertRecruitment(context: UserContext): Promise<void> {
   await requireFeature(context, "recruitment.tracker");
 }
 
+type Admin = ReturnType<typeof createAdminClient>;
+
 /**
- * The checklist items a candidate still owes (issue #51). Read as the service
- * role: every caller has already checked the candidate is this organisation's.
+ * One candidate, read as the service role but only if they're this
+ * organisation's, with their steps and the company's settings — everything
+ * progress() needs to say whether a step is open.
  */
-async function outstandingFor(
-  admin: ReturnType<typeof createAdminClient>,
-  candidateId: string,
-): Promise<ChecklistItem[]> {
-  const { data } = await admin
-    .from("candidate_documents")
-    .select("doc_type, file_path, expires_at, not_required")
-    .eq("candidate_id", candidateId);
-  return outstandingDocs((data ?? []) as CandidateDocRecord[]);
+async function loadCandidate(admin: Admin, candidateId: string, orgId: string) {
+  const [{ data: candidate }, { data: docs }, { data: settingsRow }] = await Promise.all([
+    admin
+      .from("candidates")
+      .select("id, full_name, email, organisation_id, status, dbs_conviction")
+      .eq("id", candidateId)
+      .maybeSingle(),
+    admin
+      .from("candidate_documents")
+      .select("id, doc_type, file_path, expires_at, not_required, review_status, review_note")
+      .eq("candidate_id", candidateId),
+    admin.from("recruitment_settings").select("*").eq("organisation_id", orgId).maybeSingle(),
+  ]);
+  if (!candidate || candidate.organisation_id !== orgId) return null;
+  const settings = settingsFromRow(settingsRow);
+  const stages = progress((docs ?? []) as CandidateDocRecord[], settings, { dbsConviction: candidate.dbs_conviction === true });
+  return { candidate, docs: docs ?? [], settings, stages };
+}
+
+/** The step, if it applies to this candidate and isn't locked behind an earlier stage. */
+function openStep(stages: ReturnType<typeof progress>, key: string): ResolvedStep | string {
+  const step = stages.flatMap((s) => s.steps).find((s) => s.key === key);
+  if (!step) return "That step doesn't apply to this candidate.";
+  if (step.locked) return "Finish the stage before this one first. Your company does the stages in order.";
+  return step;
+}
+
+function done(candidateId: string) {
+  revalidatePath(`/org/recruitment/${candidateId}`);
+  revalidatePath("/org/recruitment");
 }
 
 export async function addCandidateAction(
@@ -46,6 +72,7 @@ export async function addCandidateAction(
 
   const full_name = String(formData.get("full_name") ?? "").trim();
   if (!full_name) return { error: "Name is required." };
+  const text = (key: string) => String(formData.get(key) ?? "").trim() || null;
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -53,47 +80,241 @@ export async function addCandidateAction(
     .insert({
       organisation_id: context.organisationId,
       full_name,
-      email: String(formData.get("email") ?? "").trim() || null,
-      phone: String(formData.get("phone") ?? "").trim() || null,
-      postcode: String(formData.get("postcode") ?? "").trim() || null,
-      gender: String(formData.get("gender") ?? "").trim() || null,
+      email: text("email"),
+      phone: text("phone"),
+      postcode: text("postcode"),
+      role_applied: text("role_applied"),
+      source: text("source"),
       is_driver: formData.get("is_driver") === "on",
     })
     .select("id")
     .single();
-  if (error || !data) return { error: error?.message ?? "Could not add." };
+  if (error || !data) return { error: "The candidate couldn't be added. Try again." };
 
   redirect(`/org/recruitment/${data.id}`);
 }
 
 /**
- * Move a candidate along: Applied, Reviewing or Rejected (#58). Hired is not
- * here — Mark hired is the one way in, so the document check, the learner
- * account and the audit row cannot be stepped round. Only these two columns
- * are written; the action used to take any patch the browser sent.
+ * The office uploads a step's paper copy, or the file itself. An office
+ * upload is confirmed as it lands: the office is the one checking it.
  */
-export async function setCandidateProgressAction(
-  id: string,
-  progress: string,
+export async function uploadDocumentAction(
+  candidateId: string,
+  docType: string,
+  file: { name: string; dataUrl: string },
+  expiresAt: string | null,
 ): Promise<{ ok: boolean; error?: string }> {
   const context = await requireConsole();
   await assertRecruitment(context);
-  if (progress !== "applied" && progress !== "reviewing" && progress !== "rejected") {
-    return { ok: false, error: "Choose Applied, Reviewing or Rejected. Hiring is done with Mark hired." };
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  const step = openStep(loaded.stages, docType);
+  if (typeof step === "string") return { ok: false, error: step };
+
+  const base64 = file.dataUrl.split(",")[1] ?? "";
+  const buffer = Buffer.from(base64, "base64");
+  const path = `${context.organisationId}/${candidateId}/${docType}-${crypto.randomUUID()}-${file.name}`;
+  const { error: upErr } = await admin.storage.from("candidate-docs").upload(path, buffer, { upsert: true });
+  if (upErr) return { ok: false, error: "The file couldn't be uploaded. Try again." };
+
+  const previous = loaded.docs.find((d) => d.doc_type === docType);
+  const { error } = await admin.from("candidate_documents").upsert(
+    {
+      candidate_id: candidateId,
+      organisation_id: context.organisationId,
+      doc_type: docType,
+      file_path: path,
+      file_name: file.name,
+      expires_at: expiresAt || null,
+      not_required: false,
+      not_required_reason: null,
+      review_status: "confirmed",
+      review_note: null,
+      uploaded_by_candidate: false,
+      reviewed_by: context.userId,
+      reviewed_at: new Date().toISOString(),
+    },
+    { onConflict: "candidate_id,doc_type" },
+  );
+  if (error) {
+    await admin.storage.from("candidate-docs").remove([path]);
+    return { ok: false, error: "The file couldn't be saved. Try again." };
   }
+  // The file it replaced goes too: an old passport kept for no reason is data we should not hold.
+  if (previous?.file_path && previous.file_path !== path) {
+    await admin.storage.from("candidate-docs").remove([previous.file_path as string]);
+  }
+  done(candidateId);
+  return { ok: true };
+}
+
+/**
+ * Confirm a step: one the candidate sent in, or one done on paper and held in
+ * the office (a note says where). Nothing is uploaded.
+ */
+export async function confirmStepAction(
+  candidateId: string,
+  docType: string,
+  note: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  const step = openStep(loaded.stages, docType);
+  if (typeof step === "string") return { ok: false, error: step };
+
+  const existing = loaded.docs.find((d) => d.doc_type === docType);
+  const trimmed = note.trim().slice(0, 500) || null;
+  const { error } = existing
+    ? await admin
+        .from("candidate_documents")
+        .update({ review_status: "confirmed", review_note: trimmed, reviewed_by: context.userId, reviewed_at: new Date().toISOString() })
+        .eq("id", existing.id as string)
+    : await admin.from("candidate_documents").insert({
+        candidate_id: candidateId,
+        organisation_id: context.organisationId,
+        doc_type: docType,
+        file_path: null,
+        review_status: "confirmed",
+        review_note: trimmed,
+        reviewed_by: context.userId,
+        reviewed_at: new Date().toISOString(),
+      });
+  if (error) return { ok: false, error: "That couldn't be saved. Try again." };
+  await logAudit({ context, action: "candidate.step_confirmed", entity: "candidate", entityId: candidateId, detail: { step: docType, note: trimmed } });
+  done(candidateId);
+  return { ok: true };
+}
+
+/** Send a candidate's upload back, with a note saying what's wrong. */
+export async function sendBackStepAction(
+  candidateId: string,
+  docType: string,
+  note: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const trimmed = note.trim().slice(0, 500);
+  if (!trimmed) return { ok: false, error: "Say what needs changing, so they know what to send." };
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  const existing = loaded.docs.find((d) => d.doc_type === docType);
+  if (!existing || existing.review_status !== "submitted") return { ok: false, error: "There's nothing from the candidate to send back." };
+  await admin
+    .from("candidate_documents")
+    .update({ review_status: "sent_back", review_note: trimmed, reviewed_by: context.userId, reviewed_at: new Date().toISOString() })
+    .eq("id", existing.id as string);
+  done(candidateId);
+  return { ok: true };
+}
+
+/**
+ * Record that a step doesn't apply to this candidate — a share code for
+ * someone with a UK passport, say. It counts as done for the hire, so it is
+ * attributed in the audit trail with the reason given. A file already held
+ * has to be removed first: silently discarding a DBS is not a tidy-up.
+ */
+export async function markDocumentNotRequiredAction(
+  candidateId: string,
+  docType: string,
+  reason: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  if (!RECRUITMENT_STEPS.some((d) => d.key === docType)) return { ok: false, error: "Unknown step." };
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  if (loaded.docs.find((d) => d.doc_type === docType)?.file_path) {
+    return { ok: false, error: "A file is held for this. Remove it first." };
+  }
+  const trimmed = reason.trim();
+  const { error } = await admin.from("candidate_documents").upsert(
+    {
+      candidate_id: candidateId,
+      organisation_id: context.organisationId,
+      doc_type: docType,
+      file_path: null,
+      file_name: null,
+      expires_at: null,
+      not_required: true,
+      not_required_reason: trimmed || null,
+      review_status: "confirmed",
+      review_note: null,
+      reviewed_by: context.userId,
+      reviewed_at: new Date().toISOString(),
+    },
+    { onConflict: "candidate_id,doc_type" },
+  );
+  if (error) return { ok: false, error: "That couldn't be saved. Try again." };
+  await logAudit({ context, action: "candidate.document_not_required", entity: "candidate", entityId: candidateId, detail: { doc_type: docType, reason: trimmed || null } });
+  done(candidateId);
+  return { ok: true };
+}
+
+/** Undo a step: the file it holds, a "done on paper", or a "not needed". */
+export async function deleteDocumentAction(docId: string, candidateId: string): Promise<{ ok: boolean }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const admin = createAdminClient();
+  const { data: doc } = await admin
+    .from("candidate_documents")
+    .select("file_path, organisation_id")
+    .eq("id", docId)
+    .maybeSingle();
+  if (doc && doc.organisation_id === context.organisationId) {
+    if (doc.file_path) await admin.storage.from("candidate-docs").remove([doc.file_path]);
+    await admin.from("candidate_documents").delete().eq("id", docId);
+  }
+  done(candidateId);
+  return { ok: true };
+}
+
+export async function getDocUrlAction(path: string): Promise<{ url?: string }> {
+  const context = await requireConsole();
+  if (!path.startsWith(`${context.organisationId}/`)) return {};
+  const admin = createAdminClient();
+  const { data } = await admin.storage.from("candidate-docs").createSignedUrl(path, 60);
+  return { url: data?.signedUrl };
+}
+
+/** The DBS shows a conviction: the DBS risk assessment step joins stage 3. */
+export async function setDbsConvictionAction(candidateId: string, conviction: boolean): Promise<{ ok: boolean }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
   const supabase = await createClient();
-  const { error } = await supabase.from("candidates").update(progressPatch(progress)).eq("id", id);
-  if (error) return { ok: false, error: error.message };
-  revalidatePath(`/org/recruitment/${id}`);
-  revalidatePath("/org/recruitment");
+  await supabase.from("candidates").update({ dbs_conviction: conviction }).eq("id", candidateId);
+  await logAudit({ context, action: "candidate.dbs_conviction", entity: "candidate", entityId: candidateId, detail: { conviction } });
+  done(candidateId);
+  return { ok: true };
+}
+
+/** Not taking a candidate forward, or bringing them back. */
+export async function setCandidateOutcomeAction(
+  candidateId: string,
+  outcome: "rejected" | "candidate",
+): Promise<{ ok: boolean }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const supabase = await createClient();
+  await supabase
+    .from("candidates")
+    .update({ status: outcome, rejected_at: outcome === "rejected" ? new Date().toISOString() : null })
+    .eq("id", candidateId)
+    .neq("status", "hired");
+  await logAudit({ context, action: outcome === "rejected" ? "candidate.rejected" : "candidate.reopened", entity: "candidate", entityId: candidateId });
+  done(candidateId);
   return { ok: true };
 }
 
 /**
  * Delete a candidate, and every file uploaded for them (#59). The document
  * rows cascade with the candidate, but the files in the bucket do not — left
- * behind, a passport or DBS sits there with nothing pointing at it. The whole
- * folder goes, so files orphaned by an earlier failure go too.
+ * behind, a passport or DBS sits there with nothing pointing at it.
  */
 export async function deleteCandidateAction(id: string): Promise<void> {
   const context = await requireConsole();
@@ -123,175 +344,10 @@ export async function deleteCandidateAction(id: string): Promise<void> {
   redirect("/org/recruitment");
 }
 
-export async function uploadDocumentAction(
-  candidateId: string,
-  docType: string,
-  file: { name: string; dataUrl: string },
-  expiresAt: string | null,
-): Promise<{ ok: boolean; error?: string }> {
-  const context = await requireConsole();
-  await assertRecruitment(context);
-
-  const admin = createAdminClient();
-  // The service role is not gated by RLS: the candidate must be this
-  // organisation's before anything is written or replaced.
-  const [{ data: candidate }, { data: previous }] = await Promise.all([
-    admin.from("candidates").select("organisation_id").eq("id", candidateId).maybeSingle(),
-    admin
-      .from("candidate_documents")
-      .select("file_path")
-      .eq("candidate_id", candidateId)
-      .eq("organisation_id", context.organisationId!)
-      .eq("doc_type", docType)
-      .maybeSingle(),
-  ]);
-  if (!candidate || candidate.organisation_id !== context.organisationId) {
-    return { ok: false, error: "Candidate not found." };
-  }
-
-  const base64 = file.dataUrl.split(",")[1] ?? "";
-  const buffer = Buffer.from(base64, "base64");
-  const path = `${context.organisationId}/${candidateId}/${docType}-${crypto.randomUUID()}-${file.name}`;
-  const { error: upErr } = await admin.storage
-    .from("candidate-docs")
-    .upload(path, buffer, { upsert: true });
-  if (upErr) return { ok: false, error: upErr.message };
-
-  // Replace any existing row of this type — a file or a "not needed".
-  await admin
-    .from("candidate_documents")
-    .delete()
-    .eq("candidate_id", candidateId)
-    .eq("organisation_id", context.organisationId!)
-    .eq("doc_type", docType);
-  const { error } = await admin.from("candidate_documents").insert({
-    candidate_id: candidateId,
-    organisation_id: context.organisationId,
-    doc_type: docType,
-    file_path: path,
-    file_name: file.name,
-    expires_at: expiresAt || null,
-  });
-  if (error) {
-    await admin.storage.from("candidate-docs").remove([path]);
-    return { ok: false, error: error.message };
-  }
-  // The file it replaced goes too. Nothing points at it any more, and an old
-  // passport or DBS kept in the bucket for no reason is data we should not hold.
-  if (previous?.file_path && previous.file_path !== path) {
-    await admin.storage.from("candidate-docs").remove([previous.file_path as string]);
-  }
-
-  revalidatePath(`/org/recruitment/${candidateId}`);
-  revalidatePath("/org/recruitment");
-  return { ok: true };
-}
-
 /**
- * Record that a checklist item does not apply to this candidate (issue #52) —
- * Right to Work for someone already checked, a literacy test for a transfer.
- * It counts as done for the hire gate, so it is attributed in the audit trail
- * with the reason given. A file already held has to be removed first: the two
- * states are exclusive, and silently discarding a DBS is not a tidy-up.
- */
-export async function markDocumentNotRequiredAction(
-  candidateId: string,
-  docType: string,
-  reason: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const context = await requireConsole();
-  await assertRecruitment(context);
-  if (!REQUIRED_DOCS.some((d) => d.key === docType)) {
-    return { ok: false, error: "Unknown document." };
-  }
-
-  const admin = createAdminClient();
-  const { data: candidate } = await admin
-    .from("candidates")
-    .select("organisation_id")
-    .eq("id", candidateId)
-    .maybeSingle();
-  if (!candidate || candidate.organisation_id !== context.organisationId) {
-    return { ok: false, error: "Candidate not found." };
-  }
-
-  const { data: existing } = await admin
-    .from("candidate_documents")
-    .select("file_path")
-    .eq("candidate_id", candidateId)
-    .eq("doc_type", docType)
-    .maybeSingle();
-  if (existing?.file_path) {
-    return { ok: false, error: "A file is already held for this — remove it first." };
-  }
-
-  const trimmed = reason.trim();
-  const { error } = await admin.from("candidate_documents").upsert(
-    {
-      candidate_id: candidateId,
-      organisation_id: context.organisationId,
-      doc_type: docType,
-      file_path: null,
-      file_name: null,
-      expires_at: null,
-      not_required: true,
-      not_required_reason: trimmed || null,
-    },
-    { onConflict: "candidate_id,doc_type" },
-  );
-  if (error) return { ok: false, error: error.message };
-
-  await logAudit({
-    context,
-    action: "candidate.document_not_required",
-    entity: "candidate",
-    entityId: candidateId,
-    detail: { doc_type: docType, reason: trimmed || null },
-  });
-
-  revalidatePath(`/org/recruitment/${candidateId}`);
-  revalidatePath("/org/recruitment");
-  return { ok: true };
-}
-
-/** Remove a checklist row: the file it points at, or a "not needed". */
-export async function deleteDocumentAction(
-  docId: string,
-  candidateId: string,
-): Promise<{ ok: boolean }> {
-  const context = await requireConsole();
-  await assertRecruitment(context);
-  const admin = createAdminClient();
-  const { data: doc } = await admin
-    .from("candidate_documents")
-    .select("file_path, organisation_id")
-    .eq("id", docId)
-    .maybeSingle();
-  if (doc && doc.organisation_id === context.organisationId) {
-    if (doc.file_path) await admin.storage.from("candidate-docs").remove([doc.file_path]);
-    await admin.from("candidate_documents").delete().eq("id", docId);
-  }
-  revalidatePath(`/org/recruitment/${candidateId}`);
-  revalidatePath("/org/recruitment");
-  return { ok: true };
-}
-
-export async function getDocUrlAction(
-  path: string,
-): Promise<{ url?: string }> {
-  const context = await requireConsole();
-  if (!path.startsWith(`${context.organisationId}/`)) return {};
-  const admin = createAdminClient();
-  const { data } = await admin.storage
-    .from("candidate-docs")
-    .createSignedUrl(path, 60);
-  return { url: data?.signedUrl };
-}
-
-/**
- * Mark hired; optionally create the candidate as a learner (no auto-enrolment).
- * Refused while any checklist item is missing or expired (issue #51): the
- * button is disabled for the same reason, but the button is not the gate.
+ * Hire; optionally create the candidate as a learner. Refused while any
+ * required step is outstanding: the button is disabled for the same reason,
+ * but the button is not the gate.
  */
 export async function hireCandidateAction(
   candidateId: string,
@@ -299,48 +355,57 @@ export async function hireCandidateAction(
 ): Promise<{ ok: boolean; invited?: boolean; error?: string }> {
   const context = await requireConsole();
   await assertRecruitment(context);
-
   const admin = createAdminClient();
-  const { data: candidate } = await admin
-    .from("candidates")
-    .select("full_name, email, organisation_id")
-    .eq("id", candidateId)
-    .maybeSingle();
-  if (!candidate || candidate.organisation_id !== context.organisationId) {
-    return { ok: false, error: "Candidate not found." };
-  }
-
-  const outstanding = await outstandingFor(admin, candidateId);
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  const outstanding = outstandingSteps(loaded.stages, loaded.settings);
   if (outstanding.length > 0) return { ok: false, error: notReadyMessage(outstanding) };
 
-  await admin.from("candidates").update({ status: "hired" }).eq("id", candidateId);
+  await admin.from("candidates").update({ status: "hired", hired_at: new Date().toISOString() }).eq("id", candidateId);
 
   let invited = false;
+  const { candidate } = loaded;
   if (createLearner && candidate.email) {
     const result = await createInvite({
-      email: candidate.email,
+      email: candidate.email as string,
       role: "learner",
       organisationId: context.organisationId!,
-      fullName: candidate.full_name,
+      fullName: candidate.full_name as string,
       roleLabel: "learner",
     });
-    if (result.userId) {
-      invited = true;
-      // No auto-enrolment. The org admin assigns courses to each staff
-      // member from the Team page (assignTrainingAction), so training is
-      // chosen per person rather than applied automatically on hire.
-    }
+    invited = !!result.userId;
   }
 
-  await logAudit({
-    context,
-    action: "candidate.hired",
-    entity: "candidate",
-    entityId: candidateId,
-    detail: { created_learner: invited },
-  });
-
-  revalidatePath(`/org/recruitment/${candidateId}`);
-  revalidatePath("/org/recruitment");
+  await logAudit({ context, action: "candidate.hired", entity: "candidate", entityId: candidateId, detail: { created_learner: invited } });
+  done(candidateId);
   return { ok: true, invited };
+}
+
+/** The company's recruitment settings. Managers only. */
+export async function saveRecruitmentSettingsAction(
+  _prev: { ok?: boolean; error?: string },
+  formData: FormData,
+): Promise<{ ok?: boolean; error?: string }> {
+  const context = await requireRole("org_admin");
+  await assertRecruitment(context);
+  const switchable = RECRUITMENT_STEPS.filter((s) => s.canSwitchOff).map((s) => s.key);
+  const settings: RecruitmentSettings = {
+    stagesInOrder: formData.get("stages_in_order") === "on",
+    stepsOff: switchable.filter((k) => formData.get(`step_${k}`) !== "on"),
+    thirdReference: formData.get("third_reference") === "on",
+    dbsBeforeStart: formData.get("dbs_before_start") === "on",
+  };
+  const supabase = await createClient();
+  const { error } = await supabase.from("recruitment_settings").upsert({
+    organisation_id: context.organisationId,
+    stages_in_order: settings.stagesInOrder,
+    steps_off: settings.stepsOff,
+    third_reference: settings.thirdReference,
+    dbs_before_start: settings.dbsBeforeStart,
+    updated_by: context.userId,
+  });
+  if (error) return { error: "The settings couldn't be saved. Try again." };
+  await logAudit({ context, action: "recruitment.settings_saved", entity: "organisation", entityId: context.organisationId!, detail: { ...settings } });
+  revalidatePath("/org/recruitment", "layout");
+  return { ok: true };
 }

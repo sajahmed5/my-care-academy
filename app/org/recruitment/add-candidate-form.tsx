@@ -4,12 +4,11 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ROLES, SOURCES } from "@/lib/recruitment";
 import { addCandidateAction } from "./actions";
 
 const selectClass =
-  "flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm";
-
-const GENDERS = ["Female", "Male", "Non-binary", "Prefer not to say"];
+  "flex h-11 w-full rounded-lg border border-input bg-background px-3 text-sm sm:h-9";
 
 export function AddCandidateForm() {
   const [state, formAction, pending] = useActionState(addCandidateAction, {});
@@ -33,16 +32,23 @@ export function AddCandidateForm() {
           <Label htmlFor="postcode">Postcode</Label>
           <Input id="postcode" name="postcode" />
         </div>
+        {/* Role and source in place of gender (29 Oct 2026): equality
+            questions belong after an offer, on the health and equality
+            form, not when someone is added. */}
         <div className="space-y-2">
-          <Label htmlFor="gender">Gender</Label>
-          {/* A list rather than free text, so the tracker can be read and
-              filtered; older candidates keep whatever was typed. */}
-          <select id="gender" name="gender" defaultValue="" className={selectClass}>
+          <Label htmlFor="role_applied">Role</Label>
+          <select id="role_applied" name="role_applied" defaultValue={ROLES[0]} className={selectClass}>
+            {ROLES.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="source">Heard about the job through</Label>
+          <select id="source" name="source" defaultValue="" className={selectClass}>
             <option value="">Not given</option>
-            {GENDERS.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
+            {SOURCES.map((s) => (
+              <option key={s} value={s}>{s}</option>
             ))}
           </select>
         </div>
