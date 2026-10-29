@@ -47,7 +47,7 @@ export default async function ComplaintsPage({
         ? { text: "Triage it: decide what this is." }
         : nextStep(steps, es, { reportedOn: c.reportedOn, completeBy: c.completeBy, closed: false }, today);
     const current = steps.find((s) => s.state === "current");
-    return { complaint: c, next, stepLabel: current ? `${current.n} of ${steps.length} · ${current.title}` : null };
+    return { complaint: c, next, stepLabel: current && !isUntriaged(c.kind) ? `${current.n} of ${steps.length} · ${current.title}` : null };
   });
 
   const open = rows.filter((r) => r.complaint.status === "open");
