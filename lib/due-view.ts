@@ -31,6 +31,14 @@ export interface DueRow {
   last: string | null;
   next: string | null;
   status: DueRowStatus;
+  /** The soonest booked date still to come, for supervisions and appraisals. */
+  booked?: string | null;
+}
+
+/** A booked supervision or appraisal (spot checks are never booked). */
+export interface DueBooking {
+  userId: string;
+  on: string;
 }
 
 /** The order a manager works in: what is late, then what is close, then the rest. */
@@ -41,7 +49,7 @@ export const DUE_GROUP_LABEL: Record<DueRowStatus, string> = {
   due_soon: "Due in the next 30 days",
   never: "Never had one",
   none: "Nothing scheduled",
-  scheduled: "Booked further ahead",
+  scheduled: "Due later",
 };
 
 /**
@@ -49,7 +57,17 @@ export const DUE_GROUP_LABEL: Record<DueRowStatus, string> = {
  * across each area's latest check, as nextDueAcrossAreas() does on the file;
  * without, it is the latest record's, which supersedes the earlier ones.
  */
-export function buildDueRows(people: DuePerson[], records: DueRecord[], now: Date): DueRow[] {
+export function buildDueRows(
+  people: DuePerson[],
+  records: DueRecord[],
+  now: Date,
+  bookings: DueBooking[] = [],
+): DueRow[] {
+  const bookedFor = new Map<string, string>();
+  for (const b of bookings) {
+    const cur = bookedFor.get(b.userId);
+    if (!cur || b.on < cur) bookedFor.set(b.userId, b.on);
+  }
   const byPerson = new Map<string, DueRecord[]>();
   for (const r of records) {
     const list = byPerson.get(r.userId) ?? [];
@@ -58,7 +76,8 @@ export function buildDueRows(people: DuePerson[], records: DueRecord[], now: Dat
   }
   const rows = people.map((person): DueRow => {
     const mine = (byPerson.get(person.id) ?? []).slice().sort((a, b) => b.heldOn.localeCompare(a.heldOn));
-    if (mine.length === 0) return { person, last: null, next: null, status: "never" };
+    const booked = bookedFor.get(person.id) ?? null;
+    if (mine.length === 0) return { person, last: null, next: null, status: "never", booked };
     let next: string | null;
     if (mine.some((r) => r.area)) {
       const latestPerArea = new Map<string, DueRecord>();
@@ -67,7 +86,7 @@ export function buildDueRows(people: DuePerson[], records: DueRecord[], now: Dat
     } else {
       next = mine[0].nextDue;
     }
-    return { person, last: mine[0].heldOn, next, status: dueStatus(next, now) };
+    return { person, last: mine[0].heldOn, next, status: dueStatus(next, now), booked };
   });
   return rows.sort(
     (a, b) =>

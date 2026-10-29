@@ -89,7 +89,7 @@ export const SECTIONS: SectionDef[] = [
     key: "supervisions",
     label: "Supervisions & appraisals",
     blurb:
-      "Supervisions, appraisals and reviews — when they were held, what was discussed, and when the next one is due.",
+      "Supervisions and appraisals — booked ahead, held question by question, signed by both, and when the next one is due.",
     feature: "people.supervisions",
     built: true,
   },

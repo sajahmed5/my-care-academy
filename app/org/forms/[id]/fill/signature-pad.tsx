@@ -12,9 +12,16 @@ export function SignaturePad({
   const drawing = useRef(false);
   const [hasInk, setHasInk] = useState(false);
 
+  // The canvas draws at 400×140 but is shown at whatever width the screen
+  // gives it, so the pointer is scaled into the canvas's own pixels — on a
+  // phone the line otherwise lands well away from the finger.
   function pos(e: React.PointerEvent) {
-    const rect = canvasRef.current!.getBoundingClientRect();
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const c = canvasRef.current!;
+    const rect = c.getBoundingClientRect();
+    return {
+      x: ((e.clientX - rect.left) * c.width) / rect.width,
+      y: ((e.clientY - rect.top) * c.height) / rect.height,
+    };
   }
 
   function start(e: React.PointerEvent) {

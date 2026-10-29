@@ -179,6 +179,9 @@ export async function GET(
       // Whether the carer signed it at the time, or why not (CARER-FILE.md §9).
       detail: [
         s.summary,
+        ...s.actions_review.map((a) => `Last time: ${a.title} — ${a.status === "done" ? "done" : "not yet"}${a.comment ? ` (${a.comment})` : ""}`),
+        ...s.answers.filter((a) => a.answer).map((a) => `${a.label}: ${a.answer}`),
+        s.manager_signed_name ? `Signed by ${s.manager_signed_name} for the company.` : null,
         s.carer_signed_name
           ? `Signed by ${s.carer_signed_name}${s.carer_signed_at ? ` on ${fmt(s.carer_signed_at)}` : ""}.`
           : s.carer_unsigned_reason
