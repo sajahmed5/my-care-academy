@@ -14,6 +14,12 @@ import type { SaveState } from "@/app/platform/actions";
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const uid = () => crypto.randomUUID();
 
+const RAISED_FROM_LABEL: Record<string, string> = {
+  supervision: "a supervision",
+  spot_check: "a spot check",
+  competency: "a competency assessment",
+};
+
 /**
  * The plan itself: why, what is wrong and what good looks like, what the
  * carer is held to, what support they get, and what happens if nothing
@@ -25,6 +31,7 @@ export function PlanForm({
   initialUserId,
   complaintId,
   complaintReference,
+  raisedFrom,
   onDone,
 }: {
   pip?: Pip;
@@ -32,6 +39,8 @@ export function PlanForm({
   initialUserId?: string | null;
   complaintId?: string | null;
   complaintReference?: string | null;
+  /** The supervision, spot check or competency it is raised from. */
+  raisedFrom?: { type: string; id: string } | null;
   onDone?: () => void;
 }) {
   const [concerns, setConcerns] = useState<PipConcern[]>(pip?.concerns.length ? pip.concerns : [{ id: uid(), concern: "", standard: "", measure: "" }]);
@@ -53,6 +62,12 @@ export function PlanForm({
         <form action={action} className="space-y-5">
           {pip && <input type="hidden" name="pipId" value={pip.id} />}
           {complaintId && <input type="hidden" name="complaintId" value={complaintId} />}
+          {raisedFrom && (
+            <>
+              <input type="hidden" name="raisedFromType" value={raisedFrom.type} />
+              <input type="hidden" name="raisedFromId" value={raisedFrom.id} />
+            </>
+          )}
           <input type="hidden" name="concerns" value={JSON.stringify(concerns)} />
           <input type="hidden" name="expectations" value={JSON.stringify(expectations)} />
           <input type="hidden" name="support" value={JSON.stringify(support)} />
@@ -76,6 +91,7 @@ export function PlanForm({
           )}
           {editing && <input type="hidden" name="kind" value={pip.kind} />}
           {complaintReference && <p className="text-xs text-muted-foreground">From complaint {complaintReference}.</p>}
+          {raisedFrom && <p className="text-xs text-muted-foreground">Raised from {RAISED_FROM_LABEL[raisedFrom.type] ?? "a record"} on their file.</p>}
 
           <div className="space-y-1">
             <Label htmlFor="pf-reason">Why this plan is in place</Label>

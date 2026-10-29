@@ -85,6 +85,9 @@ export interface Pip {
   kind: string;
   status: string;
   complaintId: string | null;
+  /** The Staff Audits record it was raised from, if any. */
+  raisedFromType: string | null;
+  raisedFromId: string | null;
   complaintReference: string | null;
   reason: string | null;
   concerns: PipConcern[];

@@ -10,7 +10,8 @@ import { hasFeature } from "@/lib/entitlements";
 import { siteOrigin } from "@/lib/site-url";
 import { emailAssignees } from "@/lib/assignment-email";
 import { parseAgreedActions } from "@/lib/records";
-import { COMPETENCY_FORMS, SPOT_CHECK_FORM, competencyForm, readCheckAnswers } from "@/lib/audit-forms";
+import { competencyForm, readCheckAnswers } from "@/lib/audit-forms";
+import { loadAuditForms } from "@/lib/audit-forms-data";
 import { COMPETENCY_OUTCOMES } from "@/lib/competency";
 import { carerSignature } from "@/lib/supervisions";
 import type { SaveState } from "@/app/platform/actions";
@@ -93,7 +94,7 @@ export async function recordSpotCheckAction(_prev: CheckState, formData: FormDat
 
   if (!ISO_DATE.test(checkedOn)) return { ok: false, error: "Say when it was done." };
   if (!clientId && !typedClient) return { ok: false, error: "Pick the client whose home it was in." };
-  const items = readCheckAnswers(SPOT_CHECK_FORM.items, json(formData, "items"));
+  const items = readCheckAnswers((await loadAuditForms(context.organisationId!)).spotCheck.items, json(formData, "items"));
   if (!items.ok) return { ok: false, error: items.error };
   if (!OUTCOMES.includes(outcome)) return { ok: false, error: "Pick the overall outcome." };
   if (notes.length > 5000) return { ok: false, error: "Keep the notes under 5000 characters." };
@@ -171,7 +172,7 @@ export async function recordCompetencyAction(_prev: CheckState, formData: FormDa
   const agreed = parseAgreedActions(String(formData.get("agreed") ?? ""));
   const actionsDue = str(formData, "actionsDue");
 
-  const form = competencyForm(area, COMPETENCY_FORMS);
+  const form = competencyForm(area, (await loadAuditForms(context.organisationId!)).competency);
   if (!form) return { ok: false, error: "Pick the skill being assessed." };
   if (!ISO_DATE.test(checkedOn)) return { ok: false, error: "Say when it was assessed." };
   const criteria = readCheckAnswers(form.items, json(formData, "criteria"));

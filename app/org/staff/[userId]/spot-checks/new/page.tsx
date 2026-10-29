@@ -3,7 +3,7 @@ import { requireConsole } from "@/lib/auth";
 import { hasFeature, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
-import { SPOT_CHECK_FORM } from "@/lib/audit-forms";
+import { loadAuditForms } from "@/lib/audit-forms-data";
 import { CheckForm, type ClientOption } from "../../check-form";
 
 /**
@@ -16,7 +16,7 @@ export default async function NewSpotCheckPage({ params }: { params: Promise<{ u
   const { userId } = await params;
   const supabase = await createClient();
   const withClients = await hasFeature(context, "clients.list");
-  const [{ data: person }, clients] = await Promise.all([
+  const [{ data: person }, clients, forms] = await Promise.all([
     supabase.from("users").select("id, full_name, email, role").eq("id", userId).maybeSingle(),
     withClients
       ? supabase
@@ -34,13 +34,14 @@ export default async function NewSpotCheckPage({ params }: { params: Promise<{ u
             })),
           )
       : Promise.resolve(null),
+    loadAuditForms(context.organisationId!),
   ]);
   // Carers only: spot checks happen in clients' homes.
   if (!person || person.role !== "learner") notFound();
   const name = (person.full_name as string | null) || (person.email as string);
   return (
     <DashboardShell title={`Spot check — ${name}`} context={context} back={{ href: `/org/staff/${userId}?section=competency`, label: name }}>
-      <CheckForm mode="spot_check" userId={userId} personName={name} forms={[SPOT_CHECK_FORM]} clients={clients} />
+      <CheckForm mode="spot_check" userId={userId} personName={name} forms={[forms.spotCheck]} clients={clients} />
     </DashboardShell>
   );
 }

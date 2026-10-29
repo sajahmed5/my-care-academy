@@ -10,7 +10,8 @@ import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
 import { siteOrigin } from "@/lib/site-url";
 import { parseAgreedActions } from "@/lib/records";
-import { DEFAULT_FORMS, isAuditKind, readActionsReview, readTextAnswers } from "@/lib/audit-forms";
+import { isAuditKind, readActionsReview, readTextAnswers } from "@/lib/audit-forms";
+import { loadAuditForms } from "@/lib/audit-forms-data";
 import { carerSignature, managerSignature } from "@/lib/supervisions";
 import { emailBooking } from "@/lib/staff-audit-email";
 import type { SaveState } from "@/app/platform/actions";
@@ -99,7 +100,8 @@ export async function bookAuditAction(_prev: BookState, formData: FormData): Pro
     .single();
   if (error) return { ok: false, error: error.message };
 
-  const selfQuestions = DEFAULT_FORMS[kind].selfAssessment;
+  // The company's questions as they are today, kept with the booking.
+  const selfQuestions = (await loadAuditForms(context.organisationId!))[kind].selfAssessment;
   if (selfQuestions.length) {
     const { error: saError } = await supabase.from("appraisal_self_assessments").insert({
       organisation_id: context.organisationId,
@@ -202,7 +204,7 @@ export async function recordSupervisionAction(_prev: RecordState, formData: Form
   } catch {
     return { ok: false, error: "The form could not be read. Reload the page and try again." };
   }
-  const answers = readTextAnswers(DEFAULT_FORMS[kind].questions, raw);
+  const answers = readTextAnswers((await loadAuditForms(context.organisationId!))[kind].questions, raw);
   if (!answers.ok) return { ok: false, error: answers.error };
 
   const now = new Date();

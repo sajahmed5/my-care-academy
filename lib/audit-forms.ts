@@ -409,3 +409,111 @@ export function suggestedSlugs(form: CheckForm, outcome: string, answers: { id: 
     : answers.filter((a) => a.result === "no").flatMap((a) => form.courses[a.id] ?? []);
   return [...new Set(slugs)];
 }
+
+// ------------------------------------------------------ each company's own forms
+
+/** A company's change to one form, as stored in staff_audit_forms. */
+export interface FormOverride {
+  kind: "supervision" | "appraisal" | "spot_check" | "competency";
+  area_key: string;
+  label: string | null;
+  questions: AuditQuestion[];
+  self_assessment: AuditQuestion[];
+  due_every: number;
+  due_unit: IntervalUnit;
+  archived: boolean;
+}
+
+/** Every form a company uses: our defaults, with its own changes laid over them. */
+export interface ResolvedForms {
+  supervision: AuditForm;
+  appraisal: AuditForm;
+  spotCheck: CheckForm;
+  /** The skills it assesses, ours first in our order, then its own. */
+  competency: CheckForm[];
+}
+
+/**
+ * Lay a company's changes over the defaults. A changed default competency
+ * area keeps its suggested courses (they belong to the skill, not the
+ * wording); a company's own area suggests none. An archived area drops out
+ * of the forms, while records already made keep their label.
+ */
+export function resolveForms(overrides: FormOverride[]): ResolvedForms {
+  const find = (kind: FormOverride["kind"], area = "") => overrides.find((o) => o.kind === kind && o.area_key === area);
+  const due = (o: FormOverride): Interval => ({ every: o.due_every, unit: o.due_unit });
+  const meeting = (kind: AuditKind): AuditForm => {
+    const o = find(kind);
+    const d = DEFAULT_FORMS[kind];
+    if (!o) return d;
+    return {
+      ...d,
+      questions: o.questions.length ? o.questions : d.questions,
+      selfAssessment: kind === "appraisal" ? o.self_assessment : [],
+      due: due(o),
+    };
+  };
+  const checklist = (d: CheckForm, o: FormOverride | undefined): CheckForm =>
+    o ? { ...d, label: o.label || d.label, items: o.questions.length ? o.questions : d.items, due: due(o) } : d;
+
+  const spot = find("spot_check");
+  const defaults = COMPETENCY_FORMS.flatMap((d) => {
+    const o = find("competency", d.key);
+    if (o?.archived) return [];
+    return [checklist(d, o)];
+  });
+  const own = overrides
+    .filter((o) => o.kind === "competency" && !o.archived && !COMPETENCY_FORMS.some((d) => d.key === o.area_key))
+    .filter((o) => o.questions.length > 0)
+    .map((o): CheckForm => ({ key: o.area_key, label: o.label || o.area_key, items: o.questions, due: due(o), courses: {} }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+  return {
+    supervision: meeting("supervision"),
+    appraisal: meeting("appraisal"),
+    spotCheck: checklist(SPOT_CHECK_FORM, spot),
+    competency: [...defaults, ...own],
+  };
+}
+
+const QUESTION_ID = /^[a-z0-9_]{1,40}$/;
+export const MAX_QUESTIONS = 40;
+
+/**
+ * Questions as edited in the browser, checked: each needs wording, ids must
+ * be unique and plain (answers are keyed by them), and there is a limit.
+ * New questions arrive with an id the editor made up.
+ */
+export function readQuestions(
+  raw: unknown,
+  { allowEmpty = false }: { allowEmpty?: boolean } = {},
+): { ok: true; questions: AuditQuestion[] } | { ok: false; error: string } {
+  if (!Array.isArray(raw)) return { ok: false, error: "The questions could not be read. Reload and try again." };
+  const out: AuditQuestion[] = [];
+  const seen = new Set<string>();
+  for (const r of raw) {
+    const id = typeof r?.id === "string" ? r.id : "";
+    const label = typeof r?.label === "string" ? r.label.trim() : "";
+    const help = typeof r?.help === "string" ? r.help.trim() : "";
+    if (!label) continue; // a blank row left at the bottom
+    if (!QUESTION_ID.test(id) || seen.has(id)) return { ok: false, error: "The questions could not be read. Reload and try again." };
+    seen.add(id);
+    out.push({ id, label: label.slice(0, 200), ...(help ? { help: help.slice(0, 300) } : {}) });
+  }
+  if (!allowEmpty && out.length === 0) return { ok: false, error: "Keep at least one question." };
+  if (out.length > MAX_QUESTIONS) return { ok: false, error: `Keep it to ${MAX_QUESTIONS} questions or fewer.` };
+  return { ok: true, questions: out };
+}
+
+/** A key for a company's own competency area, from its name. */
+export function areaKeyFor(label: string, taken: string[]): string {
+  const base =
+    "own_" +
+    (label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 30) || "area");
+  let key = base;
+  for (let n = 2; taken.includes(key); n++) key = `${base}_${n}`;
+  return key;
+}

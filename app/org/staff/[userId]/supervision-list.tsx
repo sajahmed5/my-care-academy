@@ -13,6 +13,7 @@ import { bookingWhen, kindLabel, nextDueOf, type Booking, type Supervision } fro
 import { bookAuditAction, cancelBookingAction, type BookState } from "./supervision-actions";
 import type { SaveState } from "@/app/platform/actions";
 import { formatDate } from "@/lib/dates";
+import { RaisePlan } from "./competency-list";
 
 const selectClass =
   "flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm";
@@ -53,6 +54,7 @@ export function SupervisionList({
   bookings,
   holders,
   meId,
+  canRaisePlan,
 }: {
   userId: string;
   carerName: string;
@@ -60,6 +62,8 @@ export function SupervisionList({
   bookings: Booking[];
   holders: Holder[];
   meId: string;
+  /** Performance plans are in the package (people.performance_plans). */
+  canRaisePlan: boolean;
 }) {
   const now = new Date();
 
@@ -137,7 +141,7 @@ export function SupervisionList({
       ) : (
         <div className="space-y-3">
           {supervisions.map((s) => (
-            <SupervisionCard key={s.id} s={s} />
+            <SupervisionCard key={s.id} s={s} userId={userId} canRaisePlan={canRaisePlan} />
           ))}
         </div>
       )}
@@ -145,7 +149,7 @@ export function SupervisionList({
   );
 }
 
-function SupervisionCard({ s }: { s: Supervision }) {
+function SupervisionCard({ s, userId, canRaisePlan }: { s: Supervision; userId: string; canRaisePlan: boolean }) {
   const done = s.actions_review.filter((a) => a.status === "done").length;
   return (
     <Card>
@@ -193,6 +197,7 @@ function SupervisionCard({ s }: { s: Supervision }) {
           </details>
         )}
         <Signatures s={s} />
+        {canRaisePlan && <RaisePlan userId={userId} from={`supervision:${s.id}`} />}
       </CardContent>
     </Card>
   );
