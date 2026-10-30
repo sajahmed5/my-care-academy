@@ -82,6 +82,17 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       },
     ],
   },
+  {
+    title: "Integration",
+    features: ["platform.portal_api"],
+    pages: [
+      {
+        href: "/org/settings/integration",
+        label: "MyRoster",
+        hint: "Connect MyRoster, replace or remove its key, and see how the connection is doing.",
+      },
+    ],
+  },
 ];
 
 /** The groups this company's package has. */

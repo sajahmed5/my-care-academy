@@ -24,6 +24,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeatureForOrg } from "@/lib/entitlements";
 import { siteOrigin } from "@/lib/site-url";
 import { IntegrationPanel } from "./integration-panel";
+import { liveKeys } from "@/lib/integration-keys";
 import { RemoveOrganisation } from "./remove-organisation";
 
 // Removing an organisation deletes every account and file it holds, which
@@ -117,19 +118,15 @@ export default async function OrganisationDetailPage({
     .eq("status", "open")
     .order("created_at", { ascending: false });
 
-  // The rostering integration (myroster.care): the key's dates, whether the
-  // package lets it be used, and how many carers it has linked. The key
-  // columns are read as the service role, as the API reads them.
+  // The rostering integration (myroster.care): the MyRoster key's dates,
+  // whether the package lets it be used, and how many carers it has linked.
+  // Keys are read as the service role, as the API reads them.
   const integration =
     section === "integration"
       ? await (async () => {
           const admin = createAdminClient();
-          const [{ data: keyRow }, enabled, { count: linked }, origin] = await Promise.all([
-            admin
-              .from("organisations")
-              .select("integration_key_hash, integration_key_created_at, integration_key_last_used_at")
-              .eq("id", id)
-              .maybeSingle(),
+          const [keys, enabled, { count: linked }, origin] = await Promise.all([
+            liveKeys(id),
             hasFeatureForOrg(admin, id, "platform.portal_api"),
             admin
               .from("users")
@@ -138,10 +135,11 @@ export default async function OrganisationDetailPage({
               .not("external_ref", "is", null),
             siteOrigin(),
           ]);
+          const myroster = keys.find((k) => k.system === "myroster");
           return {
-            hasKey: !!keyRow?.integration_key_hash,
-            createdAt: (keyRow?.integration_key_created_at as string | null) ?? null,
-            lastUsedAt: (keyRow?.integration_key_last_used_at as string | null) ?? null,
+            hasKey: !!myroster,
+            createdAt: myroster?.createdAt ?? null,
+            lastUsedAt: myroster?.lastUsedAt ?? null,
             enabled,
             linked: linked ?? 0,
             origin,
@@ -330,7 +328,8 @@ export default async function OrganisationDetailPage({
               <CardTitle>Rostering integration</CardTitle>
               <CardDescription>
                 Lets the organisation&apos;s myroster.care account send its carers in as learners,
-                assign their training, and read back their records.
+                assign their training, and read back their records. Its managers can connect it
+                themselves under Settings, Integration.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
