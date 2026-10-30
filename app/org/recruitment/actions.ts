@@ -11,7 +11,7 @@ import { requireFeature } from "@/lib/entitlements";
 import { siteOrigin } from "@/lib/site-url";
 import { emailApplicationLink, issueApplicationLink, newToken } from "@/lib/candidate-links";
 import { inviteCandidate, makeCandidateStaff } from "@/lib/candidate-account";
-import { copyToStaffFile, sendWelcomePack, startInduction } from "@/lib/hire";
+import { copyRecordsToStaffFile, copyToStaffFile, sendWelcomePack, startInduction } from "@/lib/hire";
 import { staffDocLabel } from "@/lib/staff-documents";
 import { unlockAttempt } from "@/lib/literacy-attempts";
 import { interviewSections, overallScore, sanitiseInterview, validateInterview } from "@/lib/recruitment-interview";
@@ -20,6 +20,7 @@ import { INTERVIEW_CUSTOM_TITLE, customSection } from "@/lib/custom-questions";
 import type { Answers, FieldError } from "@/lib/recruitment-application";
 import { sendReferenceRequest } from "@/lib/reference-requests";
 import { sanitiseShadowing, shadowingNote, validateShadowing } from "@/lib/recruitment-shadowing";
+import { DBS_RISK_CUSTOM_TITLE, dbsRiskNote, dbsRiskSections, decisionKey, sanitiseDbsRisk, validateDbsRisk } from "@/lib/recruitment-dbs-risk";
 import { DEFAULT_WELCOME_GUIDE, MAX_CONTACTS, MAX_GUIDE_CHARS, sanitiseContacts } from "@/lib/welcome-pack";
 import { sendEmail } from "@/lib/email";
 import { emailButton, emailLayout, esc } from "@/lib/email-layout";
@@ -564,6 +565,7 @@ export async function hireCandidateAction(
   let courses = 0;
   if (userId) {
     moved = await copyToStaffFile(admin, candidateId, orgId, userId, context.userId);
+    moved.push(...(await copyRecordsToStaffFile(admin, candidateId, orgId, userId, context.userId)));
     if (moved.length) said.push(`${moved.map(staffDocLabel).join(", ")} moved to their staff file, with expiry dates.`);
     if (opts.induction) {
       const { data: c } = await admin.from("candidates").select("start_date").eq("id", candidateId).maybeSingle();
@@ -805,6 +807,67 @@ export async function saveShadowingAction(
       { onConflict: "candidate_id,doc_type" },
     );
     await logAudit({ context, action: "candidate.shadowing_recorded", entity: "candidate", entityId: candidateId, detail: { recommended: answers.recommend === "yes" } });
+  }
+  done(candidateId);
+  return { ok: true };
+}
+
+/**
+ * The DBS risk assessment, online: saved as it's typed and finished on
+ * purpose, which confirms the step with the decision on it. Only for a
+ * candidate whose DBS shows a conviction (the step doesn't apply otherwise).
+ */
+export async function saveDbsRiskAction(
+  candidateId: string,
+  raw: unknown,
+  finish: boolean,
+): Promise<{ ok: boolean; error?: string; problems?: Record<string, FieldError[]> }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  const step = openStep(loaded.stages, "dbs_risk_assessment");
+  if (typeof step === "string") return { ok: false, error: step };
+  const { custom } = await companyQuestions(admin, context.organisationId!);
+  const sections = dbsRiskSections(customSection(custom.dbs_risk, { title: DBS_RISK_CUSTOM_TITLE }));
+  const answers = sanitiseDbsRisk(raw, sections);
+  if (finish) {
+    const problems = validateDbsRisk(answers, new Date().toISOString().slice(0, 10), sections);
+    if (Object.keys(problems).length) return { ok: false, error: "Some answers still need filling in.", problems };
+  }
+  const now = new Date().toISOString();
+  const { error } = await admin.from("candidate_dbs_assessments").upsert(
+    {
+      organisation_id: context.organisationId,
+      candidate_id: candidateId,
+      answers,
+      decision: decisionKey(answers),
+      status: finish ? "complete" : "draft",
+      completed_at: finish ? now : null,
+      completed_by: finish ? context.userId : null,
+      updated_by: context.userId,
+    },
+    { onConflict: "candidate_id" },
+  );
+  if (error) return { ok: false, error: "The risk assessment couldn't be saved. Try again." };
+  if (finish) {
+    await admin.from("candidate_documents").upsert(
+      {
+        candidate_id: candidateId,
+        organisation_id: context.organisationId,
+        doc_type: "dbs_risk_assessment",
+        file_path: null,
+        not_required: false,
+        review_status: "confirmed",
+        review_note: dbsRiskNote(answers),
+        uploaded_by_candidate: false,
+        reviewed_by: context.userId,
+        reviewed_at: now,
+      },
+      { onConflict: "candidate_id,doc_type" },
+    );
+    await logAudit({ context, action: "candidate.dbs_risk_assessed", entity: "candidate", entityId: candidateId, detail: { decision: decisionKey(answers) } });
   }
   done(candidateId);
   return { ok: true };

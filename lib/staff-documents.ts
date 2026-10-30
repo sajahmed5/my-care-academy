@@ -104,6 +104,7 @@ export const STAFF_FILE_SOURCES: Array<{ staffDoc: StaffDocKey; from: string[] }
   { staffDoc: "right_to_work", from: ["share_code", "proof_id"] },
   { staffDoc: "proof_id", from: ["proof_id"] },
   { staffDoc: "dbs", from: ["dbs"] },
+  { staffDoc: "dbs_risk_assessment", from: ["dbs_risk_assessment"] },
 ];
 
 /** Summary counts for one person's documents, for lists across the company. */

@@ -64,7 +64,7 @@ export async function RecruitmentRecord({ userId }: { userId: string }) {
   // candidate page reads them; the candidate row above was found under RLS,
   // so it is this organisation's and the HR pack is on.
   const admin = createAdminClient();
-  const [{ data: c }, { data: docs }, { data: app }, attempt, { data: interview }, { data: refs }, { data: letters }, { data: starter }, { data: signings }, { data: shadowing }] =
+  const [{ data: c }, { data: docs }, { data: app }, attempt, { data: interview }, { data: refs }, { data: letters }, { data: starter }, { data: signings }, { data: shadowing }, { data: risk }] =
     await Promise.all([
       admin
         .from("candidates")
@@ -84,6 +84,7 @@ export async function RecruitmentRecord({ userId }: { userId: string }) {
       admin.from("candidate_starter_forms").select("status, submitted_at").eq("candidate_id", candidateId).maybeSingle(),
       admin.from("candidate_signings").select("doc_key, status").eq("candidate_id", candidateId),
       admin.from("candidate_shadowing").select("status, completed_at").eq("candidate_id", candidateId).maybeSingle(),
+      admin.from("candidate_dbs_assessments").select("status, decision, completed_at, answers").eq("candidate_id", candidateId).maybeSingle(),
     ]);
   if (!c) return null;
   const base = `/org/recruitment/${candidateId}`;
@@ -136,7 +137,21 @@ export async function RecruitmentRecord({ userId }: { userId: string }) {
       href: r.status === "received" ? `${base}/reference/${r.id}` : undefined,
       link: "Read it",
     })),
-    ...(c.dbs_conviction ? [{ label: "DBS risk assessment", detail: stepNote(docs, "dbs_risk_assessment") }] : []),
+    ...(c.dbs_conviction
+      ? [
+          {
+            label: "DBS risk assessment",
+            detail:
+              risk?.status === "complete"
+                ? `Completed ${fmt(risk.completed_at as string)} · ${String((risk.answers as Record<string, unknown> | null)?.decision ?? "")}`
+                : risk
+                  ? "Started, not finished"
+                  : stepNote(docs, "dbs_risk_assessment"),
+            href: risk ? `${base}/dbs-risk` : undefined,
+            link: "Read it",
+          },
+        ]
+      : []),
     ...SIGNING_DOC_KEYS.flatMap((k) => {
       const s = (signings ?? []).find((g) => g.doc_key === k);
       if (!s) return [];
