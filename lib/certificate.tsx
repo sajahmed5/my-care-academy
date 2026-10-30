@@ -9,6 +9,7 @@ import {
 } from "@react-pdf/renderer";
 import { formatDate } from "./dates";
 import { CERTIFICATE_LOGO } from "./certificate-logo";
+import { POWERED_BY } from "./pdf-brand";
 
 export interface CertificateData {
   learnerName: string;
@@ -167,6 +168,7 @@ const recStyles = StyleSheet.create({
   page: { padding: 40, paddingBottom: 56, fontSize: 10, color: DEEP, fontFamily: "Helvetica" },
   top: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", borderBottom: `2 solid ${TEAL}`, paddingBottom: 10, marginBottom: 14 },
   logo: { width: 150 },
+  orgLogo: { maxHeight: 44, maxWidth: 200, objectFit: "contain" },
   h1: { fontSize: 20, fontFamily: "Helvetica-Bold", color: DEEP },
   sub: { color: MUTED, marginTop: 3, marginBottom: 16 },
   row: { flexDirection: "row", borderBottom: "1 solid #dcebe8", paddingVertical: 6 },
@@ -190,17 +192,20 @@ function TrainingRecordDoc({
   learnerName,
   rows,
   generatedAt,
+  orgLogoUrl,
 }: {
   learnerName: string;
   rows: TrainingRecordRow[];
   generatedAt: Date;
+  /** The company's logo in place of ours, with white label. */
+  orgLogoUrl?: string | null;
 }) {
   return (
     <Document>
       <Page size="A4" style={recStyles.page}>
         <View style={recStyles.top}>
           {/* eslint-disable-next-line jsx-a11y/alt-text -- a PDF image has no alt */}
-          <Image src={CERTIFICATE_LOGO} style={recStyles.logo} />
+          <Image src={orgLogoUrl || CERTIFICATE_LOGO} style={orgLogoUrl ? recStyles.orgLogo : recStyles.logo} />
           <Text style={{ color: MUTED }}>Generated {fmtD(generatedAt)}</Text>
         </View>
         <Text style={recStyles.h1}>Training record — {learnerName}</Text>
@@ -233,6 +238,7 @@ function TrainingRecordDoc({
         )}
         <Text style={recStyles.footer} fixed>
           Any certificate number above can be checked at {VERIFY_AT}
+          {orgLogoUrl ? ` · ${POWERED_BY}` : ""}
         </Text>
       </Page>
     </Document>
@@ -243,12 +249,14 @@ export async function generateTrainingRecordPdf(
   learnerName: string,
   rows: TrainingRecordRow[],
   generatedAt: Date,
+  orgLogoUrl?: string | null,
 ): Promise<Buffer> {
   return renderToBuffer(
     <TrainingRecordDoc
       learnerName={learnerName}
       rows={rows}
       generatedAt={generatedAt}
+      orgLogoUrl={orgLogoUrl}
     />,
   );
 }

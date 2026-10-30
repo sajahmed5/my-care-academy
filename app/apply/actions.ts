@@ -84,7 +84,7 @@ export async function startApplicationAction(
     const app = (existing.candidate_applications as unknown as { id: string }[] | null)?.[0];
     if (app) {
       const link = await issueApplicationLink(admin, app.id);
-      await emailApplicationLink({ to: email, firstName, company, link });
+      await emailApplicationLink({ to: email, firstName, company, link, organisationId: orgId });
     }
     return { emailed: true };
   }
@@ -107,7 +107,7 @@ export async function startApplicationAction(
   if (!app) return { error: "Your application couldn't be started. Please try again." };
   const link = await issueApplicationLink(admin, app.id as string);
   // The same link by email too, so they can come back to it.
-  await emailApplicationLink({ to: email, firstName, company, link });
+  await emailApplicationLink({ to: email, firstName, company, link, organisationId: orgId });
   return { link };
 }
 

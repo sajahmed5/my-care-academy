@@ -146,7 +146,7 @@ export async function sendOfferAction(candidateId: string, raw: unknown): Promis
     conditions: sanitiseLetterSettings(settingsRow?.letter_settings).conditions,
   });
   const html = letterHtml(letter);
-  const sent = await sendEmail({ to: c.email as string, subject: letter.subject, html, replyTo: context.email ?? undefined });
+  const sent = await sendEmail({ to: c.email as string, subject: letter.subject, html, replyTo: context.email ?? undefined, organisationId: context.organisationId });
   if (!sent) return { ok: false, error: "The email couldn't be sent. Try again." };
 
   const now = new Date().toISOString();
@@ -200,7 +200,7 @@ export async function sendRejectionAction(candidateId: string, raw: unknown, sen
     if (problems.length) return { ok: false, error: problems.join(" ") };
     const letter = buildRejection({ fields, candidateName: c.full_name as string, companyName: c.company, position: c.role_applied as string | null, todayIso: today(), reasons });
     sentHtml = letterHtml(letter);
-    const sent = await sendEmail({ to: c.email as string, subject: letter.subject, html: sentHtml, replyTo: context.email ?? undefined });
+    const sent = await sendEmail({ to: c.email as string, subject: letter.subject, html: sentHtml, replyTo: context.email ?? undefined, organisationId: context.organisationId });
     if (!sent) return { ok: false, error: "The email couldn't be sent. Try again." };
   }
   const now = new Date().toISOString();

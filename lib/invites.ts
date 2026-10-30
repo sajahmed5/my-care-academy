@@ -44,6 +44,7 @@ export async function createInvite(opts: {
     inviteUrl,
     roleLabel: opts.roleLabel,
     orgName: opts.orgName,
+    organisationId: opts.organisationId,
   });
   return { ...result, userId: data.user?.id };
 }
@@ -82,5 +83,12 @@ export async function createSetPasswordLink(email: string): Promise<string> {
  */
 export async function createPasswordReset(email: string): Promise<SendResult> {
   const resetUrl = await createSetPasswordLink(email);
-  return sendPasswordResetEmail({ to: email, resetUrl });
+  // The account's company, so with white label the email is in its name.
+  const { data: profile } = await createAdminClient()
+    .from("users")
+    .select("organisation_id")
+    .eq("email", email.trim().toLowerCase())
+    .limit(1)
+    .maybeSingle();
+  return sendPasswordResetEmail({ to: email, resetUrl, organisationId: (profile?.organisation_id as string | null) ?? null });
 }

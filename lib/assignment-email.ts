@@ -114,7 +114,7 @@ export async function emailAssignees(
       const r = byId.get(n.userId);
       if (!r || !shouldNotify(r, ctx.assignedBy)) return [];
       const { subject, html } = assignmentEmail(kind, n, { name: r.full_name, assignedByName, orgName, origin: ctx.origin });
-      return [{ to: r.email!, subject, html }];
+      return [{ to: r.email!, subject, html, organisationId: ctx.organisationId }];
     });
     if (outgoing.length === 0) return 0;
 

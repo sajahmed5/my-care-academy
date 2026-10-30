@@ -167,7 +167,7 @@ export async function emailBookings(
     });
     if (outgoing.length === 0) return 0;
 
-    const sent = await sendEmailBatch(outgoing.map(({ to, subject, html }) => ({ to, subject, html })));
+    const sent = await sendEmailBatch(outgoing.map(({ to, subject, html, organisationId }) => ({ to, subject, html, organisationId })));
     await admin.from("email_log").insert(
       outgoing.map((m, i) => ({
         organisation_id: m.organisationId,

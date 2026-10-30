@@ -231,6 +231,7 @@ export async function submitFormAction(
       to: a.email,
       subject: `New submission: ${form.title}`,
       html: `<p>A new submission was received for <strong>${form.title}</strong>.</p>`,
+      organisationId: context.organisationId,
     });
     await admin.from("email_log").insert({
       organisation_id: context.organisationId,

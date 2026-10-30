@@ -36,7 +36,7 @@ export async function inviteCandidate(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { data: c } = await admin
     .from("candidates")
-    .select("id, full_name, email, user_id, organisations(name)")
+    .select("id, full_name, email, user_id, organisation_id, organisations(name)")
     .eq("id", candidateId)
     .maybeSingle();
   if (!c?.email) return { ok: false, error: "Add their email address first." };
@@ -63,7 +63,7 @@ export async function inviteCandidate(
       ${emailLinkFallback(link.url)}`,
     footer: `Sent for ${esc(company)} by My Care Academy.`,
   });
-  const sent = await sendEmail({ to: email, subject: `Follow your application to ${company}`, html });
+  const sent = await sendEmail({ to: email, subject: `Follow your application to ${company}`, html, organisationId: c.organisation_id as string });
   return sent ? { ok: true } : { ok: false, error: "The email couldn't be sent. Try again." };
 }
 
@@ -84,6 +84,7 @@ export async function makeCandidateStaff(admin: Admin, candidateId: string, orgI
   const url = `${await siteOrigin()}/login`;
   await sendEmail({
     to: c.email as string,
+    organisationId: orgId,
     subject: `Welcome to ${company}`,
     html: emailLayout({
       heading: `Welcome to ${company}`,

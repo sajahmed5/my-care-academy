@@ -1,3 +1,4 @@
+import { orgBranding } from "@/lib/branding";
 import { NextResponse } from "next/server";
 import { requireConsole } from "@/lib/auth";
 import { hasFeature } from "@/lib/entitlements";
@@ -33,7 +34,8 @@ export async function GET() {
     }),
   ]);
   const name = (org?.name as string) ?? "Our organisation";
-  const pdf = await renderGuidancePdf(complaintGuidance(name, councils), name);
+  const logo = (await orgBranding(context.organisationId))?.logoUrl ?? null;
+  const pdf = await renderGuidancePdf(complaintGuidance(name, councils), name, logo);
   return new NextResponse(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",

@@ -235,6 +235,7 @@ export async function sendBackStepAction(
     const url = `${await siteOrigin()}/my-application`;
     await sendEmail({
       to: loaded.candidate.email as string,
+      organisationId: context.organisationId,
       subject: `${company} needs something changed on your application`,
       html: emailLayout({
         heading: "Something to send again",
@@ -255,7 +256,7 @@ export async function sendBackStepAction(
       .maybeSingle();
     if (app && loaded.candidate.email) {
       const link = await issueApplicationLink(admin, app.id as string);
-      await emailApplicationLink({ to: loaded.candidate.email as string, firstName: null, company: await orgName(admin, context.organisationId!), link, note: trimmed });
+      await emailApplicationLink({ to: loaded.candidate.email as string, firstName: null, company: await orgName(admin, context.organisationId!), link, note: trimmed, organisationId: context.organisationId });
     }
   }
   done(candidateId);
@@ -295,6 +296,7 @@ export async function unlockLiteracyAction(
     const company = await orgName(admin, context.organisationId!);
     const sent = await sendEmail({
       to: email!,
+      organisationId: context.organisationId,
       subject: `Your reading and writing test for ${company}`,
       html: emailLayout({
         heading: "Your reading and writing test",
@@ -374,7 +376,7 @@ export async function sendApplicationFormAction(candidateId: string): Promise<{ 
   }
   if (!id) return { ok: false, error: "The form couldn't be sent. Try again." };
   const link = await issueApplicationLink(admin, id);
-  const sent = await emailApplicationLink({ to: email, firstName: null, company: await orgName(admin, context.organisationId!), link });
+  const sent = await emailApplicationLink({ to: email, firstName: null, company: await orgName(admin, context.organisationId!), link, organisationId: context.organisationId });
   if (!sent) return { ok: false, error: "The email couldn't be sent. Try again." };
   await logAudit({ context, action: "candidate.application_sent", entity: "candidate", entityId: candidateId });
   done(candidateId);

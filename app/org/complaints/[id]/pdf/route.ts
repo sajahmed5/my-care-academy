@@ -1,3 +1,4 @@
+import { orgBranding } from "@/lib/branding";
 import { NextResponse, type NextRequest } from "next/server";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     complaint,
     stages: stagesFor(allStages, complaint.kind),
     organisationName: (org?.name as string) ?? "This organisation",
+    organisationLogoUrl: (await orgBranding(context.organisationId))?.logoUrl ?? null,
     nameOf: (uid: string) => names.get(uid) ?? uid,
   };
 

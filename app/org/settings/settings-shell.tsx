@@ -104,8 +104,8 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     pages: [
       {
         href: "/org/settings/white-label",
-        label: "Logo and colour",
-        hint: "Your logo and colour in place of ours, on every page your staff see.",
+        label: "Logo, colour and emails",
+        hint: "Your logo and colour in place of ours, on every page, PDF and email, and who your emails come from.",
       },
     ],
   },

@@ -75,7 +75,7 @@ export async function emailBooking(
       orgName: (org?.name as string | null) ?? "your organisation",
       origin: ctx.origin,
     });
-    const sent = await sendEmail({ to: person.email as string, subject, html });
+    const sent = await sendEmail({ to: person.email as string, subject, html, organisationId: ctx.organisationId });
     await admin.from("email_log").insert({
       organisation_id: ctx.organisationId,
       to_email: person.email,

@@ -27,12 +27,13 @@ export async function signingsFor(admin: Admin, candidateId: string) {
 }
 
 export async function emailDocumentsReady(admin: Admin, candidateId: string, titles: string[]): Promise<boolean> {
-  const { data: c } = await admin.from("candidates").select("full_name, email, organisations(name)").eq("id", candidateId).maybeSingle();
+  const { data: c } = await admin.from("candidates").select("full_name, email, organisation_id, organisations(name)").eq("id", candidateId).maybeSingle();
   if (!c?.email) return false;
   const company = (c.organisations as unknown as { name: string } | null)?.name ?? "the company";
   const url = `${await siteOrigin()}/my-application`;
   return sendEmail({
     to: c.email as string,
+    organisationId: c.organisation_id as string,
     subject: `${company}: your documents to sign`,
     html: emailLayout({
       heading: "Your documents are ready to sign",

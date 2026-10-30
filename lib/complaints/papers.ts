@@ -5,6 +5,7 @@
  * client, so RLS decides what may be printed.
  */
 
+import { orgBranding } from "@/lib/branding";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadComplaint, loadStaffOptions, loadStages } from "./data";
 import { stagesFor } from "./stages";
@@ -28,6 +29,7 @@ export async function loadPdfContext(
     allStages,
     stages: stagesFor(allStages, complaint.kind),
     organisationName: (org?.name as string) ?? "This organisation",
+    organisationLogoUrl: (await orgBranding(organisationId))?.logoUrl ?? null,
     nameOf: (uid: string) => names.get(uid) ?? uid,
   };
 }
