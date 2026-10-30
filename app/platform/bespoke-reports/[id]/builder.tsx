@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,7 @@ import {
   type ReportDefinition,
   type Section,
 } from "@/lib/bespoke/definition";
-import { saveReportAction } from "../actions";
+import { draftReportAction, saveReportAction } from "../actions";
 
 const selectClass = "flex h-9 w-full rounded-lg border border-input bg-background px-2 text-sm";
 const textareaClass =
@@ -44,6 +44,28 @@ export function Builder({
   const [dirty, setDirty] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
+  const [brief, setBrief] = useState("");
+  const [drafting, startDraft] = useTransition();
+  const [draftNote, setDraftNote] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const draft = () => {
+    if (sections.length > 0 && !confirm("Replace the sections here with an AI draft? Nothing is saved until you press Save.")) return;
+    startDraft(async () => {
+      const r = await draftReportAction(reportId, brief);
+      if (!r.ok) {
+        setDraftNote({ ok: false, text: r.error });
+        return;
+      }
+      touch();
+      setSections(r.definition.sections);
+      if (r.title) setTitle(r.title);
+      if (r.description) setDescription(r.description);
+      setDraftNote({
+        ok: true,
+        text: `Drafted: check every section before saving.${r.cannot ? ` Not covered, to build by hand: ${r.cannot}` : ""}`,
+      });
+    });
+  };
 
   const touch = () => {
     setDirty(true);
@@ -90,6 +112,30 @@ export function Builder({
             onChange={(e) => (touch(), setDescription(e.target.value))}
             className={textareaClass}
           />
+        </div>
+      </div>
+
+      <div className="space-y-2 rounded-2xl border border-dashed bg-card p-5">
+        <Label htmlFor="ai-brief">Draft it with AI</Label>
+        <p className="text-xs text-muted-foreground">
+          From the company&apos;s request, plus anything you add here. Our cost, not theirs. It replaces the sections below; nothing is
+          saved until you press Save.
+        </p>
+        <textarea
+          id="ai-brief"
+          rows={2}
+          maxLength={4000}
+          value={brief}
+          onChange={(e) => setBrief(e.target.value)}
+          placeholder="Optional: e.g. one section per region, mandatory courses only"
+          className={textareaClass}
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" onClick={draft} disabled={drafting}>
+            <Sparkles className="size-4" />
+            {drafting ? "Drafting…" : "Draft with AI"}
+          </Button>
+          {draftNote && <span className={`text-sm ${draftNote.ok ? "text-teal-700" : "text-red-700"}`}>{draftNote.text}</span>}
         </div>
       </div>
 
