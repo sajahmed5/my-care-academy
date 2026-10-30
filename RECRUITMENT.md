@@ -1,7 +1,7 @@
 # Recruitment — agreed plan (29 Oct 2026)
 
-Agreed with Saj on 29 Oct 2026. Nothing below is built yet. Recruitment is in
-Growth and up (see PACKAGES.md).
+Agreed with Saj on 29 Oct 2026. Nothing below is built yet. Recruitment is part
+of the HR pack, in every package since 30 Oct 2026 (see PACKAGES.md).
 
 ## The aim
 

@@ -33,7 +33,7 @@ const PRICE: Record<string, { monthly: number; highlight?: boolean }> = Object.f
 // and TIER_DETAILS — change one, change all three.
 const COMPARE: { label: string; detail: string; from: number }[] = [
   { label: "Online training", detail: "Courses, inductions, matrix, certificates and reminders", from: 0 },
-  { label: "Recruitment", detail: "Candidates, their documents and DBS expiry", from: 1 },
+  { label: "Recruitment", detail: "Candidates, their documents and DBS expiry", from: 0 },
   { label: "Supervisions and appraisals", detail: "Signed in the room, with agreed actions tracked", from: 1 },
   { label: "Spot checks and competency", detail: "Area by area, with who's due next", from: 1 },
   { label: "Complaints and safeguarding", detail: "Complaints, accidents, near misses and safeguarding concerns", from: 2 },
@@ -75,7 +75,7 @@ export default function TrainingPricingPage() {
             One price for the whole team
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-[#2b1d0e]/70">
-            Four packages, from training on its own to everything a care service runs on. Unlimited learners on every one.
+            Four packages, from training and recruitment to everything a care service runs on. Unlimited learners on every one.
           </p>
           <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#2b1d0e]/75">
             <li className="inline-flex items-center gap-2"><Users className="size-4 text-[#b7791f]" /> Unlimited learners and admins</li>

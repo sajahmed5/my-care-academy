@@ -1,7 +1,8 @@
 # HR pack — agreed plan (29 Oct 2026)
 
 Agreed with Saj on 29 Oct 2026. Nothing below is built yet. The HR pack is in
-Growth and up (see PACKAGES.md). It was the Recruitment add-on until 29 Oct
+every package since 30 Oct 2026, and is never split between packages (see
+PACKAGES.md). It was the Recruitment add-on until 29 Oct
 2026; it now covers employing someone, from application to leaving. How well
 they do the job is Staff Audits (STAFF-AUDITS.md).
 
@@ -25,8 +26,7 @@ interview, test result, references, signed contract — when they were
 recruited on the site. On hire, the checked documents move here with their
 expiry dates, so reminders carry on.
 
-Starter keeps today's simple right-to-work and DBS records with expiries on
-the carer's file.
+Every package has it: the HR pack moved to Starter on 30 Oct 2026.
 
 ## Disciplinary and grievance: the rules
 

@@ -106,6 +106,7 @@ describe("my_entitlements", () => {
     expect(error).toBeNull();
     expect((data as string[]).sort()).toEqual(
       [
+        "recruitment.tracker",
         "training.courses",
         "training.matrix",
         "training.observations",

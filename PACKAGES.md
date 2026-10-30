@@ -10,7 +10,7 @@ has them (`lib/pricing.ts`) until Saj reviews them after the build.
 | | Starter £49 | Growth £99 | Pro £149 | Enterprise £249 |
 |---|:-:|:-:|:-:|:-:|
 | Online training | ✓ | ✓ | ✓ | ✓ |
-| HR pack | | ✓ | ✓ | ✓ |
+| HR pack | ✓ | ✓ | ✓ | ✓ |
 | Staff Audits | | ✓ | ✓ | ✓ |
 | Complaints & safeguarding | | | ✓ | ✓ |
 | Service audits | | | ✓ | ✓ |
@@ -27,7 +27,8 @@ has them (`lib/pricing.ts`) until Saj reviews them after the build.
   induction programmes, certificates, reminders. Every package. For everyone
   in the company, office staff and managers included (see Staff logins
   below), with new office and admin courses to write.
-- **HR pack** (called Recruitment until 29 Oct 2026) — employing someone:
+- **HR pack** (called Recruitment until 29 Oct 2026) — every package since
+  30 Oct 2026 (below). Employing someone:
   recruitment from application to hire (RECRUITMENT.md), the carer's
   documents page with its Recruitment sub-page, probation reviews, sickness
   absence and return to work, disciplinary, grievance, and leavers. Planned
@@ -101,11 +102,11 @@ there instead — part of the MyRoster review.
 
 Package keys stay as they are (`core`, `core_forms`, `core_recruitment`,
 `full`); only the public names show. The keys' old meanings no longer match
-(`core_forms` is now the HR pack and Staff Audits package), so a comment says so.
+(`core_forms` is now the Staff Audits package), so a comment says so.
 
 | Feature | Today | Agreed |
 |---|---|---|
-| `recruitment.tracker` | Pro | **Growth** (HR pack) |
+| `recruitment.tracker` | Pro | **Starter** (HR pack; Growth until 30 Oct 2026) |
 | `people.supervisions`, `people.competency` | Pro | **Growth** (Staff Audits) |
 | `forms.builder` | Growth | **Pro** |
 | `documents.library` | Growth | **Pro**, merged with the pack |
@@ -124,6 +125,16 @@ holidays) are settled when the build is planned.
 Nobody loses anything: on 29 Oct 2026 two organisations are on Starter and
 one on Enterprise, none on Growth or Pro, and the only classroom session ever
 recorded belongs to the Enterprise one.
+
+## The HR pack moved to Starter (30 Oct 2026)
+
+A platform admin ticked `recruitment.tracker` for Starter on 29 Oct 2026, and
+Saj confirmed it the next day: the HR pack is now in every package. The HR
+pack is never split — a part of it can't sit in one package and another part
+in a different one. Each new HR part (the documents page, probation, absence
+and return to work, disciplinary, grievance, leavers, holidays) goes in
+Starter too, whatever key it is built on. Growth is now Staff Audits and the
+client list.
 
 ## What people see when their package doesn't include something
 

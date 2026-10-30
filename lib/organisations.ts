@@ -7,7 +7,8 @@ export const PACKAGE_TIERS = [
   // "with more professional names"), renamed to these on 23 Oct 2026. The
   // labels are the public names; the keys below are internal and unchanged.
   // The keys' old meanings no longer match since the 29 Oct 2026 regroup:
-  // core_forms is Growth (recruitment and the staff records), core_recruitment
+  // core is Starter (training and the HR pack), core_forms is Growth (Staff
+  // Audits and the client list), core_recruitment
   // is Pro (complaints, audits, forms and policies). Stripe's price env vars
   // use the keys, so they stay.
   { value: "core", label: "Starter" },
@@ -39,20 +40,20 @@ export const TIER_DETAILS: Record<
   // Regrouped 29 Oct 2026 (PACKAGES.md). Each line describes what is built
   // today: as the HR pack, Staff Audits and the rest grow, so does this copy.
   core: {
-    tagline: "Training for the whole team.",
+    tagline: "Train your whole team, and hire the next one.",
     features: [
       "Full CQC-aligned course library and induction programmes",
       "Unlimited learners and admin users",
       "Certificates with verification and expiry tracking",
       "Training matrix and CSV exports",
       "Automated reminders and weekly digest emails",
+      "Recruitment: candidates, documents and DBS expiry",
     ],
   },
   core_forms: {
-    tagline: "Hire, check and support your staff.",
+    tagline: "Check and support your staff.",
     features: [
       "Everything in Starter",
-      "Recruitment tracker: candidates, documents and DBS expiry",
       "Supervisions and appraisals, with agreed actions tracked",
       "Spot checks and competency assessments",
     ],
