@@ -3,6 +3,7 @@ import {
   daysLeftLabel,
   endOfUkDay,
   extendedTrialEnd,
+  trialEmailDue,
   trialEndFrom,
   trialState,
   ukDateKey,
@@ -65,5 +66,37 @@ describe("trial state", () => {
   it("labels the days left", () => {
     expect(daysLeftLabel(1)).toBe("1 day left");
     expect(daysLeftLabel(4)).toBe("4 days left");
+  });
+});
+
+describe("trial emails", () => {
+  const ends = "2026-11-09T23:59:59.999Z";
+  const at = (iso: string) => new Date(iso);
+
+  it("owes nothing while more than two days are left", () => {
+    expect(trialEmailDue(ends, null, at("2026-11-06T07:00:00Z"))).toBeNull();
+  });
+
+  it("sends the two-day email at two days left, once", () => {
+    const due = trialEmailDue(ends, null, at("2026-11-07T07:00:00Z"));
+    expect(due).toEqual({ kind: "two_days", key: `two_days@${ends}` });
+    expect(trialEmailDue(ends, due!.key, at("2026-11-07T07:05:00Z"))).toBeNull();
+    // Still sent the next day if the job missed a run.
+    expect(trialEmailDue(ends, null, at("2026-11-08T07:00:00Z"))?.kind).toBe("two_days");
+  });
+
+  it("sends the last-day email on the day it ends", () => {
+    expect(trialEmailDue(ends, `two_days@${ends}`, at("2026-11-09T07:00:00Z"))?.kind).toBe("last_day");
+    expect(trialEmailDue(ends, `last_day@${ends}`, at("2026-11-09T08:00:00Z"))).toBeNull();
+  });
+
+  it("starts afresh when the trial is extended", () => {
+    const later = "2026-11-16T23:59:59.999Z";
+    expect(trialEmailDue(later, `last_day@${ends}`, at("2026-11-14T07:00:00Z"))?.kind).toBe("two_days");
+  });
+
+  it("owes nothing once it has ended or without a trial", () => {
+    expect(trialEmailDue(ends, null, at("2026-11-10T07:00:00Z"))).toBeNull();
+    expect(trialEmailDue(null, null)).toBeNull();
   });
 });

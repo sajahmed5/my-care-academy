@@ -97,3 +97,25 @@ export function daysLeftLabel(daysLeft: number): string {
   if (daysLeft <= 0) return "Last day";
   return `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
 }
+
+export type TrialEmailKind = "two_days" | "last_day";
+
+/**
+ * Which trial email the daily job owes a company today, if any: "two_days"
+ * once two days or fewer are left (a missed run still sends it), "last_day"
+ * on the day it ends. `lastSent` is organisations.trial_email_sent, so a
+ * re-run sends nothing new, and an extended trial starts afresh.
+ */
+export function trialEmailDue(
+  trialEndsAt: string | null,
+  lastSent: string | null,
+  now: Date = new Date(),
+): { kind: TrialEmailKind; key: string } | null {
+  const trial = trialState(trialEndsAt, now);
+  if (trial.kind !== "active") return null;
+  const kind: TrialEmailKind | null = trial.daysLeft === 0 ? "last_day" : trial.daysLeft <= 2 ? "two_days" : null;
+  if (!kind) return null;
+  const key = `${kind}@${trial.endsAt.toISOString()}`;
+  if (lastSent === key) return null;
+  return { kind, key };
+}
