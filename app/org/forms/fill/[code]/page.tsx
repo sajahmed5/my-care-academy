@@ -4,7 +4,7 @@ import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
-import { loadFormTemplate, visibleFormPacks } from "@/lib/form-library";
+import { loadFormTemplate, reviewMonthsFor, templateVisible } from "@/lib/form-library";
 import { FormComplete } from "@/app/learn/forms/[assignmentId]/form-complete";
 import { defaultReviewDue } from "@/lib/form-reviews";
 import { formatDate } from "@/lib/dates";
@@ -33,10 +33,7 @@ export default async function FillFormPage({
   const supabase = await createClient();
   const [enabled, template] = await Promise.all([enabledMap(context), loadFormTemplate(supabase, decodeURIComponent(code))]);
   if (!template || template.audience === "carer" || template.is_log) notFound();
-  const { packs, collections } = visibleFormPacks(enabled);
-  if (!packs.includes(template.pack) || (template.pack === "addon" && !collections.includes(template.collection ?? ""))) {
-    notFound();
-  }
+  if (!templateVisible(template, enabled, context.organisationId!)) notFound();
 
   let clientName: string | null = null;
   if (template.audience === "client") {
@@ -58,6 +55,8 @@ export default async function FillFormPage({
       previous = { id: data.id as string, answers: (data.answers as Record<string, unknown>) ?? {}, submitted_at: data.submitted_at as string };
     }
   }
+
+  const reviewMonths = await reviewMonthsFor(supabase, context.organisationId!, template);
 
   const back =
     template.audience === "client"
@@ -88,7 +87,7 @@ export default async function FillFormPage({
             templateId: template.id,
             clientId: clientId ?? undefined,
             deviceSigning: template.audience === "client",
-            reviewDue: template.review_months ? defaultReviewDue(new Date(), template.review_months) : undefined,
+            reviewDue: reviewMonths ? defaultReviewDue(new Date(), reviewMonths) : undefined,
             reviewOf: previous?.id,
           }}
           fields={template.fields}

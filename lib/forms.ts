@@ -63,6 +63,35 @@ export function isFieldVisible(
   return String(actual ?? "") === c.equals;
 }
 
+/**
+ * A list of fields as sent by an editor, made safe to keep: only labelled
+ * fields, known types, options as strings, a conditional only when it names
+ * a field, a range only on a number, and the order they were given. A field
+ * without an id gets one, so answers can be keyed to it.
+ */
+export function cleanFields(raw: unknown): FormField[] {
+  if (!Array.isArray(raw)) return [];
+  const validTypes = new Set(FIELD_TYPES.map((t) => t.value));
+  const list = (raw as Partial<FormField>[]).filter((f) => f && typeof f.label === "string" && f.label.trim()).slice(0, 300);
+  return list.map((f, i) => {
+    const type = validTypes.has(f.type as FieldType) ? (f.type as FieldType) : "text";
+    return {
+      id: typeof f.id === "string" && f.id ? f.id.slice(0, 64) : crypto.randomUUID(),
+      label: (f.label as string).trim().slice(0, 500),
+      type,
+      options: fieldHasOptions(type) && Array.isArray(f.options) ? f.options.map(String).map((o) => o.trim()).filter(Boolean).slice(0, 100) : [],
+      required: !!f.required,
+      conditional:
+        f.conditional && typeof f.conditional.whenFieldId === "string" && f.conditional.whenFieldId
+          ? { whenFieldId: f.conditional.whenFieldId, equals: String(f.conditional.equals ?? "") }
+          : null,
+      sort_order: i,
+      ...(type === "number" && typeof f.min === "number" && Number.isFinite(f.min) ? { min: f.min } : {}),
+      ...(type === "number" && typeof f.max === "number" && Number.isFinite(f.max) ? { max: f.max } : {}),
+    };
+  });
+}
+
 /** Whether a number answer falls outside the field's safe range. */
 export function isOutOfRange(field: Pick<FormField, "type" | "min" | "max">, value: unknown): boolean {
   if (field.type !== "number" || value === undefined || value === null || value === "") return false;
@@ -79,78 +108,3 @@ export function rangeLabel(field: Pick<FormField, "min" | "max">): string | null
   if (typeof min === "number") return `${min} or above`;
   return null;
 }
-
-// ---------------------------------------------------------------------------
-// Pre-made templates (cloned into a new form)
-// ---------------------------------------------------------------------------
-export interface TemplateField {
-  label: string;
-  type: FieldType;
-  options?: string[];
-  required?: boolean;
-  conditionalOn?: { label: string; equals: string };
-}
-
-export interface FormTemplate {
-  key: string;
-  title: string;
-  description: string;
-  fields: TemplateField[];
-}
-
-export const FORM_TEMPLATES: FormTemplate[] = [
-  {
-    key: "application",
-    title: "Job application form",
-    description: "Collect applicant details and right-to-work.",
-    fields: [
-      { label: "Full name", type: "text", required: true },
-      { label: "Email", type: "text", required: true },
-      { label: "Phone", type: "text" },
-      { label: "Role applied for", type: "text", required: true },
-      { label: "Do you have the right to work in the UK?", type: "radio", options: ["Yes", "No"], required: true },
-      {
-        label: "Share code",
-        type: "text",
-        conditionalOn: { label: "Do you have the right to work in the UK?", equals: "Yes" },
-      },
-      { label: "Do you drive?", type: "radio", options: ["Yes", "No"] },
-      { label: "CV upload", type: "file" },
-      { label: "Signature", type: "signature", required: true },
-    ],
-  },
-  {
-    key: "care_assessment",
-    title: "Care assessment",
-    description: "Initial needs assessment for a person receiving care.",
-    fields: [
-      { label: "Client name", type: "text", required: true },
-      { label: "Date of assessment", type: "date", required: true },
-      { label: "Mobility needs", type: "checkbox", options: ["Walking aid", "Wheelchair", "Hoist", "None"] },
-      { label: "Does the client take medication?", type: "radio", options: ["Yes", "No"], required: true },
-      {
-        label: "Medication details",
-        type: "textarea",
-        conditionalOn: { label: "Does the client take medication?", equals: "Yes" },
-      },
-      { label: "Dietary requirements", type: "textarea" },
-      { label: "Assessor signature", type: "signature", required: true },
-    ],
-  },
-  {
-    key: "client_qa",
-    title: "Client quality assurance",
-    description: "Satisfaction and quality check for a client.",
-    fields: [
-      { label: "Client name", type: "text", required: true },
-      { label: "Overall satisfaction", type: "radio", options: ["Very satisfied", "Satisfied", "Unsatisfied"], required: true },
-      {
-        label: "What could we improve?",
-        type: "textarea",
-        conditionalOn: { label: "Overall satisfaction", equals: "Unsatisfied" },
-      },
-      { label: "Are carers on time?", type: "radio", options: ["Always", "Usually", "Rarely"] },
-      { label: "Additional comments", type: "textarea" },
-    ],
-  },
-];
