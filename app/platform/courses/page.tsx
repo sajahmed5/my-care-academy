@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { buttonVariants } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { DashboardShell } from "@/components/dashboard-shell";
 import {
   Card,
@@ -21,8 +22,10 @@ export default async function CoursesAdminPage() {
   // most courses showed a short or zero count.
   const { data: courses } = await supabase
     .from("courses")
-    .select("id, title, topics(title), quiz_questions(count)")
+    .select("id, title, retired_at, topics(title), quiz_questions(count)")
     .order("sort_order");
+  // Retired courses go to the bottom, marked.
+  const ordered = [...(courses ?? [])].sort((a, b) => Number(!!a.retired_at) - Number(!!b.retired_at));
   const questionCount = (c: { quiz_questions?: unknown }) =>
     (c.quiz_questions as { count?: number }[] | null)?.[0]?.count ?? 0;
 
@@ -34,7 +37,7 @@ export default async function CoursesAdminPage() {
             <CardTitle>Course catalogue</CardTitle>
             <CardDescription>
               Manage each course&apos;s assessment question bank (aim for ~50 per
-              course).
+              course), or retire a course that shouldn&apos;t be offered any more.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -49,12 +52,15 @@ export default async function CoursesAdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {(courses ?? []).map((c) => {
+                  {ordered.map((c) => {
                     const topic = (c.topics as unknown as { title: string } | null)
                       ?.title;
                     return (
                       <tr key={c.id} className="border-b last:border-0">
-                        <td className="py-2 font-medium">{c.title}</td>
+                        <td className="py-2 font-medium">
+                          {c.title}
+                          {c.retired_at && <Badge variant="secondary" className="ml-2">Retired</Badge>}
+                        </td>
                         <td className="py-2 text-muted-foreground">{topic}</td>
                         <td className="py-2">{questionCount(c)}</td>
                         <td className="py-2 text-right">
@@ -65,7 +71,7 @@ export default async function CoursesAdminPage() {
                               variant: "outline",
                             })}
                           >
-                            Questions
+                            Manage
                           </Link>
                         </td>
                       </tr>

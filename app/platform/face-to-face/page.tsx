@@ -43,7 +43,7 @@ export default async function FaceToFacePage() {
       .lt("ends_at", now)
       .order("starts_at", { ascending: false })
       .limit(50),
-    supabase.from("courses").select("id, title").order("title"),
+    supabase.from("courses").select("id, title").is("retired_at", null).order("title"),
     supabase.from("face_to_face_closed_days").select("day, reason").gte("day", ukDay(now)).order("day"),
     supabase.rpc("face_to_face_places_taken", { p_from: new Date(today.getTime() - 2 * 365 * 86400_000).toISOString() }),
   ]);

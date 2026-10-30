@@ -188,7 +188,7 @@ export default async function StaffDetailPage({
     // manager can give this carer one more course without leaving the page.
     // Only the Training section offers it, so the other sections don't pay.
     section.key === "training"
-      ? supabase.from("courses").select("id, title").order("title")
+      ? supabase.from("courses").select("id, title").is("retired_at", null).order("title")
       : Promise.resolve({ data: null }),
     // Face-to-face sessions they attended (ROADMAP §4), on the Training tab.
     section.key === "training"
@@ -279,7 +279,7 @@ export default async function StaffDetailPage({
   const suggestions: Record<string, Suggestion[]> = {};
   if (concerns.length) {
     const [{ data: courseRows }, assignedByConcern] = await Promise.all([
-      supabase.from("courses").select("id, slug, title").order("title"),
+      supabase.from("courses").select("id, slug, title").is("retired_at", null).order("title"),
       loadConcernTraining(
         supabase,
         concerns.map((c) => c.id),
@@ -316,7 +316,7 @@ export default async function StaffDetailPage({
       }),
   ].filter((s) => s.slugs.length > 0);
   if (shortfalls.length) {
-    const { data: courseRows } = await supabase.from("courses").select("id, slug, title").order("title");
+    const { data: courseRows } = await supabase.from("courses").select("id, slug, title").is("retired_at", null).order("title");
     const catalogue = (courseRows ?? []).map((c) => ({ id: c.id as string, slug: c.slug as string, title: c.title as string }));
     for (const s of shortfalls) {
       auditSuggestions[s.key] = suggestionsFromSlugs(s.slugs, catalogue, auditTraining.get(s.key) ?? new Map());

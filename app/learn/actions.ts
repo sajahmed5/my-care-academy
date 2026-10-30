@@ -69,7 +69,7 @@ export async function selfEnrolAction(
   const admin = createAdminClient();
 
   const [{ data: course }, { data: existing }] = await Promise.all([
-    admin.from("courses").select("id").eq("id", courseId).maybeSingle(),
+    admin.from("courses").select("id").eq("id", courseId).is("retired_at", null).maybeSingle(),
     admin
       .from("enrolments")
       .select("id")

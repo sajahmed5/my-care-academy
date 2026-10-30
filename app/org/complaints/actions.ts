@@ -38,6 +38,7 @@ import { emailAssignees } from "@/lib/assignment-email";
 import { COMPLAINT_NATURES } from "@/lib/complaints/forms";
 import { siteOrigin } from "@/lib/site-url";
 import { STAFF_ROLES } from "@/lib/roles";
+import { withoutRetired, RETIRED_COURSE } from "@/lib/retired-courses";
 
 /**
  * The complaint process. Written through the RLS-scoped client, so the
@@ -950,6 +951,7 @@ export async function assignConcernTrainingAction(_prev: SaveState, formData: Fo
     .eq("status", "active")
     .maybeSingle();
   if (!target) return { ok: false, error: "That person is not an active member of staff in your organisation." };
+  if ((await withoutRetired(supabase, [courseId])).length === 0) return { ok: false, error: RETIRED_COURSE };
 
   const { error: enrolError } = await supabase.from("enrolments").upsert(
     { organisation_id: context.organisationId, user_id: userId, course_id: courseId, due_date: dueDate || null },

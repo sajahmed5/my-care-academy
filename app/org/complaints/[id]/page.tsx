@@ -64,7 +64,7 @@ export default async function ComplaintPage({
   const training: { userId: string; name: string | null; suggestions: ReturnType<typeof suggestionsFor> }[] = [];
   if (["accident", "near_miss"].includes(complaint.kind) && complaint.category && complaint.people.length) {
     const [{ data: courseRows }, assigned] = await Promise.all([
-      supabase.from("courses").select("id, slug, title").order("title"),
+      supabase.from("courses").select("id, slug, title").is("retired_at", null).order("title"),
       loadConcernTraining(supabase, [complaint.id]),
     ]);
     const catalogue = (courseRows ?? []).map((c) => ({ id: c.id as string, slug: c.slug as string, title: c.title as string }));

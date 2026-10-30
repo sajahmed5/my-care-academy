@@ -24,7 +24,7 @@ export default async function CoursesAdminPage() {
   // and paged, since a plain read stops silently at 1,000 people.
   const [{ data: courses }, { data: pathways }, activeStaff] =
     await Promise.all([
-      supabase.from("courses").select("id, title").order("title"),
+      supabase.from("courses").select("id, title").is("retired_at", null).order("title"),
       supabase.from("pathways").select("id, title").order("title"),
       fetchAll((f, t) =>
         supabase

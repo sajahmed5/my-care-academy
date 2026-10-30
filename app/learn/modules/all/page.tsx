@@ -22,6 +22,7 @@ export default async function AllCoursesPage({
     supabase
       .from("courses")
       .select("id, title, slug, description, topics(title)")
+      .is("retired_at", null)
       .order("sort_order"),
   ]);
 

@@ -12,6 +12,9 @@ import {
 } from "@/components/ui/card";
 import { correctAnswerText, type StoredQuestion } from "@/lib/quiz";
 import { QuestionEditor, type Question } from "./question-editor";
+import { RetireCourse } from "./retire-course";
+import { unfinishedAssignments } from "@/app/platform/course-actions";
+import { formatDate } from "@/lib/dates";
 
 export default async function CourseQuestionsPage({
   params,
@@ -22,13 +25,14 @@ export default async function CourseQuestionsPage({
   const { courseId } = await params;
 
   const supabase = await createClient();
-  const [{ data: course }, { data: questions }] = await Promise.all([
-    supabase.from("courses").select("id, title").eq("id", courseId).maybeSingle(),
+  const [{ data: course }, { data: questions }, unfinished] = await Promise.all([
+    supabase.from("courses").select("id, title, retired_at").eq("id", courseId).maybeSingle(),
     supabase
       .from("quiz_questions")
       .select("id, type, question, options, answer_index, payload")
       .eq("course_id", courseId)
       .order("sort_order"),
+    unfinishedAssignments(courseId),
   ]);
 
   if (!course) notFound();
@@ -66,6 +70,24 @@ export default async function CourseQuestionsPage({
           </CardHeader>
           <CardContent>
             <QuestionEditor courseId={courseId} initialQuestions={initial} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>{course.retired_at ? "Retired" : "Retire this course"}</CardTitle>
+            <CardDescription>
+              {course.retired_at
+                ? `Retired on ${formatDate(course.retired_at as string)}. It isn't offered anywhere — not in MyRoster, the console's assign screens, carers' All courses page or the sets of courses — and its renewal emails have stopped. Every certificate and completion is kept. Bringing it back offers it again; the assignments removed when it was retired don't come back.`
+                : "Stops the course being offered anywhere — MyRoster, the console's assign screens, carers' All courses page and the sets of courses — and stops its renewal emails. Every assignment nobody has finished is removed. Certificates and completions are kept. Use this instead of deleting a course, which would delete every company's certificates for it."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RetireCourse
+              courseId={courseId}
+              title={course.title as string}
+              retiredAt={(course.retired_at as string | null) ?? null}
+              unfinished={unfinished}
+            />
           </CardContent>
         </Card>
       </div>

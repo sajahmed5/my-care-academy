@@ -12,6 +12,7 @@ import { logAudit } from "@/lib/audit";
 import { fetchAll } from "@/lib/fetch-all";
 import { endOfMonthISO, type AssignCsvRow } from "@/lib/assign";
 import { emailAssignees } from "@/lib/assignment-email";
+import { withoutRetired, RETIRED_COURSE } from "@/lib/retired-courses";
 import { siteOrigin } from "@/lib/site-url";
 import type { InviteState, SaveState } from "@/app/platform/actions";
 import type { UserRole } from "@/lib/auth";
@@ -374,10 +375,12 @@ export async function assignTrainingAction(
       .eq("pathway_id", pathwayId);
     for (const r of data ?? []) courseIdSet.add(r.course_id as string);
   }
-  const courseIds = [...courseIdSet];
-  if (courseIds.length === 0) {
+  if (courseIdSet.size === 0) {
     return { ok: false, error: "Choose at least one course or a set of courses." };
   }
+  // A set of courses may hold a retired one; it's left out.
+  const courseIds = await withoutRetired(supabase, [...courseIdSet]);
+  if (courseIds.length === 0) return { ok: false, error: RETIRED_COURSE };
 
   // Resolve the target learners. "All carers" = every active learner in the org
   // (RLS scopes the read to the caller's org).
@@ -528,7 +531,7 @@ export async function bulkAssignTrainingAction(
         .order("id")
         .range(f, t),
     ).then((data) => ({ data })),
-    supabase.from("courses").select("id, title"),
+    supabase.from("courses").select("id, title").is("retired_at", null),
   ]);
   const userByEmail = new Map(
     (users ?? []).map((u) => [String(u.email).toLowerCase(), u.id as string]),

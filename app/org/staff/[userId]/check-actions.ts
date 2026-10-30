@@ -15,6 +15,7 @@ import { loadAuditForms } from "@/lib/audit-forms-data";
 import { COMPETENCY_OUTCOMES } from "@/lib/competency";
 import { carerSignature } from "@/lib/supervisions";
 import type { SaveState } from "@/app/platform/actions";
+import { withoutRetired, RETIRED_COURSE } from "@/lib/retired-courses";
 
 /**
  * Spot checks and competency assessments (STAFF-AUDITS.md). Carers only:
@@ -250,6 +251,7 @@ export async function assignAuditTrainingAction(_prev: SaveState, formData: Form
   if (!source) return { ok: false, error: "That record is not in your organisation." };
   const { data: target } = await supabase.from("users").select("id").eq("id", userId).eq("status", "active").maybeSingle();
   if (!target) return { ok: false, error: "That person is not an active carer in your organisation." };
+  if ((await withoutRetired(supabase, [courseId])).length === 0) return { ok: false, error: RETIRED_COURSE };
 
   const { error: enrolError } = await supabase.from("enrolments").upsert(
     { organisation_id: context.organisationId, user_id: userId, course_id: courseId, due_date: ISO_DATE.test(dueDate) ? dueDate : null },

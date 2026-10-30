@@ -52,6 +52,8 @@ export interface EngineEnrolment {
 export interface EngineRefs {
   users: Map<string, { email: string; name: string; org: string | null; role: string; status: string }>;
   courses: Map<string, string>;
+  /** Retired courses (30 Oct 2026): no renewal or reminder emails for them. */
+  retired: Set<string>;
   orgs: Map<string, string>;
   /**
    * Every enrolment, read once per run. Renewals, reminders and engagement
@@ -100,7 +102,7 @@ export async function loadEngineRefs(admin: Admin): Promise<EngineRefs> {
         .order("id")
         .range(f, t),
     ),
-    fetchAll((f, t) => admin.from("courses").select("id, title").order("id").range(f, t)),
+    fetchAll((f, t) => admin.from("courses").select("id, title, retired_at").order("id").range(f, t)),
     fetchAll((f, t) => admin.from("organisations").select("id, name").order("id").range(f, t)),
     fetchAll<EngineEnrolment>((f, t) =>
       admin
@@ -124,6 +126,7 @@ export async function loadEngineRefs(admin: Admin): Promise<EngineRefs> {
       ]),
     ),
     courses: new Map(courses.map((c) => [c.id as string, c.title as string])),
+    retired: new Set(courses.filter((c) => c.retired_at).map((c) => c.id as string)),
     orgs: new Map(orgs.map((o) => [o.id as string, o.name as string])),
     enrolments,
   };
@@ -277,6 +280,10 @@ export async function processRenewals(
   };
 
   for (const cert of latest.values()) {
+    // A retired course can't be taken again: its certificate runs out
+    // quietly, and the completed assignment isn't turned back into a
+    // "required again" one.
+    if (r.retired.has(cert.course_id as string)) continue;
     const expiresAt = cert.expires_at ? new Date(cert.expires_at as string) : null;
     const learner = r.users.get(cert.user_id as string);
     const base = {
@@ -363,6 +370,7 @@ export async function processReminders(
   for (const e of r.enrolments) {
     const overdue = isOverdue(e.due_date as string | null, e.status as string, now);
     if (!needsReminder(e.status as string)) continue;
+    if (r.retired.has(e.course_id as string)) continue;
     const learner = r.users.get(e.user_id as string);
     if (!isActiveLearner(learner) || !learner?.email) continue;
     items.push({

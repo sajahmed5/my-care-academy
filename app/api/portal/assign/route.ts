@@ -70,11 +70,12 @@ export async function POST(req: Request) {
   }
   if (courseIds.size === 0) return NextResponse.json({ error: "Nothing to assign" }, { status: 400 });
 
-  // Only real courses — a stale id from the portal must not insert a ghost.
+  // Only real courses — a stale id from the portal must not insert a ghost —
+  // and not retired ones.
   const validCourseIds = (
     await Promise.all(
       chunk([...courseIds], IDS_PER_REQUEST).map(async (part) => {
-        const { data, error } = await admin.from("courses").select("id").in("id", part);
+        const { data, error } = await admin.from("courses").select("id").in("id", part).is("retired_at", null);
         if (error) throw new Error(error.message);
         return (data ?? []).map((c) => c.id as string);
       }),

@@ -30,7 +30,7 @@ export default async function ClassroomPage({ searchParams }: { searchParams: Pr
       .eq("organisation_id", orgId)
       .order("held_on", { ascending: false })
       .limit(200),
-    supabase.from("courses").select("id, title").order("title"),
+    supabase.from("courses").select("id, title").is("retired_at", null).order("title"),
     supabase
       .from("users")
       .select("id, full_name, email")
