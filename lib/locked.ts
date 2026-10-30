@@ -173,6 +173,7 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
       "Tell us what you need to know, who it's for and how often",
       "We build it within 10 working days, and you can ask for as many as you like",
       "Each request tracked from asked to ready, with a conversation with us on it",
+      "Seen only by your company: live data, downloaded as a PDF with your logo or as Excel",
     ],
   },
   "platform.white_label": {

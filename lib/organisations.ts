@@ -77,6 +77,7 @@ export const TIER_DETAILS: Record<
       "Your own classroom sessions, with QR sign-in, on the training matrix",
       "Your own logo on certificates, the portal and your policies",
       "Rostering system integration (MyRoster)",
+      "Bespoke reports, built for you within 10 working days",
       "Priority support",
     ],
   },
