@@ -44,6 +44,10 @@ export default async function LetterPage({ params, searchParams }: { params: Pro
             <a href={`/org/hr/letters/${id}/pdf`} className="font-medium text-primary hover:underline">
               Download the PDF
             </a>
+            {" · "}
+            <a href={`/org/hr/letters/${id}/word`} className="font-medium text-primary hover:underline">
+              Word
+            </a>
           </p>
           <Card>
             <CardContent className="space-y-3 pt-6 text-sm leading-relaxed">

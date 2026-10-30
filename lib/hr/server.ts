@@ -5,7 +5,8 @@ import { sendEmail } from "@/lib/email";
 import { orgBranding } from "@/lib/branding";
 import { STAFF_ROLES } from "@/lib/roles";
 import { addMonths } from "@/lib/records";
-import { renderHrPdf, ukDate } from "@/lib/hr-pdf";
+import { renderLetterPdf, ukDate } from "@/lib/hr-pdf";
+import { letterDoc, sanitiseLetterhead, type LetterDoc } from "@/lib/hr/letterhead";
 import { draftLetter, hrLetterHtml, sanitiseOverrides, templateInForce, type LetterValues } from "@/lib/hr/letters";
 import { DEFAULT_PROBATION, probationFromRow, type ProbationFacts, type ProbationSettings } from "@/lib/hr/probation";
 
@@ -176,6 +177,39 @@ export async function letterSigner(admin: Admin, orgId: string, by: string): Pro
 }
 
 /**
+ * A letter on the company's letterhead, ready for the PDF or Word (issue #89).
+ * date is how it reads: today when it's sent, the sent date afterwards.
+ */
+export async function hrLetterDoc(
+  admin: Admin,
+  orgId: string,
+  by: string,
+  letter: Record<string, unknown>,
+  person: NonNullable<Awaited<ReturnType<typeof hrPerson>>>,
+  date: string,
+): Promise<{ doc: LetterDoc; logoUrl: string | null; company: string; signer: { name: string; title: string } }> {
+  const [{ data: org }, signer, brand, settings] = await Promise.all([
+    admin.from("organisations").select("name").eq("id", orgId).maybeSingle(),
+    letterSigner(admin, orgId, by),
+    orgBranding(orgId),
+    loadHrSettingsRow(admin, orgId),
+  ]);
+  const company = (org?.name as string | undefined) ?? "";
+  const doc = letterDoc({
+    company,
+    letterhead: sanitiseLetterhead(settings?.letterhead),
+    recipient: personName(person),
+    date,
+    subject: String(letter.subject ?? ""),
+    greeting: `Dear ${firstName(person)},`,
+    body: String(letter.body ?? ""),
+    fixed: Array.isArray(letter.fixed) ? (letter.fixed as string[]) : [],
+    signer,
+  });
+  return { doc, logoUrl: brand?.logoUrl ?? null, company, signer };
+}
+
+/**
  * Send a draft: emailed to the person, rendered to a PDF kept with the letter,
  * and marked sent. Returns an error in words the office can act on.
  */
@@ -186,29 +220,13 @@ export async function sendLetter(admin: Admin, letterId: string, orgId: string, 
   const person = await hrPerson(admin, orgId, letter.user_id as string);
   if (!person) return { ok: false, error: "That person is not one of your staff." };
   if (!person.email) return { ok: false, error: "They have no email address on their login." };
-  const [{ data: org }, signer, brand] = await Promise.all([
-    admin.from("organisations").select("name").eq("id", orgId).maybeSingle(),
-    letterSigner(admin, orgId, by),
-    orgBranding(orgId),
-  ]);
-  const company = (org?.name as string | undefined) ?? "";
   const today = new Date().toISOString().slice(0, 10);
+  const { doc, logoUrl, company, signer } = await hrLetterDoc(admin, orgId, by, letter, person, ukDate(today));
   const fixed = Array.isArray(letter.fixed) ? (letter.fixed as string[]) : [];
-  const greeting = `Dear ${firstName(person)},`;
+  const greeting = doc.greeting;
   const body = String(letter.body);
 
-  const pdf = await renderHrPdf(company, [
-    {
-      title: String(letter.subject),
-      subtitle: `${personName(person)} · ${ukDate(today)}`,
-      blocks: [
-        { type: "para", text: greeting },
-        ...[...body.split(/\n{2,}/), ...fixed].map((t) => t.trim()).filter(Boolean).map((text) => ({ type: "para" as const, text })),
-        { type: "para", text: "Yours sincerely," },
-        { type: "signature", name: signer.name || company, title: [signer.title, company].filter(Boolean).join(", ") },
-      ],
-    },
-  ], brand?.logoUrl);
+  const pdf = await renderLetterPdf(doc, logoUrl);
   const path = `${orgId}/${person.id}/letters/${letterId}.pdf`;
   const { error: upErr } = await admin.storage.from(HR_BUCKET).upload(path, pdf, { contentType: "application/pdf", upsert: true });
   if (upErr) return { ok: false, error: "The letter couldn't be saved as a PDF. Try again." };

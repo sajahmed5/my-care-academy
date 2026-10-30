@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { sanitiseProbation } from "@/lib/hr/probation";
 import { sanitiseOverrides, templateFor } from "@/lib/hr/letters";
+import { sanitiseLetterhead, type Letterhead } from "@/lib/hr/letterhead";
 import { sanitiseTriggers } from "@/lib/hr/absence";
 import { sanitiseLeaveTypes } from "@/lib/hr/holidays";
 
@@ -61,6 +62,19 @@ export async function saveLetterTemplateAction(kind: string, subject: string, bo
   const ok = await patchSettings(context.organisationId!, context.userId, { letter_templates: sanitiseOverrides(all) });
   if (!ok) return { ok: false, error: "That didn't save. Try again." };
   await logAudit({ context, action: "hr.letter_template_saved", entity: "organisation", entityId: context.organisationId!, detail: { kind, ours: !Object.keys(own).length } });
+  revalidatePath("/org/settings/hr/letters");
+  return { ok: true };
+}
+
+/** The letterhead under the company's name on every HR letter (issue #89). */
+export async function saveLetterheadAction(input: Letterhead): Promise<{ ok: boolean; error?: string }> {
+  const context = await gate();
+  const letterhead = sanitiseLetterhead(input);
+  if (input.email?.trim() && !letterhead.email) return { ok: false, error: "Check the email address." };
+  const empty = !letterhead.address && !letterhead.phone && !letterhead.email;
+  const ok = await patchSettings(context.organisationId!, context.userId, { letterhead: empty ? null : letterhead });
+  if (!ok) return { ok: false, error: "That didn't save. Try again." };
+  await logAudit({ context, action: "hr.letterhead_saved", entity: "organisation", entityId: context.organisationId! });
   revalidatePath("/org/settings/hr/letters");
   return { ok: true };
 }

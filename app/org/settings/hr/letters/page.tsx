@@ -3,7 +3,10 @@ import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { LETTER_FIELDS, LETTER_TEMPLATES, sanitiseOverrides } from "@/lib/hr/letters";
+import { sanitiseLetterhead } from "@/lib/hr/letterhead";
+import { orgBranding } from "@/lib/branding";
 import { TemplateEditor } from "./template-editor";
+import { LetterheadForm } from "./letterhead-form";
 
 /**
  * Every HR letter's wording (HR-PACK.md). Each starts as ours; a company
@@ -15,12 +18,16 @@ export default async function LetterTemplatesPage() {
   const context = await requireRole("org_admin");
   await requireFeature(context, "recruitment.tracker");
   const supabase = await createClient();
-  const { data } = await supabase.from("hr_settings").select("letter_templates").eq("organisation_id", context.organisationId!).maybeSingle();
+  const [{ data }, brand] = await Promise.all([
+    supabase.from("hr_settings").select("letter_templates, letterhead").eq("organisation_id", context.organisationId!).maybeSingle(),
+    orgBranding(context.organisationId),
+  ]);
   const own = sanitiseOverrides(data?.letter_templates);
   const groups = [...new Set(LETTER_TEMPLATES.map((t) => t.group))];
   return (
     <SettingsShell context={context} active="/org/settings/hr/letters">
       <div className="max-w-3xl space-y-5">
+        <LetterheadForm company={brand?.name ?? ""} initial={sanitiseLetterhead(data?.letterhead)} hasLogo={!!brand?.logoUrl} />
         <details className="rounded-xl border bg-card p-4 text-sm">
           <summary className="cursor-pointer font-medium">What you can put in {"{{double brackets}}"}</summary>
           <ul className="mt-2 grid gap-1 sm:grid-cols-2">

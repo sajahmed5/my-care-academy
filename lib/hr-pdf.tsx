@@ -1,5 +1,6 @@
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { PdfLogo, withPoweredBy } from "@/lib/pdf-brand";
+import type { LetterDoc } from "@/lib/hr/letterhead";
 
 /**
  * Paper for the HR pack (HR-PACK.md): a record as it was filled in (a
@@ -31,6 +32,9 @@ export interface HrDoc {
 const styles = StyleSheet.create({
   page: { padding: 44, paddingBottom: 56, fontSize: 10.5, color: "#111827", fontFamily: "Helvetica" },
   company: { fontSize: 14, fontFamily: "Helvetica-Bold", paddingBottom: 6, marginBottom: 14, borderBottom: "1.5 solid #1e293b" },
+  companyWithHead: { fontSize: 14, fontFamily: "Helvetica-Bold", marginBottom: 2 },
+  letterhead: { fontSize: 9, color: "#374151", lineHeight: 1.35 },
+  letterheadEnd: { paddingBottom: 6, marginBottom: 14, borderBottom: "1.5 solid #1e293b" },
   title: { fontSize: 17, fontFamily: "Helvetica-Bold", marginBottom: 2 },
   subtitle: { fontSize: 10.5, color: "#374151", marginBottom: 12 },
   heading: { fontSize: 12, fontFamily: "Helvetica-Bold", marginTop: 14, marginBottom: 5, paddingBottom: 3, borderBottom: "0.75 solid #d1d5db" },
@@ -87,14 +91,21 @@ function Block({ b }: { b: HrBlock }) {
   }
 }
 
-function HrDocument({ company, docs, logoUrl }: { company: string; docs: HrDoc[]; logoUrl: string | null | undefined }) {
+function HrDocument({ company, docs, logoUrl, letterhead = [] }: { company: string; docs: HrDoc[]; logoUrl: string | null | undefined; letterhead?: string[] }) {
   const footer = withPoweredBy(`${company ? `${company} · ` : ""}made with My Care Academy`, logoUrl);
   return (
     <Document>
       {docs.map((d, n) => (
         <Page key={n} size="A4" style={styles.page}>
           <PdfLogo url={logoUrl} />
-          <Text style={styles.company}>{company || "—"}</Text>
+          {letterhead.length ? (
+            <View style={styles.letterheadEnd}>
+              <Text style={styles.companyWithHead}>{company || "—"}</Text>
+              {letterhead.map((l, i) => <Text key={i} style={styles.letterhead}>{l}</Text>)}
+            </View>
+          ) : (
+            <Text style={styles.company}>{company || "—"}</Text>
+          )}
           <Text style={styles.title}>{d.title}</Text>
           {d.subtitle ? <Text style={styles.subtitle}>{d.subtitle}</Text> : null}
           {d.blocks.map((b, i) => (
@@ -116,6 +127,24 @@ function HrDocument({ company, docs, logoUrl }: { company: string; docs: HrDoc[]
  */
 export function renderHrPdf(company: string, docs: HrDoc[], logoUrl: string | null | undefined): Promise<Buffer> {
   return renderToBuffer(<HrDocument company={company} docs={docs} logoUrl={logoUrl} />);
+}
+
+/**
+ * An HR letter on the company's letterhead (issue #89): as it's sent, and as
+ * a template to download. The same LetterDoc prints to Word in lib/hr/letter-word.
+ */
+export function renderLetterPdf(doc: LetterDoc, logoUrl: string | null | undefined): Promise<Buffer> {
+  const page: HrDoc = {
+    title: doc.subject,
+    subtitle: [doc.recipient, doc.date].filter(Boolean).join(" · "),
+    blocks: [
+      { type: "para", text: doc.greeting },
+      ...doc.paragraphs.map((text) => ({ type: "para" as const, text })),
+      { type: "para", text: "Yours sincerely," },
+      { type: "signature", name: doc.signer.name || doc.company, title: [doc.signer.title, doc.company].filter(Boolean).join(", ") },
+    ],
+  };
+  return renderToBuffer(<HrDocument company={doc.company} docs={[page]} logoUrl={logoUrl} letterhead={doc.letterhead} />);
 }
 
 /** "12 March 2026" from an ISO date or timestamp; "—" for nothing. */

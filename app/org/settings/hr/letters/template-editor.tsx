@@ -62,6 +62,12 @@ export function TemplateEditor({
             </Button>
           )}
           {message && <span role="status" className="text-sm text-muted-foreground">{message}</span>}
+          <span className="ml-auto text-sm text-muted-foreground">
+            Download as saved, on your letterhead:{" "}
+            <a href={`/org/settings/hr/letters/${kind}?format=pdf`} className="font-medium text-primary hover:underline">PDF</a>
+            {" · "}
+            <a href={`/org/settings/hr/letters/${kind}?format=docx`} className="font-medium text-primary hover:underline">Word</a>
+          </span>
         </div>
       </div>
     </details>
