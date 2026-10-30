@@ -88,6 +88,18 @@ performance — a performance plan that fails leads to a capability hearing).
 5. Outcome letter — upheld, partly upheld or not upheld, with any actions.
 6. Appeal.
 
+*Built 31 Oct 2026: HR → Disciplinary and grievance, with each case's
+page (every step above, its letters, minutes signed or refused, witness
+statements typed and signed or written from a link, evidence, legal
+reminders, notes) and the case file as one PDF. Opened from a concern, a
+spot check or competency that wasn't met, an absence trigger or a failed
+probation, linked to it. Staff raise a grievance from My HR; managers are
+emailed, never one it's about. Deadlines are emailed daily to whoever can
+see the case, and counted in the weekly email. Settings → HR →
+Disciplinary and grievance holds the timescales, warning lengths, and the
+office workers who can see cases. A company with one manager can have
+the appeal heard by that manager ("wherever possible").*
+
 ## Probation reviews
 
 - 6 months by default (the contract template's length), with reviews at 1, 3

@@ -28,6 +28,7 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
       "Probation reviews, with the letters written for you to check and send",
       "Sickness absence, return-to-work interviews and Bradford Factor triggers",
       "Holidays: allowances, requests, approvals and a calendar of who's off",
+      "Disciplinary and grievance cases that follow the ACAS Code, with every letter",
     ],
   },
   "people.supervisions": {

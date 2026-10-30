@@ -80,6 +80,13 @@ export function ConcernList({
             </div>
 
             <p className="line-clamp-4 whitespace-pre-line text-sm text-muted-foreground">{c.description}</p>
+            {/* A concern can lead to a disciplinary case, linked to it (HR-PACK.md). */}
+            <Link
+              href={`/org/hr/cases/new?user=${userId}&from=concern&fromId=${c.id}&label=${encodeURIComponent(`${c.reference} · ${kindLabel(c.kind)}`)}`}
+              className="inline-block text-xs font-medium text-primary hover:underline"
+            >
+              Open a disciplinary case from this →
+            </Link>
 
             {c.outcome && (
               <p className="rounded-lg bg-muted/40 p-3 text-sm">

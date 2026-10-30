@@ -9,6 +9,7 @@ import {
   processEngagement,
 } from "@/lib/engine";
 import { processFaceToFaceReminders } from "@/lib/face-to-face-email";
+import { processCaseReminders } from "@/lib/hr/case-reminders";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -43,6 +44,8 @@ export async function GET(req: NextRequest) {
   const faceToFace = await processFaceToFaceReminders(admin, now, dryRun);
   // Referees who haven't answered: a reminder after 3 days, twice at most.
   const references = await chaseReferences(admin, now, dryRun);
+  // HR cases: deadlines missed or in the next 2 days, to whoever can see them.
+  const cases = await processCaseReminders(admin, now, dryRun);
 
   return NextResponse.json({
     ok: true,
@@ -52,5 +55,6 @@ export async function GET(req: NextRequest) {
     ...engagement,
     ...faceToFace,
     referenceReminders: references,
+    ...cases,
   });
 }

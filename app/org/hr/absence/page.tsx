@@ -117,16 +117,23 @@ export default async function AbsenceOverviewPage() {
 
         {list(
           "Reached a trigger point",
-          due.triggers.map((b) =>
-            row(b.userId, `/org/staff/${b.userId}?section=employment&sub=absence`, name(b.userId), (
-              <>
+          due.triggers.map((b) => (
+            <div key={b.userId} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm">
+              <Link href={`/org/staff/${b.userId}?section=employment&sub=absence`} className="font-medium text-primary hover:underline">{name(b.userId)}</Link>
+              <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <span>
                   Bradford score {b.score} ({b.spells} spell{b.spells === 1 ? "" : "s"}, {b.days} day{b.days === 1 ? "" : "s"} in 52 weeks)
                 </span>
                 <span className="rounded-full bg-rose-100 px-2 py-0.5 font-medium text-rose-700">Over {b.reached}</span>
-              </>
-            )),
-          ),
+                <Link
+                  href={`/org/hr/cases/new?user=${b.userId}&subtype=capability&from=absence&label=${encodeURIComponent(`Absence: Bradford score ${b.score}, over the trigger point of ${b.reached}`)}`}
+                  className="font-medium text-primary hover:underline"
+                >
+                  Open an absence capability case
+                </Link>
+              </span>
+            </div>
+          )),
           "Nobody has reached a trigger point. Nothing happens on its own when someone does: you decide.",
         )}
       </div>

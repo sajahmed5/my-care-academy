@@ -41,7 +41,7 @@ import { ConcernList } from "./concern-list";
 import { SupervisionList } from "./supervision-list";
 import { StaffDocuments } from "./staff-documents";
 import { RecruitmentRecord } from "./recruitment-record";
-import { AbsencePanel, HolidaysPanel, LettersPanel, ProbationPanel } from "./employment";
+import { AbsencePanel, CasesPanel, HolidaysPanel, LettersPanel, ProbationPanel } from "./employment";
 import { staffDocTasks, type StaffDoc } from "@/lib/staff-documents";
 import { TaskList } from "./task-list";
 import { SubTabs } from "./sub-tabs";
@@ -93,6 +93,7 @@ const EMPLOYMENT_TABS = [
   { key: "", label: "Probation" },
   { key: "absence", label: "Absence" },
   { key: "holidays", label: "Holidays" },
+  { key: "cases", label: "Cases" },
   { key: "letters", label: "Letters" },
 ];
 
@@ -733,6 +734,8 @@ export default async function StaffDetailPage({
             />
             {sub === "letters" ? (
               <LettersPanel supabase={supabase} userId={userId} />
+            ) : sub === "cases" ? (
+              <CasesPanel supabase={supabase} userId={userId} />
             ) : sub === "holidays" ? (
               <HolidaysPanel supabase={supabase} userId={userId} orgId={context.organisationId!} me={{ id: context.userId, role: context.role! }} />
             ) : sub === "absence" ? (

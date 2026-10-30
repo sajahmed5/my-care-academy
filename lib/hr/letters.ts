@@ -40,6 +40,7 @@ export const LETTER_FIELDS: Array<{ field: string; meaning: string }> = [
   { field: "details", meaning: "The details: allegations, outcome, actions" },
   { field: "deadline", meaning: "A deadline: to appeal, to reply" },
   { field: "managerName", meaning: "Who is dealing with it" },
+  { field: "process", meaning: "\"disciplinary\" or \"capability\"" },
 ];
 
 const ACCOMPANIED =
@@ -85,6 +86,137 @@ The reason is: {{reason}}
 
 Your employment will end in line with the notice set out in your contract. We will write to you separately about your final pay and returning company property.`,
     fixed: [APPEAL],
+  },
+
+  // ── Disciplinary and capability (ACAS) ──
+  {
+    kind: "case_suspension",
+    label: "Suspension",
+    group: "Disciplinary",
+    subject: "Your suspension on full pay",
+    body: `I'm writing to confirm that you are suspended from work on full pay from {{date}}, while we look into the following: {{details}}
+
+Suspension is a precaution so the matter can be looked into fairly. It is not a punishment, and it does not mean any decision has been made.
+
+While you are suspended, please don't come to work or contact the people we support, and keep yourself available during your normal working hours. We will review the suspension regularly and keep it as short as we can.
+
+If you have any questions, please speak to {{managerName}}.`,
+  },
+  {
+    kind: "case_hearing_invite",
+    label: "Invitation to a hearing",
+    group: "Disciplinary",
+    subject: "Invitation to a {{process}} hearing",
+    body: `I'm writing to ask you to attend a {{process}} hearing on {{date}} at {{time}}, at {{place}}.
+
+The hearing is to consider the following: {{details}}
+
+The evidence we will be relying on is enclosed or will be shared with you before the hearing. You will have the chance to answer it, ask questions, present your own evidence and call witnesses.
+
+A possible outcome of the hearing is {{reason}}.
+
+The hearing will be held by {{managerName}}. If you can't attend, please let us know as soon as possible.`,
+    fixed: [ACCOMPANIED],
+  },
+  {
+    kind: "case_outcome_warning",
+    label: "Outcome: written warning",
+    group: "Disciplinary",
+    subject: "The outcome of your {{process}} hearing",
+    body: `Thank you for attending the {{process}} hearing on {{date}}. Having considered everything said and the evidence, I have decided to give you a {{reason}}.
+
+The reasons are: {{details}}
+
+This warning will stay active on your file for {{months}}. If there is no further cause for concern in that time, it will no longer be taken into account, though it stays on record.`,
+    fixed: [APPEAL],
+  },
+  {
+    kind: "case_outcome_dismissal",
+    label: "Outcome: dismissal",
+    group: "Disciplinary",
+    subject: "The outcome of your {{process}} hearing",
+    body: `Thank you for attending the {{process}} hearing on {{date}}. Having considered everything said and the evidence, I have decided to dismiss you.
+
+The reasons are: {{details}}
+
+We will write to you separately about your final pay, your notice and returning company property.`,
+    fixed: [APPEAL],
+  },
+  {
+    kind: "case_outcome_no_action",
+    label: "Outcome: no action",
+    group: "Disciplinary",
+    subject: "The outcome of your {{process}} hearing",
+    body: `Thank you for attending the {{process}} hearing on {{date}}. I have decided to take no formal action.
+
+{{details}}`,
+  },
+  {
+    kind: "case_appeal_invite",
+    label: "Invitation to an appeal hearing",
+    group: "Disciplinary",
+    subject: "Your appeal hearing",
+    body: `Thank you for your appeal. I'm writing to ask you to attend an appeal hearing on {{date}} at {{time}}, at {{place}}.
+
+The appeal will be heard by {{managerName}}, who has not been involved so far. You will have the chance to explain your grounds of appeal: {{details}}`,
+    fixed: [ACCOMPANIED],
+  },
+  {
+    kind: "case_appeal_outcome",
+    label: "Appeal outcome",
+    group: "Disciplinary",
+    subject: "The outcome of your appeal",
+    body: `Thank you for attending your appeal hearing. Having considered your grounds of appeal and everything said, my decision is that {{reason}}.
+
+{{details}}
+
+This decision is final.`,
+  },
+
+  // ── Grievance (ACAS) ──
+  {
+    kind: "grievance_ack",
+    label: "Grievance received",
+    group: "Grievance",
+    subject: "We've received your grievance",
+    body: `Thank you for raising your grievance with us on {{date}}. We take it seriously.
+
+We will invite you to a meeting to talk it through, where you can explain your grievance and how you think it should be settled. {{details}}
+
+If you have any questions in the meantime, please speak to {{managerName}}.`,
+  },
+  {
+    kind: "grievance_meeting_invite",
+    label: "Invitation to a grievance meeting",
+    group: "Grievance",
+    subject: "Invitation to a grievance meeting",
+    body: `I'm writing to ask you to a meeting about your grievance on {{date}} at {{time}}, at {{place}}.
+
+The meeting is to talk about: {{details}}
+
+It will be held by {{managerName}}. Please bring anything you'd like us to see.`,
+    fixed: [ACCOMPANIED],
+  },
+  {
+    kind: "grievance_outcome",
+    label: "Grievance outcome",
+    group: "Grievance",
+    subject: "The outcome of your grievance",
+    body: `Thank you for meeting with us about your grievance. Having looked into it, your grievance is {{reason}}.
+
+{{details}}`,
+    fixed: [APPEAL],
+  },
+  {
+    kind: "grievance_appeal_outcome",
+    label: "Grievance appeal outcome",
+    group: "Grievance",
+    subject: "The outcome of your grievance appeal",
+    body: `Thank you for your appeal. Having considered your grounds and everything said, my decision is that {{reason}}.
+
+{{details}}
+
+This decision is final.`,
   },
 ];
 

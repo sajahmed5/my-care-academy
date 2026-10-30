@@ -7,6 +7,7 @@ import { staffDocSummary, type StaffDoc } from "@/lib/staff-documents";
 import { probationDue } from "@/lib/hr/probation-due";
 import { probationFromRow } from "@/lib/hr/probation";
 import { absenceDue, sanitiseTriggers, type Absence } from "@/lib/hr/absence";
+import { caseSettingsFromRow, deadlines, type HrCase } from "@/lib/hr/cases";
 
 /**
  * The HR pack in the weekly email (HR-PACK.md): one line per part with
@@ -36,7 +37,7 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
     (x): x is string => !!x,
   );
   if (entitled.length === 0) return out;
-  const [docs, emps, reviews, settings, absences, meetings, waiting] = await Promise.all([
+  const [docs, emps, reviews, settings, absences, meetings, waiting, cases] = await Promise.all([
     fetchAll((f, t) =>
       admin
         .from("staff_documents")
@@ -57,7 +58,7 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
         .range(f, t),
     ),
     fetchAll((f, t) =>
-      admin.from("hr_settings").select("organisation_id, probation_months, probation_review_months, bradford_triggers").in("organisation_id", entitled).order("organisation_id").range(f, t),
+      admin.from("hr_settings").select("*").in("organisation_id", entitled).order("organisation_id").range(f, t),
     ),
     fetchAll((f, t) =>
       admin
@@ -70,6 +71,7 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
     ),
     fetchAll((f, t) => admin.from("absence_welfare_meetings").select("absence_id, organisation_id, held_on").in("organisation_id", entitled).order("absence_id").range(f, t)),
     fetchAll((f, t) => admin.from("leave_requests").select("id, organisation_id").in("organisation_id", entitled).eq("status", "requested").order("id").range(f, t)),
+    fetchAll((f, t) => admin.from("hr_cases").select("*").in("organisation_id", entitled).is("closed_on", null).order("id").range(f, t)),
   ]);
   const today = now.toISOString().slice(0, 10);
   for (const orgId of entitled) {
@@ -119,6 +121,18 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
       sick.triggers.length && `${sick.triggers.length} ${sick.triggers.length === 1 ? "person" : "people"} at a trigger point`,
     ].filter(Boolean);
     if (absenceText.length) lines.push({ label: "Absence", text: absenceText.join(", "), href: "/org/hr/absence" });
+    // Every manager gets this email, so a case about a manager isn't counted here.
+    const managers = new Set(current.filter((id) => people.get(id)?.role === "org_admin"));
+    const caseSettings = caseSettingsFromRow(settings.find((x) => x.organisation_id === orgId));
+    const weekOut = new Date(now.getTime() + 7 * 86_400_000).toISOString().slice(0, 10);
+    const dueCases = cases.filter(
+      (c) =>
+        c.organisation_id === orgId &&
+        !managers.has(c.user_id as string) &&
+        !managers.has(c.about_user_id as string) &&
+        deadlines(c as unknown as HrCase, caseSettings).some((d) => d.on <= weekOut),
+    ).length;
+    if (dueCases) lines.push({ label: "Disciplinary and grievance", text: `${dueCases} case${dueCases === 1 ? "" : "s"} with a deadline this week`, href: "/org/hr/cases" });
     const asks = waiting.filter((w) => w.organisation_id === orgId).length;
     if (asks) lines.push({ label: "Holidays", text: `${asks} request${asks === 1 ? "" : "s"} waiting for a decision`, href: "/org/hr/holidays" });
     if (lines.length) out.set(orgId, lines);

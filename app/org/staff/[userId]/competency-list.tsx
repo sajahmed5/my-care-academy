@@ -152,6 +152,7 @@ export function CompetencyList({
                   suggestions={suggestions[`spot_check:${s.id}`] ?? []}
                 />
                 {canRaisePlan && s.outcome !== "met" && <RaisePlan userId={userId} from={`spot_check:${s.id}`} />}
+                {s.outcome !== "met" && <OpenCase userId={userId} from="spot_check" id={s.id} label="Spot check" />}
               </CardContent>
             </Card>
           ))
@@ -214,6 +215,7 @@ export function CompetencyList({
               {c.notes && <p className="whitespace-pre-line text-sm text-muted-foreground">{c.notes}</p>}
               <Suggested userId={userId} sourceType="competency" sourceId={c.id} suggestions={suggestions[`competency:${c.id}`] ?? []} />
               {canRaisePlan && c.outcome !== "met" && <RaisePlan userId={userId} from={`competency:${c.id}`} />}
+              {c.outcome !== "met" && <OpenCase userId={userId} from="competency" id={c.id} label="Competency assessment" />}
             </CardContent>
           </Card>
         ))}
@@ -229,6 +231,15 @@ export function RaisePlan({ userId, from }: { userId: string; from: string }) {
   return (
     <Link href={`/org/pips/new?user=${userId}&from=${from}`} className="inline-block text-sm font-medium text-primary hover:underline">
       Raise a performance plan →
+    </Link>
+  );
+}
+
+/** A disciplinary or capability case from a record that wasn't met, linked to it (HR-PACK.md). */
+function OpenCase({ userId, from, id, label }: { userId: string; from: string; id: string; label: string }) {
+  return (
+    <Link href={`/org/hr/cases/new?user=${userId}&from=${from}&fromId=${id}&label=${encodeURIComponent(label)}`} className="ml-3 inline-block text-sm font-medium text-primary hover:underline">
+      Open a case →
     </Link>
   );
 }
