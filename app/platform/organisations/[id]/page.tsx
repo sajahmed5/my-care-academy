@@ -27,6 +27,7 @@ import { IntegrationPanel } from "./integration-panel";
 import { liveKeys } from "@/lib/integration-keys";
 import { DomainPanel } from "./domain-panel";
 import { RemoveOrganisation } from "./remove-organisation";
+import { TrialPanel } from "./trial-panel";
 
 // Removing an organisation deletes every account and file it holds, which
 // runs longer than an ordinary page action.
@@ -67,7 +68,7 @@ export default async function OrganisationDetailPage({
     supabase
       .from("organisations")
       .select(
-        "id, name, package_tier, status, service_type, size_band, custom_domain, custom_domain_status, custom_domain_dns_ok",
+        "id, name, package_tier, status, service_type, size_band, custom_domain, custom_domain_status, custom_domain_dns_ok, trial_ends_at",
       )
       .eq("id", id)
       .single(),
@@ -292,6 +293,17 @@ export default async function OrganisationDetailPage({
         {section === "settings" && (
           <Card>
             <CardHeader>
+              <CardTitle>Free trial</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TrialPanel orgId={org.id} trialEndsAt={(org.trial_ends_at as string | null) ?? null} />
+            </CardContent>
+          </Card>
+        )}
+
+        {section === "settings" && (
+          <Card>
+            <CardHeader>
               <CardTitle>Organisation settings</CardTitle>
               <CardDescription>
                 Package, size, agreed amount, and any features that differ from
@@ -299,7 +311,10 @@ export default async function OrganisationDetailPage({
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Keyed on what the trial buttons change, so the form doesn't
+                  keep showing the old package and save it back. */}
               <EditOrgForm
+                key={`${org.package_tier}:${org.status}:${org.trial_ends_at ?? ""}`}
                 org={{
                   id: org.id,
                   name: org.name,

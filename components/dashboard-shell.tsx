@@ -11,6 +11,7 @@ import { deriveNotifications, unreadCount } from "@/lib/notifications";
 import { VERSION_LABEL } from "@/lib/version";
 import { StarBank } from "@/components/star-bank";
 import { ReportWidget } from "@/components/report-widget";
+import { TrialBanner } from "@/components/trial-banner";
 import { isStaffRole, memberStatus, roleLabel, type UserContext } from "@/lib/auth";
 import { enabledMap } from "@/lib/entitlements";
 
@@ -134,6 +135,8 @@ export async function DashboardShell({
         }
         stars={learner ? <StarBank initialTotal={starTotal} /> : undefined}
       />
+
+      <TrialBanner role={context.role} trialEndsAt={member?.trialEndsAt ?? null} />
 
       {/* The title and the page run the full width, on the same left edge as
           the logo and the tabs above. Until 29 Oct 2026 every page was held

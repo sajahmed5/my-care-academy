@@ -24,6 +24,8 @@ export interface OrgEngagementRow {
    * signal to look at its price. Nothing changes on its own.
    */
   outgrownBand: boolean;
+  /** When its free trial ends, or null if it isn't on one (lib/trial.ts). */
+  trialEndsAt: string | null;
   createdAt: string;
 }
 
@@ -70,7 +72,7 @@ export async function loadOrgEngagement(
   const { data: orgs } = await supabase
     .from("organisations")
     .select(
-      "id, name, package_tier, status, size_band, created_at, learners:users(count), staff:users(count), seen:users(last_seen_at), assigned:enrolments(count), overdue:enrolments(count), completed:certificates(count)",
+      "id, name, package_tier, status, size_band, trial_ends_at, created_at, learners:users(count), staff:users(count), seen:users(last_seen_at), assigned:enrolments(count), overdue:enrolments(count), completed:certificates(count)",
     )
     .in("learners.role", STAFF_ROLES)
     // Bands are measured against current staff, as on the organisation's own
@@ -106,6 +108,7 @@ export async function loadOrgEngagement(
       dormant: !activeMs || activeMs < dormantCutoff,
       sizeBand,
       outgrownBand: hasOutgrownBand(sizeBand, embeddedCount(o.staff)),
+      trialEndsAt: (o.trial_ends_at as string | null) ?? null,
       createdAt: o.created_at as string,
     };
   });

@@ -6,6 +6,7 @@ import type { OrgEngagementRow } from "@/lib/platform-orgs";
 import { tierLabel } from "@/lib/organisations";
 import { OrgNudgeButton } from "../org-nudge-button";
 import { formatDate } from "@/lib/dates";
+import { daysLeftLabel, trialState } from "@/lib/trial";
 
 const DAY = 86_400_000;
 
@@ -150,6 +151,7 @@ export function OrgsTable({ rows }: { rows: OrgEngagementRow[] }) {
             ) : (
               shown.map((r) => {
                 const active = lastActive(r.lastActive);
+                const trial = trialState(r.trialEndsAt);
                 return (
                   <tr key={r.id} className="border-b last:border-0 hover:bg-accent/40">
                     <td className="px-3 py-2">
@@ -162,6 +164,16 @@ export function OrgsTable({ rows }: { rows: OrgEngagementRow[] }) {
                       {r.status === "suspended" && (
                         <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-700">
                           suspended
+                        </span>
+                      )}
+                      {trial.kind === "active" && (
+                        <span className="ml-2 whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900">
+                          trial · {daysLeftLabel(trial.daysLeft).toLowerCase()}
+                        </span>
+                      )}
+                      {trial.kind === "ended" && (
+                        <span className="ml-2 whitespace-nowrap rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-700">
+                          trial ended
                         </span>
                       )}
                       {r.status !== "suspended" && r.dormant && (

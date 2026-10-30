@@ -145,6 +145,8 @@ export async function assertActiveMember(context: UserContext): Promise<void> {
 export interface MemberStatus {
   status: string | null;
   orgStatus: string | null;
+  /** When the organisation's free trial ends, or null (lib/trial.ts). */
+  trialEndsAt: string | null;
   /** Read alongside status so the shell's "last active" write can skip
    *  itself when it would be a no-op — see DashboardShell. */
   lastSeenAt: string | null;
@@ -169,14 +171,15 @@ export const memberStatus = cache(
       organisationId
         ? supabase
             .from("organisations")
-            .select("status")
+            .select("status, trial_ends_at")
             .eq("id", organisationId)
             .maybeSingle()
-        : Promise.resolve({ data: null as { status?: string } | null }),
+        : Promise.resolve({ data: null as { status?: string; trial_ends_at?: string | null } | null }),
     ]);
     return {
       status: me?.status ?? null,
       orgStatus: org?.status ?? null,
+      trialEndsAt: org?.trial_ends_at ?? null,
       lastSeenAt: me?.last_seen_at ?? null,
       fullName: me?.full_name ?? null,
     };
