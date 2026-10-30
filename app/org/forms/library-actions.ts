@@ -57,6 +57,12 @@ export async function assignFormAction(
   const supabase = await createClient();
   const orgId = context.organisationId!;
 
+  // Only a carer form is asked of someone; a client or company form is the
+  // office's to fill in.
+  const { data: template } = await supabase.from("form_templates").select("audience").eq("id", templateId).maybeSingle();
+  if (!template) return { ok: false, error: "That form is not in your library." };
+  if (template.audience !== "carer") return { ok: false, error: "This form is filled in by the office, not asked of staff." };
+
   // The organisation's active learners, and who already has this form open —
   // both read by organisation rather than by a list of ids in the URL, which
   // "everyone" in a large organisation would push past the URL limit.
@@ -150,6 +156,8 @@ export async function startOwnFormAction(formData: FormData): Promise<void> {
   if (!templateId) redirect("/org/forms");
 
   const supabase = await createClient();
+  const { data: template } = await supabase.from("form_templates").select("audience").eq("id", templateId).maybeSingle();
+  if (!template || template.audience !== "carer") redirect("/org/forms");
   const { data: open } = await supabase
     .from("form_assignments")
     .select("id")

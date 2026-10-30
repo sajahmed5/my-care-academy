@@ -6,12 +6,15 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { loadAssignment, pruneAnswers, validateAnswers } from "@/lib/form-library";
+import { discardFormFiles, storeFormFiles } from "@/lib/form-uploads";
 
 export interface SubmitState {
   ok?: boolean;
   error?: string;
   /** Required fields left empty, by label, so the form can point at them. */
   missing?: string[];
+  /** Where the saved record can be read back, when there is a page for it. */
+  href?: string;
 }
 
 /**
@@ -55,29 +58,11 @@ export async function submitFormResponseAction(
   // A signature field is satisfied by the typed name.
   for (const f of fields) if (f.type === "signature" && signedName) answers[f.id] = signedName;
 
-  // A file field's answer is the stored file. The browser sends the file
-  // itself beside the answers; it goes into the private form-uploads bucket,
-  // as the service role, once the assignment is known to be this person's.
-  const uploaded: string[] = [];
+  // Files go into the private bucket once the ask is known to be theirs.
   const admin = createAdminClient();
-  for (const f of fields) {
-    if (f.type !== "file") continue;
-    const file = formData.get(`file_${f.id}`);
-    if (!(file instanceof File) || file.size === 0) {
-      delete answers[f.id];
-      continue;
-    }
-    if (file.size > 3 * 1024 * 1024) return { ok: false, error: `${f.label}: keep the file under 3 MB.` };
-    if (!/^(image\/|application\/pdf$)/.test(file.type)) return { ok: false, error: `${f.label}: use a photo or a PDF.` };
-    const path = `${context.organisationId}/library/${assignmentId}/${f.id}-${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ]+/g, "")}`;
-    const { error: upErr } = await admin.storage
-      .from("form-uploads")
-      .upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type });
-    if (upErr) return { ok: false, error: `${f.label}: ${upErr.message}` };
-    uploaded.push(path);
-    answers[f.id] = { file: path, name: file.name };
-  }
-  const discardUploads = () => (uploaded.length ? admin.storage.from("form-uploads").remove(uploaded) : undefined);
+  const stored = await storeFormFiles(admin, formData, fields, answers, `${context.organisationId}/library/${assignmentId}`);
+  if (stored.error) return { ok: false, error: stored.error };
+  const discardUploads = () => discardFormFiles(admin, stored.uploaded);
 
   const problems = validateAnswers(fields, answers);
   if (problems.length) {

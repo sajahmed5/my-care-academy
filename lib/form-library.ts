@@ -14,6 +14,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isFieldVisible, type FormField } from "./forms";
+import { formatDate } from "./dates";
 
 export const FORM_CATEGORIES = [
   { value: "recruitment", label: "Recruitment" },
@@ -32,6 +33,25 @@ export function categoryLabel(value: string): string {
 
 export type FormPack = "basic" | "full" | "addon";
 
+/**
+ * Who a form is about, and so who fills it in (FORMS.md, 29 Oct 2026).
+ * A carer form is asked of a member of staff and completed on their own
+ * login; a client form is filled in by the office about a client, who or
+ * whose family can sign it on the device; a company form is about the
+ * business, not a person.
+ */
+export const FORM_AUDIENCES = [
+  { value: "client", label: "Client forms", hint: "Filled in by the office about a client. The client or family can sign on the device, and it shows on the client page." },
+  { value: "carer", label: "Carer forms", hint: "Asked of a member of staff, who fills it in on their own login. It is kept on their file." },
+  { value: "company", label: "Company forms", hint: "About the business, not a person." },
+] as const;
+
+export type FormAudience = (typeof FORM_AUDIENCES)[number]["value"];
+
+export function audienceOf(value: unknown): FormAudience {
+  return value === "client" || value === "company" ? value : "carer";
+}
+
 export interface FormTemplateSummary {
   id: string;
   code: string;
@@ -39,6 +59,7 @@ export interface FormTemplateSummary {
   description: string | null;
   category: string;
   pack: FormPack;
+  audience: FormAudience;
   collection: string | null;
   service_types: string[] | null;
   version: number;
@@ -85,6 +106,7 @@ function toSummary(r: Record<string, unknown>): FormTemplateSummary {
     description: (r.description as string | null) ?? null,
     category: r.category as string,
     pack: r.pack as FormPack,
+    audience: audienceOf(r.audience),
     collection: (r.collection as string | null) ?? null,
     service_types: (r.service_types as string[] | null) ?? null,
     version: (r.version as number) ?? 1,
@@ -106,7 +128,7 @@ export async function loadFormLibrary(
   if (packs.length === 0) return [];
   const { data } = await supabase
     .from("form_templates")
-    .select("id, code, title, description, category, pack, collection, service_types, version, status")
+    .select("id, code, title, description, category, pack, audience, collection, service_types, version, status")
     .in("pack", packs)
     .order("category")
     .order("sort_order")
@@ -123,7 +145,7 @@ export async function loadFormTemplate(
 ): Promise<FormTemplateRecord | null> {
   const { data } = await supabase
     .from("form_templates")
-    .select("id, code, title, description, category, pack, collection, service_types, version, status, fields")
+    .select("id, code, title, description, category, pack, audience, collection, service_types, version, status, fields")
     .eq("code", code)
     .maybeSingle();
   if (!data) return null;
@@ -209,7 +231,7 @@ export async function loadAssignment(
   const { data } = await supabase
     .from("form_assignments")
     .select(
-      "id, template_id, user_id, due_date, note, completed_at, created_at, template:form_templates (id, code, title, description, category, pack, collection, service_types, version, status, fields), person:users!form_assignments_user_id_fkey (full_name, email)",
+      "id, template_id, user_id, due_date, note, completed_at, created_at, template:form_templates (id, code, title, description, category, pack, audience, collection, service_types, version, status, fields), person:users!form_assignments_user_id_fkey (full_name, email)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -227,6 +249,7 @@ export async function loadAssignment(
 // ---------------------------------------------------------------------------
 
 export interface FormResponse {
+  id: string;
   answers: Record<string, unknown>;
   signed_name: string | null;
   submitted_at: string;
@@ -240,11 +263,12 @@ export async function loadResponse(
 ): Promise<FormResponse | null> {
   const { data } = await supabase
     .from("form_responses")
-    .select("answers, signed_name, submitted_at, template_version")
+    .select("id, answers, signed_name, submitted_at, template_version")
     .eq("assignment_id", assignmentId)
     .maybeSingle();
   if (!data) return null;
   return {
+    id: data.id as string,
     answers: (data.answers as Record<string, unknown> | null) ?? {},
     signed_name: (data.signed_name as string | null) ?? null,
     submitted_at: data.submitted_at as string,
@@ -283,7 +307,15 @@ export function responseRows(fields: FormField[], answers: Record<string, unknow
   const rows: ResponseRow[] = [...fields]
     .sort((a, b) => a.sort_order - b.sort_order)
     .filter((f) => isFieldVisible(f, answers))
-    .map((f) => ({ fieldId: f.id, label: f.label, value: text(answers[f.id]), filePath: fileOf(answers[f.id])?.file }));
+    .map((f) => {
+      const v = answers[f.id];
+      // A date reads as a date; pinned to noon so no timezone can move it.
+      const value =
+        f.type === "date" && typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)
+          ? formatDate(`${v}T12:00:00Z`, { day: "numeric", month: "long", year: "numeric" })
+          : text(v);
+      return { fieldId: f.id, label: f.label, value, filePath: fileOf(v)?.file };
+    });
   for (const [id, v] of Object.entries(answers)) {
     if (!known.has(id)) rows.push({ fieldId: id, label: "A question no longer on the form", value: text(v), removed: true });
   }

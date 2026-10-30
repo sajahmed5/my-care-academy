@@ -5,23 +5,27 @@ import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ClipboardPen } from "lucide-react";
 import {
+  FORM_AUDIENCES,
   categoryLabel,
   loadAssignmentsForTemplate,
   loadFormTemplate,
   visibleFormPacks,
 } from "@/lib/form-library";
+import { loadRecordsForTemplate } from "@/lib/form-records";
 import { startOwnFormAction } from "../../library-actions";
+import { RecordList } from "../../record-list";
 import { AssignForm } from "./assign-form";
 import { AssignmentList } from "./assignment-list";
 
 /**
- * One form, as a manager sees it: what it asks, who has been asked, who has
- * done it, the button to ask more people — and the button to complete it
- * themselves (issue #50), for the forms that are the manager's to fill in.
+ * One form, as the office sees it. A carer form: who has been asked, who has
+ * done it, the button to ask more people, and the button to complete it
+ * themselves (issue #50). A client form: pick a client and fill it in, and
+ * every one filled in so far. A company form: fill it in, and every version.
  */
 export default async function OrgFormPage({ params }: { params: Promise<{ code: string }> }) {
   const context = await requireConsole();
@@ -39,15 +43,23 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
     notFound();
   }
 
-  const [assignments, { data: staff }] = await Promise.all([
+  const orgId = context.organisationId!;
+  const isCarer = template.audience === "carer";
+  const [assignments, { data: staff }, records, { data: clientRows }] = await Promise.all([
     loadAssignmentsForTemplate(supabase, template.id),
-    supabase
-      .from("users")
-      .select("id, full_name, email")
-      .eq("status", "active")
-      .in("role", STAFF_ROLES)
-      .order("full_name")
-      .limit(1000),
+    isCarer
+      ? supabase
+          .from("users")
+          .select("id, full_name, email")
+          .eq("status", "active")
+          .in("role", STAFF_ROLES)
+          .order("full_name")
+          .limit(1000)
+      : Promise.resolve({ data: [] as { id: string; full_name: string | null; email: string }[] }),
+    isCarer ? Promise.resolve([]) : loadRecordsForTemplate(supabase, orgId, template.id, template.audience as "client" | "company"),
+    template.audience === "client"
+      ? supabase.from("clients").select("id, full_name").eq("status", "active").order("full_name").limit(2000)
+      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
   ]);
 
   const people = (staff ?? []).map((u) => ({
@@ -65,23 +77,78 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
         <div className="space-y-1">
           <h2 className="text-xl font-semibold">{template.title}</h2>
           <p className="text-sm text-muted-foreground">
-            {categoryLabel(template.category)} · {template.fields.length} questions · version {template.version}
+            {FORM_AUDIENCES.find((a) => a.value === template.audience)?.label.replace(/s$/, "")} · {categoryLabel(template.category)} · {template.fields.length} questions · version {template.version}
           </p>
           {template.description && <p className="text-sm">{template.description}</p>}
         </div>
 
-        <div className="flex flex-wrap items-start gap-2">
-          <AssignForm templateId={template.id} people={people} />
-          <form action={startOwnFormAction}>
-            <input type="hidden" name="templateId" value={template.id} />
-            <Button type="submit" variant="outline">
-              <ClipboardPen className="size-4" />
-              Complete it yourself
-            </Button>
-          </form>
-        </div>
+        {isCarer && (
+          <>
+            <div className="flex flex-wrap items-start gap-2">
+              <AssignForm templateId={template.id} people={people} />
+              <form action={startOwnFormAction}>
+                <input type="hidden" name="templateId" value={template.id} />
+                <Button type="submit" variant="outline">
+                  <ClipboardPen className="size-4" />
+                  Complete it yourself
+                </Button>
+              </form>
+            </div>
 
-        <AssignmentList assignments={assignments} currentUserId={context.userId} />
+            <AssignmentList assignments={assignments} currentUserId={context.userId} />
+          </>
+        )}
+
+        {template.audience === "client" && (
+          <>
+            {(clientRows ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Add your clients first —{" "}
+                <Link href="/org/clients" className="text-primary hover:underline">the client list</Link>.
+              </p>
+            ) : (
+              <form action={`/org/forms/fill/${encodeURIComponent(template.code)}`} className="flex flex-wrap items-end gap-2">
+                <div className="space-y-1">
+                  <label htmlFor="client" className="text-sm font-medium">Fill it in for</label>
+                  <select id="client" name="client" required className="flex h-9 min-w-56 rounded-lg border border-input bg-background px-3 text-sm">
+                    <option value="">Choose a client…</option>
+                    {(clientRows ?? []).map((c) => (
+                      <option key={c.id as string} value={c.id as string}>{c.full_name as string}</option>
+                    ))}
+                  </select>
+                </div>
+                <Button type="submit">
+                  <ClipboardPen className="size-4" />
+                  Fill it in
+                </Button>
+              </form>
+            )}
+            <section className="space-y-2">
+              <h3 className="text-sm font-semibold">Filled in ({records.length})</h3>
+              <RecordList records={records} show="client" empty="Not filled in for anyone yet." />
+            </section>
+          </>
+        )}
+
+        {template.audience === "company" && (
+          <>
+            <Link href={`/org/forms/fill/${encodeURIComponent(template.code)}`} className={buttonVariants()}>
+              <ClipboardPen className="size-4" />
+              {records.length ? "Fill in a new version" : "Fill it in"}
+            </Link>
+            <section className="space-y-2">
+              <h3 className="text-sm font-semibold">Versions on record ({records.length})</h3>
+              <RecordList records={records} show="date" empty="Not filled in yet." />
+            </section>
+          </>
+        )}
+
+        {!isCarer && assignments.length > 0 && (
+          <section className="space-y-2">
+            <h3 className="text-sm font-semibold text-muted-foreground">Asked of staff before it became a {template.audience} form</h3>
+            <AssignmentList assignments={assignments} currentUserId={context.userId} />
+          </section>
+        )}
 
         <Card>
           <CardContent className="space-y-1 pt-6">

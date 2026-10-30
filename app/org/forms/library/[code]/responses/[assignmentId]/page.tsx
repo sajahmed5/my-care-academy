@@ -37,9 +37,14 @@ export default async function FormResponsePage({
   return (
     <DashboardShell title={assignment.template_title} context={context}>
       <div className="space-y-6">
-        <Link href={back} className="text-sm text-muted-foreground hover:underline">
-          ← Back to the form
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Link href={back} className="text-sm text-muted-foreground hover:underline">
+            ← Back to the form
+          </Link>
+          <a href={`/org/forms/responses/${response.id}/pdf`} className="text-sm font-medium text-primary hover:underline">
+            Download PDF
+          </a>
+        </div>
 
         <div className="space-y-1">
           <h2 className="text-xl font-semibold">{assignment.template_title}</h2>

@@ -7,6 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { isFieldVisible, type FormField } from "@/lib/forms";
+import { SIGNER_ROLES, type SignerRole } from "@/lib/form-records";
+import { SignaturePad } from "@/app/org/forms/[id]/fill/signature-pad";
+import { submitFormRecordAction } from "@/app/org/forms/record-actions";
 import { submitFormResponseAction, type SubmitState } from "../actions";
 
 const inputClass =
@@ -18,24 +21,51 @@ const textareaClass =
  * Fill a form in. Answers are kept in one object and sent as one JSON field,
  * validated again on the server. A signature is a typed name: good enough for
  * "I confirm this is mine", and far more reliable on a phone than a canvas.
+ *
+ * Two ways in. A carer form answers an ask (`assignmentId`). A client or
+ * company form is a record the office fills in (`record`), and a client form
+ * can also be signed on the device by the client or their family — drawn
+ * with a finger, beside the staff member's typed name.
  */
 export function FormComplete({
   assignmentId,
+  record,
   fields,
+  initialValues,
   doneMessage = "Thank you — your answers are saved and your manager can see them.",
   doneHref,
   doneLabel = "Back",
 }: {
-  assignmentId: string;
+  assignmentId?: string;
+  record?: { templateId: string; clientId?: string; deviceSigning?: boolean };
   fields: FormField[];
+  /** Answers to start from — the previous version, when a form is reviewed. */
+  initialValues?: Record<string, unknown>;
   /** What to say once saved; a manager completing their own form reads differently. */
   doneMessage?: string;
   doneHref?: string;
   doneLabel?: string;
 }) {
-  const [values, setValues] = useState<Record<string, unknown>>({});
+  const [values, setValues] = useState<Record<string, unknown>>(() => {
+    // A file or a signature is never carried forward: it is given afresh.
+    const start: Record<string, unknown> = {};
+    for (const f of fields) {
+      const v = initialValues?.[f.id];
+      if (v !== undefined && f.type !== "file" && f.type !== "signature") start[f.id] = v;
+    }
+    return start;
+  });
   const [signedName, setSignedName] = useState("");
-  const [state, formAction, pending] = useActionState<SubmitState, FormData>(submitFormResponseAction, {});
+  const [signer, setSigner] = useState<{ role: SignerRole; name: string; relationship: string; image: string | null }>({
+    role: "client",
+    name: "",
+    relationship: "",
+    image: null,
+  });
+  const [state, formAction, pending] = useActionState<SubmitState, FormData>(
+    record ? submitFormRecordAction : submitFormResponseAction,
+    {},
+  );
 
   const visible = fields.filter((f) => isFieldVisible(f, values));
   const set = (id: string, v: unknown) => setValues((prev) => ({ ...prev, [id]: v }));
@@ -46,6 +76,13 @@ export function FormComplete({
       <Card>
         <CardContent className="space-y-2 py-8 text-center text-sm">
           <p>{doneMessage}</p>
+          {state.href && (
+            <p>
+              <Link href={state.href} className="text-primary hover:underline">
+                Read it back, or download the PDF
+              </Link>
+            </p>
+          )}
           {doneHref && (
             <Link href={doneHref} className="text-primary hover:underline">
               ← {doneLabel}
@@ -58,8 +95,17 @@ export function FormComplete({
 
   return (
     <form action={formAction} className="space-y-4">
-      <input type="hidden" name="assignmentId" value={assignmentId} />
+      {assignmentId && <input type="hidden" name="assignmentId" value={assignmentId} />}
+      {record && <input type="hidden" name="templateId" value={record.templateId} />}
+      {record?.clientId && <input type="hidden" name="clientId" value={record.clientId} />}
       <input type="hidden" name="answers" value={JSON.stringify(values)} />
+      {record?.deviceSigning && (
+        <input
+          type="hidden"
+          name="signatures"
+          value={JSON.stringify(signer.name.trim() ? [{ role: signer.role, name: signer.name, relationship: signer.relationship, image: signer.image }] : [])}
+        />
+      )}
 
       {visible.map((f) => {
         const flagged = missing.has(f.label);
@@ -154,6 +200,50 @@ export function FormComplete({
           </Card>
         );
       })}
+
+      {record?.deviceSigning && (
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            <div>
+              <p className="text-sm font-medium">Signed by the client or their family</p>
+              <p className="text-xs text-muted-foreground">
+                Optional. Hand them the device to read the answers and sign with a finger; leave it blank if they are not here.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="signer-role">Who is signing</Label>
+                <select
+                  id="signer-role"
+                  className={inputClass}
+                  value={signer.role}
+                  onChange={(e) => setSigner((s) => ({ ...s, role: e.target.value as SignerRole }))}
+                >
+                  {SIGNER_ROLES.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="signer-name">Their name</Label>
+                <Input id="signer-name" value={signer.name} onChange={(e) => setSigner((s) => ({ ...s, name: e.target.value }))} />
+              </div>
+              {signer.role !== "client" && (
+                <div className="space-y-1 sm:col-span-2">
+                  <Label htmlFor="signer-relationship">Relationship to the client</Label>
+                  <Input
+                    id="signer-relationship"
+                    placeholder="Daughter, lasting power of attorney…"
+                    value={signer.relationship}
+                    onChange={(e) => setSigner((s) => ({ ...s, relationship: e.target.value }))}
+                  />
+                </div>
+              )}
+            </div>
+            <SignaturePad onChange={(image) => setSigner((s) => ({ ...s, image }))} />
+          </CardContent>
+        </Card>
+      )}
 
       {state.error && (
         <p className="text-sm text-rose-600">
