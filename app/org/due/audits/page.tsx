@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DUE_GROUP_LABEL } from "@/lib/due-view";
 import { dueCounts } from "@/lib/service-audits";
 import { loadServiceDue } from "@/lib/service-audits-due";
+import { runHref } from "@/lib/client-qa";
 import { formatDate } from "@/lib/dates";
 import { ClientDueList } from "./client-due-list";
 
@@ -71,7 +72,7 @@ export default async function AuditsDuePage({ searchParams }: { searchParams: Pr
                 );
               })}
             </div>
-            <ClientDueList rows={open.clients} noun="one" href={(id) => `/org/audits/new?form=${open.form.key}&client=${id}`} />
+            <ClientDueList rows={open.clients} noun="one" href={(id) => runHref(open.form.key, id)} />
           </section>
         )}
       </div>

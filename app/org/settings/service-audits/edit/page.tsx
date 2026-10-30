@@ -4,10 +4,12 @@ import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { SettingsShell } from "@/app/org/settings/settings-shell";
-import { loadServiceForms } from "@/lib/service-audits-data";
+import { loadQaForm, loadServiceForms } from "@/lib/service-audits-data";
+import { QA_FORM_KEY } from "@/lib/client-qa";
 import { ServiceFormEditor } from "./form-editor";
+import { QaFormEditor } from "./qa-editor";
 
-/** Edit one audit: `?form=<key>`, or `?form=new` for one of the company's own. */
+/** Edit one audit: `?form=<key>`, `?form=client_qa` for the QA, or `?form=new` for one of the company's own. */
 export default async function EditServiceFormPage({ searchParams }: { searchParams: Promise<{ form?: string }> }) {
   const context = await requireRole("org_admin");
   await requireFeature(context, "quality.audits");
@@ -18,6 +20,19 @@ export default async function EditServiceFormPage({ searchParams }: { searchPara
     loadServiceForms(orgId),
     supabase.from("service_audit_forms").select("id").eq("organisation_id", orgId).eq("key", key).maybeSingle(),
   ]);
+  if (key === QA_FORM_KEY) {
+    return (
+      <SettingsShell context={context} active="/org/settings/service-audits">
+        <div className="space-y-4">
+          <Link href="/org/settings/service-audits" className="text-sm text-muted-foreground hover:underline">
+            ← All audits
+          </Link>
+          <h3 className="font-semibold">Client QA</h3>
+          <QaFormEditor initial={await loadQaForm(orgId)} changed={!!row} />
+        </div>
+      </SettingsShell>
+    );
+  }
   const isNew = key === "new";
   const form = isNew ? null : forms.find((f) => f.key === key);
   if (!isNew && !form) notFound();

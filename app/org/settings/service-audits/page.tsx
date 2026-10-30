@@ -8,7 +8,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { intervalLabel } from "@/lib/audit-forms";
 import { DEFAULT_SERVICE_FORMS } from "@/lib/service-audits";
-import { loadReviewBelow, loadServiceForms } from "@/lib/service-audits-data";
+import { loadQaForm, loadReviewBelow, loadServiceForms } from "@/lib/service-audits-data";
+import { QA_FORM_KEY } from "@/lib/client-qa";
 import { AuditSwitch, ReviewLevel } from "./controls";
 
 /**
@@ -21,8 +22,9 @@ export default async function ServiceAuditSettingsPage() {
   await requireFeature(context, "quality.audits");
   const orgId = context.organisationId!;
   const supabase = await createClient();
-  const [forms, reviewBelow, { data: rows }] = await Promise.all([
+  const [forms, qa, reviewBelow, { data: rows }] = await Promise.all([
     loadServiceForms(orgId),
+    loadQaForm(orgId),
     loadReviewBelow(orgId),
     supabase.from("service_audit_forms").select("key, label, archived").eq("organisation_id", orgId).limit(200),
   ]);
@@ -39,7 +41,23 @@ export default async function ServiceAuditSettingsPage() {
         </div>
         <Card>
           <CardContent className="divide-y p-0">
-            {list.length === 0 && <p className="px-4 py-3 text-sm text-muted-foreground">None.</p>}
+            {scope === "client" && (
+              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
+                <div>
+                  <Link href={`/org/settings/service-audits/edit?form=${QA_FORM_KEY}`} className="font-medium text-primary hover:underline">
+                    Client QA
+                  </Link>
+                  <p className="text-xs text-muted-foreground">
+                    Five CQC ratings, {qa.medication.length} medication and {qa.own.length} of your own questions · {intervalLabel(qa.due).toLowerCase()} ·{" "}
+                    {changed(QA_FORM_KEY) ? "changed by you" : "our default"}
+                  </p>
+                </div>
+                <Link href={`/org/settings/service-audits/edit?form=${QA_FORM_KEY}`} className="text-sm font-medium text-primary hover:underline">
+                  Edit
+                </Link>
+              </div>
+            )}
+            {list.length === 0 && scope === "service" && <p className="px-4 py-3 text-sm text-muted-foreground">None.</p>}
             {list.map((f) => {
               const href = `/org/settings/service-audits/edit?form=${f.key}`;
               return (

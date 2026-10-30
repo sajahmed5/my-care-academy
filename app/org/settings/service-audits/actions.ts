@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
 import { DEFAULT_SERVICE_FORMS, ownAuditKey, readServiceQuestions } from "@/lib/service-audits";
+import { QA_FORM_KEY } from "@/lib/client-qa";
 import type { SaveState } from "@/app/platform/actions";
 
 /**
@@ -44,6 +45,7 @@ export async function saveServiceFormAction(_prev: SaveState, formData: FormData
   const context = await gate();
   if (!context) return { ok: false, error: NOT_IN_PLAN };
   let key = str(formData, "key");
+  if (key === QA_FORM_KEY) return { ok: false, error: "Which audit is this?" };
   const ours = DEFAULT_SERVICE_FORMS.find((d) => d.key === key);
   const label = str(formData, "label").slice(0, 80);
   const dueEvery = parseInt(str(formData, "dueEvery"), 10);
@@ -132,6 +134,42 @@ export async function setServiceFormArchivedAction(_prev: SaveState, formData: F
     if (insertError) return { ok: false, error: insertError.message };
   }
   await logAudit({ context, action: archived ? "service_audit_form.stopped" : "service_audit_form.restored", entity: "service_audit_form", entityId: key });
+  done();
+  return { ok: true };
+}
+
+/**
+ * The client QA's medication and own questions, and its due period. Each
+ * question carries which part of the form it sits in. No photos: a QA is a
+ * conversation, often by phone.
+ */
+export async function saveQaFormAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
+  const context = await gate();
+  if (!context) return { ok: false, error: NOT_IN_PLAN };
+  const dueEvery = parseInt(str(formData, "dueEvery"), 10);
+  const dueUnit = str(formData, "dueUnit");
+  if (!(dueEvery >= 1 && dueEvery <= 104)) return { ok: false, error: "Say how often it falls due: between 1 and 104." };
+  if (dueUnit !== "weeks" && dueUnit !== "months") return { ok: false, error: "Weeks or months?" };
+  const questions = readServiceQuestions(parse(formData, "questions"), { requireScored: false, allowEmpty: true, sections: true });
+  if (!questions.ok) return { ok: false, error: questions.error };
+  if (questions.questions.some((q) => q.type === "photo")) return { ok: false, error: "A QA can't ask for a photo." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("service_audit_forms").upsert(
+    {
+      organisation_id: context.organisationId,
+      key: QA_FORM_KEY,
+      label: "Client QA",
+      scope: "client",
+      questions: questions.questions,
+      due_every: dueEvery,
+      due_unit: dueUnit,
+      archived: false,
+      updated_by: context.userId,
+    },
+    { onConflict: "organisation_id,key" },
+  );
+  if (error) return { ok: false, error: error.message };
+  await logAudit({ context, action: "service_audit_form.saved", entity: "service_audit_form", entityId: QA_FORM_KEY, detail: { questions: questions.questions.length, dueEvery, dueUnit } });
   done();
   return { ok: true };
 }

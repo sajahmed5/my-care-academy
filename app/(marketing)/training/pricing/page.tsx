@@ -37,7 +37,7 @@ const COMPARE: { label: string; detail: string; from: number }[] = [
   { label: "Supervisions and appraisals", detail: "Signed in the room, with agreed actions tracked", from: 1 },
   { label: "Spot checks and competency", detail: "Area by area, with who's due next", from: 1 },
   { label: "Complaints and safeguarding", detail: "Complaints, accidents, near misses and safeguarding concerns", from: 2 },
-  { label: "Service audits", detail: "Medication, care plan and infection control", from: 2 },
+  { label: "Service audits", detail: "Client QAs, medication, care plan and infection control", from: 2 },
   { label: "Forms and feedback surveys", detail: "Forms your staff fill in, and surveys for families and staff", from: 2 },
   { label: "Policies and procedures", detail: "CQC templates, and who has read each one", from: 2 },
   { label: "Face-to-face training", detail: "Sessions at our Stockport office, with unlimited places", from: 3 },
