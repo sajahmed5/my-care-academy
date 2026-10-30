@@ -8,7 +8,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeature } from "@/lib/entitlements";
 import { logAudit } from "@/lib/audit";
 import { managerSignature } from "@/lib/supervisions";
-import { itemFindings, itemsScore, needsReview, readItems, serviceForm, type AuditItem } from "@/lib/service-audits";
+import { itemFindings, itemsTally, needsReview, readItems, serviceForm, type AuditItem } from "@/lib/service-audits";
+import { autoFindings, autoTally, combinedScore } from "@/lib/auto-audits";
+import { loadAutoSnapshot } from "@/lib/auto-audits-data";
 import { loadReviewBelow, loadServiceForms } from "@/lib/service-audits-data";
 import type { SaveState } from "@/app/platform/actions";
 
@@ -76,14 +78,23 @@ export async function saveServiceAuditAction(_prev: SaveState, formData: FormDat
     clientName = client.full_name as string;
   }
 
+  // The staff file and training audits: what the site finds now, read again
+  // here rather than trusted from the form, kept with the audit as it was.
+  const auto = form.auto ? await loadAutoSnapshot(supabase, orgId, form.auto) : null;
+  const people = autoFindings(auto);
+
   // Owners are their own staff: a form field is not a permission check.
-  const owners = [...new Set(itemFindings(items).map((f) => str(formData, `owner_${f.id}`)).filter(Boolean))];
+  const owners = [
+    ...new Set(
+      [...itemFindings(items).map((f) => str(formData, `owner_${f.id}`)), ...people.map((p) => str(formData, `owner_person_${p.person.id}`))].filter(Boolean),
+    ),
+  ];
   if (owners.length) {
     const { data: staff } = await supabase.from("users").select("id").in("id", owners).eq("organisation_id", orgId);
     if ((staff ?? []).length !== owners.length) return { ok: false, error: "Pick action owners from your own staff." };
   }
 
-  const score = itemsScore(items);
+  const score = combinedScore(autoTally(auto), itemsTally(items));
   const waiting = needsReview(score, reviewBelow);
   const { data: audit, error } = await supabase
     .from("audits")
@@ -97,6 +108,7 @@ export async function saveServiceAuditAction(_prev: SaveState, formData: FormDat
       held_on: heldOn,
       auditor_id: context.userId,
       items,
+      auto,
       score,
       notes: notes || null,
       next_due: ISO_DATE.test(nextDue) ? nextDue : null,
@@ -125,22 +137,26 @@ export async function saveServiceAuditAction(_prev: SaveState, formData: FormDat
   }
 
   // A finding with an owner becomes an action; one without stays a finding on the audit.
-  const actions = itemFindings(items).flatMap((f) => {
-    const owner = str(formData, `owner_${f.id}`);
-    const due = str(formData, `due_${f.id}`);
+  const action = (key: string, title: string) => {
+    const owner = str(formData, `owner_${key}`);
+    const due = str(formData, `due_${key}`);
     if (!owner) return [];
     return [
       {
         organisation_id: orgId,
         user_id: owner,
-        title: `${form.label}${clientName ? ` (${clientName})` : ""}: ${f.label}`.slice(0, 200),
+        title: title.slice(0, 200),
         due_date: ISO_DATE.test(due) ? due : null,
         source_type: "audit",
         source_id: auditId,
         created_by: context.userId,
       },
     ];
-  });
+  };
+  const actions = [
+    ...itemFindings(items).flatMap((f) => action(f.id, `${form.label}${clientName ? ` (${clientName})` : ""}: ${f.label}`)),
+    ...people.flatMap((p) => action(`person_${p.person.id}`, `${form.label}: ${p.person.name} — ${p.failing.join("; ")}`)),
+  ];
   if (actions.length) {
     const { error: actError } = await supabase.from("record_actions").insert(actions);
     if (actError) return { ok: false, error: `The audit saved, but its actions did not: ${actError.message}` };
@@ -151,7 +167,7 @@ export async function saveServiceAuditAction(_prev: SaveState, formData: FormDat
     action: "audit.recorded",
     entity: "audit",
     entityId: auditId,
-    detail: { kind: form.key, score, findings: itemFindings(items).length, actions: actions.length, waiting },
+    detail: { kind: form.key, score, findings: itemFindings(items).length + people.length, actions: actions.length, waiting },
   });
   revalidatePath("/org/audits");
   revalidatePath("/org/due/audits");

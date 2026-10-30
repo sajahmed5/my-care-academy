@@ -63,7 +63,7 @@ export const TIER_DETAILS: Record<
     features: [
       "Everything in Growth",
       "Complaints, accidents and safeguarding",
-      "Client QAs, and medication, care plan and infection control audits",
+      "Client QAs; medication, care plan, infection control, staff file and training audits",
       "Forms, and feedback surveys for families and staff",
       "CQC policies and procedures, with who has read each one",
     ],

@@ -10,6 +10,7 @@ import { loadDueClients, loadQaForm, loadReviewBelow, loadServiceForms } from "@
 import { qaAsServiceForm, runHref } from "@/lib/client-qa";
 import { intervalLabel } from "@/lib/audit-forms";
 import { RunServiceAudit } from "./run-service-audit";
+import { loadAutoSnapshot } from "@/lib/auto-audits-data";
 
 /**
  * Carry out an audit: `?form=<key>`, and `&client=<id>` from a client's page
@@ -49,7 +50,7 @@ export default async function NewAuditPage({ searchParams }: { searchParams: Pro
   }
 
   const supabase = await createClient();
-  const [allClients, { data: staff }, reviewBelow, { data: me }] = await Promise.all([
+  const [allClients, { data: staff }, reviewBelow, { data: me }, auto] = await Promise.all([
     form.scope === "client" ? loadDueClients(supabase, orgId) : Promise.resolve([]),
     supabase
       .from("users")
@@ -61,13 +62,17 @@ export default async function NewAuditPage({ searchParams }: { searchParams: Pro
       .limit(1000),
     loadReviewBelow(orgId),
     supabase.from("users").select("full_name").eq("id", context.userId).maybeSingle(),
+    form.auto ? loadAutoSnapshot(supabase, orgId, form.auto) : Promise.resolve(null),
   ]);
   const clients = clientsFor(form, allClients);
 
   return (
     <DashboardShell title={form.label} context={context} back={back}>
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">{form.blurb}</p>
+        <p className="text-sm text-muted-foreground">
+          {form.blurb}
+          {form.auto ? " Check what the site found against the files, give anyone with something to put right an action, then sign it off." : ""}
+        </p>
         <RunServiceAudit
           form={form}
           clients={clients.map((c) => ({ id: c.id, name: c.name, region: c.region }))}
@@ -75,6 +80,7 @@ export default async function NewAuditPage({ searchParams }: { searchParams: Pro
           staff={(staff ?? []).map((u) => ({ id: u.id as string, name: (u.full_name as string | null) || (u.email as string) }))}
           auditorName={(me?.full_name as string | null) ?? ""}
           reviewBelow={reviewBelow}
+          auto={auto}
         />
       </div>
     </DashboardShell>
