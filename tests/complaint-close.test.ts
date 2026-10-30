@@ -24,7 +24,7 @@ describe("what stands between a complaint and being closed", () => {
   });
   it("says what to do in one sentence, and nothing when there is nothing", () => {
     expect(closeGapsMessage(closeGaps(stages, [{ stageId: "form", status: "done" }, { stageId: "tri", status: "done" }, { stageId: "qa", status: "done" }])))
-      .toBe("This cannot be closed yet. Still to do, or to mark as not needed: Follow-up.");
+      .toBe("This cannot be closed yet. Still to do, or to mark N/A: Follow-up.");
     expect(closeGapsMessage([])).toBe("");
     expect(closeGapsMessage([], true)).toContain("has not been triaged");
   });

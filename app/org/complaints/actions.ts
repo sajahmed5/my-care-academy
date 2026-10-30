@@ -574,7 +574,7 @@ export async function setStageStatusAction(_prev: SaveState, formData: FormData)
   const status = str(formData, "status");
   const notes = str(formData, "notes");
   if (!["pending", "done", "na"].includes(status)) return { ok: false, error: "Pick a status." };
-  if (status === "na" && !notes) return { ok: false, error: "Say why this stage is not needed." };
+  if (status === "na" && !notes) return { ok: false, error: "Say why it is N/A for this record." };
 
   const supabase = await createClient();
   const stage = await stageById(supabase, stageId);

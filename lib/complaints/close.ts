@@ -48,7 +48,7 @@ export function closeGapsMessage(gaps: CloseGap[], untriaged = false, work: Clos
     return "This concern has not been triaged yet. Triage it first — that decides what it is and what it needs — or record it as withdrawn or cancelled, under End without closing below.";
   }
   const parts: string[] = [];
-  if (gaps.length) parts.push(`Still to do, or to mark as not needed: ${some(gaps.map((g) => g.name), 6)}.`);
+  if (gaps.length) parts.push(`Still to do, or to mark N/A: ${some(gaps.map((g) => g.name), 6)}.`);
   // Said plainly as actions, not stages: "Carry out a spot check" read as the
   // Spot Checks stage, and marking that stage not needed cleared nothing (#68).
   if (work.openActions.length) {

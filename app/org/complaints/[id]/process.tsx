@@ -176,7 +176,7 @@ export function ComplaintProcess({
                         >
                           {s.name}
                           {isOptionalStage(s) && <span className="ml-1 text-xs">(optional)</span>}
-                          {st === "na" && <span className="ml-1 text-xs no-underline">· not needed</span>}
+                          {st === "na" && <span className="ml-1 text-xs no-underline">· N/A</span>}
                         </button>
                       </li>
                     );

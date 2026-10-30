@@ -72,6 +72,9 @@ export function StagePanel(props: PanelProps) {
     return (
       <div className="space-y-5">
         <StatusLine entry={entry} />
+        {/* The Complaint Form is filled in when the record is made, so "not
+            needed" there only raised the question of what it meant (#61). */}
+        {stage.kind !== "complaint_form" && <NotApplicable {...props} />}
         <StageForm
           complaintId={props.complaint.id}
           stageId={stage.id}
@@ -98,9 +101,6 @@ export function StagePanel(props: PanelProps) {
             </>
           )}
         </StageForm>
-        {/* The Complaint Form is filled in when the record is made, so "not
-            needed" there only raised the question of what it meant (#61). */}
-        {stage.kind !== "complaint_form" && <NotNeeded {...props} />}
       </div>
     );
   }
@@ -117,7 +117,7 @@ function StatusLine({ entry }: { entry: StageEntry | undefined }) {
   const st = entry?.status ?? "pending";
   return (
     <p className="text-xs text-muted-foreground">
-      {st === "done" ? "Done" : st === "na" ? `Not needed${entry?.notes ? ` — ${entry.notes}` : ""}` : "Not finished"}
+      {st === "done" ? "Done" : st === "na" ? `N/A${entry?.notes ? ` — ${entry.notes}` : ""}` : "Not finished"}
       {entry ? ` · last saved ${formatDateTime(entry.updatedAt)}` : ""}
     </p>
   );
@@ -147,11 +147,11 @@ function DocumentStatus({ complaint, stage, entry, disabled }: PanelProps) {
           <select id={`st-${stage.id}`} name="status" className={selectClass} value={status} onChange={(e) => setStatus(e.target.value)} disabled={disabled}>
             <option value="pending">Not yet</option>
             <option value="done">Done</option>
-            <option value="na">Not needed</option>
+            <option value="na">N/A (not needed)</option>
           </select>
         </div>
         <div className="space-y-1">
-          <Label htmlFor={`nt-${stage.id}`}>Note (why, if not needed)</Label>
+          <Label htmlFor={`nt-${stage.id}`}>Note (why, if N/A)</Label>
           <Input id={`nt-${stage.id}`} name="notes" value={notes} onChange={(e) => setNotes(e.target.value)} disabled={disabled} />
         </div>
       </div>
@@ -161,25 +161,42 @@ function DocumentStatus({ complaint, stage, entry, disabled }: PanelProps) {
   );
 }
 
-/** Mark a form stage not needed, with why — or clear that. */
-function NotNeeded({ complaint, stage, entry, disabled }: PanelProps) {
+/**
+ * N/A on a stage, at the top where it's seen (issue #60: "we don't need this
+ * many steps"). The stage stops counting towards closing the record; the
+ * reason is kept, because N/A is a decision someone made. Clearing it puts
+ * the stage back.
+ */
+function NotApplicable({ complaint, stage, entry, disabled }: PanelProps) {
   const [state, action, pending] = useActionState<SaveState, FormData>(setStageStatusAction, {});
+  const [asking, setAsking] = useState(false);
   if (disabled) return null;
   const na = entry?.status === "na";
+  if (!na && !asking) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed px-3 py-2 text-sm">
+        <span className="text-muted-foreground">Not needed for this one?</span>
+        <Button type="button" variant="outline" size="sm" onClick={() => setAsking(true)}>N/A</Button>
+      </div>
+    );
+  }
   return (
-    <form action={action} className="flex flex-wrap items-end gap-2 border-t pt-3">
+    <form action={action} className={`flex flex-wrap items-end gap-2 rounded-lg px-3 py-2 text-sm ${na ? "bg-muted" : "border border-dashed"}`}>
       <input type="hidden" name="complaintId" value={complaint.id} />
       <input type="hidden" name="stageId" value={stage.id} />
       <input type="hidden" name="status" value={na ? "pending" : "na"} />
-      {!na && (
+      {na ? (
+        <p className="flex-1 py-1"><span className="font-medium">N/A</span>{entry?.notes ? ` — ${entry.notes}` : ""}</p>
+      ) : (
         <div className="flex-1 space-y-1">
-          <Label htmlFor={`na-${stage.id}`}>This stage is not needed on this record because</Label>
-          <Input id={`na-${stage.id}`} name="notes" placeholder="Why" />
+          <Label htmlFor={`na-${stage.id}`}>N/A for this record because</Label>
+          <Input id={`na-${stage.id}`} name="notes" placeholder="For example: sorted on the phone the same day" autoFocus />
         </div>
       )}
-      <Button type="submit" variant="ghost" size="sm" disabled={pending}>
-        {na ? "It is needed after all" : "Mark not needed"}
+      <Button type="submit" size="sm" variant={na ? "ghost" : "default"} disabled={pending}>
+        {na ? "It applies after all" : "Mark N/A"}
       </Button>
+      {!na && <Button type="button" size="sm" variant="ghost" onClick={() => setAsking(false)}>Cancel</Button>}
       {state.error && <p className="w-full text-sm text-rose-600">{state.error}</p>}
     </form>
   );
@@ -221,6 +238,7 @@ function LetterPanel({ complaint, stage, entry, organisationName, senderName, to
 
   return (
     <div className="space-y-4">
+      <NotApplicable complaint={complaint} stage={stage} entry={entry} staff={[]} organisationName={organisationName} senderName={senderName} today={today} disabled={disabled} />
       {ack && (
         <p className={`text-sm ${ack.overdue ? "text-rose-700" : "text-muted-foreground"}`}>
           {ack.sentOn ? `Sent ${fmtDate(ack.sentOn)}.` : `Due by ${fmtDate(ack.dueBy)} — three working days from when it reached us.`}
@@ -270,7 +288,6 @@ function LetterPanel({ complaint, stage, entry, organisationName, senderName, to
         {state.ok && !state.error && <p className="text-sm text-teal-700">Saved.</p>}
       </form>
       <DocumentsBox complaint={complaint} stage={stage} entry={entry} staff={[]} organisationName={organisationName} senderName={senderName} today={today} disabled={disabled} />
-      <NotNeeded complaint={complaint} stage={stage} entry={entry} staff={[]} organisationName={organisationName} senderName={senderName} today={today} disabled={disabled} />
     </div>
   );
 }
