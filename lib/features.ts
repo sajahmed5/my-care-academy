@@ -153,7 +153,7 @@ export const FEATURES = [
     category: "quality",
     label: "Audits",
     isCore: false,
-    hint: "Medication, care plan and infection control audits, under Audits in the menu.",
+    hint: "Service audits under Quality in the menu: per-client medication and care plan audits, infection control and the company's own; set up under Settings.",
   },
   {
     key: "quality.feedback",

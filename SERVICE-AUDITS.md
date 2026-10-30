@@ -1,7 +1,23 @@
 # Service audits — agreed plan (29 Oct 2026)
 
-Agreed with Saj on 29 Oct 2026. Nothing below is built yet beyond what's
-marked as today's. Service audits are in Pro and up (see PACKAGES.md).
+Agreed with Saj on 29 Oct 2026. Service audits are in Pro and up (see
+PACKAGES.md), all on `quality.audits`.
+
+## Built
+
+- **Editable audits, client by client** (30 Oct 2026, migration
+  20261031110000) — each audit is a form (`lib/service-audits.ts`): ours
+  (medication, care plan, infection control) with a company's changes laid
+  over them in `service_audit_forms`, and its own audits, for one client at a
+  time or the whole service. Question types: yes / no / N/A, rating 1–5, free
+  text, photo (shrunk on the phone, kept in the private
+  `service-audit-photos` bucket). Medication and care plan audits link to a
+  client and are due client by client (medication only where the company
+  helps with medicines) at `/org/due/audits`. Signed off by the auditor; a
+  score below the company's level (`service_audit_settings`, 80% by default)
+  waits for a manager's review. Set up under `/org/settings/service-audits`,
+  managers only. An audit keeps the questions it was asked (`audits.items`);
+  the one audit from before keeps `answers`.
 
 ## Today
 
