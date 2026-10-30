@@ -82,7 +82,7 @@ export function SettingsForm({
           <TextOption name="offer_signatory_title" label="Their job title" value={letters.signatoryTitle} disabled={!canEdit} placeholder="For example Registered Manager" />
         </div>
         <TextOption name="offer_hours_line" label="Hours" value={letters.hoursLine} disabled={!canEdit} placeholder={DEFAULT_HOURS_LINE} />
-        <TextOption name="offer_pay_line" label="Pay" value={letters.payLine} disabled={!canEdit} placeholder="For example: Your pay will be £12.60 an hour, with mileage paid at 45p a mile." />
+        <TextOption name="offer_pay_line" label="Pay" value={letters.payLine} disabled={!canEdit} placeholder="For example: Your pay will be £… an hour, with mileage paid at …p a mile." />
       </fieldset>
       <fieldset className="space-y-3">
         <legend className="mb-2 font-semibold">Welcome pack</legend>

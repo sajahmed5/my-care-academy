@@ -117,7 +117,8 @@ export function OfferForm({
         </label>
         <label className="block text-sm">
           <span className="font-medium">Pay</span>
-          <input value={fields.payLine} onChange={(e) => set("payLine", e.target.value)} placeholder="For example: Your pay will be £12.60 an hour." maxLength={300} className={input} />
+          <input value={fields.payLine} onChange={(e) => set("payLine", e.target.value)} placeholder="For example: Your pay will be £… an hour." maxLength={300} className={input} />
+          <span className="mt-1 block text-xs text-muted-foreground">A manager can set this once for every offer in Settings → Recruitment.</span>
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-sm">
