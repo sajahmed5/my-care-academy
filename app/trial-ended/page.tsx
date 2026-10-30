@@ -18,6 +18,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { trialState } from "@/lib/trial";
 import { ChangePackage } from "@/app/org/billing/change-package";
+import { SameTeam } from "@/components/same-team";
 
 export const metadata = { title: "Trial ended" };
 
@@ -169,6 +170,8 @@ export default async function TrialEndedPage() {
             />
           </CardContent>
         </Card>
+
+        <SameTeam context={context} layout="row" hideable={false} />
       </main>
     </div>
   );

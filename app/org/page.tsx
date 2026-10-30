@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import { tierLabel } from "@/lib/organisations";
 import { StatTile } from "@/components/learner-ui";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { SameTeam } from "@/components/same-team";
 import { bucketOf, isActiveLearner, isInactive30d, isNeverActive, loadOrgLearners } from "@/lib/org-learners";
 import { ChooseWhoLink } from "./choose-who-link";
 import { WhosOff } from "./hr/holidays/whos-off";
@@ -152,75 +153,80 @@ export default async function OrgDashboard() {
           single line under eleven equal tiles, so "2 overdue" weighed the same
           as "0 completed late" and the one thing to act on sat at the bottom.
           Tiles that read zero now step back (StatTile dims them). */}
-      <div className="space-y-8">
-        <section className="space-y-3">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-lg font-semibold tracking-tight">To do today</h2>
-            <p className="text-sm text-muted-foreground">
-              {tierLabel(organisation?.package_tier ?? "core")} plan
-            </p>
-          </div>
-          {todo.length === 0 ? (
-            <p className="rounded-2xl border bg-card px-5 py-6 text-sm text-muted-foreground">
-              You&apos;re all up to date ✓
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {todo.map((r) => (
-                <li
-                  key={r.key}
-                  className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-l-4 bg-card px-5 py-4 shadow-sm ${
-                    r.tone === "alert" ? "border-l-rose-500" : "border-l-amber-500"
-                  }`}
-                >
-                  <Link href={r.href} className="min-w-0 flex-1 text-sm font-medium hover:underline">
-                    {r.text}
-                  </Link>
-                  {/* Training is chased person by person (issue #27); everything
-                      else has one button to where it is done. */}
-                  {r.action ? (
-                    <Link
-                      href={r.href}
-                      className="inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-sm font-medium transition-colors hover:bg-accent"
-                    >
-                      {r.action}
+      {/* From the same team sits beside the page on a wide screen, and
+          under it on anything narrower (TRIAL.md). */}
+      <div className="flex flex-col gap-8 xl:flex-row xl:items-start">
+        <div className="min-w-0 flex-1 space-y-8">
+          <section className="space-y-3">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-lg font-semibold tracking-tight">To do today</h2>
+              <p className="text-sm text-muted-foreground">
+                {tierLabel(organisation?.package_tier ?? "core")} plan
+              </p>
+            </div>
+            {todo.length === 0 ? (
+              <p className="rounded-2xl border bg-card px-5 py-6 text-sm text-muted-foreground">
+                You&apos;re all up to date ✓
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {todo.map((r) => (
+                  <li
+                    key={r.key}
+                    className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-l-4 bg-card px-5 py-4 shadow-sm ${
+                      r.tone === "alert" ? "border-l-rose-500" : "border-l-amber-500"
+                    }`}
+                  >
+                    <Link href={r.href} className="min-w-0 flex-1 text-sm font-medium hover:underline">
+                      {r.text}
                     </Link>
-                  ) : (
-                    <ChooseWhoLink href={r.href} />
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+                    {/* Training is chased person by person (issue #27); everything
+                        else has one button to where it is done. */}
+                    {r.action ? (
+                      <Link
+                        href={r.href}
+                        className="inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-sm font-medium transition-colors hover:bg-accent"
+                      >
+                        {r.action}
+                      </Link>
+                    ) : (
+                      <ChooseWhoLink href={r.href} />
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
-        <WhosOff context={context} />
+          <WhosOff context={context} />
 
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Training
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <StatTile label="Assigned training complete" value={`${overallPct}%`} icon={CheckCircle2} color="#10b981" hint={`${totals.completed} of ${totals.assigned} courses`} href="/org/courses" />
-            <StatTile label="Overdue courses" value={totals.overdue} icon={BadgeAlert} color="#ef4444" href="/org/learners/statistics?status=overdue" />
-            <StatTile label="In progress" value={`${pct(totals.inProgress)}%`} icon={Clock} color="#f59e0b" hint={`${totals.inProgress} of ${totals.assigned} courses`} href="/org/learners/statistics?status=in_progress" />
-            <StatTile label="Not started" value={`${pct(totals.notStarted)}%`} icon={CircleDashed} color="#64748b" hint={`${totals.notStarted} of ${totals.assigned} courses`} href="/org/learners/statistics?status=not_started" />
-            <StatTile label="Completed late" value={totals.late} icon={CalendarClock} color="#f97316" href="/org/learners/statistics?status=late" />
-          </div>
-        </section>
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Training
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              <StatTile label="Assigned training complete" value={`${overallPct}%`} icon={CheckCircle2} color="#10b981" hint={`${totals.completed} of ${totals.assigned} courses`} href="/org/courses" />
+              <StatTile label="Overdue courses" value={totals.overdue} icon={BadgeAlert} color="#ef4444" href="/org/learners/statistics?status=overdue" />
+              <StatTile label="In progress" value={`${pct(totals.inProgress)}%`} icon={Clock} color="#f59e0b" hint={`${totals.inProgress} of ${totals.assigned} courses`} href="/org/learners/statistics?status=in_progress" />
+              <StatTile label="Not started" value={`${pct(totals.notStarted)}%`} icon={CircleDashed} color="#64748b" hint={`${totals.notStarted} of ${totals.assigned} courses`} href="/org/learners/statistics?status=not_started" />
+              <StatTile label="Completed late" value={totals.late} icon={CalendarClock} color="#f97316" href="/org/learners/statistics?status=late" />
+            </div>
+          </section>
 
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Staff
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-            <StatTile label="Active learners" value={activeLearners} icon={Users} color="#0284c7" href="/org/learners?filter=signed_in#learners" />
-            <StatTile label="With overdue training" value={withOverdue} icon={AlertTriangle} color="#e11d48" href="/org/learners?filter=overdue#learners" />
-            <StatTile label="Learning now" value={inProgress} icon={BookOpenCheck} color="#f59e0b" href="/org/learners?filter=in_progress#learners" />
-            <StatTile label="Not signed in for a month" value={inactive} icon={MoonStar} color="#8b5cf6" href="/org/learners?filter=inactive#learners" />
-            <StatTile label="Never signed in" value={neverActive} icon={UserRoundX} color="#e11d48" href="/org/learners?filter=never#learners" />
-          </div>
-        </section>
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Staff
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              <StatTile label="Active learners" value={activeLearners} icon={Users} color="#0284c7" href="/org/learners?filter=signed_in#learners" />
+              <StatTile label="With overdue training" value={withOverdue} icon={AlertTriangle} color="#e11d48" href="/org/learners?filter=overdue#learners" />
+              <StatTile label="Learning now" value={inProgress} icon={BookOpenCheck} color="#f59e0b" href="/org/learners?filter=in_progress#learners" />
+              <StatTile label="Not signed in for a month" value={inactive} icon={MoonStar} color="#8b5cf6" href="/org/learners?filter=inactive#learners" />
+              <StatTile label="Never signed in" value={neverActive} icon={UserRoundX} color="#e11d48" href="/org/learners?filter=never#learners" />
+            </div>
+          </section>
+        </div>
+        <SameTeam context={context} className="xl:w-80 xl:shrink-0" />
       </div>
     </DashboardShell>
   );

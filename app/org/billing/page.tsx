@@ -28,6 +28,7 @@ import { aiStatus, monthCharge } from "@/lib/ai";
 import { AI_MARKUP, formatGbp } from "@/lib/ai-cost";
 import { AiSettingsForm } from "./ai-card";
 import { trialState } from "@/lib/trial";
+import { SameTeam } from "@/components/same-team";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -229,6 +230,8 @@ export default async function AccountPage({
             )}
           </CardContent>
         </Card>
+
+        <SameTeam context={context} layout="row" />
 
         {/* Billing */}
         <Card>

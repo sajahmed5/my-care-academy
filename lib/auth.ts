@@ -266,10 +266,10 @@ export async function requireStaff(): Promise<UserContext> {
  * who has console access keep requireRole("org_admin"). Same MFA and
  * active-member checks as requireRole.
  */
-export async function requireConsole(): Promise<UserContext> {
+export async function requireConsole(opts: { allowEndedTrial?: boolean } = {}): Promise<UserContext> {
   const context = await requireUser();
   if (!isConsoleRole(context.role)) redirect(dashboardPathForRole(context.role));
   await requireAdminMfa();
-  await assertActiveMember(context);
+  await assertActiveMember(context, opts);
   return context;
 }
