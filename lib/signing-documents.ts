@@ -368,6 +368,38 @@ export function documentsInForce(overrides: WordingOverride[]): Record<SigningDo
 const BLANK = /\[[^[\]\n]{2,240}\]/g;
 export const blanksIn = (body: string): string[] => [...new Set(body.match(BLANK) ?? [])];
 
+/** How a merge field reads in the editor's preview: a tag, not a blank (issue #85). */
+export const FIELD_TAGS: Record<string, string> = {
+  candidateName: "their name",
+  position: "their job title",
+  today: "the date sent",
+  startDate: "their start date",
+  address: "their address",
+};
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/**
+ * Blanks we can fill from the company's own settings (issue #85: "add info
+ * where we can"): probation from Settings → HR → Probation, the holiday year
+ * from Settings → HR → Holidays. Offered in the editor; the manager saves it.
+ */
+export function knownBlanks(s: { probationMonths: number; yearStart: string }): Record<string, string> {
+  const [m, d] = s.yearStart.split("-").map(Number);
+  const start = new Date(Date.UTC(2025, (m || 1) - 1, d || 1));
+  const end = new Date(start.getTime() - 86_400_000);
+  const day = (x: Date) => `${x.getUTCDate()} ${MONTHS[x.getUTCMonth()]}`;
+  return {
+    "[length of probation]": `${s.probationMonths} month${s.probationMonths === 1 ? "" : "s"}`,
+    "[start and end of the holiday year]": `${day(start)} to ${day(end)}`,
+  };
+}
+
+/** The text with every blank we know filled in. */
+export function fillKnownBlanks(body: string, known: Record<string, string>): string {
+  return body.replace(BLANK, (b) => known[b] ?? b);
+}
+
 export interface MergeValues { candidateName: string; companyName: string; position: string; today: string; startDate: string; address: string }
 
 const FIELD = /\{\{\s*([a-zA-Z]+)\s*\}\}/g;
