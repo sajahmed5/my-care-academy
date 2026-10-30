@@ -96,6 +96,7 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
       "Your own questions and audits, done on a phone with photos, and signed off",
       "Anything that fails becomes an action with an owner and a date",
       "Low scores wait for a manager to review them",
+      "A monthly governance report for CQC's well-led question, as a PDF",
     ],
   },
   "quality.feedback": {

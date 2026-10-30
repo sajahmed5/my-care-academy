@@ -41,12 +41,14 @@ beforeAll(async () => {
   });
   await admin.from("audits").insert({ organisation_id: orgId, kind: "own_test", held_on: "2026-10-01", items: [], score: 50, review_status: "waiting" });
   await admin.from("client_qas").insert({ organisation_id: orgId, client_name: "A client", held_on: "2026-10-01", method: "phone", completed: false, not_done_reason: "No answer" });
+  await admin.from("governance_reports").insert({ organisation_id: orgId, month: "2026-10-01", summary: "A summary" });
 }, 60_000);
 
 afterAll(async () => {
   const admin = adminClient();
   await admin.from("audits").delete().in("organisation_id", [orgId, otherOrgId]);
   await admin.from("client_qas").delete().in("organisation_id", [orgId, otherOrgId]);
+  await admin.from("governance_reports").delete().in("organisation_id", [orgId, otherOrgId]);
   await admin.from("service_audit_forms").delete().in("organisation_id", [orgId, otherOrgId]);
   await admin.from("service_audit_settings").delete().in("organisation_id", [orgId, otherOrgId]);
   await cleanup(userIds, [orgId, otherOrgId]);
@@ -60,12 +62,15 @@ describe("service audits", () => {
     expect(audits).toHaveLength(1);
     const { data: qas } = await office.from("client_qas").select("id");
     expect(qas).toHaveLength(1);
+    const { data: reports } = await office.from("governance_reports").select("summary");
+    expect(reports).toEqual([{ summary: "A summary" }]);
   });
 
   it("are never read by a carer", async () => {
     expect((await carer.from("service_audit_forms").select("key")).data).toEqual([]);
     expect((await carer.from("audits").select("id")).data).toEqual([]);
     expect((await carer.from("client_qas").select("id")).data).toEqual([]);
+    expect((await carer.from("governance_reports").select("id")).data).toEqual([]);
     expect((await carer.from("service_audit_settings").select("review_below")).data).toEqual([]);
   });
 
@@ -73,6 +78,7 @@ describe("service audits", () => {
     expect((await outsider.from("service_audit_forms").select("key")).data).toEqual([]);
     expect((await outsider.from("audits").select("id")).data).toEqual([]);
     expect((await outsider.from("client_qas").select("id")).data).toEqual([]);
+    expect((await outsider.from("governance_reports").select("id")).data).toEqual([]);
   });
 
   it("won't take a QA that was done without its ratings", async () => {

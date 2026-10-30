@@ -92,9 +92,14 @@ export default async function AuditsPage() {
             Audits of the service and of each client, and client QAs. Anything answered No can be given an owner and a date, and goes into their
             task list.
           </p>
-          <Link href="/org/audits/new" className={buttonVariants({ size: "sm" })}>
-            <Plus className="size-4" /> Carry out an audit
-          </Link>
+          <span className="flex flex-wrap gap-2">
+            <Link href="/org/audits/governance" className={buttonVariants({ variant: "outline", size: "sm" })}>
+              Governance report
+            </Link>
+            <Link href="/org/audits/new" className={buttonVariants({ size: "sm" })}>
+              <Plus className="size-4" /> Carry out an audit
+            </Link>
+          </span>
         </div>
 
         {waiting.length > 0 && (
