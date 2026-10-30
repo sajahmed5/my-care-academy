@@ -39,10 +39,11 @@ import { CompetencyList } from "./competency-list";
 import { EvidencePackButton } from "./evidence-pack-button";
 import { ConcernList } from "./concern-list";
 import { SupervisionList } from "./supervision-list";
-import { StaffDocuments, type ApplicationDoc } from "./staff-documents";
+import { StaffDocuments } from "./staff-documents";
+import { RecruitmentRecord } from "./recruitment-record";
 import { staffDocTasks, type StaffDoc } from "@/lib/staff-documents";
-import { docLabel } from "@/lib/recruitment";
 import { TaskList } from "./task-list";
+import { SubTabs } from "./sub-tabs";
 import { endOfMonthISO } from "@/lib/assign";
 import { isOverdue, isAssessmentDue, expiryFlag } from "@/lib/engine-logic";
 import {
@@ -76,7 +77,7 @@ function statusVariant(e: OrgEnrolment, now: Date): StatusVariant {
 /** Sections this page renders itself; the rest get a panel. */
 const INLINE_SECTIONS = new Set([
   "training",
-  "recruitment",
+  "documents",
   "certificates",
   "actions",
   "supervisions",
@@ -94,11 +95,11 @@ export default async function StaffDetailPage({
   searchParams,
 }: {
   params: Promise<{ userId: string }>;
-  searchParams: Promise<{ show?: string; section?: string }>;
+  searchParams: Promise<{ show?: string; section?: string; sub?: string }>;
 }) {
   const context = await requireConsole();
   const { userId } = await params;
-  const { show: showParam, section: sectionParam } = await searchParams;
+  const { show: showParam, section: sectionParam, sub } = await searchParams;
   const show: Show = SHOWS.includes(showParam as Show) ? (showParam as Show) : "all";
 
   // Which part of the file is open. An unknown key falls back to Training
@@ -118,13 +119,13 @@ export default async function StaffDetailPage({
     // still have rows from before a downgrade, and fetching them to grey them
     // out would be a way to read what they stopped paying for.
     const wantsTasks = section.key === "actions" || section.key === "forms";
-    const recruitmentOpen = section.key === "recruitment" && state === "open";
+    const documentsOpen = section.key === "documents" && state === "open" && sub !== "recruitment";
     // Their compliance documents feed the task list as well as their own
     // section, so the Actions tab reads them too (ROADMAP §3).
-    const wantsStaffDocs = recruitmentOpen || (wantsTasks && enabled["recruitment.tracker"]);
+    const wantsStaffDocs = documentsOpen || (wantsTasks && enabled["recruitment.tracker"]);
     const supervisionsOpen = section.key === "supervisions" && state === "open";
     const competencyOpen = section.key === "competency" && state === "open";
-    const [supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs, applicationDocs] = await Promise.all([
+    const [supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs] = await Promise.all([
       supervisionsOpen ? loadSupervisions(supabase, userId) : Promise.resolve([]),
       supervisionsOpen ? loadBookings(supabase, userId) : Promise.resolve([]),
       // Who can hold one: anyone with console access (STAFF-AUDITS.md).
@@ -158,13 +159,12 @@ export default async function StaffDetailPage({
             .eq("user_id", userId)
             .then((r) => (r.data ?? []) as StaffDoc[])
         : Promise.resolve([] as StaffDoc[]),
-      recruitmentOpen ? loadApplicationDocs(supabase, userId) : Promise.resolve([] as ApplicationDoc[]),
     ]);
-    return { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs, applicationDocs };
+    return { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs };
   });
   const [
     { profile, enrolments, certificates, assessments },
-    { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs, applicationDocs },
+    { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs },
     { data: libraryRows },
     { data: classroomRows },
   ] = await Promise.all([
@@ -700,8 +700,18 @@ export default async function StaffDetailPage({
           </div>
         )}
 
-        {section.key === "recruitment" && state === "open" && (
-          <StaffDocuments userId={userId} docs={staffDocs} applicationDocs={applicationDocs} />
+        {section.key === "documents" && state === "open" && (
+          <div className="space-y-4">
+            <SubTabs
+              base={`/org/staff/${userId}?section=documents`}
+              active={sub === "recruitment" ? "recruitment" : ""}
+              tabs={[
+                { key: "", label: "Documents" },
+                { key: "recruitment", label: "Recruitment" },
+              ]}
+            />
+            {sub === "recruitment" ? <RecruitmentRecord userId={userId} /> : <StaffDocuments userId={userId} docs={staffDocs} />}
+          </div>
         )}
 
         {section.key === "supervisions" && state === "open" && (
@@ -818,34 +828,4 @@ export default async function StaffDetailPage({
       </div>
     </DashboardShell>
   );
-}
-
-/**
- * The documents collected when this person applied: the recruitment record
- * they were hired from, matched by email within the organisation (hiring
- * creates the account from the candidate's email). Read under RLS.
- */
-async function loadApplicationDocs(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-): Promise<ApplicationDoc[]> {
-  const { data: person } = await supabase.from("users").select("email, organisation_id").eq("id", userId).maybeSingle();
-  if (!person?.email) return [];
-  const { data: cands } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("organisation_id", person.organisation_id as string)
-    .ilike("email", person.email as string);
-  const ids = (cands ?? []).map((c) => c.id as string);
-  if (ids.length === 0) return [];
-  const { data: docs } = await supabase
-    .from("candidate_documents")
-    .select("doc_type, file_path, expires_at")
-    .in("candidate_id", ids)
-    .not("file_path", "is", null);
-  return (docs ?? []).map((d) => ({
-    label: docLabel(d.doc_type as string),
-    file_path: d.file_path as string,
-    expires_at: (d.expires_at as string | null) ?? null,
-  }));
 }

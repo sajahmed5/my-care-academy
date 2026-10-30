@@ -113,7 +113,7 @@ describe("welcome pack", () => {
 });
 
 describe("hire", () => {
-  it("moves right to work and the DBS, never anything else, onto the staff file", () => {
-    expect(STAFF_FILE_SOURCES.map((s) => s.staffDoc)).toEqual(["right_to_work", "dbs"]);
+  it("moves right to work, the ID and the DBS, never anything else, onto the staff file as files", () => {
+    expect(STAFF_FILE_SOURCES.map((s) => s.staffDoc)).toEqual(["right_to_work", "proof_id", "dbs"]);
   });
 });

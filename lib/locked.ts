@@ -17,14 +17,14 @@ export interface LockedCopy {
 
 export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
   "recruitment.tracker": {
-    area: "Recruitment",
+    area: "HR pack",
     home: "/org/recruitment",
-    heading: "Track every candidate from application to hire",
+    heading: "Employ someone, from application to leaving",
     bullets: [
       "Each candidate's progress, from applied to hired",
-      "A checklist of their documents, with right to work and DBS expiry dates",
-      "Everything for one candidate downloaded in one go",
-      "Hired candidates become carers with a login, ready for their training",
+      "Hired candidates become staff with a login, ready for their training",
+      "Every carer's documents on their file, with expiry reminders",
+      "Everything from their recruitment kept on their file",
     ],
   },
   "people.supervisions": {

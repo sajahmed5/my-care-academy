@@ -12,6 +12,7 @@ import { siteOrigin } from "@/lib/site-url";
 import { emailApplicationLink, issueApplicationLink, newToken } from "@/lib/candidate-links";
 import { inviteCandidate, makeCandidateStaff } from "@/lib/candidate-account";
 import { copyToStaffFile, sendWelcomePack, startInduction } from "@/lib/hire";
+import { staffDocLabel } from "@/lib/staff-documents";
 import { unlockAttempt } from "@/lib/literacy-attempts";
 import { interviewSections, overallScore, sanitiseInterview, validateInterview } from "@/lib/recruitment-interview";
 import { companyQuestions } from "@/lib/company-questions";
@@ -563,7 +564,7 @@ export async function hireCandidateAction(
   let courses = 0;
   if (userId) {
     moved = await copyToStaffFile(admin, candidateId, orgId, userId, context.userId);
-    if (moved.length) said.push(`${moved.map((m) => (m === "dbs" ? "DBS" : "Right to work")).join(" and ")} moved to their staff file.`);
+    if (moved.length) said.push(`${moved.map(staffDocLabel).join(", ")} moved to their staff file, with expiry dates.`);
     if (opts.induction) {
       const { data: c } = await admin.from("candidates").select("start_date").eq("id", candidateId).maybeSingle();
       courses = await startInduction(admin, orgId, userId, (c?.start_date as string | null) ?? null);

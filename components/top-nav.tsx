@@ -93,7 +93,15 @@ const ORG_MENU: MenuItem[] = [
       { href: "/org/complaints", label: "Complaints & safeguarding", feature: "complaints.register" },
     ],
   },
-  { label: "Recruitment", href: "/org/recruitment", feature: "recruitment.tracker" },
+  // The HR pack (HR-PACK.md): employing someone, from application to leaving.
+  {
+    label: "HR",
+    also: ["/org/recruitment", "/org/hr"],
+    children: [
+      { href: "/org/recruitment", label: "Recruitment", feature: "recruitment.tracker" },
+      { href: "/org/hr/documents", label: "Documents due", feature: "recruitment.tracker" },
+    ],
+  },
   {
     label: "Documents",
     children: [

@@ -76,14 +76,17 @@ export const SECTIONS: SectionDef[] = [
     built: true,
   },
   {
-    key: "recruitment",
-    label: "Recruitment & right to work",
+    // The carer's documents page (HR-PACK.md): right to work, DBS, references
+    // and the rest with their expiries, and a Recruitment sub-page with
+    // everything from when they were recruited on the site. It was
+    // "Recruitment & right to work" (?section=recruitment) until 31 Oct 2026;
+    // the old key still lands here, as those links are in emails.
+    key: "documents",
+    label: "Documents",
     blurb:
-      "Right to work, DBS, references and insurance for current staff, with their expiry dates, and what was collected when they applied.",
+      "Right to work, DBS, references, insurance and the rest, with expiry reminders, and everything from their recruitment.",
     feature: "recruitment.tracker",
     built: true,
-    href: "/org/recruitment",
-    hrefLabel: "Open Recruitment",
   },
   {
     key: "supervisions",
@@ -124,7 +127,11 @@ export const SECTIONS: SectionDef[] = [
 
 export const DEFAULT_SECTION = "training";
 
+/** Keys a section used to have, still in links people were sent. */
+const RENAMED: Record<string, string> = { recruitment: "documents" };
+
 export function sectionByKey(key: string | undefined): SectionDef {
+  if (key && RENAMED[key]) key = RENAMED[key];
   return (
     SECTIONS.find((s) => s.key === key) ??
     SECTIONS.find((s) => s.key === DEFAULT_SECTION)!
