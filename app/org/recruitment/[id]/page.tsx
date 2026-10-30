@@ -139,6 +139,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
             state: st.state,
             doc: (docs ?? []).find((d) => d.doc_type === st.key) as StepView["doc"],
             signedHref: (signings ?? []).some((g) => g.doc_key === st.key && g.status === "signed") ? `/org/recruitment/${id}/signed/${st.key}` : undefined,
+            readHref: st.key === "application" && application?.status === "submitted" ? `/org/recruitment/${id}/application` : undefined,
           }));
           const body = (
             <ul className="border-t">

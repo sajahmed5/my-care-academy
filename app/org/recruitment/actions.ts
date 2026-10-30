@@ -430,19 +430,33 @@ export async function markDocumentNotRequiredAction(
   return { ok: true };
 }
 
-/** Undo a step: the file it holds, a "done on paper", or a "not needed". */
+/**
+ * Undo a step. What the office recorded — a file, a "done on paper", a "not
+ * needed" — is removed. What the candidate sent in online is theirs: undoing
+ * the confirm puts it back to waiting on the office, kept (#79).
+ */
 export async function deleteDocumentAction(docId: string, candidateId: string): Promise<{ ok: boolean }> {
   const context = await requireConsole();
   await assertRecruitment(context);
   const admin = createAdminClient();
   const { data: doc } = await admin
     .from("candidate_documents")
-    .select("file_path, organisation_id")
+    .select("doc_type, file_path, organisation_id, review_status, uploaded_by_candidate")
     .eq("id", docId)
+    .eq("candidate_id", candidateId)
     .maybeSingle();
   if (doc && doc.organisation_id === context.organisationId) {
-    if (doc.file_path) await admin.storage.from("candidate-docs").remove([doc.file_path]);
-    await admin.from("candidate_documents").delete().eq("id", docId);
+    const backToWaiting = doc.uploaded_by_candidate && doc.review_status === "confirmed";
+    if (backToWaiting) {
+      await admin
+        .from("candidate_documents")
+        .update({ review_status: "submitted", reviewed_by: null, reviewed_at: null })
+        .eq("id", docId);
+    } else {
+      if (doc.file_path) await admin.storage.from("candidate-docs").remove([doc.file_path]);
+      await admin.from("candidate_documents").delete().eq("id", docId);
+    }
+    await logAudit({ context, action: "candidate.step_undone", entity: "candidate", entityId: candidateId, detail: { step: doc.doc_type, back_to_waiting: backToWaiting } });
   }
   done(candidateId);
   return { ok: true };

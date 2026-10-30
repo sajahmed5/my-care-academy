@@ -27,6 +27,8 @@ export interface StepView {
   state: StepState;
   /** Signed online and waiting for the office: accepted from the signed copy, not here. */
   signedHref?: string;
+  /** What they sent in online, to read: the application form. */
+  readHref?: string;
   doc?: {
     id: string;
     file_name: string | null;
@@ -71,6 +73,8 @@ export function StepRow({ candidateId, step }: { candidateId: string; step: Step
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const pill = PILL[step.state];
+  // What the candidate sent online goes back to waiting on an undo, never away.
+  const fromCandidate = step.state === "confirmed" && !!step.doc?.uploaded_by_candidate;
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>) =>
     start(async () => {
       setError(null);
@@ -96,6 +100,8 @@ export function StepRow({ candidateId, step }: { candidateId: string; step: Step
         ? `Sent back: "${step.doc?.review_note ?? ""}"`
         : !step.doc?.file_name && step.doc?.uploaded_by_candidate && step.doc.review_note
           ? `Online: ${step.doc.review_note}`
+          : !step.doc?.file_name && step.doc?.uploaded_by_candidate
+          ? "Sent in online"
           : step.doc?.file_name
           ? `${step.doc.file_name}${step.doc.uploaded_by_candidate ? ", from the candidate" : ""}${
               step.doc.expires_at ? ` · ${step.state === "expired" ? "expired" : "expires"} ${formatDate(step.doc.expires_at)}` : ""
@@ -122,6 +128,9 @@ export function StepRow({ candidateId, step }: { candidateId: string; step: Step
             {step.doc?.file_path && (
               <Button variant="outline" size="sm" onClick={view}>View</Button>
             )}
+            {step.readHref && (
+              <Link href={step.readHref} className={buttonVariants({ variant: "outline", size: "sm" })}>Read their application</Link>
+            )}
             {step.state === "submitted" && step.signedHref && (
               <Link href={step.signedHref} className={buttonVariants({ size: "sm" })}>Read and sign</Link>
             )}
@@ -146,11 +155,11 @@ export function StepRow({ candidateId, step }: { candidateId: string; step: Step
                 size="sm"
                 disabled={pending}
                 onClick={() => {
-                  if (window.confirm(step.doc?.file_path ? "Remove this file? The step goes back to not started." : "Undo this? The step goes back to not started."))
+                  if (window.confirm(fromCandidate ? "Undo confirming this? It goes back to waiting on you." : step.doc?.file_path ? "Remove this file? The step goes back to not started." : "Undo this? The step goes back to not started."))
                     run(() => deleteDocumentAction(step.doc!.id, candidateId));
                 }}
               >
-                {step.doc.file_path ? "Remove" : "Undo"}
+                {step.doc.file_path && !fromCandidate ? "Remove" : "Undo"}
               </Button>
             )}
           </div>
