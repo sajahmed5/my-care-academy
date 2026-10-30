@@ -45,6 +45,7 @@ const COMPARE: { label: string; detail: string; from: number }[] = [
   { label: "Classroom sessions", detail: "Your own sessions, with QR sign-in, on the training matrix", from: 3 },
   { label: "White label", detail: "Your own web address, logo and colour on every page, email and PDF", from: 3 },
   { label: "Rostering integration", detail: "MyRoster, or any system through our API", from: 3 },
+  { label: "Bespoke reports", detail: "Built for you within 10 working days, live, PDF or Excel", from: 3 },
   { label: "Priority support", detail: "", from: 3 },
 ];
 

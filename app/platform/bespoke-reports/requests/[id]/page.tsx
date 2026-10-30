@@ -17,6 +17,7 @@ import { MessageForm } from "@/components/bespoke/message-form";
 import { ukToday } from "@/lib/bespoke/working-days";
 import { postOurMessageAction } from "../../actions";
 import { StatusButtons } from "./status-buttons";
+import { NewReport } from "../../new-report";
 
 export const metadata = { title: "Report request" };
 
@@ -27,7 +28,7 @@ export default async function PlatformReportRequestPage({ params }: { params: Pr
   const context = await requireRole("platform_admin");
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: request }, { data: messages }] = await Promise.all([
+  const [{ data: request }, { data: messages }, { data: built }] = await Promise.all([
     supabase
       .from("report_requests")
       .select(
@@ -41,6 +42,7 @@ export default async function PlatformReportRequestPage({ params }: { params: Pr
       .eq("request_id", id)
       .order("created_at")
       .limit(500),
+    supabase.from("bespoke_reports").select("id, title, archived_at").eq("request_id", id).limit(5),
   ]);
   if (!request) notFound();
   const r = request as unknown as RequestRecord & {
@@ -82,6 +84,19 @@ export default async function PlatformReportRequestPage({ params }: { params: Pr
           )}
           <RequestSteps status={r.status} />
           <StatusButtons requestId={r.id} status={r.status} />
+          {(built ?? []).length > 0 ? (
+            <p className="text-sm">
+              Report:{" "}
+              {(built ?? []).map((b) => (
+                <Link key={b.id as string} href={`/platform/bespoke-reports/${b.id}`} className="font-medium text-primary hover:underline">
+                  {b.title as string}
+                  {b.archived_at ? " (taken down)" : ""}
+                </Link>
+              ))}
+            </p>
+          ) : (
+            r.status !== "withdrawn" && <NewReport requestId={r.id} />
+          )}
         </section>
 
         <section className="rounded-2xl border bg-card p-5">

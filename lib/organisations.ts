@@ -78,6 +78,7 @@ export const TIER_DETAILS: Record<
       "Your own classroom sessions, with QR sign-in, on the training matrix",
       "White label: your own web address, logo and colour on every page, email and PDF",
       "Rostering integration: MyRoster, or any system through our API, with alerts",
+      "Bespoke reports, built for you within 10 working days",
       "Priority support",
     ],
   },

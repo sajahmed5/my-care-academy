@@ -20,6 +20,7 @@ import { lockedHref } from "@/lib/features";
 import { buttonVariants } from "@/components/ui/button";
 import { RequestDue, RequestStatus } from "@/components/bespoke/request-parts";
 import { isOpenRequest } from "@/lib/bespoke/requests";
+import { reportsForConsole } from "@/lib/bespoke/access";
 import { REPORT_WORKING_DAYS, ukToday } from "@/lib/bespoke/working-days";
 
 /**
@@ -74,9 +75,10 @@ export default async function OrgReportsPage() {
   const today = new Date().toISOString().slice(0, 10);
   const supabase = await createClient();
   const manager = context.role === "org_admin";
-  const [activity, bespoke] = await Promise.all([
+  const [activity, bespoke, reports] = await Promise.all([
     loadRecentActivity(supabase, 30, context.organisationId),
     hasFeature(context, "reports.bespoke"),
+    reportsForConsole(context),
   ]);
   const { data: requestRows } =
     bespoke && manager
@@ -113,7 +115,7 @@ export default async function OrgReportsPage() {
           export is a spreadsheet you can save, print or email.
         </p>
 
-        <OurReports bespoke={bespoke} manager={manager} requests={requests} />
+        <OurReports bespoke={bespoke} manager={manager} requests={requests} reports={reports} />
 
         <section className="rounded-2xl border bg-card p-5">
           <div className="flex items-start gap-3">
@@ -210,10 +212,12 @@ function OurReports({
   bespoke,
   manager,
   requests,
+  reports,
 }: {
   bespoke: boolean;
   manager: boolean;
   requests: { id: string; request_no: number; title: string; status: string; due_on: string; ready_at: string | null }[];
+  reports: { id: string; title: string; description: string | null; managers_only: boolean }[];
 }) {
   if (!bespoke) {
     return (
@@ -250,7 +254,7 @@ function OurReports({
           <div>
             <h2 className="font-semibold">Our reports</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Built for your company alone. Only you see them.
+              Built for your company alone, from your live data. Only you see them.
             </p>
           </div>
         </div>
@@ -261,11 +265,27 @@ function OurReports({
         )}
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        {manager
-          ? `Nothing built yet. Ask for a report and we'll build it within ${REPORT_WORKING_DAYS} working days.`
-          : "Nothing built yet. Your manager can ask us for one."}
-      </p>
+      {reports.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          {manager
+            ? `Nothing built yet. Ask for a report and we'll build it within ${REPORT_WORKING_DAYS} working days.`
+            : "Nothing built yet. Your manager can ask us for one."}
+        </p>
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {reports.map((r) => (
+            <li key={r.id} className="flex flex-col rounded-xl border p-4">
+              <Link href={`/org/reports/bespoke/${r.id}`} className="font-medium text-primary hover:underline">
+                {r.title}
+              </Link>
+              {r.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{r.description}</p>}
+              <p className="mt-auto pt-2 text-xs text-muted-foreground">
+                Live · PDF · Excel{r.managers_only ? " · Managers only" : ""}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {manager && requests.length > 0 && (
         <div>
