@@ -82,6 +82,17 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       },
     ],
   },
+  {
+    title: "Policies & procedures",
+    features: ["documents.library"],
+    pages: [
+      {
+        href: "/org/settings/policies",
+        label: "Reviews and your details",
+        hint: "How often your policies are reviewed, and the details put into every policy you adopt.",
+      },
+    ],
+  },
 ];
 
 /** The groups this company's package has. */
