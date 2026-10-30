@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/auth";
-import { enabledMap, requireFeature } from "@/lib/entitlements";
+import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { PolicyBody } from "@/components/policy-body";
 import { orgBranding } from "@/lib/branding";
 import { PolicyAcceptButton } from "@/components/policy-accept-button";
-import { loadCopy, loadPolicy, visiblePacks } from "@/lib/policy-library";
+import { loadCopy, loadPolicy } from "@/lib/policy-library";
 
 /**
  * One policy, read by the carer it is addressed to, with their employer's
@@ -25,17 +25,9 @@ export default async function LearnerPolicyPage({
   const { code } = await params;
 
   const supabase = await createClient();
-  const [enabled, doc] = await Promise.all([
-    enabledMap(context),
-    loadPolicy(supabase, decodeURIComponent(code), context.userId),
-  ]);
-  // Carers read policies. The forms are the manager's, and a pack the
-  // organisation has not bought is nobody's.
+  const doc = await loadPolicy(supabase, decodeURIComponent(code), context.userId);
+  // Carers read policies, and only their organisation's published copies.
   if (!doc || doc.kind !== "policy") notFound();
-  const { packs, collections } = visiblePacks(enabled);
-  if (!packs.includes(doc.pack) || (doc.pack === "addon" && !collections.includes(doc.collection ?? ""))) {
-    notFound();
-  }
 
   // The organisation's published copy is what a carer reads and accepts —
   // never the template (ROADMAP §1).

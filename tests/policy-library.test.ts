@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cleanBlocks, stillToWrite } from "../lib/policy-library";
+import { appliesTo, byCategory, cleanBlocks, stillToWrite } from "../lib/policy-library";
 
 describe("an organisation's copy, before it can go to staff", () => {
   it("counts each guidance note and each [bracketed] fill-in still to write", () => {
@@ -20,5 +20,33 @@ describe("an organisation's copy, before it can go to staff", () => {
     ]);
     expect(cleanBlocks([{ type: "script", text: "x" }])).toBeNull();
     expect(cleanBlocks("not a list")).toBeNull();
+  });
+});
+
+describe("appliesTo", () => {
+  it("shows a company the version for its service, and the domiciliary one when it has not said", () => {
+    expect(appliesTo(["homecare"], "homecare")).toBe(true);
+    expect(appliesTo(["care_home"], "homecare")).toBe(false);
+    expect(appliesTo(["care_home"], "care_home")).toBe(true);
+    expect(appliesTo(["homecare"], null)).toBe(true);
+    expect(appliesTo(["care_home"], null)).toBe(false);
+    expect(appliesTo(["care_home"], "both")).toBe(true);
+    expect(appliesTo(null, "care_home")).toBe(true);
+  });
+});
+
+describe("byCategory", () => {
+  it("puts the topics in their order, and an unknown one last", () => {
+    const groups = byCategory([
+      { category: "Governance and quality" },
+      { category: "Something new" },
+      { category: "Care and support" },
+      { category: "Governance and quality" },
+    ]);
+    expect(groups.map(([c, items]) => [c, items.length])).toEqual([
+      ["Care and support", 1],
+      ["Governance and quality", 2],
+      ["Something new", 1],
+    ]);
   });
 });

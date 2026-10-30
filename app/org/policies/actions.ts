@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { assertActiveMember, requireConsole, requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
-import { enabledMap, hasFeature } from "@/lib/entitlements";
-import { cleanBlocks, loadCopy, loadPolicy, render, stillToWrite, visiblePacks } from "@/lib/policy-library";
+import { hasFeature } from "@/lib/entitlements";
+import { appliesTo, cleanBlocks, loadCopy, loadPolicy, render, stillToWrite } from "@/lib/policy-library";
 import type { SaveState } from "@/app/platform/actions";
 
 /**
@@ -80,14 +80,11 @@ export async function adoptPolicyAction(_prev: SaveState, formData: FormData): P
   if (!(await hasFeature(context, "documents.library"))) return { ok: false, error: "The policy library is not in your plan." };
   const code = String(formData.get("code") ?? "");
   const supabase = await createClient();
-  const [doc, enabled, { data: org }] = await Promise.all([
+  const [doc, { data: org }] = await Promise.all([
     loadPolicy(supabase, code, context.userId),
-    enabledMap(context),
-    supabase.from("organisations").select("name").eq("id", context.organisationId!).single(),
+    supabase.from("organisations").select("name, service_type").eq("id", context.organisationId!).single(),
   ]);
-  if (!doc || doc.kind !== "policy") return { ok: false, error: "That policy is not in your library." };
-  const { packs, collections } = visiblePacks(enabled);
-  if (!packs.includes(doc.pack) || (doc.pack === "addon" && !collections.includes(doc.collection ?? ""))) {
+  if (!doc || doc.kind !== "policy" || !appliesTo(doc.service_types, (org?.service_type as string | null) ?? null)) {
     return { ok: false, error: "That policy is not in your library." };
   }
   const { error } = await supabase.from("organisation_policies").insert({

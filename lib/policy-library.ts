@@ -1,11 +1,11 @@
 /**
- * The policies and documents an organisation can see, and what they read.
+ * The policies an organisation can see, and what they read.
  *
- * Two different things share one table and must not share one screen. A
- * **policy** is read and accepted, and the acceptance is the evidence. A
- * **document** — a MAR chart, a spot check form, a complaints log — is
- * downloaded, printed and filled in. Mixing them teaches people to scroll past
- * both, so the library has a tab each.
+ * One combined pack since 31 Oct 2026 (POLICIES.md, "Clean-up"): the CQC
+ * basics, full and add-on packs repeated the same titles, so they were merged
+ * and the duplicates retired. A policy is read and accepted, and the
+ * acceptance is the evidence. The forms and logs that shared this table are
+ * drafts on their way to Forms (FORMS.md) and are never shown here.
  *
  * Everything here is a template: it carries {{organisation}} where the
  * provider's name goes, and guidance in square brackets that the provider is
@@ -15,10 +15,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchAll } from "./fetch-all";
-import type { FeatureKey } from "./features";
 
 export type PolicyKind = "policy" | "form" | "log";
-export type PolicyPack = "basic" | "full" | "addon";
 
 export interface PolicyBlock {
   type: "heading" | "paragraph" | "bullet" | "guidance";
@@ -31,8 +29,6 @@ export interface PolicySummary {
   code: string;
   title: string;
   category: string;
-  pack: PolicyPack;
-  collection: string | null;
   kind: PolicyKind;
   service_types: string[] | null;
   version: number | null;
@@ -43,41 +39,6 @@ export interface PolicySummary {
 export interface PolicyDocument extends PolicySummary {
   blocks: PolicyBlock[];
 }
-
-/**
- * Which packs an organisation sees.
- *
- * The add-on packs follow the feature they belong to rather than the tier: an
- * organisation that bought the complaints register gets the complaints pack,
- * because the pack is the paper half of the same thing.
- */
-export function visiblePacks(enabled: Record<string, boolean>): {
-  packs: PolicyPack[];
-  collections: string[];
-} {
-  const packs: PolicyPack[] = [];
-  if (enabled["documents.library"]) packs.push("basic");
-  if (enabled["documents.compliance_pack"]) packs.push("full");
-
-  const collections: string[] = [];
-  if (enabled["complaints.register"]) collections.push("Complaints and Safeguarding Pack");
-  if (enabled["recruitment.tracker"]) collections.push("Recruitment Pack");
-  if (collections.length) packs.push("addon");
-
-  return { packs, collections };
-}
-
-/** The feature that unlocks a pack, for the "not in your plan" line. */
-export const PACK_FEATURE: Record<string, FeatureKey> = {
-  basic: "documents.library",
-  full: "documents.compliance_pack",
-};
-
-export const PACK_LABEL: Record<PolicyPack, string> = {
-  basic: "CQC basics",
-  full: "Full compliance pack",
-  addon: "Add-on pack",
-};
 
 /**
  * Put the organisation's name into a template.
@@ -93,37 +54,45 @@ export function render(blocks: PolicyBlock[], organisationName: string): PolicyB
   }));
 }
 
-/** Does this document apply to a homecare service, a care home, or both? */
-function appliesTo(serviceTypes: string[] | null, orgServiceType: string | null): boolean {
+/**
+ * Does a policy's version suit this organisation's service?
+ *
+ * Domiciliary and residential versions of the same title sit side by side,
+ * and a company sees the one for its service type. One that has not said is
+ * a homecare company — that is who the site is for — and sees the
+ * domiciliary versions rather than every title twice. "Both" sees both.
+ */
+export function appliesTo(serviceTypes: string[] | null, orgServiceType: string | null): boolean {
   if (!serviceTypes || serviceTypes.length === 0) return true;
-  // An organisation that has not said what it is sees everything rather than
-  // nothing: a blank field must never look like an empty library.
-  if (!orgServiceType || orgServiceType === "both") return true;
-  return serviceTypes.includes(orgServiceType);
+  if (orgServiceType === "both") return true;
+  return serviceTypes.includes(orgServiceType ?? "homecare");
+}
+
+/** "Domiciliary" or "Residential", for a company that runs both. */
+export function serviceLabel(serviceTypes: string[] | null): string | null {
+  if (!serviceTypes || serviceTypes.length !== 1) return null;
+  return serviceTypes[0] === "care_home" ? "Residential" : "Domiciliary";
 }
 
 export async function loadLibrary(
   supabase: SupabaseClient,
   {
-    enabled,
     serviceType,
     userId,
   }: {
-    enabled: Record<string, boolean>;
     serviceType: string | null;
     userId: string;
   },
 ): Promise<PolicySummary[]> {
-  const { packs, collections } = visiblePacks(enabled);
-  if (packs.length === 0) return [];
-
   const [{ data: rows }, { data: acks }] = await Promise.all([
     supabase
       .from("policy_documents")
-      .select("id, code, title, category, pack, collection, kind, service_types, version")
-      .in("pack", packs)
+      .select("id, code, title, category, kind, service_types, version")
+      .eq("status", "published")
+      .eq("kind", "policy")
       .order("category")
       .order("sort_order")
+      .order("title")
       .limit(500),
     supabase
       .from("policy_acknowledgements")
@@ -135,15 +104,11 @@ export async function loadLibrary(
 
   return (rows ?? [])
     .filter((r) => appliesTo(r.service_types as string[] | null, serviceType))
-    // An add-on pack is only visible to whoever bought that add-on.
-    .filter((r) => r.pack !== "addon" || collections.includes((r.collection as string) ?? ""))
     .map((r) => ({
       id: r.id as string,
       code: r.code as string,
       title: r.title as string,
       category: r.category as string,
-      pack: r.pack as PolicyPack,
-      collection: (r.collection as string | null) ?? null,
       kind: r.kind as PolicyKind,
       service_types: (r.service_types as string[] | null) ?? null,
       version: (r.version as number | null) ?? null,
@@ -159,9 +124,7 @@ export async function loadPolicy(
   const [{ data: row }, { data: acks }] = await Promise.all([
     supabase
       .from("policy_documents")
-      .select(
-        "id, code, title, category, pack, collection, kind, service_types, version, blocks",
-      )
+      .select("id, code, title, category, kind, service_types, version, blocks")
       .eq("code", code)
       .maybeSingle(),
     supabase.from("policy_acknowledgements").select("policy_id, version").eq("user_id", userId),
@@ -174,8 +137,6 @@ export async function loadPolicy(
     code: row.code as string,
     title: row.title as string,
     category: row.category as string,
-    pack: row.pack as PolicyPack,
-    collection: (row.collection as string | null) ?? null,
     kind: row.kind as PolicyKind,
     service_types: (row.service_types as string[] | null) ?? null,
     version: (row.version as number | null) ?? null,
@@ -184,15 +145,34 @@ export async function loadPolicy(
   };
 }
 
-/** Group a list for display, keeping the library's own order. */
-export function byCategory(items: PolicySummary[]): [string, PolicySummary[]][] {
-  const groups = new Map<string, PolicySummary[]>();
+/**
+ * The library's topics, in the order a manager thinks of them: the care
+ * itself first, the paperwork of running a company last. A topic not listed
+ * here goes at the end rather than nowhere.
+ */
+export const POLICY_CATEGORIES = [
+  "Care and support",
+  "Safeguarding and concerns",
+  "Medicines and health",
+  "Health and safety",
+  "Staff and employment",
+  "Information and records",
+  "Governance and quality",
+] as const;
+
+/** Group a list for display: topics in their order, each keeping the library's. */
+export function byCategory<T extends { category: string }>(items: T[]): [string, T[]][] {
+  const groups = new Map<string, T[]>();
   for (const item of items) {
     const list = groups.get(item.category) ?? [];
     list.push(item);
     groups.set(item.category, list);
   }
-  return [...groups.entries()];
+  const rank = (c: string) => {
+    const i = (POLICY_CATEGORIES as readonly string[]).indexOf(c);
+    return i === -1 ? POLICY_CATEGORIES.length : i;
+  };
+  return [...groups.entries()].sort(([a], [b]) => rank(a) - rank(b));
 }
 
 // ---------------------------------------------------------------------------

@@ -5,24 +5,28 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatTile } from "@/components/learner-ui";
-import { PACK_LABEL, type PolicyBlock, type PolicyKind, type PolicyPack } from "@/lib/policy-library";
-import { PackActions } from "./pack-actions";
+import { byCategory, serviceLabel, type PolicyBlock, type PolicyKind } from "@/lib/policy-library";
 
 /**
- * The document library, as the people who own it see it.
+ * The policy library, as the people who own it see it.
  *
- * The org-side library shows published documents to a customer. This shows
- * everything, with what is wrong with it: a library of 129 imported files is
- * reviewed by finding the handful that need attention, not by opening all of
- * them in order.
+ * The org-side library shows published policies to a customer. This shows
+ * every policy, with what is wrong with it: a library is reviewed by finding
+ * the handful that need attention, not by opening all of them in order.
+ *
+ * One pack since 31 Oct 2026 (POLICIES.md). The forms and logs that were
+ * imported alongside the policies are drafts waiting for Forms (FORMS.md);
+ * they are listed behind their own filter, to read, never to publish here.
+ * There is no "publish a whole set" any more: each policy is read before it
+ * is published, one at a time.
  */
 
 interface Row {
   code: string;
   title: string;
   category: string;
-  pack: PolicyPack;
   kind: PolicyKind;
+  service_types: string[] | null;
   status: string;
   blocks: PolicyBlock[];
   source_file: string | null;
@@ -50,52 +54,53 @@ export default async function PlatformDocumentsPage({
   searchParams: Promise<{ status?: string; kind?: string }>;
 }) {
   const context = await requireRole("platform_admin");
-  const { status, kind } = await searchParams;
+  const { status, kind: kindParam } = await searchParams;
+  const kind = kindParam === "form" ? "form" : "policy";
 
   const supabase = await createClient();
   const { data } = await supabase
     .from("policy_documents")
-    .select("code, title, category, pack, kind, status, blocks, source_file")
+    .select("code, title, category, kind, status, blocks, source_file, service_types")
     .order("category")
     .order("sort_order")
+    .order("title")
     .limit(500);
 
-  const rows = (data ?? []) as Row[];
+  const all = (data ?? []) as Row[];
+  // "Forms" covers the logs too: both are on their way to Forms.
+  const rows = all.filter((r) => (kind === "policy" ? r.kind === "policy" : r.kind !== "policy"));
+  const formCount = all.length - all.filter((r) => r.kind === "policy").length;
   const published = rows.filter((r) => r.status === "published").length;
   const drafts = rows.filter((r) => r.status === "draft").length;
   const needsAttention = rows.filter((r) =>
     flagsFor(r).some((f) => f === "no content" || f === "no organisation name" || f === "very short"),
   );
 
-  const shown = rows.filter(
-    (r) => (!status || r.status === status) && (!kind || r.kind === kind),
-  );
+  // Retired rows are history (duplicates merged on 31 Oct 2026, kept for the
+  // acceptances that hang off them): behind their own filter, not in "All".
+  const shown = rows.filter((r) => (status ? r.status === status : r.status !== "retired"));
+  const base = kind === "form" ? "/platform/documents?kind=form" : "/platform/documents";
+  const join = kind === "form" ? "&" : "?";
 
-  const groups = new Map<string, Row[]>();
-  for (const row of shown) {
-    const list = groups.get(row.category) ?? [];
-    list.push(row);
-    groups.set(row.category, list);
-  }
 
   return (
-    <DashboardShell title="Document library" context={context}>
+    <DashboardShell title={kind === "form" ? "Forms waiting for Forms" : "Policy library"} context={context}>
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatTile
             label="All"
-            value={rows.length}
+            value={rows.filter((r) => r.status !== "retired").length}
             icon={FileText}
             color="#6366f1"
-            href="/platform/documents"
-            hint={status || kind ? "Show all" : "Showing all"}
+            href={base}
+            hint={status ? "Show all" : "Showing all"}
           />
           <StatTile
             label="Published"
             value={published}
             icon={ShieldCheck}
             color="#10b981"
-            href="/platform/documents?status=published"
+            href={`${base}${join}status=published`}
             hint={status === "published" ? "Showing these" : undefined}
           />
           <StatTile
@@ -103,7 +108,7 @@ export default async function PlatformDocumentsPage({
             value={drafts}
             icon={Table2}
             color="#f59e0b"
-            href="/platform/documents?status=draft"
+            href={`${base}${join}status=draft`}
             hint={status === "draft" ? "Showing these" : undefined}
           />
           <StatTile
@@ -147,47 +152,38 @@ export default async function PlatformDocumentsPage({
           </Card>
         )}
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <PackActions />
-          {/* Status and type, as links: the list is filtered server-side and a
-              filter should survive a refresh and a shared URL. */}
-          <nav aria-label="Filter" className="flex flex-wrap items-center gap-1 text-xs">
-            {[
-              { label: "All", href: "/platform/documents", on: !status && !kind },
-              { label: "Published", href: "/platform/documents?status=published", on: status === "published" },
-              { label: "Draft", href: "/platform/documents?status=draft", on: status === "draft" },
-              { label: "Retired", href: "/platform/documents?status=retired", on: status === "retired" },
-            ].map((f) => (
-              <Link
-                key={f.label}
-                href={f.href}
-                className={`rounded-full px-2.5 py-1 font-medium ${
-                  f.on ? "bg-[#134f63] text-white" : "bg-muted text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {f.label}
-              </Link>
-            ))}
-            <span className="mx-1 text-muted-foreground">·</span>
-            {[
-              { label: "Policies", value: "policy" },
-              { label: "Forms", value: "form" },
-              { label: "Logs", value: "log" },
-            ].map((f) => (
-              <Link
-                key={f.value}
-                href={`/platform/documents?${status ? `status=${status}&` : ""}kind=${f.value}`}
-                className={`rounded-full px-2.5 py-1 font-medium ${
-                  kind === f.value ? "bg-[#134f63] text-white" : "bg-muted text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {f.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
+        <nav aria-label="Filter" className="flex flex-wrap items-center gap-1 text-xs">
+          {/* Status as links: the list is filtered server-side and a filter
+              should survive a refresh and a shared URL. */}
+          {[
+            { label: "All", href: base, on: !status },
+            { label: "Published", href: `${base}${join}status=published`, on: status === "published" },
+            { label: "Draft", href: `${base}${join}status=draft`, on: status === "draft" },
+            { label: "Retired", href: `${base}${join}status=retired`, on: status === "retired" },
+          ].map((f) => (
+            <Link
+              key={f.label}
+              href={f.href}
+              className={`rounded-full px-2.5 py-1 font-medium ${
+                f.on ? "bg-[#134f63] text-white" : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {f.label}
+            </Link>
+          ))}
+          <span className="mx-1 text-muted-foreground">·</span>
+          {kind === "policy" ? (
+            <Link href="/platform/documents?kind=form" className="text-muted-foreground hover:text-foreground hover:underline">
+              Forms and logs waiting for Forms ({formCount})
+            </Link>
+          ) : (
+            <Link href="/platform/documents" className="text-muted-foreground hover:text-foreground hover:underline">
+              ← Policies
+            </Link>
+          )}
+        </nav>
 
-        {[...groups.entries()].map(([category, items]) => (
+        {byCategory(shown).map(([category, items]) => (
           <section key={category} className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground">{category}</h3>
             <div className="space-y-2">
@@ -204,8 +200,7 @@ export default async function PlatformDocumentsPage({
                           {row.title}
                         </Link>
                         <p className="text-xs text-muted-foreground">
-                          {PACK_LABEL[row.pack]} · {row.kind}
-                          {flags.length ? ` · ${flags.join(", ")}` : ""}
+                          {[kind === "form" ? row.kind : serviceLabel(row.service_types) ?? "Every service", ...flags].join(" · ")}
                         </p>
                       </div>
                       <span
