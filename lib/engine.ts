@@ -1,5 +1,6 @@
 import { isStaff } from "@/lib/roles";
 import { emailLayout } from "./email-layout";
+import { setupUrl } from "@/lib/account-setup";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmailBatch } from "@/lib/email";
 import { siteOrigin } from "@/lib/site-url";
@@ -50,7 +51,7 @@ export interface EngineEnrolment {
 }
 
 export interface EngineRefs {
-  users: Map<string, { email: string; name: string; org: string | null; role: string; status: string }>;
+  users: Map<string, { email: string; name: string; org: string | null; role: string; status: string; signedIn: boolean }>;
   courses: Map<string, string>;
   /** Retired courses (30 Oct 2026): no renewal or reminder emails for them. */
   retired: Set<string>;
@@ -98,7 +99,7 @@ export async function loadEngineRefs(admin: Admin): Promise<EngineRefs> {
     fetchAll((f, t) =>
       admin
         .from("users")
-        .select("id, email, full_name, organisation_id, role, status")
+        .select("id, email, full_name, organisation_id, role, status, last_seen_at")
         .order("id")
         .range(f, t),
     ),
@@ -122,6 +123,7 @@ export async function loadEngineRefs(admin: Admin): Promise<EngineRefs> {
           org: u.organisation_id as string | null,
           role: u.role as string,
           status: (u.status as string) ?? "active",
+          signedIn: !!u.last_seen_at,
         },
       ]),
     ),
@@ -386,7 +388,9 @@ export async function processReminders(
   const plans = planReminders(items, settings.reminderRepeatDays, now);
   const outbox: Outgoing[] = plans.map((p) => {
     const learner = r.users.get(p.userId)!;
-    const { subject, html } = reminderEmail(learner.name, p.items, origin);
+    // Never signed in: the button sets up their account instead of opening a
+    // sign-in page they have no password for.
+    const { subject, html } = reminderEmail(learner.name, p.items, origin, learner.signedIn ? null : setupUrl(origin, p.userId, now));
     return { orgId: learner.org, to: learner.email, type: "reminder", subject, html };
   });
 

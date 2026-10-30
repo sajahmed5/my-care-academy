@@ -8,9 +8,15 @@
  * Who is skipped, and why:
  *   - the person doing the assigning — they know;
  *   - anyone not active, or with no email;
- *   - anyone who has never signed in. They cannot follow the link yet, and
- *     their invitation (or the manager's Remind, which sends a set-password
- *     link) is the email that helps them. A task email first is noise.
+ *   - for a form or an action, anyone who has never signed in. They cannot
+ *     follow the link yet, and their invitation (or the manager's Remind) is
+ *     the email that helps them.
+ *
+ * Training is different (Saj, 30 Oct 2026): most of a MyRoster company's
+ * carers have never signed in, and their invitation has long run out by the
+ * time training arrives. So they are told too, and their button sets up
+ * their account (lib/account-setup) instead of opening a page they can't get
+ * into.
  *
  * Callers run this inside after(), so the manager's click is not held up by
  * the mail provider, and a failed send never undoes the assignment.
@@ -20,6 +26,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendEmailBatch } from "./email";
 import { emailButton, emailLayout, esc } from "./email-layout";
 import { formatDate } from "./dates";
+import { setupUrl } from "./account-setup";
 
 export type AssignmentKind = "form_assigned" | "action_assigned" | "training_assigned";
 
@@ -43,15 +50,22 @@ export interface Recipient {
 }
 
 /** Whether this person should be emailed about something assigned to them. */
-export function shouldNotify(r: Recipient, assignedBy: string | null): boolean {
-  return r.id !== assignedBy && r.status === "active" && !!r.email && !!r.last_seen_at;
+export function shouldNotify(r: Recipient, assignedBy: string | null, kind?: AssignmentKind): boolean {
+  return r.id !== assignedBy && r.status === "active" && !!r.email && (!!r.last_seen_at || kind === "training_assigned");
 }
 
 /** The subject and body for one notice. Pure, so it can be tested. */
 export function assignmentEmail(
   kind: AssignmentKind,
   notice: AssignmentNotice,
-  ctx: { name: string | null; assignedByName: string; orgName: string; origin: string },
+  ctx: {
+    name: string | null;
+    assignedByName: string;
+    orgName: string;
+    origin: string;
+    /** Never signed in: the "Set up your account" link, in place of the usual button. */
+    setupUrl?: string | null;
+  },
 ): { subject: string; html: string } {
   const what = kind === "form_assigned" ? "a form to complete" : kind === "training_assigned" ? "training to complete" : "an action";
   const subject =
@@ -64,7 +78,10 @@ export function assignmentEmail(
     ? `<p>Please have it done by <strong>${formatDate(notice.dueDate, { day: "numeric", month: "long", year: "numeric" })}</strong>.</p>`
     : "";
   const note = notice.note ? `<p style="color:#444">${esc(notice.note)}</p>` : "";
-  const link = notice.href
+  const link = ctx.setupUrl
+    ? `<p>You haven't set up your account yet. Use the button to choose a password, and it will be waiting for you.</p>
+${emailButton(ctx.setupUrl, "Set up your account")}`
+    : notice.href
     ? emailButton(`${ctx.origin}${notice.href}`, "Open it")
     : `<p>Speak to ${esc(ctx.assignedByName)} if you need more detail.</p>`;
   const html = emailLayout({
@@ -137,8 +154,9 @@ export async function emailAssignees(
 
     const outgoing = notices.flatMap((n) => {
       const r = byId.get(n.userId);
-      if (!r || !shouldNotify(r, ctx.assignedBy)) return [];
-      const { subject, html } = assignmentEmail(kind, n, { name: r.full_name, assignedByName, orgName, origin: ctx.origin });
+      if (!r || !shouldNotify(r, ctx.assignedBy, kind)) return [];
+      const setup = r.last_seen_at ? null : setupUrl(ctx.origin, r.id);
+      const { subject, html } = assignmentEmail(kind, n, { name: r.full_name, assignedByName, orgName, origin: ctx.origin, setupUrl: setup });
       return [{ to: r.email!, subject, html, organisationId: ctx.organisationId }];
     });
     if (outgoing.length === 0) return 0;

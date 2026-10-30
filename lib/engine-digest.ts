@@ -97,6 +97,8 @@ export function reminderEmail(
   name: string,
   items: ReminderItem[],
   origin: string,
+  /** For someone who has never signed in: their "Set up your account" link (lib/account-setup). */
+  setupUrl: string | null = null,
 ): { subject: string; html: string } {
   const overdue = items.filter((i) => i.overdue).length;
   const subject =
@@ -120,7 +122,12 @@ export function reminderEmail(
     `<p>Hi ${esc(name)},</p>
      <p>You have ${items.length} ${plural(items.length, "course")} to complete on My Care Academy:</p>
      <ul style="padding-left:18px">${rows}</ul>
-     ${emailButton(`${origin}/learn`, "Continue your training")}`,
+     ${
+       setupUrl
+         ? `<p>You haven't set up your account yet. Use the button to choose a password, and your training will be waiting.</p>
+     ${emailButton(setupUrl, "Set up your account")}`
+         : emailButton(`${origin}/learn`, "Continue your training")
+     }`,
   );
   return { subject, html };
 }

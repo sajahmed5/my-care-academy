@@ -24,6 +24,12 @@ describe("who is told about an assignment", () => {
     expect(shouldNotify(person(), null)).toBe(true);
     expect(shouldNotify(person({ last_seen_at: null }), null)).toBe(false);
   });
+  it("tells someone who has never signed in about training, but not about a form or an action", () => {
+    expect(shouldNotify(person({ last_seen_at: null }), "manager", "training_assigned")).toBe(true);
+    expect(shouldNotify(person({ last_seen_at: null }), null, "training_assigned")).toBe(true);
+    expect(shouldNotify(person({ last_seen_at: null }), "manager", "form_assigned")).toBe(false);
+    expect(shouldNotify(person({ last_seen_at: null, status: "deactivated" }), null, "training_assigned")).toBe(false);
+  });
   it("skips the deactivated and those with no address", () => {
     expect(shouldNotify(person({ status: "deactivated" }), "manager")).toBe(false);
     expect(shouldNotify(person({ email: null }), "manager")).toBe(false);
@@ -71,6 +77,20 @@ describe("the email", () => {
     );
     expect(html).toContain("&lt;b&gt;x&lt;/b&gt;");
     expect(html).toContain("a &amp; b");
+  });
+});
+
+describe("training for someone who has never signed in", () => {
+  it("gives them a button to set up their account instead of one to a page they can't open", () => {
+    const { html } = assignmentEmail(
+      "training_assigned",
+      { userId: "u1", title: "Fire Safety", dueDate: "2026-11-30", href: "/learn/modules" },
+      { name: "Sam", assignedByName: "Your manager", orgName: "HG Care", origin: "https://x", setupUrl: "https://x/auth/setup?t=abc" },
+    );
+    expect(html).toContain("Set up your account");
+    expect(html).toContain('href="https://x/auth/setup?t=abc"');
+    expect(html).not.toContain("/learn/modules");
+    expect(html).toContain("Fire Safety");
   });
 });
 

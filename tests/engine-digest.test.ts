@@ -86,6 +86,12 @@ describe("planReminders — one email per person, not per course", () => {
 });
 
 describe("reminderEmail", () => {
+  it("sets up the account of someone who has never signed in, instead of sending them to sign in", () => {
+    const { html } = reminderEmail("Sam", [item({})], "https://x", "https://x/auth/setup?t=abc");
+    expect(html).toContain('href="https://x/auth/setup?t=abc"');
+    expect(html).toContain("Set up your account");
+    expect(html).not.toContain('href="https://x/learn"');
+  });
   it("leads with overdue in the subject when there is any", () => {
     const { subject } = reminderEmail(
       "Sam",
