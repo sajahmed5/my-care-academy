@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { render, serviceLabel, type PolicyBlock } from "@/lib/policy-library";
+import { mergeDetails, serviceLabel, type PolicyBlock } from "@/lib/policy-library";
 import { PolicyBody } from "@/components/policy-body";
 import { StatusForm } from "./status-form";
 
@@ -38,7 +38,9 @@ export default async function PlatformDocumentPage({
   if (!row) notFound();
 
   const blocks = (row.blocks as PolicyBlock[]) ?? [];
-  const rendered = render(blocks, SAMPLE_ORG);
+  // The company's details ({{registered_manager}} and the rest) show as the
+  // fill-ins a company sees until it completes Settings → Policies.
+  const rendered = mergeDetails(blocks, SAMPLE_ORG, {});
   const guidance = blocks.filter((b) => b.type === "guidance").length;
   const hasOrgName = blocks.some((b) => b.text.includes("{{organisation}}"));
 
