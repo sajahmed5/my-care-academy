@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { hashKey } from "@/lib/integration-keys";
 import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeatureForOrg } from "@/lib/entitlements";
@@ -14,8 +15,8 @@ import { hasFeatureForOrg } from "@/lib/entitlements";
  * everyone's data.
  *
  * The comparison hashes first and compares hashes timing-safely, so neither
- * string length nor prefix leaks; a wrong key and a missing org answer
- * identically.
+ * string length nor prefix leaks; a wrong key, a revoked key and a missing
+ * org answer identically.
  *
  * A valid key is not enough on its own: the organisation's package (or an
  * override) must include platform.portal_api. Before this, the switch on the
@@ -26,28 +27,52 @@ import { hasFeatureForOrg } from "@/lib/entitlements";
 export interface PortalOrg {
   id: string;
   name: string;
+  /** The integration_keys row the call came in on; null for the old column. */
+  keyId: string | null;
 }
+
+const unauthorised = () => NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
 export async function resolvePortalOrg(req: Request): Promise<PortalOrg | NextResponse> {
   const auth = req.headers.get("authorization") ?? "";
   const key = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
-  if (!key) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  if (!key) return unauthorised();
 
-  const hash = crypto.createHash("sha256").update(key).digest("hex");
+  const hash = hashKey(key);
   const admin = createAdminClient();
-  const { data } = await admin
-    .from("organisations")
-    .select("id, name, status, integration_key_hash")
-    .eq("integration_key_hash", hash)
+  // A company's keys live in integration_keys since 31 Oct 2026 (a manager
+  // issues them in Settings). The one key before that, on the organisation
+  // itself, is still accepted until the column is dropped.
+  const { data: keyRow } = await admin
+    .from("integration_keys")
+    .select("id, organisation_id, key_hash")
+    .eq("key_hash", hash)
+    .is("revoked_at", null)
     .limit(1)
     .maybeSingle();
-
-  if (
-    !data?.integration_key_hash ||
-    !crypto.timingSafeEqual(Buffer.from(data.integration_key_hash), Buffer.from(hash))
-  ) {
-    return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  let orgId: string | null = null;
+  let keyId: string | null = null;
+  let stored: string | null = null;
+  if (keyRow) {
+    orgId = keyRow.organisation_id as string;
+    keyId = keyRow.id as string;
+    stored = keyRow.key_hash as string;
+  } else {
+    const { data: legacy } = await admin
+      .from("organisations")
+      .select("id, integration_key_hash")
+      .eq("integration_key_hash", hash)
+      .limit(1)
+      .maybeSingle();
+    orgId = (legacy?.id as string | undefined) ?? null;
+    stored = (legacy?.integration_key_hash as string | null) ?? null;
   }
+  if (!orgId || !stored || !crypto.timingSafeEqual(Buffer.from(stored), Buffer.from(hash))) {
+    return unauthorised();
+  }
+
+  const { data } = await admin.from("organisations").select("id, name, status").eq("id", orgId).maybeSingle();
+  if (!data) return unauthorised();
   if (data.status !== "active") {
     return NextResponse.json({ error: "Organisation is not active" }, { status: 403 });
   }
@@ -57,24 +82,14 @@ export async function resolvePortalOrg(req: Request): Promise<PortalOrg | NextRe
       { status: 403 },
     );
   }
-  // When the key was last used, for the platform's integration panel —
-  // after the response, so a failed stamp can never fail the call.
+  // When the key was last used, for the connection's status — after the
+  // response, so a failed stamp can never fail the call.
   after(async () => {
-    await admin
-      .from("organisations")
-      .update({ integration_key_last_used_at: new Date().toISOString() })
-      .eq("id", data.id);
+    const at = new Date().toISOString();
+    if (keyId) await admin.from("integration_keys").update({ last_used_at: at }).eq("id", keyId);
+    else await admin.from("organisations").update({ integration_key_last_used_at: at }).eq("id", data.id);
   });
-  return { id: data.id, name: data.name };
+  return { id: data.id as string, name: data.name as string, keyId };
 }
 
 export const isOrg = (v: PortalOrg | NextResponse): v is PortalOrg => !(v instanceof NextResponse);
-
-/**
- * A new integration key and the hash that is stored for it. The key is shown
- * once, to the platform admin who issued it, and never stored on this side.
- */
-export function newIntegrationKey(): { key: string; hash: string } {
-  const key = "mca_" + crypto.randomBytes(32).toString("base64url");
-  return { key, hash: crypto.createHash("sha256").update(key).digest("hex") };
-}

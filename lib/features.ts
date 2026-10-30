@@ -174,6 +174,7 @@ export const FEATURES = [
     category: "platform",
     label: "Rostering portal integration",
     isCore: false,
+    hint: "MyRoster, connected by the company's managers under Settings, Integration.",
   },
 ] as const;
 

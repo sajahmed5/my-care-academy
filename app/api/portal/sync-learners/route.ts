@@ -4,6 +4,7 @@ import { resolvePortalOrg, isOrg } from "@/lib/portal-api";
 import { createInvite } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
 import { fetchAll } from "@/lib/fetch-all";
+import type { SyncProblem } from "@/lib/integration-status";
 
 export const dynamic = "force-dynamic";
 // Invites send emails one by one; give the function room to breathe.
@@ -142,6 +143,31 @@ export async function POST(req: Request) {
     acc[r.outcome] = (acc[r.outcome] ?? 0) + 1;
     return acc;
   }, {});
+  // For the company's connection status in Settings: what came across, and
+  // in plain words what didn't (lib/integration-status). One result per row,
+  // in the order sent. Best-effort, like the audit row.
+  const problems: SyncProblem[] = [];
+  results.forEach((r, i) => {
+    if (r.outcome !== "error") return;
+    const email = (learners[i]?.email ?? "").trim().toLowerCase();
+    const wasHere = byRef.has(r.externalRef) || (!!email && byEmail.has(email));
+    const kind: SyncProblem["kind"] = r.error?.startsWith("No email")
+      ? "no_email"
+      : r.error === "externalRef is required"
+        ? "no_ref"
+        : !wasHere
+          ? "invite_failed"
+          : "other";
+    problems.push({ kind, name: learners[i]?.fullName?.trim() || null, externalRef: r.externalRef || null });
+  });
+  await admin.from("integration_sync_runs").insert({
+    organisation_id: org.id,
+    key_id: org.keyId,
+    total: learners.length,
+    counts,
+    problems: problems.slice(0, 500),
+  });
+
   await logAudit({
     organisationId: org.id,
     action: "portal.sync_learners",
