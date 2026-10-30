@@ -47,6 +47,18 @@ PACKAGES.md), all on `quality.audits`.
   one list over time of their QAs, audits, spot checks, concerns and
   compliments (`lib/client-history.ts`), each part only where the package has
   it; low scores, open concerns and spot checks not met stand out.
+- **Monthly governance report** (30 Oct 2026, migration 20261031113000) —
+  `/org/audits/governance?month=YYYY-MM` (Quality → Governance report) and
+  its PDF (`/org/audits/governance/pdf`, `lib/governance-pdf.tsx`), worked
+  out each time from what is recorded (`lib/governance.ts`,
+  `lib/governance-data.ts`): audits done and their scores, what's behind,
+  QA ratings by heading, actions open at the month's end, concerns and
+  compliments (with Complaints & safeguarding), supervisions, appraisals and
+  spot checks (with Staff Audits), and training compliance as it stands. The
+  summary at the top is the one part kept (`governance_reports`): written by
+  a person, or drafted by AI from the figures only — never names — with
+  `askClaudeJson` (feature `governance_summary`, 1.5 times cost), then edited
+  and saved.
 
 ## Today
 

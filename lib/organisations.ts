@@ -64,6 +64,7 @@ export const TIER_DETAILS: Record<
       "Everything in Growth",
       "Complaints, accidents and safeguarding",
       "Client QAs; medication, care plan, infection control, staff file and training audits",
+      "A monthly governance report for CQC's well-led question",
       "Forms, and feedback surveys for families and staff",
       "CQC policies and procedures, with who has read each one",
     ],
