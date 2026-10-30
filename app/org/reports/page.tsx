@@ -48,7 +48,7 @@ const EXPORTS: {
     icon: Users,
   },
   {
-    title: "Every assignment, course by course",
+    title: "All training assigned, course by course",
     body: "One row per carer per course, with status, progress, when it was assigned and when it is due. Sort by any column.",
     href: "/org/learners/statistics",
     cta: "Open every assignment",

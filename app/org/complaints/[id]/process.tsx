@@ -93,7 +93,7 @@ export function ComplaintProcess({
             <div>
               <div className="flex flex-wrap items-baseline gap-x-3">
                 <p className="text-lg font-semibold">
-                  {untriaged ? "Concern waiting for triage" : kindLabel(complaint.kind)}
+                  {untriaged ? "Concern waiting to be looked at" : kindLabel(complaint.kind)}
                   {complaint.aboutName ? ` about ${complaint.aboutName}` : ""}
                 </p>
                 {!untriaged && !closed && <ChangeType complaint={complaint} />}

@@ -30,12 +30,12 @@ export function TriagePanel({ complaint }: { complaint: Complaint }) {
     <Card className="border-violet-200">
       <CardContent className="space-y-3 pt-6">
         <div>
-          <p className="font-medium">Triage this concern</p>
+          <p className="font-medium">Decide what this concern is</p>
           <p className="text-sm text-muted-foreground">
             Decide what it is. Each type has its own process, which starts as soon as you choose. It can be changed later if the facts say otherwise.
           </p>
         </div>
-        <KindChooser complaint={complaint} submitLabel="Triage it" />
+        <KindChooser complaint={complaint} submitLabel="Save" />
       </CardContent>
     </Card>
   );
@@ -54,7 +54,7 @@ export function ChangeType({ complaint }: { complaint: Complaint }) {
   return (
     <div className="w-full space-y-2 rounded-lg border p-3">
       <p className="text-sm text-muted-foreground">
-        It is a {kindLabel(complaint.kind).toLowerCase()} now. Move it to another type if the facts say it was triaged wrongly; everything already recorded stays on it.
+        It is a {kindLabel(complaint.kind).toLowerCase()} now. Move it to another type if the facts say it was put down as the wrong type; everything already recorded stays on it.
       </p>
       <KindChooser complaint={complaint} submitLabel="Change type" onDone={() => setOpen(false)} onCancel={() => setOpen(false)} />
     </div>

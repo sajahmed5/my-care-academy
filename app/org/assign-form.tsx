@@ -69,7 +69,7 @@ export function AssignForm({
     <form action={formAction} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="pathway">Whole pathway (optional)</Label>
+          <Label htmlFor="pathway">A set of courses (optional)</Label>
           <select id="pathway" name="pathway" className={selectClass} defaultValue="">
             <option value="">None</option>
             {pathways.map((p) => (
@@ -125,7 +125,7 @@ export function AssignForm({
           ))}
         </div>
         <p className="text-xs text-muted-foreground">
-          Pick one or more courses (and/or a pathway above). Searching only
+          Pick one or more courses (and/or a set of courses above). Searching only
           hides rows — anything already ticked stays ticked.
         </p>
       </div>

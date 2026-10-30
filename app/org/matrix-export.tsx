@@ -45,7 +45,7 @@ export function MatrixExport({ filename }: { filename: string }) {
   return (
     <div className="flex flex-col items-end gap-1">
       <Button variant="outline" size="sm" onClick={download} disabled={busy} className="min-h-11 sm:min-h-9">
-        {busy ? "Preparing…" : "Training matrix (CSV)"}
+        {busy ? "Preparing…" : "Training matrix (spreadsheet)"}
       </Button>
       <label className="flex min-h-11 items-center gap-2 text-xs text-muted-foreground sm:min-h-0">
         <input

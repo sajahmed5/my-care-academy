@@ -45,7 +45,7 @@ export default async function CoursesAdminPage() {
         <CardHeader>
           <CardTitle>Assign training</CardTitle>
           <CardDescription>
-            Assign one or more courses (or a whole pathway) to selected carers
+            Assign one or more courses (or a whole set of courses) to selected carers
             or everyone. Every assignment gets a due date — it defaults to the
             end of this month.
           </CardDescription>
@@ -65,7 +65,7 @@ export default async function CoursesAdminPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Bulk assign from CSV</CardTitle>
+          <CardTitle>Assign from a spreadsheet (CSV file)</CardTitle>
           <CardDescription>
             Assign many courses to many staff in one upload.
           </CardDescription>

@@ -25,7 +25,7 @@ export default async function ConcernLinkPage() {
       <Card>
         <CardContent className="space-y-4 pt-6 text-sm">
           <p className="text-muted-foreground">
-            Give this address to families and the people you care for — in your service user guide, on letters, or on your website. Anyone with it can raise a concern without signing in. It arrives on your list as a concern waiting for triage, with their contact details, and they are given its reference.
+            Give this address to families and the people you care for — in your service user guide, on letters, or on your website. Anyone with it can raise a concern without signing in. It arrives on your list as a concern waiting to be looked at, with their contact details, and they are given its reference.
           </p>
           {link ? (
             <>

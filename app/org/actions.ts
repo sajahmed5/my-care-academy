@@ -250,10 +250,10 @@ export async function bulkInviteStaffAction(
   try {
     rows = JSON.parse(String(formData.get("rows") ?? "[]"));
   } catch {
-    return { ok: false, error: "Could not read the CSV." };
+    return { ok: false, error: "Could not read the spreadsheet (CSV file)." };
   }
   if (!Array.isArray(rows) || rows.length === 0) {
-    return { ok: false, error: "No rows found in the CSV." };
+    return { ok: false, error: "No rows found in the spreadsheet (CSV file)." };
   }
 
   const admin = createAdminClient();
@@ -376,7 +376,7 @@ export async function assignTrainingAction(
   }
   const courseIds = [...courseIdSet];
   if (courseIds.length === 0) {
-    return { ok: false, error: "Choose at least one course or a pathway." };
+    return { ok: false, error: "Choose at least one course or a set of courses." };
   }
 
   // Resolve the target learners. "All carers" = every active learner in the org
@@ -511,10 +511,10 @@ export async function bulkAssignTrainingAction(
   try {
     rows = JSON.parse(String(formData.get("rows") ?? "[]"));
   } catch {
-    return { ok: false, error: "Could not read the CSV." };
+    return { ok: false, error: "Could not read the spreadsheet (CSV file)." };
   }
   if (!Array.isArray(rows) || rows.length === 0) {
-    return { ok: false, error: "No rows found in the CSV." };
+    return { ok: false, error: "No rows found in the spreadsheet (CSV file)." };
   }
 
   const supabase = await createClient();

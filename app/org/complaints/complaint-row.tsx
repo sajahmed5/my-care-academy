@@ -46,7 +46,7 @@ export function ComplaintRow({
             <div className="flex items-center gap-2 text-xs">
               {stepLabel && <span className="text-muted-foreground">{stepLabel}</span>}
               {isUntriaged(complaint.kind) && complaint.status === "open" && (
-                <span className="rounded-full bg-violet-100 px-2 py-0.5 font-medium text-violet-700">Waiting for triage</span>
+                <span className="rounded-full bg-violet-100 px-2 py-0.5 font-medium text-violet-700">Waiting to be looked at</span>
               )}
               <span className={`rounded-full px-2 py-0.5 font-medium ${STATUS_STYLE[complaint.status] ?? ""}`}>
                 {statusLabel(complaint.status)}

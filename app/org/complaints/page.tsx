@@ -48,7 +48,7 @@ export default async function ComplaintsPage({
     const next = c.status !== "open"
       ? { text: `${c.status === "closed" ? "Closed" : c.status === "withdrawn" ? "Withdrawn" : "Cancelled"}${c.closedOn ? ` on ${c.closedOn}` : ""}.` }
       : isUntriaged(c.kind)
-        ? { text: "Triage it: decide what this is." }
+        ? { text: "Decide what this is." }
         : nextStep(steps, es, { reportedOn: c.reportedOn, completeBy: c.completeBy, closed: false }, today);
     const current = steps.find((s) => s.state === "current");
     return { complaint: c, next, stepLabel: current && !isUntriaged(c.kind) ? `${current.n} of ${steps.length} · ${current.title}` : null };
@@ -90,7 +90,7 @@ export default async function ComplaintsPage({
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <StatTile label="Waiting for triage" value={waiting} icon={Inbox} color="#8b5cf6" href={href({ status: "open", kind: UNTRIAGED })} hint={kind === UNTRIAGED ? "Showing these" : undefined} />
+          <StatTile label="Waiting to be looked at" value={waiting} icon={Inbox} color="#8b5cf6" href={href({ status: "open", kind: UNTRIAGED })} hint={kind === UNTRIAGED ? "Showing these" : undefined} />
           <StatTile label="Open" value={open.length} icon={Clock} color="#f59e0b" href={href({ status: "open", kind })} hint={status === "open" ? "Showing these" : undefined} />
           <StatTile label="Running late" value={late} icon={AlertTriangle} color="#ef4444" hint="Acknowledgement or response past its date" />
           <StatTile label="All" value={complaints.length} icon={FolderOpen} color="#6366f1" href="/org/complaints" hint={status || kind ? "Show all" : "Showing all"} />

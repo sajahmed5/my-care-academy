@@ -381,7 +381,7 @@ export default async function LearnersAdminPage({
         <Card>
           <CardHeader>
             <CardTitle>Bulk import</CardTitle>
-            <CardDescription>Invite many staff from a CSV.</CardDescription>
+            <CardDescription>Invite many staff at once from a spreadsheet (CSV file).</CardDescription>
           </CardHeader>
           <CardContent>
             <CsvImport />

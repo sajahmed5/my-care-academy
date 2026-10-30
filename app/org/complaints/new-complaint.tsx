@@ -64,7 +64,7 @@ export function ConcernForm({
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">What is it?</legend>
             <div className="grid gap-2 sm:grid-cols-2">
-              {[{ value: UNTRIAGED, label: "Not sure yet", hint: "Raise it as a concern, and triage it next" }, ...COMPLAINT_KINDS].map((k) => (
+              {[{ value: UNTRIAGED, label: "Not sure yet", hint: "Raise it as a concern, and decide what it is later" }, ...COMPLAINT_KINDS].map((k) => (
                 <label
                   key={k.value}
                   className={`flex cursor-pointer gap-2 rounded-lg border p-2 text-sm ${kind === k.value ? "border-indigo-300 bg-indigo-50" : "bg-background"}`}
