@@ -38,6 +38,7 @@ export function StarBank({ initialTotal }: { initialTotal: number }) {
   const [total, setTotal] = useState(initialTotal);
   const [flyers, setFlyers] = useState<Flyer[]>([]);
   const [popping, setPopping] = useState(false);
+  const [open, setOpen] = useState(false);
   const pillRef = useRef<HTMLSpanElement>(null);
   const nextId = useRef(0);
 
@@ -95,15 +96,37 @@ export function StarBank({ initialTotal }: { initialTotal: number }) {
 
   return (
     <>
-      <span
-        ref={pillRef}
-        title={`${total} stars — 1 per correct answer, up to 20 per course assessment plus in-course questions`}
-        className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-sm font-semibold text-amber-700"
-        style={popping ? { animation: "star-pop 0.32s ease-out" } : undefined}
-        aria-label={`Star bank: ${total} stars`}
-      >
-        <Star className="size-4" fill={GLYPH} stroke={GLYPH} />
-        {total}
+      {/* What the stars are, a tap away (ease-of-use review, 30 Oct 2026):
+          a bare "⭐ 32" in the bar explained itself only on hover. */}
+      <span className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          onBlur={() => setOpen(false)}
+          onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+          aria-expanded={open}
+          aria-label={`Your stars: ${total}. What are these?`}
+        >
+          <span
+            ref={pillRef}
+            className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-sm font-semibold text-amber-700"
+            style={popping ? { animation: "star-pop 0.32s ease-out" } : undefined}
+          >
+            <Star className="size-4" fill={GLYPH} stroke={GLYPH} />
+            {total}
+            <span className="hidden font-medium sm:inline">{total === 1 ? "star" : "stars"}</span>
+          </span>
+        </button>
+        {open && (
+          <span
+            role="status"
+            className="absolute right-0 top-full z-40 mt-2 block w-64 rounded-lg border bg-card p-3 text-left text-sm font-normal text-card-foreground shadow-lg"
+          >
+            <span className="block font-medium">Your stars</span>
+            You earn a star for each right answer in your training: up to 20 in each course&apos;s test, and more for the questions along
+            the way. They show how much you&apos;ve learned.
+          </span>
+        )}
       </span>
 
       {flyers.length > 0 && (
