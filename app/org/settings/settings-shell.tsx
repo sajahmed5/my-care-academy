@@ -82,6 +82,17 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       },
     ],
   },
+  {
+    title: "Bespoke reports",
+    features: ["reports.bespoke"],
+    pages: [
+      {
+        href: "/org/settings/reports",
+        label: "Who sees them, and emails",
+        hint: "Whether office staff see each report, and who it's emailed to, how often and as a PDF or Excel.",
+      },
+    ],
+  },
 ];
 
 /** The groups this company's package has. */
