@@ -56,7 +56,7 @@ export function AddLogLine({
     }
   }
 
-  const visible = fields.filter((f) => f.type !== "signature" && isFieldVisible(f, values));
+  const visible = fields.filter((f) => f.type !== "signature" && f.type !== "heading" && isFieldVisible(f, values));
 
   return (
     <Card>

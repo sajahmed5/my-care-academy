@@ -43,3 +43,17 @@ describe("responseRows dates", () => {
     expect(responseRows(fields, { d: "2026-10-30" })[0].value).toBe("30 October 2026");
   });
 });
+
+describe("responseRows headings", () => {
+  const fields: FormField[] = [
+    { id: "h", label: "Mobility", type: "heading", options: [], required: false, conditional: null, sort_order: 0 },
+    { id: "q", label: "Aid", type: "text", options: [], required: false, conditional: null, sort_order: 1 },
+  ];
+  it("leaves headings out unless asked, then marks them", () => {
+    expect(responseRows(fields, { q: "Frame" }).map((r) => r.label)).toEqual(["Aid"]);
+    expect(responseRows(fields, { q: "Frame" }, { withHeadings: true })).toEqual([
+      { fieldId: "h", label: "Mobility", value: "", heading: true },
+      { fieldId: "q", label: "Aid", value: "Frame", filePath: undefined },
+    ]);
+  });
+});

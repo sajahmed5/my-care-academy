@@ -117,6 +117,14 @@ export function FormComplete({
       )}
 
       {visible.map((f) => {
+        if (f.type === "heading") {
+          return (
+            <div key={f.id} className="space-y-1 pt-4 first:pt-0">
+              <h3 className="text-base font-semibold">{f.label}</h3>
+              {f.hint && <p className="text-sm text-muted-foreground">{f.hint}</p>}
+            </div>
+          );
+        }
         const flagged = missing.has(f.label);
         const label = (
           <Label htmlFor={`q-${f.id}`} className={flagged ? "text-rose-600" : undefined}>
@@ -128,6 +136,7 @@ export function FormComplete({
           <Card key={f.id}>
             <CardContent className="space-y-2 pt-6">
               {label}
+              {f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>}
               {f.type === "text" && (
                 <Input id={`q-${f.id}`} value={String(values[f.id] ?? "")} onChange={(e) => set(f.id, e.target.value)} />
               )}

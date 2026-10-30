@@ -102,7 +102,7 @@ export interface LogCell {
 export function logColumns(fields: FormField[]): { label: string; fields: FormField[] }[] {
   const cols: { label: string; fields: FormField[] }[] = [];
   for (const f of [...fields].sort((a, b) => a.sort_order - b.sort_order)) {
-    if (f.type === "signature") continue;
+    if (f.type === "signature" || f.type === "heading") continue;
     const same = cols.find((c) => c.label === f.label);
     if (same) same.fields.push(f);
     else cols.push({ label: f.label, fields: [f] });

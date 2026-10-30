@@ -76,3 +76,14 @@ describe("cleanFields", () => {
     expect(cleanFields("x")).toEqual([]);
   });
 });
+
+describe("headings and guidance", () => {
+  it("keeps a hint, and a heading is never required", () => {
+    const [h, q] = cleanFields([
+      { id: "h", label: "Mobility", type: "heading", required: true, hint: " How they move around " },
+      { id: "q", label: "Walking aid", type: "text", hint: "" },
+    ]);
+    expect(h).toMatchObject({ type: "heading", required: false, hint: "How they move around" });
+    expect(q.hint).toBeUndefined();
+  });
+});

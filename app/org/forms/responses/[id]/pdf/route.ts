@@ -39,7 +39,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     filledBy: record.user_name,
     submittedAt: record.submitted_at,
     version: record.template_version,
-    rows: responseRows(record.fields, record.answers),
+    rows: responseRows(record.fields, record.answers, { withHeadings: true }),
     signedName: record.signed_name,
     signatures: record.signatures,
     meta: record.review_due

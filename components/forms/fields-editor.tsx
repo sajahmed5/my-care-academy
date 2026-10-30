@@ -85,6 +85,13 @@ export function FieldsEditor({ fields, onChange }: { fields: FormField[]; onChan
               <Switch checked={f.required} onCheckedChange={(v) => update(i, { required: !!v })} />
               Required
             </label>
+            <Input
+              aria-label={`Field ${i + 1} guidance`}
+              className="sm:max-w-md"
+              placeholder={f.type === "heading" ? "Guidance under the heading (optional)" : "Guidance under the question (optional)"}
+              value={f.hint ?? ""}
+              onChange={(e) => update(i, { hint: e.target.value || undefined })}
+            />
             {f.type === "number" && (
               <span className="flex items-center gap-2 text-sm text-muted-foreground">
                 Safe range

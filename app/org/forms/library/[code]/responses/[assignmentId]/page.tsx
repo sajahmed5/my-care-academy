@@ -31,7 +31,7 @@ export default async function FormResponsePage({
   if (!assignment || !response) notFound();
 
   const back = `/org/forms/library/${encodeURIComponent(assignment.template_code)}`;
-  const rows = responseRows(assignment.template.fields, response.answers);
+  const rows = responseRows(assignment.template.fields, response.answers, { withHeadings: true });
   const revised = response.template_version !== assignment.template.version;
 
   return (
@@ -65,7 +65,10 @@ export default async function FormResponsePage({
         <Card>
           <CardContent className="pt-6">
             <dl className="divide-y">
-              {rows.map((r) => (
+              {rows.map((r) =>
+                r.heading ? (
+                  <h3 key={r.fieldId} className="pb-1 pt-5 text-base font-semibold first:pt-0">{r.label}</h3>
+                ) : (
                 <div key={r.fieldId} className="space-y-1 py-3 first:pt-0 last:pb-0">
                   <dt className={`text-sm font-medium ${r.removed ? "text-muted-foreground italic" : ""}`}>{r.label}</dt>
                   <dd className="flex flex-wrap items-center gap-2 whitespace-pre-wrap text-sm">
@@ -73,7 +76,8 @@ export default async function FormResponsePage({
                     {r.filePath && <ViewFile path={r.filePath} />}
                   </dd>
                 </div>
-              ))}
+                ),
+              )}
             </dl>
           </CardContent>
         </Card>

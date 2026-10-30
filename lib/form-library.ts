@@ -379,6 +379,8 @@ export interface ResponseRow {
   removed?: boolean;
   /** A file answer: where it is stored, for a "View file" link. */
   filePath?: string;
+  /** A section heading rather than a question; only with { withHeadings }. */
+  heading?: boolean;
 }
 
 /**
@@ -386,7 +388,11 @@ export interface ResponseRow {
  * template only keeps its current questions, so an answer whose question has
  * since been removed is still shown, at the end, rather than silently lost.
  */
-export function responseRows(fields: FormField[], answers: Record<string, unknown>): ResponseRow[] {
+export function responseRows(
+  fields: FormField[],
+  answers: Record<string, unknown>,
+  { withHeadings = false }: { withHeadings?: boolean } = {},
+): ResponseRow[] {
   const fileOf = (v: unknown) =>
     v && typeof v === "object" && !Array.isArray(v) && typeof (v as { file?: unknown }).file === "string"
       ? (v as { file: string; name?: string })
@@ -400,8 +406,9 @@ export function responseRows(fields: FormField[], answers: Record<string, unknow
   // A conditional question that was never shown to them is not a blank answer.
   const rows: ResponseRow[] = [...fields]
     .sort((a, b) => a.sort_order - b.sort_order)
-    .filter((f) => isFieldVisible(f, answers))
+    .filter((f) => isFieldVisible(f, answers) && (withHeadings || f.type !== "heading"))
     .map((f) => {
+      if (f.type === "heading") return { fieldId: f.id, label: f.label, value: "", heading: true };
       const v = answers[f.id];
       // A date reads as a date; pinned to noon so no timezone can move it.
       const value =
@@ -459,7 +466,7 @@ export function pruneAnswers(
 ): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const f of fields) {
-    if (!isFieldVisible(f, answers)) continue;
+    if (f.type === "heading" || !isFieldVisible(f, answers)) continue;
     if (answers[f.id] !== undefined) out[f.id] = answers[f.id];
   }
   return out;

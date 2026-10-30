@@ -26,7 +26,7 @@ export default async function FormRecordPage({ params }: { params: Promise<{ id:
   const record = await loadRecord(supabase, id);
   if (!record) notFound();
 
-  const rows = responseRows(record.fields, record.answers);
+  const rows = responseRows(record.fields, record.answers, { withHeadings: true });
   const revised = record.template_version !== record.current_version;
   const back =
     record.subject === "client" && record.client_id
@@ -91,7 +91,10 @@ export default async function FormRecordPage({ params }: { params: Promise<{ id:
         <Card>
           <CardContent className="pt-6">
             <dl className="divide-y">
-              {rows.map((r) => (
+              {rows.map((r) =>
+                r.heading ? (
+                  <h3 key={r.fieldId} className="pb-1 pt-5 text-base font-semibold first:pt-0">{r.label}</h3>
+                ) : (
                 <div key={r.fieldId} className="space-y-1 py-3 first:pt-0 last:pb-0">
                   <dt className={`text-sm font-medium ${r.removed ? "italic text-muted-foreground" : ""}`}>{r.label}</dt>
                   <dd className="flex flex-wrap items-center gap-2 whitespace-pre-wrap text-sm">
@@ -99,7 +102,8 @@ export default async function FormRecordPage({ params }: { params: Promise<{ id:
                     {r.filePath && <ViewFile path={r.filePath} />}
                   </dd>
                 </div>
-              ))}
+                ),
+              )}
             </dl>
           </CardContent>
         </Card>
