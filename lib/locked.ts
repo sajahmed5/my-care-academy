@@ -171,6 +171,16 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
       "A practical assessment on the day, and a certificate on the same training matrix",
     ],
   },
+  "reports.bespoke": {
+    area: "Reports",
+    home: "/org/reports",
+    heading: "Reports built for you, within 10 working days",
+    bullets: [
+      "Tell us what you need to know, who it's for and how often",
+      "We build it within 10 working days, and you can ask for as many as you like",
+      "Each request tracked from asked to ready, with a conversation with us on it",
+    ],
+  },
   "platform.white_label": {
     area: "Account",
     home: "/org/billing",
