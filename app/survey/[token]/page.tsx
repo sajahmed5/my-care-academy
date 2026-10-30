@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { orgBranding } from "@/lib/branding";
+import { BrandStyle } from "@/components/brand-style";
 import { BrandMark } from "@/components/brand-mark";
 import { SurveyForm } from "./survey-form";
 import { resolveSurveyToken } from "./load";
@@ -26,6 +27,7 @@ export default async function SurveyPage({ params }: { params: Promise<{ token: 
   return (
     <main className="mx-auto min-h-svh max-w-2xl space-y-6 px-4 py-10">
       <div className="inline-flex rounded-lg bg-white px-3 py-2 shadow-sm">
+        <BrandStyle colour={branding?.colour} />
         <BrandMark logoUrl={branding?.logoUrl} orgName={branding?.name} width={140} />
       </div>
       <div className="space-y-1">

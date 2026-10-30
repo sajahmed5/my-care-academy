@@ -21,8 +21,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ConsoleUsers, type ConsoleUser } from "./console-users";
-import { LogoCard } from "./logo-card";
-import { orgBranding } from "@/lib/branding";
 import { hasFeature } from "@/lib/entitlements";
 import { formatDate } from "@/lib/dates";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -105,8 +103,7 @@ export default async function AccountPage({
   }));
 
   const admin = createAdminClient();
-  const [branding, whiteLabel, ai, aiMonth] = await Promise.all([
-    orgBranding(context.organisationId),
+  const [whiteLabel, ai, aiMonth] = await Promise.all([
     hasFeature(context, "platform.white_label"),
     aiStatus(admin, context.organisationId!),
     monthCharge(admin, context.organisationId!),
@@ -180,28 +177,22 @@ export default async function AccountPage({
           </CardContent>
         </Card>
 
-        {/* Your logo (white-label) */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your logo</CardTitle>
-            <CardDescription>
-              Shown on your certificates, your carers&apos; learning portal and your copy of the policies.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {whiteLabel ? (
-              <LogoCard logoUrl={branding?.logoUrl ?? null} orgName={branding?.name ?? "Your organisation"} />
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Your own logo is included in Enterprise.{" "}
+        {/* Your logo and colour (white label) moved to Settings on 31 Oct
+            2026; without it, this is where a manager learns it exists. */}
+        {!whiteLabel && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Your logo and colour</CardTitle>
+              <CardDescription>
+                Your own logo and colour in place of ours are included in Enterprise.{" "}
                 <Link href="/org/billing?package=full#change" className="font-medium text-primary hover:underline">
                   Ask to move to Enterprise
                 </Link>
                 .
-              </p>
-            )}
-          </CardContent>
-        </Card>
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        )}
 
         {/* AI */}
         <Card>

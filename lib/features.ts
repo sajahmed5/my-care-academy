@@ -165,9 +165,9 @@ export const FEATURES = [
   {
     key: "platform.white_label",
     category: "platform",
-    label: "White-label logo",
+    label: "White label",
     isCore: false,
-    hint: "The organisation's logo on its certificates, menu, policies and surveys.",
+    hint: "The organisation's logo and colour in place of ours. Set up by its managers under Settings, White label.",
   },
   {
     key: "platform.portal_api",

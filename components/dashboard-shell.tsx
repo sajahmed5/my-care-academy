@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 import { orgBranding } from "@/lib/branding";
 import { TopNav } from "@/components/top-nav";
+import { BrandStyle } from "@/components/brand-style";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { loadBadgeData, loadStarTotal } from "@/lib/learner-data";
 import { deriveNotifications, unreadCount } from "@/lib/notifications";
@@ -98,6 +99,8 @@ export async function DashboardShell({
   const learner = (learn && isStaffRole(context.role)) || context.role === "learner";
   return (
     <div className="flex min-h-svh w-full flex-col">
+      {/* The company's colour on its buttons and menu, with white label. */}
+      <BrandStyle colour={branding?.colour} />
       {/* The menu across the top — every role, every signed-in page. It was a
           left-hand panel until 27 Oct 2026. */}
       <TopNav
@@ -144,6 +147,14 @@ export async function DashboardShell({
           clear of the last thing on the page — e.g. a course's Next button.
           On a phone the button follows the page instead of floating. */}
       <main className="min-w-0 flex-1 px-4 pt-6 pb-8 sm:px-6 sm:pt-8 sm:pb-24">{children}</main>
+
+      {/* With white label our name stays, small, at the foot (INTEGRATION-
+          WHITE-LABEL.md). */}
+      {(branding?.logoUrl || branding?.colour) && (
+        <p data-print="hide" className="px-4 pb-6 text-center text-xs text-muted-foreground sm:-mt-16 sm:px-6">
+          Powered by My Care Academy
+        </p>
+      )}
 
       {/* Always-visible "Report an issue" widget — every role, every page. */}
       <ReportWidget />

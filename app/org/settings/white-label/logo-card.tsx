@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { SaveState } from "@/app/platform/actions";
-import { removeOrgLogoAction, uploadOrgLogoAction } from "./logo-actions";
+import { removeOrgLogoAction, uploadOrgLogoAction } from "./actions";
 
 /** Upload, replace or remove the organisation's logo. */
 export function LogoCard({ logoUrl, orgName }: { logoUrl: string | null; orgName: string }) {

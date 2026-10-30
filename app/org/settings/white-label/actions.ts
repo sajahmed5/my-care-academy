@@ -6,13 +6,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeatureForOrg } from "@/lib/entitlements";
 import { logAudit } from "@/lib/audit";
 import { LOGO_BUCKET, LOGO_MAX_BYTES, LOGO_TYPES } from "@/lib/branding";
+import { normaliseHex } from "@/lib/brand-colour";
 import type { SaveState } from "@/app/platform/actions";
 
 /**
- * The organisation's logo, set by a manager on the Account page (white-label,
- * ROADMAP §2). Written as the service role into a public bucket; the
- * previous file goes when a new one replaces it, so the bucket holds one logo
- * per organisation.
+ * The organisation's logo, set by a manager in Settings, White label (on
+ * the Account page until 31 Oct 2026). Written as the service role into a
+ * public bucket; the previous file goes when a new one replaces it, so the
+ * bucket holds one logo per organisation.
  */
 export async function uploadOrgLogoAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
   const context = await requireRole("org_admin");
@@ -58,6 +59,27 @@ export async function removeOrgLogoAction(): Promise<SaveState> {
   if (error) return { ok: false, error: error.message };
   if (previous) await admin.storage.from(LOGO_BUCKET).remove([previous]);
   await logAudit({ context, action: "organisation.logo_removed", entity: "organisation", entityId: orgId });
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+/**
+ * The company's colour, or our own again (null). Only a real colour is
+ * stored; how readable it is decides how it's used (lib/brand-colour), never
+ * whether it's allowed.
+ */
+export async function saveBrandColourAction(colour: string | null): Promise<SaveState> {
+  const context = await requireRole("org_admin");
+  const orgId = context.organisationId!;
+  const admin = createAdminClient();
+  if (!(await hasFeatureForOrg(admin, orgId, "platform.white_label"))) {
+    return { ok: false, error: "Your own colour is not included in your package." };
+  }
+  const value = colour === null ? null : normaliseHex(colour);
+  if (colour !== null && !value) return { ok: false, error: "That isn't a colour. Use the picker, or a code like #1d4ed8." };
+  const { error } = await admin.from("organisations").update({ brand_colour: value }).eq("id", orgId);
+  if (error) return { ok: false, error: error.message };
+  await logAudit({ context, action: value ? "organisation.colour_set" : "organisation.colour_removed", entity: "organisation", entityId: orgId, detail: { colour: value } });
   revalidatePath("/", "layout");
   return { ok: true };
 }
