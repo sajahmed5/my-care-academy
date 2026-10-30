@@ -252,5 +252,20 @@ export function progressOf(c: { status: string }): CandidateProgress {
 /** Where people heard about the job, offered when adding a candidate. */
 export const SOURCES = ["Indeed", "Facebook", "Referral", "Our website", "Job centre", "Walk-in", "Other"];
 
-/** The roles people apply for, offered when adding a candidate. */
-export const ROLES = ["Care assistant", "Senior carer", "Care coordinator", "Office staff"];
+/** Our job titles, until a company names its own (issue #83). */
+export const DEFAULT_JOB_TITLES = ["Care assistant", "Senior carer", "Care coordinator", "Office staff"];
+export const MAX_JOB_TITLES = 12;
+
+/**
+ * A company's job titles (Settings → Recruitment): what it saved, tidied, or
+ * ours when it never has. The first is its main title, used wherever a
+ * candidate has no job of their own.
+ */
+export function jobTitlesOf(raw: unknown): string[] {
+  const list = Array.isArray(raw)
+    ? raw.map((t) => String(t ?? "").replace(/\s+/g, " ").trim().slice(0, 60)).filter(Boolean)
+    : [];
+  const seen = new Set<string>();
+  const clean = list.filter((t) => !seen.has(t.toLowerCase()) && !!seen.add(t.toLowerCase())).slice(0, MAX_JOB_TITLES);
+  return clean.length ? clean : DEFAULT_JOB_TITLES;
+}

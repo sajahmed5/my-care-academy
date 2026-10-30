@@ -1,7 +1,7 @@
 import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
-import { RECRUITMENT_STEPS, settingsFromRow } from "@/lib/recruitment";
+import { RECRUITMENT_STEPS, jobTitlesOf, settingsFromRow } from "@/lib/recruitment";
 import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { SettingsForm } from "./settings-form";
 import { letterDefaultsFromRow } from "@/lib/recruitment-letters";
@@ -28,7 +28,7 @@ export default async function RecruitmentSettingsPage() {
           onHire: data?.welcome_on_hire !== false,
           guide: (data?.welcome_guide as string | null) ?? DEFAULT_WELCOME_GUIDE,
           contacts: sanitiseContacts(data?.welcome_contacts),
-        }} switchable={switchable} canEdit />
+        }} switchable={switchable} jobTitles={jobTitlesOf(data?.job_titles)} canEdit />
     </SettingsShell>
   );
 }

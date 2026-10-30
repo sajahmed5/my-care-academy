@@ -1,5 +1,5 @@
 import { GENDER_OPTIONS, LANGUAGE_OPTIONS, PREFER_NOT_TO_SAY, tidyLanguage } from "@/lib/demographics";
-import { ROLES, SOURCES } from "@/lib/recruitment";
+import { DEFAULT_JOB_TITLES, SOURCES } from "@/lib/recruitment";
 import { formatDate } from "@/lib/dates";
 /**
  * Brought across from MyRoster (src/lib/recruitment/applicationForm.ts) on
@@ -119,7 +119,7 @@ export const APPLICATION_SECTIONS: FormSection[] = [
   {
     id: "work", title: "Working with us",
     fields: [
-      { id: "roleApplied", label: "Which job are you applying for?", type: "select", required: true, options: ROLES },
+      { id: "roleApplied", label: "Which job are you applying for?", type: "select", required: true, options: DEFAULT_JOB_TITLES },
       { id: "heardFrom", label: "Where did you hear about this job?", type: "select", options: SOURCES },
       { id: "rightToWork", label: "Do you have the legal right to work in the UK?", type: "yesno", required: true, help: "We will ask for proof later — a passport, or a share code from gov.uk." },
       { id: "drivingLicence", label: "Do you hold a full UK driving licence?", type: "yesno", required: true },
@@ -441,11 +441,17 @@ export function sanitiseAnswers(raw: unknown, sections: FormSection[] = APPLICAT
   return sanitiseWith(sections, raw);
 }
 
-/** Our sections with a company's own questions before the declaration (release 7). */
-export function applicationSections(company: FormSection | null): FormSection[] {
-  if (!company) return APPLICATION_SECTIONS;
-  const at = APPLICATION_SECTIONS.findIndex((s) => s.id === "declaration");
-  return [...APPLICATION_SECTIONS.slice(0, at), company, ...APPLICATION_SECTIONS.slice(at)];
+/**
+ * Our sections with a company's own questions before the declaration
+ * (release 7), and its own job titles to choose from (issue #83).
+ */
+export function applicationSections(company: FormSection | null, jobTitles?: string[]): FormSection[] {
+  const ours = jobTitles?.length
+    ? APPLICATION_SECTIONS.map((s) => ({ ...s, fields: s.fields.map((f) => (f.id === "roleApplied" ? { ...f, options: jobTitles } : f)) }))
+    : APPLICATION_SECTIONS;
+  if (!company) return ours;
+  const at = ours.findIndex((s) => s.id === "declaration");
+  return [...ours.slice(0, at), company, ...ours.slice(at)];
 }
 
 /** The same rule for any form built from these field types (the referee form uses it). */

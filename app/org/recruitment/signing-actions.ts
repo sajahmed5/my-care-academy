@@ -6,7 +6,7 @@ import { requireFeature } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { inviteCandidate } from "@/lib/candidate-account";
-import { progress, settingsFromRow, type CandidateDocRecord } from "@/lib/recruitment";
+import { jobTitlesOf, progress, settingsFromRow, type CandidateDocRecord } from "@/lib/recruitment";
 import { emailDocumentsReady, wordingInForce } from "@/lib/signing";
 import {
   DEFAULT_SIGNING_DOCUMENTS,
@@ -95,7 +95,7 @@ export async function sendForSigningAction(candidateId: string, startDate: strin
 
   const wording = await wordingInForce(admin, orgId);
   const company = (c.organisations as unknown as { name: string } | null)?.name ?? "";
-  const position = String((offer?.fields as { position?: string } | null)?.position ?? c.role_applied ?? "Carer");
+  const position = String((offer?.fields as { position?: string } | null)?.position ?? c.role_applied ?? jobTitlesOf(settingsRow?.job_titles)[0]);
   const ukDate = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
   const values = {
     candidateName: c.full_name as string,

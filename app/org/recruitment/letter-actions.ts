@@ -8,7 +8,7 @@ import { logAudit } from "@/lib/audit";
 import { sendEmail } from "@/lib/email";
 import { askClaudeJson } from "@/lib/ai";
 import { inviteCandidate } from "@/lib/candidate-account";
-import { progress, settingsFromRow, type CandidateDocRecord } from "@/lib/recruitment";
+import { jobTitlesOf, progress, settingsFromRow, type CandidateDocRecord } from "@/lib/recruitment";
 import type { Answers } from "@/lib/recruitment-application";
 import {
   OFFER_DRAFT_SCHEMA,
@@ -48,8 +48,8 @@ async function load(admin: Admin, context: UserContext, candidateId: string) {
 }
 
 async function letterSettings(admin: Admin, orgId: string) {
-  const { data } = await admin.from("recruitment_settings").select("letter_settings").eq("organisation_id", orgId).maybeSingle();
-  return sanitiseLetterSettings(data?.letter_settings);
+  const { data } = await admin.from("recruitment_settings").select("letter_settings, job_titles").eq("organisation_id", orgId).maybeSingle();
+  return { ...sanitiseLetterSettings(data?.letter_settings), mainJobTitle: jobTitlesOf(data?.job_titles)[0] };
 }
 const companyReasons = async (admin: Admin, orgId: string) => reasonsFor(await letterSettings(admin, orgId));
 
@@ -191,14 +191,15 @@ export async function sendRejectionAction(candidateId: string, raw: unknown, sen
   const c = await load(admin, context, candidateId);
   if (!c) return { ok: false, error: "Candidate not found." };
   if (c.status === "hired") return { ok: false, error: "They've been hired." };
-  const reasons = await companyReasons(admin, c.organisation_id as string);
+  const settings = await letterSettings(admin, c.organisation_id as string);
+  const reasons = reasonsFor(settings);
   const fields = sanitiseRejection(raw, reasons);
   let sentHtml: string | null = null;
   if (sendLetter) {
     if (!c.email) return { ok: false, error: "There's no email address for them. Close it without a letter." };
     const problems = rejectionProblems(fields);
     if (problems.length) return { ok: false, error: problems.join(" ") };
-    const letter = buildRejection({ fields, candidateName: c.full_name as string, companyName: c.company, position: c.role_applied as string | null, todayIso: today(), reasons });
+    const letter = buildRejection({ fields, candidateName: c.full_name as string, companyName: c.company, position: (c.role_applied as string | null) ?? settings.mainJobTitle, todayIso: today(), reasons });
     sentHtml = letterHtml(letter);
     const sent = await sendEmail({ to: c.email as string, subject: letter.subject, html: sentHtml, replyTo: context.email ?? undefined, organisationId: context.organisationId });
     if (!sent) return { ok: false, error: "The email couldn't be sent. Try again." };

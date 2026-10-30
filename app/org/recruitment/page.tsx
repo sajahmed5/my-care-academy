@@ -9,6 +9,7 @@ import {
   currentStage,
   nextMove,
   progress,
+  jobTitlesOf,
   settingsFromRow,
   type CandidateDocRecord,
 } from "@/lib/recruitment";
@@ -90,7 +91,7 @@ export default async function RecruitmentPage({ searchParams }: { searchParams: 
             Add a candidate
           </summary>
           <div className="border-t px-5 pb-5 pt-4">
-            <AddCandidateForm />
+            <AddCandidateForm jobTitles={jobTitlesOf(settingsRow?.job_titles)} />
           </div>
         </details>
 

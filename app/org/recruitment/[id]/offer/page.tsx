@@ -4,7 +4,7 @@ import { requireFeature } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { aiStatus } from "@/lib/ai";
 import { formatDate } from "@/lib/dates";
-import { progress, settingsFromRow, type CandidateDocRecord } from "@/lib/recruitment";
+import { jobTitlesOf, progress, settingsFromRow, type CandidateDocRecord } from "@/lib/recruitment";
 import { letterDefaultsFromRow, sanitiseLetterSettings, sanitiseOffer, type OfferFields } from "@/lib/recruitment-letters";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { OfferForm } from "./offer-form";
@@ -36,7 +36,7 @@ export default async function OfferPage({ params }: { params: Promise<{ id: stri
   const defaults = letterDefaultsFromRow(settingsRow);
   const initial: OfferFields = letter?.fields
     ? sanitiseOffer(letter.fields)
-    : sanitiseOffer({ position: c.role_applied ?? "Carer", ...defaults, whyHired: "" });
+    : sanitiseOffer({ position: c.role_applied ?? jobTitlesOf(settingsRow?.job_titles)[0], ...defaults, whyHired: "" });
   const interviewConfirmed = steps.find((s) => s.key === "interview")?.state === "confirmed";
 
   return (

@@ -4,13 +4,14 @@ import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ROLES, SOURCES } from "@/lib/recruitment";
+import { SOURCES } from "@/lib/recruitment";
 import { addCandidateAction } from "./actions";
 
 const selectClass =
   "flex h-11 w-full rounded-lg border border-input bg-background px-3 text-sm sm:h-9";
 
-export function AddCandidateForm() {
+/** jobTitles: the company's own, main title first (Settings → Recruitment). */
+export function AddCandidateForm({ jobTitles }: { jobTitles: string[] }) {
   const [state, formAction, pending] = useActionState(addCandidateAction, {});
 
   return (
@@ -37,8 +38,8 @@ export function AddCandidateForm() {
             form, not when someone is added. */}
         <div className="space-y-2">
           <Label htmlFor="role_applied">Role</Label>
-          <select id="role_applied" name="role_applied" defaultValue={ROLES[0]} className={selectClass}>
-            {ROLES.map((r) => (
+          <select id="role_applied" name="role_applied" defaultValue={jobTitles[0]} className={selectClass}>
+            {jobTitles.map((r) => (
               <option key={r} value={r}>{r}</option>
             ))}
           </select>

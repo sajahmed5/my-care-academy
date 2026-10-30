@@ -40,9 +40,11 @@ export function SettingsForm({
   letters,
   welcome,
   switchable,
+  jobTitles,
   canEdit,
 }: {
   settings: RecruitmentSettings;
+  jobTitles: string[];
   letters: LetterDefaults;
   welcome: { onHire: boolean; guide: string; contacts: WelcomeContact[] };
   switchable: { key: string; label: string; hint: string }[];
@@ -73,6 +75,23 @@ export function SettingsForm({
             {s.hint}
           </Option>
         ))}
+      </fieldset>
+      <fieldset className="space-y-3">
+        <legend className="mb-2 font-semibold">Job titles</legend>
+        <p className="text-sm text-muted-foreground">
+          What you call the jobs you recruit for, one on each line: for example Support worker rather than Care assistant. People choose from these on
+          the application form, and so do you when you add someone. The first is your main one: offer letters, rejection letters and the documents to
+          sign use it when a candidate hasn&apos;t picked a job. Changing a title here doesn&apos;t change anyone already added; you can change the job
+          on their offer letter.
+        </p>
+        <textarea
+          name="job_titles"
+          defaultValue={jobTitles.join("\n")}
+          disabled={!canEdit}
+          rows={Math.max(4, jobTitles.length + 1)}
+          aria-label="Job titles, one on each line"
+          className="w-full rounded-lg border bg-background p-3 text-sm leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        />
       </fieldset>
       <fieldset className="space-y-3">
         <legend className="mb-2 font-semibold">Offer letters</legend>

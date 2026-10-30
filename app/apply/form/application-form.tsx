@@ -35,6 +35,7 @@ export function ApplicationForm({ token }: { token: string }) {
   const [firstName, setFirstName] = useState("");
   const [answers, setAnswers] = useState<Answers>({});
   const [companyQuestions, setCompanyQuestions] = useState<FormSection | null>(null);
+  const [jobTitles, setJobTitles] = useState<string[] | undefined>(undefined);
   const [step, setStep] = useState(0); // APPLICATION_SECTIONS.length = review & sign
   const [errors, setErrors] = useState<FieldError[]>([]);
   const [problems, setProblems] = useState<Record<string, FieldError[]>>({});
@@ -58,6 +59,7 @@ export function ApplicationForm({ token }: { token: string }) {
         setOfficeNote(typeof json.officeNote === "string" && json.officeNote.trim() ? json.officeNote : null);
         setFirstName(json.firstName ?? "");
         setCompanyQuestions(json.company_questions ?? null);
+        setJobTitles(json.job_titles);
         if (json.status === "submitted") { setState("submitted"); return; }
         latest.current = json.answers ?? {};
         setAnswers(latest.current);
@@ -106,7 +108,7 @@ export function ApplicationForm({ token }: { token: string }) {
     return () => { document.removeEventListener("visibilitychange", onHide); window.removeEventListener("beforeunload", onUnload); };
   }, [save]);
 
-  const sections = useMemo(() => applicationSections(companyQuestions), [companyQuestions]);
+  const sections = useMemo(() => applicationSections(companyQuestions, jobTitles), [companyQuestions, jobTitles]);
   const onReview = step >= sections.length;
   const section = onReview ? null : sections[step];
   const gaps = useMemo(() => employmentGaps(answers, todayIso()), [answers]);

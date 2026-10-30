@@ -27,6 +27,8 @@ import { sendEmail } from "@/lib/email";
 import { emailButton, emailLayout, esc } from "@/lib/email-layout";
 import {
   RECRUITMENT_STEPS,
+  DEFAULT_JOB_TITLES,
+  jobTitlesOf,
   notReadyMessage,
   outstandingSteps,
   progress,
@@ -633,6 +635,12 @@ export async function hireCandidateAction(
   return { ok: true, message: said.join(" ") };
 }
 
+/** One title a line, tidied; ours unchanged (or nothing) is saved as null, so it follows ours. */
+function jobTitlesToSave(text: string): string[] | null {
+  const titles = jobTitlesOf(text.split("\n"));
+  return titles.join("\n") === DEFAULT_JOB_TITLES.join("\n") ? null : titles;
+}
+
 /** The company's recruitment settings. Managers only. */
 export async function saveRecruitmentSettingsAction(
   _prev: { ok?: boolean; error?: string },
@@ -660,6 +668,7 @@ export async function saveRecruitmentSettingsAction(
     offer_signatory_title: words("offer_signatory_title", 80),
     offer_hours_line: words("offer_hours_line", 500),
     offer_pay_line: words("offer_pay_line", 300),
+    job_titles: jobTitlesToSave(String(formData.get("job_titles") ?? "")),
     welcome_on_hire: formData.get("welcome_on_hire") === "on",
     // Our guide unchanged is stored as nothing, so improvements to it reach them.
     welcome_guide: guide && guide !== DEFAULT_WELCOME_GUIDE.trim() ? guide : null,

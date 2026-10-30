@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
+import { jobTitlesOf } from "@/lib/recruitment";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { letterDefaultsFromRow, reasonsFor, sanitiseLetterSettings, sanitiseRejection } from "@/lib/recruitment-letters";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -39,7 +40,7 @@ export default async function RejectPage({ params }: { params: Promise<{ id: str
         candidateId={id}
         candidateName={c.full_name as string}
         companyName={(c.organisations as unknown as { name: string } | null)?.name ?? ""}
-        position={(c.role_applied as string | null) ?? null}
+        position={(c.role_applied as string | null) ?? jobTitlesOf(settingsRow?.job_titles)[0]}
         email={(c.email as string | null) ?? null}
         initial={initial}
         reasons={reasons}
