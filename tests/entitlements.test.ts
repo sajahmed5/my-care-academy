@@ -134,6 +134,7 @@ describe("tier contents", () => {
       "training.face_to_face": "full",
       "platform.white_label": "full",
       "platform.portal_api": "full",
+      "reports.bespoke": "full",
     };
     const ladder = ["core", "core_forms", "core_recruitment", "full"];
     for (const [feature, first] of Object.entries(from)) {

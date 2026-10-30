@@ -26,6 +26,7 @@ export const FEATURE_CATEGORIES = [
   { key: "documents", label: "Documents" },
   { key: "people", label: "Staff Audits" },
   { key: "quality", label: "Quality" },
+  { key: "reports", label: "Reports" },
   { key: "platform", label: "Platform & integration" },
 ] as const;
 
@@ -161,6 +162,15 @@ export const FEATURES = [
     label: "Client & carer feedback",
     isCore: false,
     hint: "Survey links for families, service users and staff, under Feedback in the menu.",
+  },
+  // The company asks, we build it with our own report builder within 10
+  // working days, and only that company sees it (BESPOKE-REPORTS.md).
+  {
+    key: "reports.bespoke",
+    category: "reports",
+    label: "Bespoke reports",
+    isCore: false,
+    hint: "Our reports, on the company's Evidence & exports page. Requests are built under Bespoke reports.",
   },
   {
     key: "platform.white_label",

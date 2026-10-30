@@ -4,7 +4,9 @@ import {
   CheckCircle2,
   ClipboardList,
   FileSpreadsheet,
+  Lock,
   ShieldCheck,
+  Sparkles,
   Users,
 } from "lucide-react";
 import { requireConsole } from "@/lib/auth";
@@ -13,6 +15,12 @@ import { loadRecentActivity } from "@/lib/activity";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { MatrixExport } from "../matrix-export";
 import { formatDateTime } from "@/lib/dates";
+import { hasFeature } from "@/lib/entitlements";
+import { lockedHref } from "@/lib/features";
+import { buttonVariants } from "@/components/ui/button";
+import { RequestDue, RequestStatus } from "@/components/bespoke/request-parts";
+import { isOpenRequest } from "@/lib/bespoke/requests";
+import { REPORT_WORKING_DAYS, ukToday } from "@/lib/bespoke/working-days";
 
 /**
  * Evidence & exports.
@@ -65,7 +73,30 @@ export default async function OrgReportsPage() {
   const context = await requireConsole();
   const today = new Date().toISOString().slice(0, 10);
   const supabase = await createClient();
-  const activity = await loadRecentActivity(supabase, 30, context.organisationId);
+  const manager = context.role === "org_admin";
+  const [activity, bespoke] = await Promise.all([
+    loadRecentActivity(supabase, 30, context.organisationId),
+    hasFeature(context, "reports.bespoke"),
+  ]);
+  const { data: requestRows } =
+    bespoke && manager
+      ? await supabase
+          .from("report_requests")
+          .select("id, request_no, title, status, due_on, ready_at, created_at")
+          .eq("organisation_id", context.organisationId!)
+          .order("created_at", { ascending: false })
+          .limit(100)
+      : { data: null };
+  const requests = (requestRows ?? []) as {
+    id: string;
+    request_no: number;
+    title: string;
+    status: string;
+    due_on: string;
+    ready_at: string | null;
+  }[];
+  // Still with us first, then the rest newest first.
+  requests.sort((a, b) => Number(isOpenRequest(b.status)) - Number(isOpenRequest(a.status)));
   const when = (iso: string) =>
     formatDateTime(iso, {
       day: "numeric",
@@ -81,6 +112,8 @@ export default async function OrgReportsPage() {
           Everything an inspector is likely to ask for, in one place. Each
           export is a spreadsheet you can save, print or email.
         </p>
+
+        <OurReports bespoke={bespoke} manager={manager} requests={requests} />
 
         <section className="rounded-2xl border bg-card p-5">
           <div className="flex items-start gap-3">
@@ -165,5 +198,94 @@ export default async function OrgReportsPage() {
         </section>
       </div>
     </DashboardShell>
+  );
+}
+
+/**
+ * Our reports (BESPOKE-REPORTS.md): reports we build for this company alone,
+ * and — for a manager — the requests for them. Without Enterprise it's a
+ * padlocked card leading to the page that says which package has it.
+ */
+function OurReports({
+  bespoke,
+  manager,
+  requests,
+}: {
+  bespoke: boolean;
+  manager: boolean;
+  requests: { id: string; request_no: number; title: string; status: string; due_on: string; ready_at: string | null }[];
+}) {
+  if (!bespoke) {
+    return (
+      <section id="our-reports" className="rounded-2xl border border-dashed bg-card p-5">
+        <div className="flex items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-foreground/70">
+            <Lock className="size-5" />
+          </span>
+          <div>
+            <h2 className="font-semibold">Our reports</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Reports built for your company: tell us what you need and we build it within {REPORT_WORKING_DAYS}{" "}
+              working days.
+            </p>
+            <Link
+              href={lockedHref("reports.bespoke")}
+              className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline sm:min-h-0"
+            >
+              {manager ? "See which package has it" : "Find out more"} →
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+  const today = ukToday();
+  return (
+    <section id="our-reports" className="space-y-4 rounded-2xl border bg-card p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+            <Sparkles className="size-5" />
+          </span>
+          <div>
+            <h2 className="font-semibold">Our reports</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Built for your company alone. Only you see them.
+            </p>
+          </div>
+        </div>
+        {manager && (
+          <Link href="/org/reports/requests/new" className={buttonVariants()}>
+            Ask for a report
+          </Link>
+        )}
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        {manager
+          ? `Nothing built yet. Ask for a report and we'll build it within ${REPORT_WORKING_DAYS} working days.`
+          : "Nothing built yet. Your manager can ask us for one."}
+      </p>
+
+      {manager && requests.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold">Your requests</h3>
+          <ul className="mt-2 divide-y text-sm">
+            {requests.map((r) => (
+              <li key={r.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2">
+                <Link href={`/org/reports/requests/${r.id}`} className="font-medium text-primary hover:underline">
+                  <span className="mr-1.5 font-mono text-xs text-muted-foreground">#{r.request_no}</span>
+                  {r.title}
+                </Link>
+                <span className="flex flex-wrap items-center gap-2 text-xs">
+                  <RequestDue request={r} today={today} />
+                  <RequestStatus status={r.status} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
   );
 }
