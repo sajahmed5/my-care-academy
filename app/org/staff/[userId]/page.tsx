@@ -41,7 +41,7 @@ import { ConcernList } from "./concern-list";
 import { SupervisionList } from "./supervision-list";
 import { StaffDocuments } from "./staff-documents";
 import { RecruitmentRecord } from "./recruitment-record";
-import { LettersPanel, ProbationPanel } from "./employment";
+import { AbsencePanel, LettersPanel, ProbationPanel } from "./employment";
 import { staffDocTasks, type StaffDoc } from "@/lib/staff-documents";
 import { TaskList } from "./task-list";
 import { SubTabs } from "./sub-tabs";
@@ -91,6 +91,7 @@ const INLINE_SECTIONS = new Set([
 /** The pages of the Employment section (HR-PACK.md). */
 const EMPLOYMENT_TABS = [
   { key: "", label: "Probation" },
+  { key: "absence", label: "Absence" },
   { key: "letters", label: "Letters" },
 ];
 
@@ -726,11 +727,13 @@ export default async function StaffDetailPage({
           <div className="space-y-4">
             <SubTabs
               base={`/org/staff/${userId}?section=employment`}
-              active={sub === "letters" ? "letters" : ""}
+              active={EMPLOYMENT_TABS.some((t) => t.key === sub) ? sub! : ""}
               tabs={EMPLOYMENT_TABS}
             />
             {sub === "letters" ? (
               <LettersPanel supabase={supabase} userId={userId} />
+            ) : sub === "absence" ? (
+              <AbsencePanel supabase={supabase} userId={userId} orgId={context.organisationId!} />
             ) : (
               <ProbationPanel supabase={supabase} userId={userId} orgId={context.organisationId!} />
             )}

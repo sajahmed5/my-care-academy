@@ -30,6 +30,7 @@ const SOURCES: { table: string; column: string; bucket: string }[] = [
   { table: "staff_documents", column: "file_path", bucket: "staff-docs" },
   // HR letters sent to them, kept as PDFs (HR-PACK.md).
   { table: "hr_letters", column: "pdf_path", bucket: "hr-docs" },
+  { table: "sickness_absences", column: "fit_note_path", bucket: "hr-docs" },
   {
     table: "care_cert_observations",
     column: "evidence_path",

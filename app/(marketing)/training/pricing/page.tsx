@@ -33,7 +33,7 @@ const PRICE: Record<string, { monthly: number; highlight?: boolean }> = Object.f
 // and TIER_DETAILS — change one, change all three.
 const COMPARE: { label: string; detail: string; from: number }[] = [
   { label: "Online training", detail: "Courses, inductions, matrix, certificates and reminders", from: 0 },
-  { label: "HR pack", detail: "Recruitment, staff documents with expiry reminders, probation reviews and HR letters", from: 0 },
+  { label: "HR pack", detail: "Recruitment, staff documents, probation, sickness absence and return to work, HR letters", from: 0 },
   { label: "Supervisions and appraisals", detail: "Signed in the room, with agreed actions tracked", from: 1 },
   { label: "Spot checks and competency", detail: "Area by area, with who's due next", from: 1 },
   { label: "Complaints and safeguarding", detail: "Complaints, accidents, near misses and safeguarding concerns", from: 2 },

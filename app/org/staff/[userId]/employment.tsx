@@ -5,6 +5,9 @@ import { formatDate } from "@/lib/dates";
 import { PROBATION_STATUS_LABEL, outcomeLabel, probationFromRow, schedule, type ReviewRecord } from "@/lib/hr/probation";
 import { templateFor } from "@/lib/hr/letters";
 import { EmploymentForm, ProbationLine } from "./employment-forms";
+import { AbsenceForm } from "@/app/org/hr/absence/absence-forms";
+import { bradford, daysOff, needsFitNote, rtwOutstanding, sanitiseTriggers, type Absence } from "@/lib/hr/absence";
+import { addDays } from "@/lib/hr/probation";
 
 const fmt = (d: string | null) => (d ? formatDate(d, { day: "numeric", month: "short", year: "numeric" }) : "—");
 
@@ -112,5 +115,64 @@ export async function LettersPanel({ supabase, userId }: { supabase: Supabase; u
         ))}
       </CardContent>
     </Card>
+  );
+}
+
+/** Their sickness absences, Bradford score, and a way to record one (HR-PACK.md). */
+export async function AbsencePanel({ supabase, userId, orgId }: { supabase: Supabase; userId: string; orgId: string }) {
+  const [{ data: rows }, { data: settings }] = await Promise.all([
+    supabase
+      .from("sickness_absences")
+      .select("id, user_id, start_date, returned_on, reason, certification, fit_note_until, excluded_from_triggers, rtw_status, reported_by_self")
+      .eq("user_id", userId)
+      .order("start_date", { ascending: false })
+      .limit(500),
+    supabase.from("hr_settings").select("bradford_triggers").eq("organisation_id", orgId).maybeSingle(),
+  ]);
+  const absences = (rows ?? []) as unknown as Absence[];
+  const today = new Date().toISOString().slice(0, 10);
+  const triggers = sanitiseTriggers(settings?.bradford_triggers);
+  const b = bradford(absences, today, triggers);
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="flex flex-wrap items-center gap-3 pt-6 text-sm">
+          <span className="font-semibold">Bradford score {b.score}</span>
+          <span className="text-muted-foreground">
+            {b.spells} spell{b.spells === 1 ? "" : "s"}, {b.days} day{b.days === 1 ? "" : "s"} in the last 52 weeks · trigger points {triggers.join(", ")}
+          </span>
+          {b.reached !== null && <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">Reached {b.reached}</span>}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="space-y-3 pt-6">
+          <h3 className="font-semibold">Record an absence</h3>
+          <AbsenceForm userId={userId} />
+        </CardContent>
+      </Card>
+      {absences.length > 0 && (
+        <Card>
+          <CardContent className="divide-y p-0">
+            {absences.map((a) => (
+              <Link key={a.id} href={`/org/hr/absence/${a.id}`} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-muted/50">
+                <span>
+                  <span className="font-medium">{a.reason}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {fmt(a.start_date)} to {a.returned_on ? fmt(addDays(a.returned_on, -1)) : "now"} · {daysOff(a, today)} day{daysOff(a, today) === 1 ? "" : "s"}
+                    {a.excluded_from_triggers ? " · not counted" : ""}
+                  </span>
+                </span>
+                <span className="flex flex-wrap gap-1.5 text-xs">
+                  {!a.returned_on && <span className="rounded-full bg-rose-100 px-2 py-0.5 font-medium text-rose-700">Off now</span>}
+                  {rtwOutstanding(a) && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">Return to work due</span>}
+                  {a.rtw_status === "held" && <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700">Return to work held</span>}
+                  {needsFitNote(a, today) && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">Fit note needed</span>}
+                </span>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

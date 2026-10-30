@@ -124,6 +124,16 @@ to appeal; the capability case itself comes with disciplinary.*
   Reaching one flags it to the manager, who can open an absence capability
   case. Nothing happens automatically.
 
+*Built 31 Oct 2026: HR → Absence (who's off, interviews and welfare
+meetings due, triggers reached), each absence's page (fit note, the
+interview, welfare meetings, occupational health), an Absence tab on the
+file, Settings → HR → Absence, and reporting sick from My HR when switched
+on (managers are emailed). Days are calendar days: home care works seven
+days a week and there is no rota here. Pregnancy-related absence and
+injuries at work never count towards a trigger; the office can leave out
+others (a disability) with a reason. The capability case link comes with
+disciplinary.*
+
 ## Holidays
 
 Added 29 Oct 2026: not every company uses MyRoster to record holidays, so the
