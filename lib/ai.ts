@@ -2,6 +2,7 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AI_MODEL, attemptCostUsd, attemptsFrom, chargeFor, formatGbp } from "@/lib/ai-cost";
+import { trialState } from "@/lib/trial";
 
 /**
  * Claude for a company (RECRUITMENT.md, "AI"): only when its manager has
@@ -21,6 +22,8 @@ export interface AiStatus {
   chargedGbp: number;
   allowed: boolean;
   reason?: string;
+  /** On a free trial (TRIAL.md): AI is built in but can't be used. */
+  trial: boolean;
 }
 
 function monthStartIso(now = new Date()): string {
@@ -48,14 +51,18 @@ export async function monthCharge(admin: Admin, orgId: string): Promise<{ charge
 }
 
 export async function aiStatus(admin: Admin, orgId: string): Promise<AiStatus> {
-  const [{ data: settings }, { chargedGbp }] = await Promise.all([
+  const [{ data: settings }, { chargedGbp }, { data: org }] = await Promise.all([
     admin.from("organisation_ai_settings").select("enabled, monthly_limit_gbp").eq("organisation_id", orgId).maybeSingle(),
     monthCharge(admin, orgId),
+    admin.from("organisations").select("trial_ends_at").eq("id", orgId).maybeSingle(),
   ]);
   const available = !!process.env.ANTHROPIC_API_KEY;
   const enabled = settings?.enabled === true;
   const limitGbp = settings?.monthly_limit_gbp == null ? null : Number(settings.monthly_limit_gbp);
-  const base = { available, enabled, limitGbp, chargedGbp };
+  const trial = trialState((org?.trial_ends_at as string | null) ?? null).kind !== "none";
+  const base = { available, enabled, limitGbp, chargedGbp, trial };
+  // Billed at 1.5 times cost, so never on a free trial (TRIAL.md).
+  if (trial) return { ...base, allowed: false, reason: "AI is built in, but it's unavailable during your free trial." };
   if (!available) return { ...base, allowed: false, reason: "AI drafting isn't available yet." };
   if (!enabled) return { ...base, allowed: false, reason: "AI is switched off for your company. A manager can switch it on under Account." };
   if (limitGbp != null && chargedGbp >= limitGbp) {

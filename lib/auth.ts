@@ -194,6 +194,17 @@ export const memberStatus = cache(
 );
 
 /**
+ * Whether the user's organisation is on a free trial (TRIAL.md), still
+ * running or ended. What a trial can't do — face-to-face booking, bespoke
+ * reports being built, AI — asks this. Read from the cached member row.
+ */
+export async function onFreeTrial(context: UserContext): Promise<boolean> {
+  if (context.role === "platform_admin" || !context.organisationId) return false;
+  const member = await memberStatus(context.userId, context.organisationId);
+  return trialState(member.trialEndsAt).kind !== "none";
+}
+
+/**
  * Require a specific role. Authenticated users with the wrong role are sent to
  * their own dashboard. This is defence-in-depth over RLS, not a replacement.
  * Admin roles additionally require MFA (AAL2); org members are blocked if their

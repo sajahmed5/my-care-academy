@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireRole, type UserContext } from "@/lib/auth";
+import { onFreeTrial, requireRole, type UserContext } from "@/lib/auth";
 import { hasFeature } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
@@ -82,6 +82,9 @@ export async function askForReportAction(_prev: SaveState, formData: FormData): 
     me.email ? `${me.name} (${me.email})` : me.name,
     origin,
   );
+  // On a free trial the request is sent but not built (TRIAL.md); the
+  // subject says so before anyone starts on it.
+  if (await onFreeTrial(context)) mail.subject = `Free trial, don't build yet: ${mail.subject}`;
   await sendEmail({ to: INBOX, replyTo: me.email ?? undefined, ...mail });
   await logAudit({ context, action: "report_request.created", entity: "report_request", entityId: data.id as string });
 

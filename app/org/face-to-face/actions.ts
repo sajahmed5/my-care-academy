@@ -2,7 +2,7 @@
 
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
-import { requireConsole } from "@/lib/auth";
+import { onFreeTrial, requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
@@ -23,6 +23,8 @@ export interface BookState extends SaveState {
 export async function bookStaffAction(_prev: BookState, formData: FormData): Promise<BookState> {
   const context = await requireConsole();
   await requireFeature(context, "training.face_to_face");
+  // Places are real seats at our office: not booked on a free trial (TRIAL.md).
+  if (await onFreeTrial(context)) return { ok: false, error: "Booking opens once you choose a package." };
   const orgId = context.organisationId!;
   const sessionId = String(formData.get("sessionId") ?? "");
   const picked = [...new Set(formData.getAll("person").map(String).filter(Boolean))];

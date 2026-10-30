@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { MapPin } from "lucide-react";
-import { requireConsole } from "@/lib/auth";
+import { onFreeTrial, requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OFFICE_ADDRESS, canCancelBooking, sessionTitle, sessionWhen } from "@/lib/face-to-face";
 import { BookSession } from "./book-session";
+import { Button } from "@/components/ui/button";
 import { CancelBooking } from "./cancel-booking";
 
 const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
@@ -50,6 +51,7 @@ function resultLabel(b: { status: string; practical_passed: boolean | null; cert
 export default async function FaceToFaceBookingPage() {
   const context = await requireConsole();
   await requireFeature(context, "training.face_to_face");
+  const trial = await onFreeTrial(context);
   const supabase = await createClient();
   const orgId = context.organisationId!;
   const today = new Date();
@@ -117,6 +119,12 @@ export default async function FaceToFaceBookingPage() {
             onto a session; each person gets a confirmation email and a reminder the day before. Online and face to face
             are separate, so nobody needs to finish the online course first.
           </p>
+          {trial && (
+            <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+              <strong>Booking opens once you choose a package.</strong> During your free trial you can see the dates and
+              what each session covers, but you can&apos;t book places.
+            </p>
+          )}
           <div className="flex items-start gap-3 rounded-xl border bg-accent/40 p-4 text-sm">
             <MapPin className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
             <p>
@@ -200,7 +208,12 @@ export default async function FaceToFaceBookingPage() {
                           {mine.size > 0 && ` · ${mine.size} of yours booked`}
                         </span>
                       </div>
-                      {left > 0 && (
+                      {left > 0 && trial && (
+                        <Button size="sm" variant="outline" disabled>
+                          Book staff
+                        </Button>
+                      )}
+                      {left > 0 && !trial && (
                         <BookSession
                           sessionId={s.id}
                           left={left}

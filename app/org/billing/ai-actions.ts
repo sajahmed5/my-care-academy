@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { onFreeTrial, requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 
@@ -14,6 +14,7 @@ export async function saveAiSettingsAction(
   formData: FormData,
 ): Promise<{ ok?: boolean; error?: string }> {
   const context = await requireRole("org_admin");
+  if (await onFreeTrial(context)) return { error: "AI can be switched on once you choose a package." };
   const enabled = formData.get("enabled") === "on";
   const rawLimit = String(formData.get("limit") ?? "").replace(/[£,\s]/g, "");
   const limit = rawLimit === "" ? null : Number(rawLimit);

@@ -211,7 +211,22 @@ export default async function AccountPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <AiSettingsForm enabled={ai.enabled} limitGbp={ai.limitGbp} />
+            {ai.trial ? (
+              <div className="space-y-2 rounded-xl border p-4 text-sm">
+                <p>
+                  <span className="mr-2 rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                    Unavailable during your free trial
+                  </span>
+                </p>
+                <p className="text-muted-foreground">
+                  AI is built into My Care Academy. It drafts offer letters, HR letters, references and your
+                  governance report for a person to check and send. It&apos;s switched off during the free trial. Once
+                  you choose a package, you can switch it on here.
+                </p>
+              </div>
+            ) : (
+              <AiSettingsForm enabled={ai.enabled} limitGbp={ai.limitGbp} />
+            )}
           </CardContent>
         </Card>
 
