@@ -30,7 +30,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       {
         href: "/org/billing",
         label: "Account and package",
-        hint: "Your package and billing, your logo, AI drafting, and who has the console.",
+        hint: "Your package and billing, AI drafting, and who has the console.",
       },
     ],
   },
@@ -95,6 +95,17 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         href: "/org/settings/integration/other",
         label: "Other systems and alerts",
         hint: "Keys for another rota or care system built against our API, and the alerts we send it.",
+      },
+    ],
+  },
+  {
+    title: "White label",
+    features: ["platform.white_label"],
+    pages: [
+      {
+        href: "/org/settings/white-label",
+        label: "Logo and colour",
+        hint: "Your logo and colour in place of ours, on every page your staff see.",
       },
     ],
   },

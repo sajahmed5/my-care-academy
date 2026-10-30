@@ -334,7 +334,7 @@ export function TopNav({
           {brandLogo ? (
             <BrandMark logoUrl={brandLogo} orgName={brandName} width={112} />
           ) : (
-            <Logo width={128} className="brightness-0 invert" />
+            <Logo width={128} className="[filter:var(--menu-logo-filter,brightness(0)_invert(1))]" />
           )}
         </IntentLink>
 
