@@ -10,7 +10,10 @@ import { logAudit } from "@/lib/audit";
 import { requestMessageEmail, requestStatusEmail } from "@/lib/bespoke/request-email";
 import type { SaveState } from "@/app/platform/actions";
 import { hasFeatureForOrg } from "@/lib/entitlements";
-import { parseDefinition } from "@/lib/bespoke/definition";
+import { parseDefinition, type ReportDefinition } from "@/lib/bespoke/definition";
+import { askClaudeJson, OUR_AI_FEATURE } from "@/lib/ai";
+import { draftToDefinition, reportPrompt, REPORT_DRAFT_SCHEMA, type ReportDraft } from "@/lib/bespoke/ai";
+import { ukToday } from "@/lib/bespoke/working-days";
 
 /**
  * Our side of a bespoke report request (BESPOKE-REPORTS.md): moving it along
@@ -230,4 +233,64 @@ export async function setReportArchivedAction(id: string, archived: boolean): Pr
   revalidatePath(`/platform/bespoke-reports/${id}`);
   revalidatePath("/platform/bespoke-reports");
   return { ok: true };
+}
+
+/**
+ * A first draft of the report from the company's request, for us to check
+ * in the builder: nothing is saved until we press Save. Our cost, not the
+ * company's (OUR_AI_FEATURE).
+ */
+export async function draftReportAction(
+  id: string,
+  brief: string,
+): Promise<
+  | { ok: true; title: string; description: string; definition: ReportDefinition; cannot: string }
+  | { ok: false; error: string }
+> {
+  const context = await requireRole("platform_admin");
+  const admin = createAdminClient();
+  const { data: report } = await admin
+    .from("bespoke_reports")
+    .select("organisation_id, organisation:organisations (name), request:report_requests (question, audience, audience_other, frequency, format)")
+    .eq("id", id)
+    .maybeSingle();
+  if (!report) return { ok: false, error: "That report wasn't found." };
+  const one = <T,>(v: T | T[] | null): T | null => (Array.isArray(v) ? (v[0] ?? null) : v);
+  const org = one(report.organisation as { name: string } | { name: string }[] | null);
+  const request = one(
+    report.request as
+      | { question: string; audience: string; audience_other: string | null; frequency: string; format: string }
+      | { question: string; audience: string; audience_other: string | null; frequency: string; format: string }[]
+      | null,
+  );
+  if (!request && !brief.trim()) return { ok: false, error: "Say what the report should show first." };
+
+  const r = await askClaudeJson<ReportDraft>({
+    orgId: report.organisation_id as string,
+    userId: context.userId,
+    feature: OUR_AI_FEATURE,
+    ours: true,
+    prompt: reportPrompt({
+      company: org?.name ?? "the company",
+      request: request
+        ? `${request.question}\n(For: ${request.audience_other || request.audience}. How often: ${request.frequency}. Format: ${request.format}.)`
+        : null,
+      brief: brief.slice(0, 4000),
+      today: ukToday(),
+    }),
+    schema: REPORT_DRAFT_SCHEMA as unknown as Record<string, unknown>,
+  });
+  if (!r.ok) return r;
+  const definition = draftToDefinition(r.data);
+  if (definition.sections.length === 0) {
+    return { ok: false, error: r.data.cannot?.trim() || "The draft had nothing the builder can show. Build it by hand." };
+  }
+  await logAudit({ context, organisationId: report.organisation_id as string, action: "bespoke_report.drafted_ai", entity: "bespoke_report", entityId: id });
+  return {
+    ok: true,
+    title: (r.data.title ?? "").trim().slice(0, 150),
+    description: (r.data.description ?? "").trim().slice(0, 2000),
+    definition,
+    cannot: (r.data.cannot ?? "").trim(),
+  };
 }

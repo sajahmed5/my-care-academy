@@ -27,11 +27,20 @@ function monthStartIso(now = new Date()): string {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
 
+/**
+ * Our own use of AI for a company — drafting its bespoke report in the
+ * report builder (BESPOKE-REPORTS.md). Recorded against the company so we
+ * can see what each costs us, charged at nothing, and left out of the
+ * company's month: it never asked for it and doesn't see it.
+ */
+export const OUR_AI_FEATURE = "bespoke_report_builder";
+
 export async function monthCharge(admin: Admin, orgId: string): Promise<{ chargedGbp: number; requests: number }> {
   const { data } = await admin
     .from("ai_usage")
     .select("charge_gbp")
     .eq("organisation_id", orgId)
+    .neq("feature", OUR_AI_FEATURE)
     .gte("created_at", monthStartIso())
     .limit(5000);
   const rows = data ?? [];
@@ -80,10 +89,16 @@ export async function askClaudeJson<T>(args: {
   prompt: string;
   schema: Record<string, unknown>;
   maxTokens?: number;
+  /** Ours, not the company's (OUR_AI_FEATURE): no switch or limit of theirs applies, and nothing is charged. */
+  ours?: boolean;
 }): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   const admin = createAdminClient();
-  const status = await aiStatus(admin, args.orgId);
-  if (!status.allowed) return { ok: false, error: status.reason ?? "AI isn't available." };
+  if (args.ours) {
+    if (!process.env.ANTHROPIC_API_KEY) return { ok: false, error: "AI isn't set up on this deployment." };
+  } else {
+    const status = await aiStatus(admin, args.orgId);
+    if (!status.allowed) return { ok: false, error: status.reason ?? "AI isn't available." };
+  }
 
   const client = new Anthropic();
   let response;
@@ -118,7 +133,7 @@ export async function askClaudeJson<T>(args: {
     cache_read_tokens: sum("cache_read_input_tokens"),
     cost_usd: costUsd,
     cost_gbp: costGbp,
-    charge_gbp: chargeGbp,
+    charge_gbp: args.ours ? 0 : chargeGbp,
     user_id: args.userId,
   });
   if (usageError) console.error("AI usage not recorded:", usageError.message);
