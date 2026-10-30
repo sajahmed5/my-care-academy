@@ -252,7 +252,10 @@ export const MAX_SERVICE_QUESTIONS = 60;
  * least one must count towards the score — an audit with nothing to score
  * can never fall below the review level.
  */
-export function readServiceQuestions(raw: unknown): { ok: true; questions: ServiceQuestion[] } | { ok: false; error: string } {
+export function readServiceQuestions(
+  raw: unknown,
+  { requireScored = true, allowEmpty = false, sections = false }: { requireScored?: boolean; allowEmpty?: boolean; sections?: boolean } = {},
+): { ok: true; questions: ServiceQuestion[] } | { ok: false; error: string } {
   if (!Array.isArray(raw)) return { ok: false, error: "The questions could not be read. Reload and try again." };
   const out: ServiceQuestion[] = [];
   const seen = new Set<string>();
@@ -265,11 +268,12 @@ export function readServiceQuestions(raw: unknown): { ok: true; questions: Servi
       return { ok: false, error: "The questions could not be read. Reload and try again." };
     }
     seen.add(id);
-    out.push({ id, label: label.slice(0, 200), type: r.type, ...(help ? { help: help.slice(0, 300) } : {}) });
+    const section = sections && (r?.section === "own" || r?.section === "medication") ? { section: r.section } : {};
+    out.push({ id, label: label.slice(0, 200), type: r.type, ...(help ? { help: help.slice(0, 300) } : {}), ...section });
   }
-  if (out.length === 0) return { ok: false, error: "Keep at least one question." };
+  if (out.length === 0 && !allowEmpty) return { ok: false, error: "Keep at least one question." };
   if (out.length > MAX_SERVICE_QUESTIONS) return { ok: false, error: `Keep it to ${MAX_SERVICE_QUESTIONS} questions or fewer.` };
-  if (!out.some((q) => q.type === "yes_no" || q.type === "rating")) {
+  if (requireScored && !out.some((q) => q.type === "yes_no" || q.type === "rating")) {
     return { ok: false, error: "Keep at least one Yes / No or rating question, so the audit has a score." };
   }
   return { ok: true, questions: out };

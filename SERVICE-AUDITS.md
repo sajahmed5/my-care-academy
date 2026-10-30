@@ -18,6 +18,18 @@ PACKAGES.md), all on `quality.audits`.
   waits for a manager's review. Set up under `/org/settings/service-audits`,
   managers only. An audit keeps the questions it was asked (`audits.items`);
   the one audit from before keeps `answers`.
+- **Client QAs** (30 Oct 2026, migration 20261031111000) — `client_qas`, at
+  `/org/audits/qa/new` (`lib/client-qa.ts`): visit or phone, with the client
+  or a family member, or why it couldn't be done (still counts as attempted);
+  1–10 under Safe, Effective, Caring, Responsive, Well-led (the score is
+  their average × 10); medication questions only for clients helped with
+  medicines; the company's own questions; well / better / action plan, with
+  actions on the task list (`record_actions` source `client_qa`). Due client
+  by client, every 3 months by default; the medication and own questions and
+  the period are edited under Settings (`service_audit_forms` key
+  `client_qa`). From a QA in one click: praise to the compliments log, linked
+  to the carers ticked; a problem raised as a concern waiting for triage,
+  which links back (`client_qas.complaint_id`, shown on the concern).
 
 ## Today
 

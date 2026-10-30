@@ -17,6 +17,7 @@ import {
   type ServiceQuestion,
 } from "./service-audits";
 import { fetchAll } from "./fetch-all";
+import { QA_FORM_KEY, resolveQaForm, type QaForm } from "./client-qa";
 
 function questions(raw: unknown): ServiceQuestion[] {
   if (!Array.isArray(raw)) return [];
@@ -28,6 +29,7 @@ async function readForms(supabase: SupabaseClient, organisationId: string): Prom
     .from("service_audit_forms")
     .select("key, label, scope, questions, due_every, due_unit, archived")
     .eq("organisation_id", organisationId)
+    .neq("key", QA_FORM_KEY)
     .limit(200);
   return resolveServiceForms(
     (data ?? []).map((r) => ({
@@ -44,6 +46,18 @@ async function readForms(supabase: SupabaseClient, organisationId: string): Prom
 
 /** Once per request, per organisation. */
 export const loadServiceForms = cache(async (organisationId: string): Promise<ServiceAuditForm[]> => readForms(await createClient(), organisationId));
+
+/** The client QA as the company asks it: ours, or its own medication and extra questions and due period. */
+export const loadQaForm = cache(async (organisationId: string): Promise<QaForm> => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("service_audit_forms")
+    .select("questions, due_every, due_unit")
+    .eq("organisation_id", organisationId)
+    .eq("key", QA_FORM_KEY)
+    .maybeSingle();
+  return resolveQaForm(data ? { questions: data.questions, due_every: data.due_every as number, due_unit: data.due_unit === "weeks" ? "weeks" : "months" } : null);
+});
 
 export const loadReviewBelow = cache(async (organisationId: string): Promise<number> => {
   const supabase = await createClient();

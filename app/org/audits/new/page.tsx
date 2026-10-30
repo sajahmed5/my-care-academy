@@ -6,7 +6,8 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { STAFF_ROLES } from "@/lib/roles";
 import { clientsFor, serviceForm } from "@/lib/service-audits";
-import { loadDueClients, loadReviewBelow, loadServiceForms } from "@/lib/service-audits-data";
+import { loadDueClients, loadQaForm, loadReviewBelow, loadServiceForms } from "@/lib/service-audits-data";
+import { qaAsServiceForm, runHref } from "@/lib/client-qa";
 import { intervalLabel } from "@/lib/audit-forms";
 import { RunServiceAudit } from "./run-service-audit";
 
@@ -24,14 +25,15 @@ export default async function NewAuditPage({ searchParams }: { searchParams: Pro
   const back = { href: "/org/audits", label: "Audits" };
 
   if (!form) {
+    const all = [qaAsServiceForm(await loadQaForm(orgId)), ...forms];
     return (
       <DashboardShell title="Carry out an audit" context={context} back={back}>
         <Card>
           <CardContent className="divide-y p-0">
-            {forms.map((f) => (
+            {all.map((f) => (
               <Link
                 key={f.key}
-                href={`/org/audits/new?form=${f.key}${client ? `&client=${client}` : ""}`}
+                href={runHref(f.key, client)}
                 className="block px-4 py-3 text-sm hover:bg-muted/50"
               >
                 <span className="font-medium">{f.label}</span>

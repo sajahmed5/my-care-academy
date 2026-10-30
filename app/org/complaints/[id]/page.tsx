@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatDate } from "@/lib/dates";
 import { notFound } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
 import { hasFeature, requireFeature } from "@/lib/entitlements";
@@ -55,6 +56,8 @@ export default async function ComplaintPage({
     }),
   ]);
   if (!complaint) notFound();
+  // Raised from a client QA (Service audits): the link back. RLS returns none without the package.
+  const { data: fromQa } = await supabase.from("client_qas").select("id, held_on").eq("complaint_id", complaint.id).limit(1).maybeSingle();
 
   // The training an accident's or near miss's category suggests, for each
   // member of staff named on it, shown under its actions.
@@ -140,6 +143,15 @@ export default async function ComplaintPage({
             {complaint.kind === "complaint" ? "Response PDF" : "Record PDF"}
           </a>
         </div>
+        {fromQa && (
+          <p className="text-sm text-muted-foreground">
+            Raised from the{" "}
+            <Link href={`/org/audits/qa/${fromQa.id}`} className="underline">
+              client QA on {formatDate(fromQa.held_on as string, { day: "numeric", month: "long", year: "numeric" })}
+            </Link>
+            .
+          </p>
+        )}
 
         <ComplaintProcess
           complaint={complaint}
