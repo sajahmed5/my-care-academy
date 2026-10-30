@@ -68,12 +68,17 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   },
   {
     title: "Forms",
-    features: ["forms.builder"],
+    features: ["forms.builder", "quality.feedback"],
     pages: [
       {
         href: "/org/settings/forms",
         label: "Your forms",
         hint: "Which of our forms you use and how often each is reviewed, your own copies of ours, and forms you build yourself.",
+      },
+      {
+        href: "/org/settings/forms/surveys",
+        label: "Feedback surveys",
+        hint: "The questions on your client and family survey and your staff survey. A round already started keeps its own.",
       },
     ],
   },

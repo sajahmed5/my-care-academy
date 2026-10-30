@@ -6,6 +6,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { ClientForm, type ClientValues } from "../client-form";
 import { ClientConcerns } from "./concerns";
 import { ClientForms } from "./forms";
+import { ClientFeedback } from "./feedback";
 
 /**
  * One client. Their details today; the QAs, audits, concerns and compliments
@@ -16,7 +17,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   await requireFeature(context, "clients.list");
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: client }, { data: regionRows }, concernsOn, formsOn] = await Promise.all([
+  const [{ data: client }, { data: regionRows }, concernsOn, formsOn, feedbackOn] = await Promise.all([
     supabase
       .from("clients")
       .select("full_name, date_of_birth, region, postcode, funder_type, funder_name, medication_support, start_date, status")
@@ -30,6 +31,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
       .limit(1000),
     hasFeature(context, "complaints.register"),
     hasFeature(context, "forms.builder"),
+    hasFeature(context, "quality.feedback"),
   ]);
   if (!client) notFound();
   const regions = [...new Set((regionRows ?? []).map((r) => r.region as string))].sort();
@@ -39,6 +41,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         <ClientForm id={id} values={client as ClientValues} regions={regions} />
         {formsOn && <ClientForms supabase={supabase} context={context} clientId={id} />}
         {concernsOn && <ClientConcerns supabase={supabase} clientId={id} />}
+        {feedbackOn && <ClientFeedback supabase={supabase} clientId={id} />}
       </div>
     </DashboardShell>
   );
