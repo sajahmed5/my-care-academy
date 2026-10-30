@@ -103,3 +103,34 @@ export async function saveHolidaySettingsAction(input: {
   revalidatePath("/org/hr/holidays");
   return { ok: true };
 }
+
+export async function saveCaseSettingsAction(input: {
+  warningFirstMonths: number;
+  warningFinalMonths: number;
+  hearingNoticeDays: number;
+  appealDays: number;
+  grievanceAckDays: number;
+  officeAccess: string[];
+}): Promise<{ ok: boolean; error?: string }> {
+  const context = await gate();
+  const n = (v: number, lo: number, hi: number) => Math.round(Number(v)) >= lo && Math.round(Number(v)) <= hi;
+  if (!n(input.warningFirstMonths, 1, 36) || !n(input.warningFinalMonths, 1, 36)) return { ok: false, error: "Warnings last 1 to 36 months." };
+  if (!n(input.hearingNoticeDays, 1, 30) || !n(input.appealDays, 1, 30) || !n(input.grievanceAckDays, 1, 30)) return { ok: false, error: "Timescales are 1 to 30 days." };
+  // Only this company's office workers can be given access.
+  const admin = createAdminClient();
+  const { data: office } = await admin.from("users").select("id").eq("organisation_id", context.organisationId!).eq("role", "org_office");
+  const allowed = new Set((office ?? []).map((u) => u.id as string));
+  const access = [...new Set(input.officeAccess)].filter((id) => allowed.has(id));
+  const ok = await patchSettings(context.organisationId!, context.userId, {
+    warning_first_months: Math.round(input.warningFirstMonths),
+    warning_final_months: Math.round(input.warningFinalMonths),
+    hearing_notice_days: Math.round(input.hearingNoticeDays),
+    appeal_days: Math.round(input.appealDays),
+    grievance_ack_days: Math.round(input.grievanceAckDays),
+    case_office_access: access,
+  });
+  if (!ok) return { ok: false, error: "The settings couldn't be saved. Try again." };
+  await logAudit({ context, action: "hr.case_settings_saved", entity: "organisation", entityId: context.organisationId!, detail: { officeAccess: access } });
+  revalidatePath("/org/settings/hr/cases");
+  return { ok: true };
+}

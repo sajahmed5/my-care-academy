@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/lib/dates";
 import { PROBATION_STATUS_LABEL } from "@/lib/hr/probation";
 import { ReportSick } from "./report-sick";
+import { RaiseGrievance } from "./raise-grievance";
 import { CancelMyLeave } from "./cancel-leave";
 import { LeaveForm } from "@/app/org/hr/holidays/holiday-forms";
 import { requestLeaveAction } from "./actions";
@@ -63,6 +64,16 @@ export default async function MyHrPage() {
   const unit = (allowance?.unit as string | undefined) ?? "days";
   const bal = balance(allowance ? { amount: Number(allowance.amount), unit } : null, myLeave, year, types, today);
   const offNow = (absences ?? []).find((a) => !a.returned_on);
+  // Who a grievance can be about: anyone else in the company.
+  const { data: colleagues } = await admin
+    .from("users")
+    .select("id, full_name, email")
+    .eq("organisation_id", context.organisationId!)
+    .neq("id", context.userId)
+    .in("role", ["learner", "org_admin", "org_office"])
+    .eq("status", "active")
+    .order("full_name")
+    .limit(1000);
   const inProbation = emp && (emp.probation_status === "in_probation" || emp.probation_status === "extended");
 
   return (
@@ -166,6 +177,15 @@ export default async function MyHrPage() {
             ))}
           </section>
         )}
+
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-muted-foreground">A grievance</h2>
+          <Card>
+            <CardContent className="pt-6">
+              <RaiseGrievance people={(colleagues ?? []).map((u) => ({ id: u.id as string, name: ((u.full_name as string | null) || (u.email as string)) ?? "" }))} />
+            </CardContent>
+          </Card>
+        </section>
 
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-muted-foreground">Letters sent to you</h2>

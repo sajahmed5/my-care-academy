@@ -71,6 +71,11 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         hint: "When your leave year starts, bank holidays, how many can be off at once, and your own kinds of leave.",
       },
       {
+        href: "/org/settings/hr/cases",
+        label: "Disciplinary and grievance",
+        hint: "Notice before a hearing, the appeal window, how long warnings stay active, and which office workers can see cases.",
+      },
+      {
         href: "/org/settings/hr/letters",
         label: "Letters",
         hint: "The wording of every HR letter. The right to be accompanied and to appeal are always added.",

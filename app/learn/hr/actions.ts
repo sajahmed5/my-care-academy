@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/dates";
 import { ABSENCE_REASONS } from "@/lib/hr/absence";
 import { personName } from "@/lib/hr/server";
 import { unitFor, validateLeave, type LeaveInput } from "@/lib/hr/holidays-server";
+import { createCase, emailNewGrievance } from "@/lib/hr/cases-server";
 
 /**
  * What a member of staff does from their own login (HR-PACK.md). Reporting
@@ -110,6 +111,44 @@ export async function cancelMyLeaveAction(id: string): Promise<{ ok: boolean; er
   if (!r || r.user_id !== context.userId) return { ok: false, error: "Not found." };
   if (r.status !== "requested") return { ok: false, error: "It has been decided: speak to the office to change it." };
   await admin.from("leave_requests").update({ status: "cancelled" }).eq("id", id).eq("status", "requested");
+  revalidatePath("/learn/hr");
+  return { ok: true };
+}
+
+/**
+ * Raise a grievance from their own login (HR-PACK.md). It goes to the
+ * managers, never to a manager it's about; they acknowledge it in writing.
+ */
+export async function raiseGrievanceAction(input: { summary: string; aboutUserId: string }): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireStaff();
+  if (!(await hasFeature(context, "recruitment.tracker"))) return { ok: false, error: "Not available." };
+  const summary = input.summary.replace(/\r/g, "").trim().slice(0, 6000);
+  if (summary.length < 20) return { ok: false, error: "Please explain your grievance in full: what happened, and what you'd like done about it." };
+  const admin = createAdminClient();
+  const orgId = context.organisationId!;
+  let about: string | null = null;
+  if (input.aboutUserId) {
+    const { data: a } = await admin.from("users").select("id, organisation_id").eq("id", input.aboutUserId).maybeSingle();
+    if (!a || a.organisation_id !== orgId || a.id === context.userId) return { ok: false, error: "Choose who it's about from the list, or leave it blank." };
+    about = a.id as string;
+  }
+  const r = await createCase(admin, {
+    orgId,
+    kind: "grievance",
+    subtype: "",
+    userId: context.userId,
+    aboutUserId: about,
+    summary,
+    raisedVia: "own_login",
+    raisedBy: context.userId,
+    linkedType: "",
+    linkedId: "",
+    linkedLabel: "",
+    by: "them, from their own login",
+  });
+  if (!r.id) return { ok: false, error: "It didn't send. Please try again, or put it in writing to your manager." };
+  await emailNewGrievance(admin, orgId, r.id, context.userId, about);
+  await logAudit({ context, action: "hr.grievance_raised", entity: "hr_case", entityId: r.id });
   revalidatePath("/learn/hr");
   return { ok: true };
 }

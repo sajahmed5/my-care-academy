@@ -70,6 +70,16 @@ export default async function ProbationReviewPage({ params }: { params: Promise<
             </ul>
           </CardContent>
         </Card>
+        {held && review.outcome === "not_passed" && (
+          <p className="text-sm">
+            <a
+              href={`/org/hr/cases/new?user=${person.id}&subtype=capability&from=probation&fromId=${id}&label=${encodeURIComponent("Probation not passed")}`}
+              className="font-medium text-primary hover:underline"
+            >
+              Open a capability case for this
+            </a>
+          </p>
+        )}
         <ReviewForm
           id={id}
           userId={person.id}

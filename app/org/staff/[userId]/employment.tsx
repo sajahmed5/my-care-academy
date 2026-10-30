@@ -10,6 +10,7 @@ import { bradford, daysOff, needsFitNote, rtwOutstanding, sanitiseTriggers, type
 import { addDays } from "@/lib/hr/probation";
 import { STATUS_LABEL, amountText, balance, canApprove, holidaySettingsFromRow, leaveTypeLabel, leaveTypesFor, leaveYear, type LeaveRequest } from "@/lib/hr/holidays";
 import { AllowanceForm, CancelLeave, DecideLeave, LeaveForm } from "@/app/org/hr/holidays/holiday-forms";
+import { activeWarning, kindLabel as caseKindLabel, outcomeLabel as caseOutcomeLabel, stageLabel as caseStageLabel } from "@/lib/hr/cases";
 
 const fmt = (d: string | null) => (d ? formatDate(d, { day: "numeric", month: "short", year: "numeric" }) : "—");
 
@@ -242,6 +243,59 @@ export async function HolidaysPanel({ supabase, userId, orgId, me }: { supabase:
                   {(r.status === "requested" || (r.status === "approved" && r.start_date > today)) && <CancelLeave id={r.id} />}
                 </span>
               </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Their disciplinary and grievance cases, and any warning still active
+ * (HR-PACK.md). Read under RLS: a manager, or an office worker given access,
+ * sees them; anyone else sees nothing here.
+ */
+export async function CasesPanel({ supabase, userId }: { supabase: Supabase; userId: string }) {
+  const { data: rows } = await supabase
+    .from("hr_cases")
+    .select("id, ref, kind, subtype, stage, outcome, outcome_on, warning_expires_on, appeal_outcome, raised_on, closed_on")
+    .eq("user_id", userId)
+    .order("raised_on", { ascending: false })
+    .limit(100);
+  const today = new Date().toISOString().slice(0, 10);
+  const cases = rows ?? [];
+  const active = cases.filter((c) => activeWarning(c as never, today));
+  return (
+    <div className="space-y-4">
+      {active.map((c) => (
+        <p key={c.id as string} className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
+          {caseOutcomeLabel(c.outcome as string)} active until {fmt(c.warning_expires_on as string)} ({c.ref as string})
+        </p>
+      ))}
+      <div className="flex flex-wrap gap-2">
+        <Link href={`/org/hr/cases/new?user=${userId}`} className="inline-flex min-h-9 items-center rounded-full border px-4 text-sm font-medium hover:bg-accent">
+          Open a disciplinary or capability case
+        </Link>
+        <Link href={`/org/hr/cases/new?user=${userId}&kind=grievance`} className="inline-flex min-h-9 items-center rounded-full border px-4 text-sm font-medium hover:bg-accent">
+          Record a grievance they raised
+        </Link>
+      </div>
+      {cases.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No cases you can see.</p>
+      ) : (
+        <Card>
+          <CardContent className="divide-y p-0">
+            {cases.map((c) => (
+              <Link key={c.id as string} href={`/org/hr/cases/${c.id}`} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-muted/50">
+                <span>
+                  <span className="font-mono text-xs text-muted-foreground">{c.ref as string}</span> <span className="font-medium">{caseKindLabel(c.kind as string, c.subtype as string | null)}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">raised {fmt(c.raised_on as string)}</span>
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {c.closed_on ? `Closed${c.outcome ? `: ${caseOutcomeLabel(c.outcome as string)}` : ""}` : caseStageLabel(c.kind as string, c.stage as string)}
+                </span>
+              </Link>
             ))}
           </CardContent>
         </Card>
