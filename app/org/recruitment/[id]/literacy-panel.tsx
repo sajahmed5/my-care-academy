@@ -4,9 +4,10 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
-import { unlockLiteracyAction } from "../actions";
+import { deleteLiteracyAttemptAction, unlockLiteracyAction } from "../actions";
 
 export interface AttemptView {
+  id: string;
   attemptNo: number;
   mode: string;
   status: string;
@@ -14,26 +15,48 @@ export interface AttemptView {
   max: number | null;
   percent: number | null;
   passed: boolean | null;
+  /** When it was finished, as a date. */
+  when: string | null;
   leftPage: number;
   endedByTime: boolean;
   passPercent: number;
   marked: { prompt: string; marks: number; awarded: number; given: string; correct: string }[];
 }
 
+const resultLine = (a: AttemptView) =>
+  `${a.score}/${a.max} (${a.percent}%), ${a.passed ? "passed" : `below the ${a.passPercent}% pass mark`}${a.endedByTime ? ", ran out of time" : ""}`;
+
+const statusLine = (a: AttemptView) =>
+  a.status === "in_progress"
+    ? "They're taking it now."
+    : a.status === "unlocked"
+      ? `Unlocked ${a.mode === "office" ? "in the office" : "by email"}, not started.`
+      : `${resultLine(a)}${a.attemptNo > 1 ? `, attempt ${a.attemptNo}` : ""}.`;
+
 /**
  * The literacy test from the office's side (brought across from MyRoster's
  * LiteracyPanel): show a QR code for the candidate to scan here, or email
  * them a link; then the result, how often they left the page, and their
- * answers marked.
+ * answers marked. Earlier attempts are listed under the latest, and any
+ * attempt not being taken can be deleted (issue #80).
  */
-export function LiteracyPanel({ candidateId, hasEmail, attempt, minutes }: { candidateId: string; hasEmail: boolean; attempt: AttemptView | null; minutes: number }) {
+export function LiteracyPanel({ candidateId, hasEmail, attempts, minutes }: { candidateId: string; hasEmail: boolean; attempts: AttemptView[]; minutes: number }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [qr, setQr] = useState<{ image: string; link: string } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [attempt, ...earlier] = attempts;
   const finished = attempt?.status === "submitted";
 
-  const unlock = (mode: "office" | "remote") =>
+  const unlock = (mode: "office" | "remote") => {
+    // A finished test is never replaced without asking (issue #80).
+    if (
+      finished &&
+      !window.confirm(
+        `They've already taken the test: ${resultLine(attempt)}.\n\nA retake starts a new attempt ${mode === "office" ? "here" : "by email"}, and this result comes off the Literacy step until the new one is in. It stays listed below, and you can delete the retake to bring it back.\n\nStart a retake?`,
+      )
+    )
+      return;
     start(async () => {
       setMessage(null);
       const r = await unlockLiteracyAction(candidateId, mode, finished);
@@ -42,20 +65,32 @@ export function LiteracyPanel({ candidateId, hasEmail, attempt, minutes }: { can
       else setMessage("Sent. They'll get an email with the link.");
       router.refresh();
     });
+  };
+
+  const remove = (a: AttemptView) => {
+    const latest = a.id === attempt?.id;
+    const what = a.status === "submitted" ? `attempt ${a.attemptNo} (${resultLine(a)})` : `attempt ${a.attemptNo}, which hasn't been taken yet`;
+    const after = !latest
+      ? "The latest attempt stays as it is."
+      : earlier.find((e) => e.status === "submitted")
+        ? "The Literacy step goes back to the earlier result."
+        : "The Literacy step goes back to not started.";
+    if (!window.confirm(`Delete ${what}? ${after} This can't be undone.`)) return;
+    start(async () => {
+      setMessage(null);
+      const r = await deleteLiteracyAttemptAction(candidateId, a.id);
+      if (!r.ok) return setMessage(r.error ?? "That didn't work.");
+      if (latest) setQr(null);
+      setMessage("Deleted.");
+      router.refresh();
+    });
+  };
 
   return (
     <div className="space-y-3 text-sm">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <span className="font-medium">Literacy test</span>
-        <span className="text-muted-foreground">
-          {!attempt
-            ? "Not unlocked yet."
-            : attempt.status === "in_progress"
-              ? "They're taking it now."
-              : attempt.status === "unlocked"
-                ? `Unlocked ${attempt.mode === "office" ? "in the office" : "by email"}, not started.`
-                : `${attempt.score}/${attempt.max} (${attempt.percent}%), ${attempt.passed ? "passed" : `below the ${attempt.passPercent}% pass mark`}${attempt.endedByTime ? ", ran out of time" : ""}${attempt.attemptNo > 1 ? `, attempt ${attempt.attemptNo}` : ""}.`}
-        </span>
+        <span className="text-muted-foreground">{attempt ? statusLine(attempt) : "Not unlocked yet."}</span>
         {attempt?.status !== "in_progress" && (
           <>
             <Button size="sm" variant="outline" disabled={pending} onClick={() => unlock("office")}>
@@ -66,8 +101,13 @@ export function LiteracyPanel({ candidateId, hasEmail, attempt, minutes }: { can
             </Button>
           </>
         )}
+        {attempt && attempt.status !== "in_progress" && (
+          <Button size="sm" variant="ghost" className="text-destructive" disabled={pending} onClick={() => remove(attempt)}>
+            Delete
+          </Button>
+        )}
       </div>
-      {finished && attempt && attempt.leftPage > 0 && (
+      {finished && attempt.leftPage > 0 && (
         <p className="text-amber-900">They left the test page {attempt.leftPage} time{attempt.leftPage === 1 ? "" : "s"} while it was running.</p>
       )}
       {qr && (
@@ -82,23 +122,51 @@ export function LiteracyPanel({ candidateId, hasEmail, attempt, minutes }: { can
           </div>
         </div>
       )}
-      {finished && attempt && attempt.marked.length > 0 && (
-        <details className="rounded-xl border bg-card">
-          <summary className="cursor-pointer px-4 py-3 font-medium">Their answers, marked</summary>
-          <ol className="divide-y border-t">
-            {attempt.marked.map((m, i) => (
-              <li key={i} className="px-4 py-2.5">
-                <p className="font-medium">{i + 1}. {m.prompt}</p>
-                <p className={m.awarded === m.marks ? "text-green-800" : "text-destructive"}>
-                  {m.awarded}/{m.marks} · they gave: {m.given}
-                  {m.awarded < m.marks && <span className="text-muted-foreground"> · answer: {m.correct}</span>}
-                </p>
+      {finished && <MarkedAnswers attempt={attempt} />}
+      {earlier.length > 0 && (
+        <div className="rounded-xl border bg-card">
+          <p className="border-b px-4 py-2.5 font-medium">Earlier attempts</p>
+          <ul className="divide-y">
+            {earlier.map((a) => (
+              <li key={a.id} className="space-y-2 px-4 py-2.5">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <span className="font-medium">Attempt {a.attemptNo}</span>
+                  <span className="text-muted-foreground">
+                    {a.status === "submitted"
+                      ? `${resultLine(a)} · ${a.mode === "remote" ? "taken at home" : "taken in the office"}${a.when ? ` · ${a.when}` : ""}`
+                      : "Not taken."}
+                  </span>
+                  <Button size="sm" variant="ghost" className="ml-auto text-destructive" disabled={pending} onClick={() => remove(a)}>
+                    Delete
+                  </Button>
+                </div>
+                {a.status === "submitted" && <MarkedAnswers attempt={a} />}
               </li>
             ))}
-          </ol>
-        </details>
+          </ul>
+        </div>
       )}
       {message && <p role="status">{message}</p>}
     </div>
+  );
+}
+
+function MarkedAnswers({ attempt }: { attempt: AttemptView }) {
+  if (attempt.marked.length === 0) return null;
+  return (
+    <details className="rounded-xl border bg-card">
+      <summary className="cursor-pointer px-4 py-3 font-medium">Their answers, marked{attempt.attemptNo > 1 ? ` (attempt ${attempt.attemptNo})` : ""}</summary>
+      <ol className="divide-y border-t">
+        {attempt.marked.map((m, i) => (
+          <li key={i} className="px-4 py-2.5">
+            <p className="font-medium">{i + 1}. {m.prompt}</p>
+            <p className={m.awarded === m.marks ? "text-green-800" : "text-destructive"}>
+              {m.awarded}/{m.marks} · they gave: {m.given}
+              {m.awarded < m.marks && <span className="text-muted-foreground"> · answer: {m.correct}</span>}
+            </p>
+          </li>
+        ))}
+      </ol>
+    </details>
   );
 }

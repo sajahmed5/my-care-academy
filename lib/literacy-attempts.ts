@@ -92,14 +92,32 @@ export async function finaliseAttempt(
     .select("id");
   if (!closed?.length) return result;
 
-  const where = attempt.mode === "remote" ? "taken at home" : "taken in the office";
-  const note = `${result.score}/${result.max} (${result.percent}%), ${result.passed ? "passed" : "below the pass mark"} · ${where}${
-    endedBy === "time" ? " · ran out of time" : ""
-  }${attempt.attempt_no > 1 ? ` · attempt ${attempt.attempt_no}` : ""}`;
+  await fileLiteracyResult(admin, { ...attempt, score: result.score, max_score: result.max, percent: result.percent, passed: result.passed, ended_by: endedBy });
+  return result;
+}
+
+type FinishedAttempt = {
+  organisation_id: string;
+  candidate_id: string;
+  mode: string;
+  attempt_no: number;
+  score: number | null;
+  max_score: number | null;
+  percent: number | null;
+  passed: boolean | null;
+  ended_by: string | null;
+};
+
+/** Put a finished attempt's result on the Literacy step, for the office to confirm. */
+async function fileLiteracyResult(admin: Admin, a: FinishedAttempt) {
+  const where = a.mode === "remote" ? "taken at home" : "taken in the office";
+  const note = `${a.score}/${a.max_score} (${a.percent}%), ${a.passed ? "passed" : "below the pass mark"} · ${where}${
+    a.ended_by === "time" ? " · ran out of time" : ""
+  }${a.attempt_no > 1 ? ` · attempt ${a.attempt_no}` : ""}`;
   await admin.from("candidate_documents").upsert(
     {
-      candidate_id: attempt.candidate_id,
-      organisation_id: attempt.organisation_id,
+      candidate_id: a.candidate_id,
+      organisation_id: a.organisation_id,
       doc_type: "literacy",
       file_path: null,
       file_name: null,
@@ -112,5 +130,38 @@ export async function finaliseAttempt(
     },
     { onConflict: "candidate_id,doc_type" },
   );
-  return result;
+}
+
+/** Every attempt, newest first: the latest leads the panel, the rest are listed under it. */
+export async function allAttempts(admin: Admin, candidateId: string) {
+  const { data } = await admin
+    .from("literacy_attempts")
+    .select(ATTEMPT_COLUMNS)
+    .eq("candidate_id", candidateId)
+    .order("attempt_no", { ascending: false });
+  return data ?? [];
+}
+
+/**
+ * Delete one attempt (issue #80: the office can take away a retake started
+ * by mistake, or an earlier attempt). Never one being taken right now. When
+ * the newest attempt goes, the step shows the newest finished one left, or
+ * goes back to not started if there's none; an older one going changes nothing.
+ */
+export async function deleteAttempt(admin: Admin, opts: { candidateId: string; attemptId: string }): Promise<{ ok: true; attemptNo: number } | { error: string }> {
+  const attempts = await allAttempts(admin, opts.candidateId);
+  const target = attempts.find((a) => a.id === opts.attemptId);
+  if (!target) return { error: "That attempt has already gone." };
+  if (target.status === "in_progress") return { error: "They're taking this one right now." };
+  const { error } = await admin.from("literacy_attempts").delete().eq("id", opts.attemptId).neq("status", "in_progress");
+  if (error) return { error: "The attempt couldn't be deleted. Try again." };
+  const rest = attempts.filter((a) => a.id !== opts.attemptId);
+  const wasNewest = rest.every((a) => (a.attempt_no as number) < (target.attempt_no as number));
+  if (wasNewest) {
+    const newest = rest[0];
+    if (newest?.status === "submitted") await fileLiteracyResult(admin, newest as unknown as FinishedAttempt);
+    // Only the test's own result is taken off: a paper copy the office uploaded stays.
+    else await admin.from("candidate_documents").delete().eq("candidate_id", opts.candidateId).eq("doc_type", "literacy").is("file_path", null);
+  }
+  return { ok: true, attemptNo: target.attempt_no as number };
 }

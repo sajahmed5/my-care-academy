@@ -11,7 +11,7 @@ import { CandidateActions, DbsConviction } from "./candidate-detail";
 import { ApplicationTools } from "./application-tools";
 import { LiteracyPanel, type AttemptView } from "./literacy-panel";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { latestAttempt } from "@/lib/literacy-attempts";
+import { allAttempts } from "@/lib/literacy-attempts";
 import { markLiteracy, sanitiseLiteracyAnswers, sanitiseLiteracySettings, testOf } from "@/lib/literacy-test";
 import { importReferees } from "@/lib/reference-requests";
 import { isFreeWebmail } from "@/lib/recruitment-references";
@@ -47,9 +47,9 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   ]);
   if (!candidate) notFound();
 
-  // The latest literacy attempt, marked here (the key never leaves the server).
+  // Every literacy attempt, marked here (the key never leaves the server).
   const admin = createAdminClient();
-  const a = await latestAttempt(admin, id);
+  const attemptRows = await allAttempts(admin, id);
   // Referees: copied from their application the first time anyone looks.
   await importReferees(admin, id, context.organisationId!);
   const [{ data: refRows }, { data: interview }, { data: offerLetter }, { data: starter }, { data: signings }, { data: shadowing }, { data: appAnswers }, { data: dbsRisk }] = await Promise.all([
@@ -79,21 +79,21 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
     reminders: (r.reminder_count as number) ?? 0,
     webmailEmployer: r.referee_type === "Previous employer" && isFreeWebmail(r.email as string | null),
   }));
-  const attempt: AttemptView | null = a
-    ? {
-        attemptNo: a.attempt_no as number,
-        mode: a.mode as string,
-        status: a.status as string,
-        score: (a.score as number | null) ?? null,
-        max: (a.max_score as number | null) ?? null,
-        percent: (a.percent as number | null) ?? null,
-        passed: (a.passed as boolean | null) ?? null,
-        leftPage: (a.left_page_count as number) ?? 0,
-        endedByTime: a.ended_by === "time",
-        passPercent: testOf(a.test).passPercent,
-        marked: a.status === "submitted" ? markLiteracy(sanitiseLiteracyAnswers(a.answers, testOf(a.test)), testOf(a.test)).questions : [],
-      }
-    : null;
+  const attempts: AttemptView[] = attemptRows.map((a) => ({
+    id: a.id as string,
+    attemptNo: a.attempt_no as number,
+    mode: a.mode as string,
+    status: a.status as string,
+    score: (a.score as number | null) ?? null,
+    max: (a.max_score as number | null) ?? null,
+    percent: (a.percent as number | null) ?? null,
+    passed: (a.passed as boolean | null) ?? null,
+    when: a.submitted_at ? formatDate(a.submitted_at as string) : null,
+    leftPage: (a.left_page_count as number) ?? 0,
+    endedByTime: a.ended_by === "time",
+    passPercent: testOf(a.test).passPercent,
+    marked: a.status === "submitted" ? markLiteracy(sanitiseLiteracyAnswers(a.answers, testOf(a.test)), testOf(a.test)).questions : [],
+  }));
   const settings = settingsFromRow(settingsRow);
   const stages = progress((docs ?? []) as CandidateDocRecord[], settings, { dbsConviction: candidate.dbs_conviction === true });
   const now = currentStage(stages);
@@ -159,7 +159,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
               )}
               {s.stage === 1 && !s.locked && s.steps.some((st) => st.key === "literacy") && (
                 <li className="border-t bg-muted/30 px-5 py-3.5">
-                  <LiteracyPanel candidateId={id} hasEmail={!!candidate.email} attempt={attempt} minutes={sanitiseLiteracySettings(settingsRow?.literacy_settings).minutes} />
+                  <LiteracyPanel candidateId={id} hasEmail={!!candidate.email} attempts={attempts} minutes={sanitiseLiteracySettings(settingsRow?.literacy_settings).minutes} />
                 </li>
               )}
               {s.stage === 2 && !s.locked && (

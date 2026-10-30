@@ -14,7 +14,7 @@ import { inviteCandidate, makeCandidateStaff } from "@/lib/candidate-account";
 import { copyRecordsToStaffFile, copyToStaffFile, sendWelcomePack, startInduction } from "@/lib/hire";
 import { staffDocLabel } from "@/lib/staff-documents";
 import { setEmployment } from "@/lib/hr/server";
-import { unlockAttempt } from "@/lib/literacy-attempts";
+import { deleteAttempt, unlockAttempt } from "@/lib/literacy-attempts";
 import { interviewSections, overallScore, sanitiseInterview, validateInterview } from "@/lib/recruitment-interview";
 import { companyQuestions } from "@/lib/company-questions";
 import { INTERVIEW_CUSTOM_TITLE, customSection } from "@/lib/custom-questions";
@@ -315,6 +315,22 @@ export async function unlockLiteracyAction(
   await logAudit({ context, action: "candidate.literacy_unlocked", entity: "candidate", entityId: candidateId, detail: { mode, retake } });
   done(candidateId);
   return { ok: true, link: mode === "office" ? r.link : undefined };
+}
+
+/** Delete a literacy attempt: a retake started by mistake, or an earlier one (issue #80). */
+export async function deleteLiteracyAttemptAction(candidateId: string, attemptId: string): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireConsole();
+  await assertRecruitment(context);
+  const admin = createAdminClient();
+  const loaded = await loadCandidate(admin, candidateId, context.organisationId!);
+  if (!loaded) return { ok: false, error: "Candidate not found." };
+  const step = openStep(loaded.stages, "literacy");
+  if (typeof step === "string") return { ok: false, error: step };
+  const r = await deleteAttempt(admin, { candidateId, attemptId });
+  if ("error" in r) return { ok: false, error: r.error };
+  await logAudit({ context, action: "candidate.literacy_attempt_deleted", entity: "candidate", entityId: candidateId, detail: { attempt: r.attemptNo } });
+  done(candidateId);
+  return { ok: true };
 }
 
 /** Give a candidate a login to follow their application, by email. */
