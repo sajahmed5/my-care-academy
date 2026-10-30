@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SignaturePad } from "@/app/org/forms/[id]/fill/signature-pad";
+import { SignaturePad } from "@/components/signature-pad";
 
 /**
  * The person's signature on an audit, signed on this screen at the time

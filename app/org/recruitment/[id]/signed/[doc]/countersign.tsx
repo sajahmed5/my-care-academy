@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { SignaturePad } from "@/app/org/forms/[id]/fill/signature-pad";
+import { SignaturePad } from "@/components/signature-pad";
 import { countersignAction } from "../../../signing-actions";
 
 const input = "mt-1 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50";

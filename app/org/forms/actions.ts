@@ -2,6 +2,7 @@
 
 import { requireConsole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hasFeature } from "@/lib/entitlements";
 
 /**
  * Signed URL to view a file answer on a form or a log (own organisation
@@ -13,6 +14,7 @@ export async function getSubmissionFileUrlAction(
 ): Promise<{ url?: string }> {
   const context = await requireConsole();
   if (!path.startsWith(`${context.organisationId}/`)) return {};
+  if (!(await hasFeature(context, "forms.builder"))) return {};
   const admin = createAdminClient();
   const { data } = await admin.storage
     .from("form-uploads")

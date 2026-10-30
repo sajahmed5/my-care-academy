@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { brandEmailHtml, emailButton, emailLayout, pointLinksAt } from "@/lib/email-layout";
-import { fromAs } from "@/lib/email";
+import { companyLookupOnce, fromAs } from "@/lib/email";
 
 const email = emailLayout({
   heading: "Your training",
@@ -71,5 +71,22 @@ describe("pointLinksAt", () => {
   it("keeps certificate checks on our site, and leaves look-alikes", () => {
     expect(out).toContain('href="https://www.mycareacademy.co.uk/verify?number=MCA-1"');
     expect(out).toContain("https://www.mycareacademy.co.uk.evil.com/x");
+  });
+});
+
+describe("companyLookupOnce", () => {
+  it("looks each company up once however many messages it has", async () => {
+    const lookup = vi.fn(async (_id: string) => null);
+    const once = companyLookupOnce(lookup);
+    await Promise.all([once("a"), once("a"), once("b"), once("a"), once("b")]);
+    expect(lookup).toHaveBeenCalledTimes(2);
+    expect(lookup.mock.calls.map((c) => c[0]).sort()).toEqual(["a", "b"]);
+  });
+
+  it("starts afresh for each batch", async () => {
+    const lookup = vi.fn(async () => null);
+    await companyLookupOnce(lookup)("a");
+    await companyLookupOnce(lookup)("a");
+    expect(lookup).toHaveBeenCalledTimes(2);
   });
 });

@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { textareaClass } from "@/components/hr/fields";
-import { SignaturePad } from "@/app/org/forms/[id]/fill/signature-pad";
+import { SignaturePad } from "@/components/signature-pad";
 import { loadStatementAction, submitStatementAction } from "./actions";
 
 export function StatementForm({ token }: { token: string }) {

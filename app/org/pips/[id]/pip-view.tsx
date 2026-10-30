@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SignaturePad } from "@/app/org/forms/[id]/fill/signature-pad";
+import { SignaturePad } from "@/components/signature-pad";
 import type { StaffOption } from "@/lib/complaints/data";
 import { PIP_OUTCOMES, PIP_SUPPORT_TYPES, PIP_WEEK_RATINGS, label, type Pip, type PipReview } from "@/lib/pips/plan";
 import type { PipNext, PipStep } from "@/lib/pips/steps";

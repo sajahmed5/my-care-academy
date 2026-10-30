@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { selectClass, textareaClass } from "@/components/hr/fields";
-import { SignaturePad } from "@/app/org/forms/[id]/fill/signature-pad";
+import { SignaturePad } from "@/components/signature-pad";
 import { APPEAL_OUTCOMES, DISCIPLINARY_OUTCOMES, GRIEVANCE_OUTCOMES, RECOMMENDATIONS } from "@/lib/hr/cases";
 import {
   acknowledgeGrievanceAction,

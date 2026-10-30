@@ -13,6 +13,9 @@ import { fetchAll } from "@/lib/fetch-all";
  */
 const IDS_PER_REQUEST = 100;
 
+/** The most courses, or pathways, one call may name. */
+const MAX_ITEMS = 200;
+
 export const dynamic = "force-dynamic";
 // Invites send emails one by one; give the function room to breathe.
 export const maxDuration = 60;
@@ -44,18 +47,32 @@ export async function POST(req: Request) {
 
   const admin = createAdminClient();
 
-  // Expand pathways -> courses, dedupe.
-  const courseIds = new Set((body.courseIds ?? []).filter(Boolean));
-  const pathwayIds = (body.pathwayIds ?? []).filter(Boolean);
-  if (pathwayIds.length) {
-    const { data } = await admin.from("pathway_courses").select("course_id").in("pathway_id", pathwayIds);
-    for (const pc of data ?? []) courseIds.add(pc.course_id);
+  // Expand pathways -> courses, dedupe. Both lists are capped, and every
+  // lookup split, so no request carries more ids than its URL can hold.
+  const sentCourses = [...new Set((Array.isArray(body.courseIds) ? body.courseIds : []).filter(Boolean))];
+  const pathwayIds = [...new Set((Array.isArray(body.pathwayIds) ? body.pathwayIds : []).filter(Boolean))];
+  if (sentCourses.length > MAX_ITEMS || pathwayIds.length > MAX_ITEMS) {
+    return NextResponse.json({ error: `Send at most ${MAX_ITEMS} courseIds and ${MAX_ITEMS} pathwayIds` }, { status: 400 });
+  }
+  const courseIds = new Set(sentCourses);
+  for (const part of chunk(pathwayIds, IDS_PER_REQUEST)) {
+    const rows = await fetchAll<{ pathway_id: string; course_id: string }>((f, t) =>
+      admin.from("pathway_courses").select("pathway_id, course_id").in("pathway_id", part).order("pathway_id").order("course_id").range(f, t),
+    );
+    for (const pc of rows) courseIds.add(pc.course_id);
   }
   if (courseIds.size === 0) return NextResponse.json({ error: "Nothing to assign" }, { status: 400 });
 
   // Only real courses — a stale id from the portal must not insert a ghost.
-  const { data: courses } = await admin.from("courses").select("id").in("id", [...courseIds]);
-  const validCourseIds = (courses ?? []).map((c) => c.id);
+  const validCourseIds = (
+    await Promise.all(
+      chunk([...courseIds], IDS_PER_REQUEST).map(async (part) => {
+        const { data, error } = await admin.from("courses").select("id").in("id", part);
+        if (error) throw new Error(error.message);
+        return (data ?? []).map((c) => c.id as string);
+      }),
+    )
+  ).flat();
 
   const users = (
     await Promise.all(
@@ -82,11 +99,13 @@ export async function POST(req: Request) {
   const existing = validCourseIds.length
     ? (
         await Promise.all(
-          chunk(userIds, IDS_PER_REQUEST).map((part) =>
-            fetchAll<{ id: string; user_id: string; course_id: string; due_date: string | null }>((f, t) =>
-              admin.from("enrolments").select("id, user_id, course_id, due_date")
-                .eq("organisation_id", org.id).in("user_id", part).in("course_id", validCourseIds)
-                .order("id").range(f, t),
+          chunk(userIds, IDS_PER_REQUEST).flatMap((part) =>
+            chunk(validCourseIds, IDS_PER_REQUEST).map((coursePart) =>
+              fetchAll<{ id: string; user_id: string; course_id: string; due_date: string | null }>((f, t) =>
+                admin.from("enrolments").select("id, user_id, course_id, due_date")
+                  .eq("organisation_id", org.id).in("user_id", part).in("course_id", coursePart)
+                  .order("id").range(f, t),
+              ),
             ),
           ),
         )

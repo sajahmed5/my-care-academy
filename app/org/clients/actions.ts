@@ -138,8 +138,33 @@ export async function importClientsAction(
     );
     if (error) return { ok: false, error: "Some clients couldn't be added. Nothing after row " + (i + 1) + " was saved." };
   }
-  for (const u of updates) {
-    await supabase.from("clients").update(u.values).eq("id", u.id);
+  // Clients already on the list, 500 at a time: an upsert on id (every one
+  // exists, so each is an update) instead of one request per row, which a
+  // large file couldn't finish — and whose failures went unnoticed.
+  let updated = 0;
+  for (let i = 0; i < updates.length; i += 500) {
+    const part = updates.slice(i, i + 500);
+    const { error } = await supabase
+      .from("clients")
+      .upsert(
+        part.map((u) => ({ id: u.id, organisation_id: context.organisationId, ...u.values })),
+        { onConflict: "id" },
+      );
+    if (error) {
+      await logAudit({
+        context,
+        action: "clients.imported",
+        entity: "client",
+        entityId: context.organisationId!,
+        detail: { added: inserts.length, updated, skipped, failedUpdates: updates.length - updated },
+      });
+      revalidatePath("/org/clients");
+      return {
+        ok: false,
+        error: `${inserts.length} added and ${updated} updated, but ${updates.length - updated} clients already on the list couldn't be updated. Try the upload again.`,
+      };
+    }
+    updated += part.length;
   }
 
   await logAudit({

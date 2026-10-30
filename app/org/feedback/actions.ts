@@ -73,7 +73,8 @@ export async function createSurveyAction(_prev: SaveState, formData: FormData): 
 
 /** Open or close a round. A closed round says so and takes no answers. */
 export async function setSurveyOpenAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
-  const context = await requireConsole();
+  const context = await console_();
+  if (!context) return { ok: false, error: NOT_IN_PLAN };
   const id = String(formData.get("id") ?? "");
   const open = formData.get("open") === "1";
   const supabase = await createClient();

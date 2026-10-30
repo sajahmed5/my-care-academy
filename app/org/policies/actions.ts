@@ -116,6 +116,7 @@ export async function adoptPolicyAction(_prev: SaveState, formData: FormData): P
 /** Save the working copy. Staff keep reading the published version. */
 export async function savePolicyDraftAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
   const context = await requireConsole();
+  if (!(await hasFeature(context, "documents.library"))) return { ok: false, error: "The policy library is not in your plan." };
   const copyId = String(formData.get("copyId") ?? "");
   const code = String(formData.get("code") ?? "");
   let blocks;
@@ -265,6 +266,7 @@ export async function reviewNoChangeAction(_prev: SaveState, formData: FormData)
  */
 export async function fillDetailsAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
   const context = await requireConsole();
+  if (!(await hasFeature(context, "documents.library"))) return { ok: false, error: "The policy library is not in your plan." };
   const copyId = String(formData.get("copyId") ?? "");
   const code = String(formData.get("code") ?? "");
   const supabase = await createClient();

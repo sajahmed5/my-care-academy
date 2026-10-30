@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { siteOrigin } from "@/lib/site-url";
 import { formatDateTime } from "@/lib/dates";
 import { liveKeys } from "@/lib/integration-keys";
-import { ALERT_EVENTS } from "@/lib/alert-signing";
+import { ALERT_EVENTS, autoPaused } from "@/lib/alert-signing";
 import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -104,6 +104,7 @@ export default async function OtherSystemsPage() {
           {(endpoints ?? []).map((e) => {
             const recent = (deliveries ?? []).filter((d) => d.endpoint_id === e.id).slice(0, 5);
             const failing = (e.consecutive_failures as number) > 0;
+            const pausedByUs = autoPaused(e as { active: boolean; consecutive_failures: number | null });
             return (
               <div key={e.id as string} className="space-y-2 rounded-lg border p-3">
                 <div className="flex flex-wrap items-center gap-2">
@@ -119,9 +120,11 @@ export default async function OtherSystemsPage() {
                 <p className={failing ? "text-amber-700" : "text-muted-foreground"}>
                   {!e.last_attempt_at
                     ? "Nothing sent yet."
-                    : failing
-                      ? `The last ${e.consecutive_failures === 1 ? "alert" : `${e.consecutive_failures} alerts`} didn't get through (${e.last_error}). We try again for three days.`
-                      : `The last alert got through, ${formatDateTime(e.last_attempt_at as string)}.`}
+                    : pausedByUs
+                      ? `We paused alerts to this address after ${e.consecutive_failures} in a row didn't get through (${e.last_error}). Check the address with the other system, then resume it.`
+                      : failing
+                        ? `The last ${e.consecutive_failures === 1 ? "alert" : `${e.consecutive_failures} alerts`} didn't get through (${e.last_error}). We try again for three days.`
+                        : `The last alert got through, ${formatDateTime(e.last_attempt_at as string)}.`}
                 </p>
                 <AlertEndpointControls id={e.id as string} label={e.label as string} active={e.active as boolean} />
                 {recent.length > 0 && (

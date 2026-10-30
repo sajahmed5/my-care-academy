@@ -2,6 +2,7 @@ import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-p
 import type { FormField } from "./forms";
 import { lineFlagged, logCell, logColumns, type LogEntry } from "./form-logs";
 import { formatDate } from "./dates";
+import { PdfLogo, withPoweredBy } from "./pdf-brand";
 
 /**
  * A log as the table that gets printed or handed to an inspector: landscape,
@@ -35,6 +36,8 @@ export function renderLogPdf(input: {
   entries: LogEntry[];
   from: string | null;
   to: string | null;
+  /** The company's logo, with white label (orgBranding().logoUrl). */
+  logoUrl?: string | null;
 }): Promise<Buffer> {
   const cols = logColumns(input.fields);
   // Fixed columns are narrow; the log's own share what is left, long text getting more.
@@ -53,6 +56,7 @@ export function renderLogPdf(input: {
   return renderToBuffer(
     <Document title={input.title} author={input.organisationName}>
       <Page size="A4" orientation="landscape" style={styles.page}>
+        <PdfLogo url={input.logoUrl} />
         <Text style={styles.brand}>{input.organisationName.toUpperCase()}</Text>
         <Text style={styles.title}>{input.title}</Text>
         <Text style={styles.sub}>
@@ -82,7 +86,7 @@ export function renderLogPdf(input: {
         {input.entries.length === 0 && <Text style={styles.note}>No lines in this range.</Text>}
         {anyFlagged && <Text style={styles.note}>* Outside the safe range.</Text>}
         <View style={styles.footer} fixed>
-          <Text>{`${input.organisationName} — ${input.title}`}</Text>
+          <Text>{withPoweredBy(`${input.organisationName} — ${input.title}`, input.logoUrl)}</Text>
           <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>
       </Page>

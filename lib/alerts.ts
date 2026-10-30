@@ -4,7 +4,7 @@ import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeatureForOrg } from "@/lib/entitlements";
 import { fetchAll } from "@/lib/fetch-all";
-import { isPrivateAddress, signAlert, SIGNATURE_HEADER, type AlertEvent } from "@/lib/alert-signing";
+import { afterAlertTry, isPrivateAddress, signAlert, SIGNATURE_HEADER, type AlertEvent } from "@/lib/alert-signing";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -16,7 +16,8 @@ type Admin = ReturnType<typeof createAdminClient>;
  *
  * Sending never holds up or fails what caused it: a certificate is issued
  * whether or not the alert gets through. Each alert is tried three times in
- * the moment, then again by the daily run for up to three days.
+ * the moment, then again by the daily run for up to three days. An address
+ * that fails AUTO_PAUSE_AFTER times in a row is paused (lib/alert-signing).
  */
 
 const TIMEOUT_MS = 10_000;
@@ -92,13 +93,15 @@ async function attempt(admin: Admin, endpoint: Endpoint, delivery: { id: string;
     .update({ attempts, ok: result.ok, status_code: result.status, error: result.error, delivered_at: result.ok ? now : null })
     .eq("id", delivery.id);
   const { data: ep } = await admin.from("alert_endpoints").select("consecutive_failures").eq("id", endpoint.id).maybeSingle();
+  const next = afterAlertTry(result.ok, (ep?.consecutive_failures as number | undefined) ?? 0);
   await admin
     .from("alert_endpoints")
     .update({
       last_attempt_at: now,
       last_status: result.status,
       last_error: result.error,
-      consecutive_failures: result.ok ? 0 : ((ep?.consecutive_failures as number | undefined) ?? 0) + 1,
+      consecutive_failures: next.consecutiveFailures,
+      ...(next.pause ? { active: false } : {}),
     })
     .eq("id", endpoint.id);
   return result.ok;
@@ -112,6 +115,7 @@ async function deliver(
   event: AlertEvent,
   data: Record<string, unknown>,
   dedupeKey: string | null = null,
+  tries = TRIES_NOW,
 ): Promise<boolean | null> {
   const id = crypto.randomUUID();
   const payload = {
@@ -130,7 +134,7 @@ async function deliver(
     payload,
   });
   if (error) return null;
-  return attempt(admin, endpoint, { id, event, payload, attempts: 0 }, TRIES_NOW);
+  return attempt(admin, endpoint, { id, event, payload, attempts: 0 }, tries);
 }
 
 async function endpointsFor(admin: Admin, organisationId: string, event: AlertEvent): Promise<Endpoint[]> {
@@ -216,13 +220,31 @@ export async function sendTestAlert(endpointId: string, organisationId: string):
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
 /**
+ * What the daily run's two alert jobs share: when to stop starting new sends
+ * (the function has 60 seconds, and these run last), and the addresses that
+ * have already failed this run, which aren't tried again until tomorrow.
+ */
+export interface AlertRun {
+  deadline: number;
+  failed: Set<string>;
+}
+
+export function newAlertRun(deadline = Date.now() + 20_000): AlertRun {
+  return { deadline, failed: new Set() };
+}
+
+/**
  * "Training overdue", once a day from the daily run: for each address that
  * wants it, the courses whose due date has passed since its last overdue
  * alert (since it was set up, for the first). One alert per address per day;
  * an empty day sends nothing. What was already overdue before the address
  * was set up is in GET /api/portal/records.
  */
-export async function processOverdueAlerts(now: Date, dryRun: boolean): Promise<{ overdueAlertsSent: number }> {
+export async function processOverdueAlerts(
+  now: Date,
+  dryRun: boolean,
+  run: AlertRun = newAlertRun(),
+): Promise<{ overdueAlertsSent: number; overdueAlertsLeft: number }> {
   const admin = createAdminClient();
   const { data: endpoints } = await admin
     .from("alert_endpoints")
@@ -230,8 +252,14 @@ export async function processOverdueAlerts(now: Date, dryRun: boolean): Promise<
     .eq("active", true)
     .contains("events", ["training.overdue"]);
   let sent = 0;
+  let left = 0;
   const today = isoDate(now);
   for (const e of endpoints ?? []) {
+    if (Date.now() > run.deadline) {
+      left += 1;
+      continue;
+    }
+    if (run.failed.has(e.id as string)) continue;
     if (!(await hasFeatureForOrg(admin, e.organisation_id as string, "platform.portal_api"))) continue;
     const { data: last } = await admin
       .from("alert_deliveries")
@@ -276,14 +304,20 @@ export async function processOverdueAlerts(now: Date, dryRun: boolean): Promise<
         course: { id: x.course_id, title: byCourse.get(x.course_id) ?? null },
       }));
     if (!items.length) continue;
-    const ok = await deliver(admin, e as Endpoint, await orgName(admin, e.organisation_id as string), "training.overdue", { items }, `overdue:${today}`);
+    // One try here: a failure is logged and the retry run has it tomorrow.
+    const ok = await deliver(admin, e as Endpoint, await orgName(admin, e.organisation_id as string), "training.overdue", { items }, `overdue:${today}`, 1);
+    if (ok === false) run.failed.add(e.id as string);
     if (ok !== null) sent += 1;
   }
-  return { overdueAlertsSent: sent };
+  return { overdueAlertsSent: sent, overdueAlertsLeft: left };
 }
 
 /** The daily run's second go at alerts that didn't get through. */
-export async function retryFailedAlerts(now: Date, dryRun: boolean): Promise<{ alertsRetried: number }> {
+export async function retryFailedAlerts(
+  now: Date,
+  dryRun: boolean,
+  run: AlertRun = newAlertRun(),
+): Promise<{ alertsRetried: number; alertsRetryLeft: number }> {
   const admin = createAdminClient();
   const { data: failed } = await admin
     .from("alert_deliveries")
@@ -293,7 +327,7 @@ export async function retryFailedAlerts(now: Date, dryRun: boolean): Promise<{ a
     .gte("created_at", new Date(now.getTime() - RETRY_DAYS * 86_400_000).toISOString())
     .order("created_at")
     .limit(100);
-  if (dryRun || !failed?.length) return { alertsRetried: failed?.length ?? 0 };
+  if (dryRun || !failed?.length) return { alertsRetried: failed?.length ?? 0, alertsRetryLeft: 0 };
   const { data: endpoints } = await admin
     .from("alert_endpoints")
     .select("id, organisation_id, url, secret, events")
@@ -301,11 +335,18 @@ export async function retryFailedAlerts(now: Date, dryRun: boolean): Promise<{ a
     .eq("active", true);
   const byId = new Map((endpoints ?? []).map((e) => [e.id as string, e as Endpoint]));
   let n = 0;
+  let left = 0;
   for (const d of failed) {
     const e = byId.get(d.endpoint_id as string);
-    if (!e) continue;
-    await attempt(admin, e, d as { id: string; event: string; payload: unknown; attempts: number }, 1);
+    // Paused (by the manager, or by us), or already failed this run.
+    if (!e || run.failed.has(e.id)) continue;
+    if (Date.now() > run.deadline) {
+      left += 1;
+      continue;
+    }
+    const ok = await attempt(admin, e, d as { id: string; event: string; payload: unknown; attempts: number }, 1);
+    if (!ok) run.failed.add(e.id);
     n += 1;
   }
-  return { alertsRetried: n };
+  return { alertsRetried: n, alertsRetryLeft: left };
 }

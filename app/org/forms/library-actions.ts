@@ -11,6 +11,7 @@ import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
 import { emailAssignees } from "@/lib/assignment-email";
 import { siteOrigin } from "@/lib/site-url";
+import { fetchAll } from "@/lib/fetch-all";
 import type { SaveState } from "@/app/platform/actions";
 
 /** A save that can say how many people it reached. */
@@ -65,47 +66,64 @@ export async function assignFormAction(
 
   // The organisation's active learners, and who already has this form open —
   // both read by organisation rather than by a list of ids in the URL, which
-  // "everyone" in a large organisation would push past the URL limit.
-  const [{ data: users }, { data: open }] = await Promise.all([
-    supabase
-      .from("users")
-      .select("id")
-      .eq("organisation_id", orgId)
-      .eq("status", "active")
-      .in("role", STAFF_ROLES)
-      .limit(1000),
-    supabase
-      .from("form_assignments")
-      .select("user_id")
-      .eq("organisation_id", orgId)
-      .eq("template_id", templateId)
-      .is("completed_at", null)
-      .limit(1000),
+  // "everyone" in a large organisation would push past the URL limit — and a
+  // page at a time, past the 1,000 rows one read returns.
+  const [users, open] = await Promise.all([
+    fetchAll<{ id: string }>((f, t) =>
+      supabase
+        .from("users")
+        .select("id")
+        .eq("organisation_id", orgId)
+        .eq("status", "active")
+        .in("role", STAFF_ROLES)
+        .order("id")
+        .range(f, t),
+    ),
+    fetchAll<{ id: string; user_id: string }>((f, t) =>
+      supabase
+        .from("form_assignments")
+        .select("id, user_id")
+        .eq("organisation_id", orgId)
+        .eq("template_id", templateId)
+        .is("completed_at", null)
+        .order("id")
+        .range(f, t),
+    ),
   ]);
   const wanted = everyone ? null : new Set(picked);
-  const userIds = (users ?? []).map((u) => u.id as string).filter((id) => !wanted || wanted.has(id));
+  const userIds = users.map((u) => u.id).filter((id) => !wanted || wanted.has(id));
   if (userIds.length === 0) return { ok: false, error: "Nobody matched." };
 
-  const alreadyOpen = new Set((open ?? []).map((r) => r.user_id as string));
+  const alreadyOpen = new Set(open.map((r) => r.user_id));
   const fresh = userIds.filter((id) => !alreadyOpen.has(id));
   if (fresh.length === 0) {
     return { ok: false, error: "Everyone you chose already has this form open." };
   }
 
-  const { data: created, error } = await supabase
-    .from("form_assignments")
-    .insert(
-      fresh.map((user_id) => ({
-        organisation_id: context.organisationId,
-        template_id: templateId,
-        user_id,
-        assigned_by: context.userId,
-        due_date: dueDate || null,
-        note: note || null,
-      })),
-    )
-    .select("id, user_id, template:form_templates (title)");
-  if (error) return { ok: false, error: error.message };
+  // Written 500 at a time, so a large organisation's rows (and what comes
+  // back for the emails) stay well inside one request.
+  const created: { id: string; user_id: string; template: unknown }[] = [];
+  for (let i = 0; i < fresh.length; i += 500) {
+    const { data, error } = await supabase
+      .from("form_assignments")
+      .insert(
+        fresh.slice(i, i + 500).map((user_id) => ({
+          organisation_id: context.organisationId,
+          template_id: templateId,
+          user_id,
+          assigned_by: context.userId,
+          due_date: dueDate || null,
+          note: note || null,
+        })),
+      )
+      .select("id, user_id, template:form_templates (title)");
+    if (error) {
+      if (created.length === 0) return { ok: false, error: error.message };
+      break;
+    }
+    created.push(...((data ?? []) as typeof created));
+  }
+  const assigned = new Set(created.map((a) => a.user_id));
 
   // Each person is told, after the response so the click is not held up (#72).
   const origin = await siteOrigin();
@@ -113,13 +131,13 @@ export async function assignFormAction(
     emailAssignees(
       createAdminClient(),
       "form_assigned",
-      (created ?? []).map((a) => {
+      created.map((a) => {
         const t = (Array.isArray(a.template) ? a.template[0] : a.template) as { title?: string } | null;
         return {
-          userId: a.user_id as string,
+          userId: a.user_id,
           title: t?.title ?? "A form",
           dueDate: dueDate || null,
-          href: `/learn/forms/${a.id as string}`,
+          href: `/learn/forms/${a.id}`,
           note: note || null,
         };
       }),
@@ -132,11 +150,14 @@ export async function assignFormAction(
     action: "form.assigned",
     entity: "form_template",
     entityId: templateId,
-    detail: { people: fresh.length, dueDate: dueDate || null, everyone },
+    detail: { people: assigned.size, dueDate: dueDate || null, everyone },
   });
 
   revalidatePath("/org/forms");
-  for (const id of fresh) revalidatePath(`/org/staff/${id}`);
+  for (const id of assigned) revalidatePath(`/org/staff/${id}`);
+  if (assigned.size < fresh.length) {
+    return { ok: false, count: assigned.size, error: `Sent to ${assigned.size} of ${fresh.length}; the rest couldn't be saved. Try again for them.` };
+  }
   return { ok: true, count: fresh.length };
 }
 

@@ -60,7 +60,7 @@ export async function sendInvitations(
   outgoing: { invitationId: string; to: string; subject: string; html: string }[],
 ): Promise<number> {
   if (outgoing.length === 0) return 0;
-  const sent = await sendEmailBatch(outgoing.map(({ to, subject, html }) => ({ to, subject, html })));
+  const sent = await sendEmailBatch(outgoing.map(({ to, subject, html }) => ({ to, subject, html, organisationId })));
   await admin.from("email_log").insert(
     outgoing.map((m, i) => ({ organisation_id: organisationId, to_email: m.to, type: "feedback_survey", subject: m.subject, sent: sent[i] })),
   );
