@@ -85,6 +85,10 @@ export interface FormRecord {
   signed_name: string | null;
   signatures: DeviceSignature[];
   submitted_at: string;
+  /** When it is due for review, if the form is one that is reviewed. */
+  review_due: string | null;
+  /** The earlier record this one reviews. */
+  review_of: string | null;
 }
 
 function unwrap(v: unknown): unknown {
@@ -92,7 +96,7 @@ function unwrap(v: unknown): unknown {
 }
 
 const RECORD_SELECT =
-  "id, template_id, template_version, subject, assignment_id, client_id, user_id, answers, signed_name, signatures, submitted_at, template:form_templates (code, title), client:clients (full_name), person:users!form_responses_user_id_fkey (full_name, email)";
+  "id, template_id, template_version, subject, assignment_id, client_id, user_id, answers, signed_name, signatures, submitted_at, review_due, review_of, template:form_templates (code, title), client:clients (full_name), person:users!form_responses_user_id_fkey (full_name, email)";
 
 function toRecord(r: Record<string, unknown>): FormRecord {
   const t = unwrap(r.template) as { code?: string; title?: string } | undefined;
@@ -114,6 +118,8 @@ function toRecord(r: Record<string, unknown>): FormRecord {
     signed_name: (r.signed_name as string | null) ?? null,
     signatures: Array.isArray(r.signatures) ? (r.signatures as DeviceSignature[]) : [],
     submitted_at: r.submitted_at as string,
+    review_due: (r.review_due as string | null) ?? null,
+    review_of: (r.review_of as string | null) ?? null,
   };
 }
 
@@ -154,7 +160,7 @@ export async function loadRecord(
   const { data } = await supabase
     .from("form_responses")
     .select(
-      "id, template_id, template_version, subject, assignment_id, client_id, user_id, answers, signed_name, signatures, submitted_at, template:form_templates (code, title, description, version, fields), client:clients (full_name), person:users!form_responses_user_id_fkey (full_name, email)",
+      "id, template_id, template_version, subject, assignment_id, client_id, user_id, answers, signed_name, signatures, submitted_at, review_due, review_of, template:form_templates (code, title, description, version, fields), client:clients (full_name), person:users!form_responses_user_id_fkey (full_name, email)",
     )
     .eq("id", id)
     .maybeSingle();
