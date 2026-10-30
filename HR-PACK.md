@@ -2,8 +2,8 @@
 
 Agreed with Saj on 29 Oct 2026. Built 31 Oct 2026 (each part's note says
 how). The HR pack is in
-every package since 30 Oct 2026, and is never split between packages (see
-PACKAGES.md). It was the Recruitment add-on until 29 Oct
+Growth and up (Starter is training only since 30 Oct 2026), and is never
+split between packages (see PACKAGES.md). It was the Recruitment add-on until 29 Oct
 2026; it now covers employing someone, from application to leaving. How well
 they do the job is Staff Audits (STAFF-AUDITS.md).
 
@@ -27,7 +27,7 @@ interview, test result, references, signed contract — when they were
 recruited on the site. On hire, the checked documents move here with their
 expiry dates, so reminders carry on.
 
-Every package has it: the HR pack moved to Starter on 30 Oct 2026.
+Growth and up, with the rest of the HR pack (Starter is training only).
 
 *Built 31 Oct 2026: the file's Documents section, with a Recruitment
 sub-page; Documents due under HR; an HR line in the weekly email.*

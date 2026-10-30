@@ -113,12 +113,13 @@ describe("tier contents", () => {
     }
   });
 
-  // The HR pack moved to Starter on 30 Oct 2026, and is never split.
+  // Starter is online training only; the HR pack starts at Growth, and is
+  // never split (30 Oct 2026).
   it("match the packages agreed on 29 Oct 2026 (PACKAGES.md)", () => {
     const has = (tier: string, feature: string) =>
       ticks.some((t) => t.tier_key === tier && t.feature_key === feature);
     const from: Record<string, string> = {
-      "recruitment.tracker": "core",
+      "recruitment.tracker": "core_forms",
       "people.supervisions": "core_forms",
       "people.competency": "core_forms",
       "people.performance_plans": "core_forms",

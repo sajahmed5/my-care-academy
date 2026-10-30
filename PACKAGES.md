@@ -10,7 +10,7 @@ has them (`lib/pricing.ts`) until Saj reviews them after the build.
 | | Starter £49 | Growth £99 | Pro £149 | Enterprise £249 |
 |---|:-:|:-:|:-:|:-:|
 | Online training | ✓ | ✓ | ✓ | ✓ |
-| HR pack | ✓ | ✓ | ✓ | ✓ |
+| HR pack | | ✓ | ✓ | ✓ |
 | Staff Audits | | ✓ | ✓ | ✓ |
 | Complaints & safeguarding | | | ✓ | ✓ |
 | Service audits | | | ✓ | ✓ |
@@ -27,8 +27,8 @@ has them (`lib/pricing.ts`) until Saj reviews them after the build.
   induction programmes, certificates, reminders. Every package. For everyone
   in the company, office staff and managers included (see Staff logins
   below), with new office and admin courses to write.
-- **HR pack** (called Recruitment until 29 Oct 2026) — every package since
-  30 Oct 2026 (below). Employing someone:
+- **HR pack** (called Recruitment until 29 Oct 2026) — Growth and up
+  (below). Employing someone:
   recruitment from application to hire (RECRUITMENT.md), the carer's
   documents page with its Recruitment sub-page, probation reviews, sickness
   absence and return to work, disciplinary, grievance, and leavers. Planned
@@ -106,7 +106,7 @@ Package keys stay as they are (`core`, `core_forms`, `core_recruitment`,
 
 | Feature | Today | Agreed |
 |---|---|---|
-| `recruitment.tracker` | Pro | **Starter** (HR pack; Growth until 30 Oct 2026) |
+| `recruitment.tracker` | Pro | **Growth** (HR pack; briefly Starter on 30 Oct 2026) |
 | `people.supervisions`, `people.competency` | Pro | **Growth** (Staff Audits) |
 | `forms.builder` | Growth | **Pro** |
 | `documents.library` | Growth | **Pro**, merged with the pack |
@@ -126,15 +126,19 @@ Nobody loses anything: on 29 Oct 2026 two organisations are on Starter and
 one on Enterprise, none on Growth or Pro, and the only classroom session ever
 recorded belongs to the Enterprise one.
 
-## The HR pack moved to Starter (30 Oct 2026)
+## Starter is online training only (30 Oct 2026)
 
 A platform admin ticked `recruitment.tracker` for Starter on 29 Oct 2026, and
-Saj confirmed it the next day: the HR pack is now in every package. The HR
-pack is never split — a part of it can't sit in one package and another part
-in a different one. Each new HR part (the documents page, probation, absence
-and return to work, disciplinary, grievance, leavers, holidays) goes in
-Starter too, whatever key it is built on. Growth is now Staff Audits and the
-client list.
+for part of 30 Oct the HR pack was in every package. Later that day Saj set
+the packages back to his original spreadsheet: **Starter is online training
+only; Growth is training, recruitment and Staff Audits.** The HR pack is
+never split — a part of it can't sit in one package and another part in a
+different one — so all of it starts at Growth, and each new HR part
+(whatever key it is built on) goes in Growth and up.
+
+Nothing was deleted: a Starter company's HR records stay, out of sight until
+it moves to Growth. On 30 Oct 2026 that was Norwood Drive (one candidate)
+and the Starter Pack demo company.
 
 ## What people see when their package doesn't include something
 

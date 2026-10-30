@@ -40,20 +40,21 @@ export const TIER_DETAILS: Record<
   // Regrouped 29 Oct 2026 (PACKAGES.md). Each line describes what is built
   // today: as the HR pack, Staff Audits and the rest grow, so does this copy.
   core: {
-    tagline: "Train your whole team, and hire the next one.",
+    // Online training only (Saj's package spreadsheet, 30 Oct 2026).
+    tagline: "Train your whole team.",
     features: [
       "Full CQC-aligned course library and induction programmes",
       "Unlimited learners and admin users",
       "Certificates with verification and expiry tracking",
       "Training matrix and CSV exports",
       "Automated reminders and weekly digest emails",
-      "HR pack: recruitment to leaving: documents, probation, sickness, holidays, disciplinary and grievance",
     ],
   },
   core_forms: {
-    tagline: "Check and support your staff.",
+    tagline: "Hire, check and support your staff.",
     features: [
       "Everything in Starter",
+      "HR pack: recruitment to leaving: documents, probation, sickness, holidays, disciplinary and grievance",
       "Supervisions and appraisals, with agreed actions tracked",
       "Spot checks and competency assessments",
       "Performance plans, raised when a check isn't met, with reviews and an outcome",

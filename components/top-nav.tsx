@@ -53,7 +53,9 @@ const ORG_MENU: MenuItem[] = [
   // Everything falling due, from every add-on, as tabs on one page (ease-of-
   // use review, 30 Oct 2026) — it was eight "…due" pages under four menus.
   // Staff documents is one of its tabs, though it lives under /org/hr.
-  { label: "Who's due", href: "/org/due", also: ["/org/hr/documents"] },
+  // Every tab starts at Growth, so Starter gets the padlock, leading to
+  // what Staff Audits does.
+  { label: "Who's due", href: "/org/due", also: ["/org/hr/documents"], feature: "people.supervisions" },
   {
     label: "Staff",
     also: ["/org/staff"],
@@ -158,7 +160,8 @@ const MENUS: Record<string, MenuItem[]> = {
         { href: "/learn/hr", label: "Leave & letters", feature: "recruitment.tracker" },
         // Their booked supervisions and appraisal self-assessment (STAFF-AUDITS.md).
         { href: "/learn/reviews", label: "Supervisions", feature: "people.supervisions" },
-        { href: "/learn/actions", label: "My actions" },
+        // Actions come from supervisions, spot checks, complaints and audits: Growth and up.
+        { href: "/learn/actions", label: "My actions", feature: "people.supervisions" },
       ],
     },
     { label: "Policies", href: "/learn/policies", feature: "documents.library" },

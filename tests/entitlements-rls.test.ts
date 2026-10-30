@@ -105,8 +105,8 @@ describe("my_entitlements", () => {
     const { data, error } = await overriddenOn.rpc("my_entitlements");
     expect(error).toBeNull();
     expect((data as string[]).sort()).toEqual(
+      // Starter is online training only (PACKAGES.md, 30 Oct 2026).
       [
-        "recruitment.tracker",
         "training.courses",
         "training.matrix",
         "training.observations",

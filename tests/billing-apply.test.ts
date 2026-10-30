@@ -63,8 +63,8 @@ describe("applySubscriptionToOrg (what the webhook does)", () => {
     expect(data?.package_tier).toBe("core");
     expect(await has(org, "forms.builder")).toBe(false);
     expect(await has(org, "people.supervisions")).toBe(false);
-    // The HR pack is in Starter (PACKAGES.md, 30 Oct 2026), so it stays.
-    expect(await has(org, "recruitment.tracker")).toBe(true);
+    // Starter is online training only (PACKAGES.md, 30 Oct 2026).
+    expect(await has(org, "recruitment.tracker")).toBe(false);
   });
 
   // The old flag writes would have overwritten this. A platform admin's
