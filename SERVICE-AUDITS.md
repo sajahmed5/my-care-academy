@@ -41,6 +41,12 @@ PACKAGES.md), all on `quality.audits`.
   something to put right can be given an action; the auditor's own questions
   are editable and the score counts both. Probation is read in
   `lib/auto-audits-data.ts` only, ready for the HR pack's own record.
+- **The client page** (30 Oct 2026, no migration) — `/org/clients/<id>`
+  with service audits: what's due for that client (QA, and each client audit
+  that applies), their QA ratings over time with each heading's average, and
+  one list over time of their QAs, audits, spot checks, concerns and
+  compliments (`lib/client-history.ts`), each part only where the package has
+  it; low scores, open concerns and spot checks not met stand out.
 
 ## Today
 
