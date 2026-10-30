@@ -11,7 +11,7 @@ import {
 import { LIST_PRICE_GBP } from "@/lib/pricing";
 import { ChangePackage } from "./change-package";
 import { formatMoney, getBillingSummary } from "@/lib/account-billing";
-import { DashboardShell } from "@/components/dashboard-shell";
+import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -120,7 +120,7 @@ export default async function AccountPage({
   });
 
   return (
-    <DashboardShell title="Account and package" context={context} back={{ href: "/org/settings", label: "Settings" }}>
+    <SettingsShell context={context} active="/org/billing">
       <div className="space-y-6">
         {/* Package */}
         <Card className="overflow-hidden">
@@ -314,6 +314,6 @@ export default async function AccountPage({
           </CardContent>
         </Card>
       </div>
-    </DashboardShell>
+    </SettingsShell>
   );
 }

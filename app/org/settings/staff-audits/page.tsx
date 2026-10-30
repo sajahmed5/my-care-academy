@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/auth";
 import { enabledMap } from "@/lib/entitlements";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { DashboardShell } from "@/components/dashboard-shell";
+import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { lockedHref } from "@/lib/features";
@@ -52,7 +52,7 @@ export default async function AuditFormsPage() {
   );
 
   return (
-    <DashboardShell title="Staff audit forms" context={context} back={{ href: "/org/settings", label: "Settings" }}>
+    <SettingsShell context={context} active="/org/settings/staff-audits">
       <div className="space-y-6">
         <p className="text-sm text-muted-foreground">
           The questions on each audit, and how often it falls due. Each starts as ours — change any of them to suit how you work.
@@ -117,6 +117,6 @@ export default async function AuditFormsPage() {
           </section>
         )}
       </div>
-    </DashboardShell>
+    </SettingsShell>
   );
 }

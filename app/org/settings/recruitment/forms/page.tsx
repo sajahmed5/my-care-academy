@@ -5,7 +5,7 @@ import { CUSTOM_FORMS, CUSTOM_FORM_LABELS, sanitiseCustomQuestions } from "@/lib
 import { INTERVIEW_QUESTIONS } from "@/lib/recruitment-interview";
 import { LITERACY_QUESTIONS, MIN_MARKS, sanitiseLiteracySettings } from "@/lib/literacy-test";
 import { REJECTION_REASONS, defaultConditions, sanitiseLetterSettings } from "@/lib/recruitment-letters";
-import { DashboardShell } from "@/components/dashboard-shell";
+import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { InterviewQuestionsPicker, QuestionsEditor } from "./questions-editor";
 import { TestEditor } from "./test-editor";
 import { LettersEditor } from "./letters-editor";
@@ -35,7 +35,7 @@ export default async function RecruitmentFormsPage() {
   const card = "rounded-2xl border bg-card p-5";
 
   return (
-    <DashboardShell title="Recruitment forms and test" context={context} back={{ href: "/org/settings", label: "Settings" }}>
+    <SettingsShell context={context} active="/org/settings/recruitment/forms">
       <div className="max-w-3xl space-y-5">
         {CUSTOM_FORMS.map((form) => (
           <section key={form} aria-labelledby={`f-${form}`} className={card}>
@@ -67,6 +67,6 @@ export default async function RecruitmentFormsPage() {
           <LettersEditor initial={sanitiseLetterSettings(data?.letter_settings)} ours={REJECTION_REASONS} defaultConditions={defaultConditions(2)} canEdit={canEdit} />
         </section>
       </div>
-    </DashboardShell>
+    </SettingsShell>
   );
 }

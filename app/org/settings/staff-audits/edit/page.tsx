@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
-import { DashboardShell } from "@/components/dashboard-shell";
+import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { COMPETENCY_FORMS } from "@/lib/audit-forms";
 import { loadAuditForms } from "@/lib/audit-forms-data";
 import { FormEditor } from "./form-editor";
@@ -49,13 +49,14 @@ export default async function EditAuditFormPage({ searchParams }: { searchParams
   const title = kind === "competency" ? (area === "new" ? "A new skill" : `Competency: ${initial.label}`) : initial.label;
 
   return (
-    <DashboardShell title={title} context={context}>
+    <SettingsShell context={context} active="/org/settings/staff-audits">
       <div className="space-y-4">
         <Link href="/org/settings/staff-audits" className="text-sm text-muted-foreground hover:underline">
           ← All forms
         </Link>
+        <h3 className="font-semibold">{title}</h3>
         <FormEditor initial={initial} isNew={area === "new"} changed={!!row} ours={ours} />
       </div>
-    </DashboardShell>
+    </SettingsShell>
   );
 }

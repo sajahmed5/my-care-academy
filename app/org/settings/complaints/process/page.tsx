@@ -1,7 +1,7 @@
 import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
-import { DashboardShell } from "@/components/dashboard-shell";
+import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadStages } from "@/lib/complaints/data";
 import { buildSteps } from "@/lib/complaints/steps";
@@ -21,7 +21,7 @@ export default async function StagesPage() {
   const steps = buildSteps(stages.filter((s) => s.enabled), [], false);
 
   return (
-    <DashboardShell title="The complaints process" context={context} back={{ href: "/org/settings", label: "Settings" }}>
+    <SettingsShell context={context} active="/org/settings/complaints/process">
       <div className="space-y-6">
         {stages.length === 0 ? (
           <SeedStages />
@@ -51,6 +51,6 @@ export default async function StagesPage() {
           </>
         )}
       </div>
-    </DashboardShell>
+    </SettingsShell>
   );
 }

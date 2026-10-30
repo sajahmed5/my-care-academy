@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { siteOrigin } from "@/lib/site-url";
-import { DashboardShell } from "@/components/dashboard-shell";
+import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { CopyLink } from "@/app/org/feedback/controls";
 import { LinkOpenToggle, MakeLink } from "./controls";
@@ -21,7 +21,7 @@ export default async function ConcernLinkPage() {
     siteOrigin(),
   ]);
   return (
-    <DashboardShell title="Raise-a-concern link" context={context} back={{ href: "/org/settings", label: "Settings" }}>
+    <SettingsShell context={context} active="/org/settings/complaints/link">
       <Card>
         <CardContent className="space-y-4 pt-6 text-sm">
           <p className="text-muted-foreground">
@@ -43,6 +43,6 @@ export default async function ConcernLinkPage() {
           )}
         </CardContent>
       </Card>
-    </DashboardShell>
+    </SettingsShell>
   );
 }

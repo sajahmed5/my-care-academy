@@ -3,7 +3,7 @@ import { requireFeature } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { wordingInForce } from "@/lib/signing";
 import { DEFAULT_SIGNING_DOCUMENTS, MERGE_FIELDS, SIGNING_DOC_KEYS, blanksIn } from "@/lib/signing-documents";
-import { DashboardShell } from "@/components/dashboard-shell";
+import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { WordingEditor } from "./wording-editor";
 
 /**
@@ -31,7 +31,7 @@ export default async function DocumentsToSignPage() {
   }));
   const blankCount = docs.flatMap((d) => d.parts).reduce((n, p) => n + blanksIn(p.body).length, 0);
   return (
-    <DashboardShell title="Documents to sign" context={context} back={{ href: "/org/settings", label: "Settings" }}>
+    <SettingsShell context={context} active="/org/settings/recruitment/documents">
       <div className="max-w-4xl space-y-5">
         <p className="text-sm text-muted-foreground">
           What a new carer signs once their checks are done: role acceptance, the contract and the refund of training agreement. This is
@@ -53,6 +53,6 @@ export default async function DocumentsToSignPage() {
         </details>
         <WordingEditor docs={docs} canEdit />
       </div>
-    </DashboardShell>
+    </SettingsShell>
   );
 }

@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { RECRUITMENT_STEPS, settingsFromRow } from "@/lib/recruitment";
-import { DashboardShell } from "@/components/dashboard-shell";
+import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { SettingsForm } from "./settings-form";
 import { letterDefaultsFromRow } from "@/lib/recruitment-letters";
 import { DEFAULT_WELCOME_GUIDE, sanitiseContacts } from "@/lib/welcome-pack";
@@ -20,7 +20,7 @@ export default async function RecruitmentSettingsPage() {
   const settings = settingsFromRow(data);
   const switchable = RECRUITMENT_STEPS.filter((s) => s.canSwitchOff).map((s) => ({ key: s.key, label: s.label, hint: s.hint }));
   return (
-    <DashboardShell title="Recruitment settings" context={context} back={{ href: "/org/settings", label: "Settings" }}>
+    <SettingsShell context={context} active="/org/settings/recruitment">
       <SettingsForm
         settings={settings}
         letters={letterDefaultsFromRow(data)}
@@ -29,6 +29,6 @@ export default async function RecruitmentSettingsPage() {
           guide: (data?.welcome_guide as string | null) ?? DEFAULT_WELCOME_GUIDE,
           contacts: sanitiseContacts(data?.welcome_contacts),
         }} switchable={switchable} canEdit />
-    </DashboardShell>
+    </SettingsShell>
   );
 }
