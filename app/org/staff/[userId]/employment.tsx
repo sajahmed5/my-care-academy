@@ -8,6 +8,8 @@ import { EmploymentForm, ProbationLine } from "./employment-forms";
 import { AbsenceForm } from "@/app/org/hr/absence/absence-forms";
 import { bradford, daysOff, needsFitNote, rtwOutstanding, sanitiseTriggers, type Absence } from "@/lib/hr/absence";
 import { addDays } from "@/lib/hr/probation";
+import { STATUS_LABEL, amountText, balance, canApprove, holidaySettingsFromRow, leaveTypeLabel, leaveTypesFor, leaveYear, type LeaveRequest } from "@/lib/hr/holidays";
+import { AllowanceForm, CancelLeave, DecideLeave, LeaveForm } from "@/app/org/hr/holidays/holiday-forms";
 
 const fmt = (d: string | null) => (d ? formatDate(d, { day: "numeric", month: "short", year: "numeric" }) : "—");
 
@@ -169,6 +171,77 @@ export async function AbsencePanel({ supabase, userId, orgId }: { supabase: Supa
                   {needsFitNote(a, today) && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">Fit note needed</span>}
                 </span>
               </Link>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+/** Their allowance this leave year, what's taken and booked, and their leave (HR-PACK.md). */
+export async function HolidaysPanel({ supabase, userId, orgId, me }: { supabase: Supabase; userId: string; orgId: string; me: { id: string; role: string } }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [{ data: settingsRow }, { data: person }] = await Promise.all([
+    supabase.from("hr_settings").select("leave_year_start, bank_holidays_from_allowance, max_off_at_once, leave_types").eq("organisation_id", orgId).maybeSingle(),
+    supabase.from("users").select("id, role").eq("id", userId).maybeSingle(),
+  ]);
+  const s = holidaySettingsFromRow(settingsRow);
+  const year = leaveYear(today, s.yearStart);
+  const [{ data: allowance }, { data: rows }] = await Promise.all([
+    supabase.from("leave_allowances").select("amount, unit").eq("user_id", userId).eq("year_start", year.start).maybeSingle(),
+    supabase
+      .from("leave_requests")
+      .select("id, user_id, leave_type, start_date, end_date, amount, unit, status, note, decision_note")
+      .eq("user_id", userId)
+      .order("start_date", { ascending: false })
+      .limit(200),
+  ]);
+  const types = leaveTypesFor(s.own);
+  const requests = (rows ?? []) as unknown as Array<LeaveRequest & { note: string | null; decision_note: string | null }>;
+  const b = balance(allowance ? { amount: Number(allowance.amount), unit: allowance.unit as string } : null, requests, year, types, today);
+  const unit = (allowance?.unit as string | undefined) ?? "days";
+  const decides = person ? canApprove(me, { id: person.id as string, role: person.role as string }) : false;
+  const yearLabel = `${fmt(year.start)} to ${fmt(year.end)}`;
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="space-y-3 pt-6 text-sm">
+          <AllowanceForm userId={userId} yearStart={year.start} yearLabel={yearLabel} amount={b.allowance} unit={unit} />
+          {b.allowance !== null && (
+            <p className="text-muted-foreground">
+              Taken {amountText(b.taken, unit)} · booked {amountText(b.booked, unit)}
+              {b.pending ? ` · waiting ${amountText(b.pending, unit)}` : ""} · <span className="font-medium text-foreground">{amountText(b.left ?? 0, unit)} left</span>
+            </p>
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="space-y-3 pt-6">
+          <h3 className="font-semibold">Add leave</h3>
+          <LeaveForm types={types} unit={unit} bankHolidaysFromAllowance={s.bankHolidaysFromAllowance} userId={userId} canApproveNow={decides} />
+        </CardContent>
+      </Card>
+      {requests.length > 0 && (
+        <Card>
+          <CardContent className="divide-y p-0">
+            {requests.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
+                <span>
+                  <span className="font-medium">{leaveTypeLabel(r.leave_type, s.own)}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {fmt(r.start_date)}{r.end_date !== r.start_date ? ` to ${fmt(r.end_date)}` : ""} · {amountText(r.amount, r.unit)}
+                    {r.decision_note ? ` · ${r.decision_note}` : ""}
+                  </span>
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.status === "approved" ? "bg-green-100 text-green-700" : r.status === "requested" ? "bg-amber-100 text-amber-700" : "bg-muted text-muted-foreground"}`}>
+                    {STATUS_LABEL[r.status]}
+                  </span>
+                  {r.status === "requested" && decides && <DecideLeave id={r.id} />}
+                  {(r.status === "requested" || (r.status === "approved" && r.start_date > today)) && <CancelLeave id={r.id} />}
+                </span>
+              </div>
             ))}
           </CardContent>
         </Card>

@@ -27,6 +27,7 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
       "Everything from their recruitment kept on their file",
       "Probation reviews, with the letters written for you to check and send",
       "Sickness absence, return-to-work interviews and Bradford Factor triggers",
+      "Holidays: allowances, requests, approvals and a calendar of who's off",
     ],
   },
   "people.supervisions": {

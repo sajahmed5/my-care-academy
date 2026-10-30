@@ -8,6 +8,7 @@ import { logAudit } from "@/lib/audit";
 import { sanitiseProbation } from "@/lib/hr/probation";
 import { sanitiseOverrides, templateFor } from "@/lib/hr/letters";
 import { sanitiseTriggers } from "@/lib/hr/absence";
+import { sanitiseLeaveTypes } from "@/lib/hr/holidays";
 
 /**
  * The company's HR setup (HR-PACK.md), under Settings → HR. Managers only:
@@ -72,5 +73,33 @@ export async function saveAbsenceSettingsAction(input: { selfReport: boolean; tr
   await logAudit({ context, action: "hr.absence_settings_saved", entity: "organisation", entityId: context.organisationId!, detail: { selfReport: input.selfReport, triggers } });
   revalidatePath("/org/settings/hr/absence");
   revalidatePath("/org/hr/absence");
+  return { ok: true };
+}
+
+export async function saveHolidaySettingsAction(input: {
+  yearStart: string;
+  bankHolidaysFromAllowance: boolean;
+  maxOffAtOnce: number | null;
+  own: Array<{ key: string; label: string; fromAllowance: boolean }>;
+}): Promise<{ ok: boolean; error?: string }> {
+  const context = await gate();
+  const m = /^(\d{2})-(\d{2})$/.exec(input.yearStart);
+  const month = Number(m?.[1]);
+  const day = Number(m?.[2]);
+  // Up to the 28th, so every year has the day.
+  if (!m || month < 1 || month > 12 || day < 1 || day > 28) return { ok: false, error: "Choose the day the leave year starts (the 1st to the 28th)." };
+  const max = input.maxOffAtOnce === null ? null : Math.round(Number(input.maxOffAtOnce));
+  if (max !== null && (!Number.isFinite(max) || max < 1 || max > 500)) return { ok: false, error: "The limit is a number of people, or leave it blank." };
+  const own = sanitiseLeaveTypes(input.own);
+  const ok = await patchSettings(context.organisationId!, context.userId, {
+    leave_year_start: input.yearStart,
+    bank_holidays_from_allowance: input.bankHolidaysFromAllowance,
+    max_off_at_once: max,
+    leave_types: own,
+  });
+  if (!ok) return { ok: false, error: "The settings couldn't be saved. Try again." };
+  await logAudit({ context, action: "hr.holiday_settings_saved", entity: "organisation", entityId: context.organisationId!, detail: { yearStart: input.yearStart, max, own: own.length } });
+  revalidatePath("/org/settings/hr/holidays");
+  revalidatePath("/org/hr/holidays");
   return { ok: true };
 }

@@ -158,6 +158,14 @@ of staff; see "Staff logins" in PACKAGES.md).
   time off in lieu; a company can add its own. Sickness stays separate (above).
 - Who's off today and this week on the Overview, and a holiday calendar.
 
+*Built 31 Oct 2026: HR → Holidays (requests with who else is off, the
+limit warning, today and this week, a month calendar, leave entered for
+someone), a Holidays tab on the file (allowance per leave year, taken,
+booked, left), My HR (balance, requests, taking one back), Who's off on
+the Overview (leave and sickness), Settings → HR → Holidays. The amount is
+suggested from weekdays and the bank holiday rule (England and Wales,
+2026–2028) and can always be changed: only the rota knows.*
+
 ## Leavers
 
 - The leaving reason (resigned, dismissed, end of probation, retired…), the
