@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assignmentEmail, shouldNotify, type Recipient } from "../lib/assignment-email";
+import { assignmentEmail, shouldNotify, trainingNotices, type Recipient } from "../lib/assignment-email";
 
 const person = (over: Partial<Recipient> = {}): Recipient => ({
   id: "u1",
@@ -19,6 +19,10 @@ describe("who is told about an assignment", () => {
   });
   it("skips someone who has never signed in — their invitation is the email that helps", () => {
     expect(shouldNotify(person({ last_seen_at: null }), "manager")).toBe(false);
+  });
+  it("works with nobody assigning, as when MyRoster does it", () => {
+    expect(shouldNotify(person(), null)).toBe(true);
+    expect(shouldNotify(person({ last_seen_at: null }), null)).toBe(false);
   });
   it("skips the deactivated and those with no address", () => {
     expect(shouldNotify(person({ status: "deactivated" }), "manager")).toBe(false);
@@ -67,5 +71,26 @@ describe("the email", () => {
     );
     expect(html).toContain("&lt;b&gt;x&lt;/b&gt;");
     expect(html).toContain("a &amp; b");
+  });
+});
+
+describe("training from MyRoster", () => {
+  const titles = new Map([["c1", "Fire Safety"], ["c2", "Moving and Handling"], ["c3", "Safeguarding"]]);
+  it("is one notice per carer, naming every new course", () => {
+    const notices = trainingNotices(
+      [
+        { user_id: "u1", course_id: "c1", due_date: "2026-11-30" },
+        { user_id: "u1", course_id: "c2", due_date: "2026-11-30" },
+        { user_id: "u2", course_id: "c3", due_date: "2026-11-30" },
+      ],
+      titles,
+    );
+    expect(notices).toEqual([
+      { userId: "u1", title: "2 courses (Fire Safety, Moving and Handling)", dueDate: "2026-11-30", href: "/learn/modules" },
+      { userId: "u2", title: "Safeguarding", dueDate: "2026-11-30", href: "/learn/modules" },
+    ]);
+  });
+  it("is empty when nothing new was given", () => {
+    expect(trainingNotices([], titles)).toEqual([]);
   });
 });

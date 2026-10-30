@@ -1,10 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolvePortalOrg, isOrg } from "@/lib/portal-api";
 import { logAudit } from "@/lib/audit";
 import { endOfMonthISO, planPortalAssign } from "@/lib/assign";
 import { chunk } from "@/lib/engine-digest";
 import { fetchAll } from "@/lib/fetch-all";
+import { emailAssignees, trainingNotices } from "@/lib/assignment-email";
+import { siteOrigin } from "@/lib/site-url";
 
 /**
  * Ids per `.in()` filter or bulk update. Ids travel in the request URL, which
@@ -30,6 +32,11 @@ export const maxDuration = 60;
  * progress or assigned date; a new enrolment with no date sent gets the
  * platform default (end of this month) — see planPortalAssign. Learners are resolved by
  * external_ref; unknown refs are reported back, not silently dropped.
+ *
+ * Each carer given a course they didn't have gets the same "Training to
+ * complete" email as an assign from the console, once, naming what's new.
+ * A course they already had, or a changed due date, sends nothing — MyRoster
+ * may send the same assignment again.
  */
 export async function POST(req: Request) {
   const org = await resolvePortalOrg(req);
@@ -123,6 +130,19 @@ export async function POST(req: Request) {
       .insert(plan.inserts.map((r) => ({ organisation_id: org.id, ...r })), { count: "exact" });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     assigned = count ?? plan.inserts.length;
+
+    const origin = await siteOrigin();
+    const inserts = plan.inserts;
+    after(async () => {
+      const titles = new Map<string, string>();
+      for (const part of chunk([...new Set(inserts.map((r) => r.course_id))], IDS_PER_REQUEST)) {
+        const { data } = await admin.from("courses").select("id, title").in("id", part);
+        for (const c of data ?? []) titles.set(c.id as string, c.title as string);
+      }
+      await emailAssignees(admin, "training_assigned", trainingNotices(inserts, titles), {
+        organisationId: org.id, assignedBy: null, origin,
+      });
+    });
   }
   // One update per due date (in practice there is only one per call), a
   // URL-safe number of ids at a time — it was one request per enrolment.

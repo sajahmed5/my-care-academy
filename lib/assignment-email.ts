@@ -43,7 +43,7 @@ export interface Recipient {
 }
 
 /** Whether this person should be emailed about something assigned to them. */
-export function shouldNotify(r: Recipient, assignedBy: string): boolean {
+export function shouldNotify(r: Recipient, assignedBy: string | null): boolean {
   return r.id !== assignedBy && r.status === "active" && !!r.email && !!r.last_seen_at;
 }
 
@@ -78,6 +78,28 @@ ${note}${due}${link}`,
 }
 
 /**
+ * One notice per person for training they've just been given: the course by
+ * name, or "3 courses (A, B, C)". MyRoster's assign names many at once.
+ */
+export function trainingNotices(
+  enrolments: { user_id: string; course_id: string; due_date: string | null }[],
+  titles: Map<string, string>,
+): AssignmentNotice[] {
+  const perUser = new Map<string, { titles: string[]; due: string | null }>();
+  for (const e of enrolments) {
+    const entry = perUser.get(e.user_id) ?? { titles: [], due: e.due_date };
+    entry.titles.push(titles.get(e.course_id) ?? "a course");
+    perUser.set(e.user_id, entry);
+  }
+  return [...perUser].map(([userId, e]) => ({
+    userId,
+    title: e.titles.length === 1 ? e.titles[0] : `${e.titles.length} courses (${e.titles.slice(0, 5).join(", ")}${e.titles.length > 5 ? ", …" : ""})`,
+    dueDate: e.due,
+    href: "/learn/modules",
+  }));
+}
+
+/**
  * Email each notice's person, skipping as above, and log every send. Returns
  * how many went. Never throws: an assignment stands whether or not the mail
  * did.
@@ -86,7 +108,8 @@ export async function emailAssignees(
   admin: SupabaseClient,
   kind: AssignmentKind,
   notices: AssignmentNotice[],
-  ctx: { organisationId: string; assignedBy: string; origin: string },
+  /** assignedBy is null when MyRoster assigned it: no person to name or skip. */
+  ctx: { organisationId: string; assignedBy: string | null; origin: string },
 ): Promise<number> {
   try {
     if (notices.length === 0) return 0;
@@ -104,7 +127,9 @@ export async function emailAssignees(
         ),
       ).then((pages) => pages.flatMap((p) => (p.data ?? []) as Recipient[])),
       admin.from("organisations").select("name").eq("id", ctx.organisationId).maybeSingle(),
-      admin.from("users").select("full_name, email").eq("id", ctx.assignedBy).maybeSingle(),
+      ctx.assignedBy
+        ? admin.from("users").select("full_name, email").eq("id", ctx.assignedBy).maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
     const byId = new Map(people.map((p) => [p.id, p]));
     const assignedByName = (by?.full_name as string | null) || (by?.email as string | null) || "Your manager";
