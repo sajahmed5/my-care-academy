@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getUserContext, roleLabel } from "@/lib/auth";
 import { AuthShell } from "@/components/auth-shell";
+import { hostCompany } from "@/lib/company-host";
 import { SetPasswordForm } from "./set-password-form";
 
 export const metadata: Metadata = {
@@ -17,13 +18,15 @@ export default async function SetPasswordPage() {
   // which role it is heads off the commonest confusion on a shared office
   // machine — finishing setup while signed in as somebody else.
   const role = context.role ? roleLabel(context.role) : null;
+  const brand = await hostCompany();
 
   return (
     <AuthShell
+      brand={brand}
       title="Set your password"
       description={
         <>
-          Welcome to My Care Academy. Choose a password to finish setting up{" "}
+          Welcome to {brand ? `${brand.name}'s training` : "My Care Academy"}. Choose a password to finish setting up{" "}
           <span className="font-medium text-foreground">{context.email}</span>
           {role ? ` (${role.toLowerCase()})` : ""}.
         </>

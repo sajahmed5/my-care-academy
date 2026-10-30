@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { BrandMark } from "@/components/brand-mark";
+import { BrandStyle } from "@/components/brand-style";
 import { outfit } from "@/lib/fonts";
 
 /**
@@ -16,12 +18,19 @@ export function AuthShell({
   title,
   description,
   footer,
+  brand,
   children,
 }: {
   title: string;
   description?: React.ReactNode;
   /** The way out: back to sign in, back to the site, or sign out. */
   footer?: React.ReactNode;
+  /**
+   * The company whose own web address this is (lib/company-host), with
+   * white label: its logo and colour in place of ours, and our name kept
+   * as a small line at the foot.
+   */
+  brand?: { name: string; logoUrl: string | null; colour: string | null } | null;
   children: React.ReactNode;
 }) {
   // In the public site's dress since 28 Oct 2026 — its sand-and-sky wash and
@@ -35,9 +44,20 @@ export function AuthShell({
           "radial-gradient(90% 60% at 50% 0%, #f7e6d2 0%, rgba(247,230,210,0) 60%), radial-gradient(70% 50% at 100% 100%, #d9eef5 0%, rgba(217,238,245,0) 60%), #f5faf9",
       }}
     >
-      <Link href="/" className="mb-8" aria-label="My Care Academy home">
-        <Logo width={190} eager />
-      </Link>
+      <BrandStyle colour={brand?.colour} />
+      {brand ? (
+        <Link href="/login" className="mb-8 flex flex-col items-center gap-2" aria-label={`${brand.name} sign in`}>
+          {brand.logoUrl ? (
+            <BrandMark logoUrl={brand.logoUrl} orgName={brand.name} width={200} />
+          ) : (
+            <span className="font-[family-name:var(--font-outfit)] text-2xl font-semibold text-[#0f2f3c]">{brand.name}</span>
+          )}
+        </Link>
+      ) : (
+        <Link href="/" className="mb-8" aria-label="My Care Academy home">
+          <Logo width={190} eager />
+        </Link>
+      )}
       <div className="w-full max-w-md rounded-3xl bg-card p-6 shadow-xl shadow-[#134f63]/10 ring-1 ring-[#134f63]/10 sm:p-8">
         <h1 className="font-[family-name:var(--font-outfit)] text-2xl font-semibold tracking-tight text-[#0f2f3c]">
           {title}
@@ -54,6 +74,7 @@ export function AuthShell({
           {footer}
         </div>
       )}
+      {brand && <p className="mt-6 text-xs text-muted-foreground">Powered by My Care Academy</p>}
     </main>
   );
 }

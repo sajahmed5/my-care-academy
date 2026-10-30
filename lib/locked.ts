@@ -174,9 +174,11 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
   "platform.white_label": {
     area: "Account",
     home: "/org/billing",
-    heading: "Your own logo on everything",
+    heading: "Your own name on everything",
     bullets: [
-      "Your logo on certificates, the menu, your policies and your surveys",
+      "Your staff sign in at your own web address, like training.yourcompany.co.uk",
+      "Your logo and colour on every page, email, letter and PDF",
+      "Emails sent in your company's name, with replies to your office",
     ],
   },
   "platform.portal_api": {
@@ -186,6 +188,7 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
     bullets: [
       "Your carers sent across from MyRoster automatically",
       "Training assigned and records read from inside MyRoster",
+      "Any other rota system can connect through our published API, with alerts",
     ],
   },
 };

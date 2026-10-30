@@ -1,4 +1,4 @@
-import { brandEmailHtml, emailButton, emailLayout, emailLinkFallback, esc } from "./email-layout";
+import { brandEmailHtml, emailButton, emailLayout, emailLinkFallback, esc, pointLinksAt } from "./email-layout";
 
 const DEFAULT_FROM = "My Care Academy <onboarding@resend.dev>";
 
@@ -26,8 +26,16 @@ async function asCompany(
     const { companyEmail } = await import("./email-brand");
     const company = await companyEmail(organisationId);
     if (!company) return { html, from, replyTo };
+    let branded = brandEmailHtml(html, company.brand);
+    if (company.origin) {
+      // Links built for our address — the request's, or the live site's —
+      // open on the company's own.
+      const { siteOrigin } = await import("./site-url");
+      const here = await siteOrigin().catch(() => null);
+      branded = pointLinksAt(branded, [here, process.env.NEXT_PUBLIC_SITE_URL, "https://www.mycareacademy.co.uk", "https://mycareacademy.co.uk"], company.origin);
+    }
     return {
-      html: brandEmailHtml(html, company.brand),
+      html: branded,
       from: fromAs(from, company.senderName),
       replyTo: replyTo ?? company.replyTo ?? undefined,
     };

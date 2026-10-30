@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { brandEmailHtml, emailButton, emailLayout } from "@/lib/email-layout";
+import { brandEmailHtml, emailButton, emailLayout, pointLinksAt } from "@/lib/email-layout";
 import { fromAs } from "@/lib/email";
 
 const email = emailLayout({
@@ -51,5 +51,25 @@ describe("fromAs", () => {
   it("can't be made to break the header", () => {
     expect(fromAs("A <a@b.co>", 'Evil"\r\nBcc: x@y.z <>')).toBe('"EvilBcc: x@y.z" <a@b.co>');
     expect(fromAs("A <a@b.co>", "  ")).toBe("A <a@b.co>");
+  });
+});
+
+describe("pointLinksAt", () => {
+  const html = `<a href="https://www.mycareacademy.co.uk/auth/confirm?t=1">Open</a>
+    <span>https://www.mycareacademy.co.uk/learn</span>
+    <a href="http://localhost:3000/login">x</a>
+    <a href="https://www.mycareacademy.co.uk/verify?number=MCA-1">check</a>
+    <a href="https://www.mycareacademy.co.uk.evil.com/x">no</a>`;
+  const out = pointLinksAt(html, ["https://www.mycareacademy.co.uk", "http://localhost:3000"], "https://training.hgcare.co.uk");
+
+  it("sends the app's links to the company's address", () => {
+    expect(out).toContain('href="https://training.hgcare.co.uk/auth/confirm?t=1"');
+    expect(out).toContain("<span>https://training.hgcare.co.uk/learn</span>");
+    expect(out).toContain('href="https://training.hgcare.co.uk/login"');
+  });
+
+  it("keeps certificate checks on our site, and leaves look-alikes", () => {
+    expect(out).toContain('href="https://www.mycareacademy.co.uk/verify?number=MCA-1"');
+    expect(out).toContain("https://www.mycareacademy.co.uk.evil.com/x");
   });
 });

@@ -1,8 +1,23 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { companyHostRedirect, isOurHost } from "@/lib/custom-domain";
 
 // Next.js 16 renamed the "middleware" convention to "proxy".
 export async function proxy(request: NextRequest) {
+  // A company's own web address (white label) opens on sign-in, and sends
+  // our public pages to our own address (lib/custom-domain).
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (!isOurHost(host, process.env.NEXT_PUBLIC_SITE_URL)) {
+    const to = companyHostRedirect(
+      request.nextUrl.pathname,
+      process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.mycareacademy.co.uk",
+    );
+    if (to) {
+      const url = new URL(to, request.url);
+      url.search = request.nextUrl.search;
+      return NextResponse.redirect(url);
+    }
+  }
   return updateSession(request);
 }
 

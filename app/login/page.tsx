@@ -4,13 +4,17 @@ import { redirect } from "next/navigation";
 import { dashboardPathForRole, getUserContext } from "@/lib/auth";
 import { AuthShell } from "@/components/auth-shell";
 import { LoginForm } from "./login-form";
+import { hostCompany } from "@/lib/company-host";
 
-export const metadata: Metadata = {
-  title: "Sign in · My Care Academy",
-  // The sign-in screen has nothing for a search engine, and indexing it
-  // competes with the marketing pages that do.
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const brand = await hostCompany();
+  return {
+    title: `Sign in · ${brand?.name ?? "My Care Academy"}`,
+    // The sign-in screen has nothing for a search engine, and indexing it
+    // competes with the marketing pages that do.
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function LoginPage({
   searchParams,
@@ -28,6 +32,22 @@ export default async function LoginPage({
     redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
       ? redirectTo
       : "/dashboard";
+
+  // On a company's own web address: its name and dress, and none of our
+  // public site's links (white label).
+  const brand = await hostCompany();
+  if (brand) {
+    return (
+      <AuthShell
+        title="Sign in"
+        description={`Sign in to ${brand.name}'s training. Carers, office staff and managers all sign in here.`}
+        brand={brand}
+        footer={<p className="text-xs">No account yet? Your manager sets one up and emails you an invitation.</p>}
+      >
+        <LoginForm redirectTo={safeRedirect} />
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell

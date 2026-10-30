@@ -25,6 +25,7 @@ import { hasFeatureForOrg } from "@/lib/entitlements";
 import { siteOrigin } from "@/lib/site-url";
 import { IntegrationPanel } from "./integration-panel";
 import { liveKeys } from "@/lib/integration-keys";
+import { DomainPanel } from "./domain-panel";
 import { RemoveOrganisation } from "./remove-organisation";
 
 // Removing an organisation deletes every account and file it holds, which
@@ -66,7 +67,7 @@ export default async function OrganisationDetailPage({
     supabase
       .from("organisations")
       .select(
-        "id, name, package_tier, status, service_type, size_band",
+        "id, name, package_tier, status, service_type, size_band, custom_domain, custom_domain_status, custom_domain_dns_ok",
       )
       .eq("id", id)
       .single(),
@@ -193,6 +194,17 @@ export default async function OrganisationDetailPage({
           </Link>
           <OrgNudgeButton orgId={org.id} />
         </div>
+
+        {org.custom_domain && org.custom_domain_status === "pending" && org.custom_domain_dns_ok && (
+          <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            <strong>{org.custom_domain as string}</strong> is ready to switch on: their DNS record is in place. Add it
+            to the Vercel project, then switch it on under{" "}
+            <Link href={`/platform/organisations/${org.id}?section=integration`} className="font-medium underline">
+              Integration
+            </Link>
+            .
+          </div>
+        )}
 
         {(asks ?? []).map((a) => (
           <div key={a.id as string} role="status" className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
@@ -346,6 +358,17 @@ export default async function OrganisationDetailPage({
                 lastUsedAt={integration.lastUsedAt}
                 origin={integration.origin}
               />
+              {org.custom_domain && (
+                <div className="space-y-2 border-t pt-4">
+                  <p className="font-medium">Web address (white label)</p>
+                  <DomainPanel
+                    orgId={org.id}
+                    domain={org.custom_domain as string}
+                    live={org.custom_domain_status === "live"}
+                    dnsOk={(org.custom_domain_dns_ok as boolean | null) ?? null}
+                  />
+                </div>
+              )}
               <p className="text-sm text-muted-foreground">
                 {integration.linked > 0
                   ? `${integration.linked} learner${integration.linked === 1 ? "" : "s"} linked to the portal.`

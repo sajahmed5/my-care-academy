@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { dashboardPathForRole, getUserContext } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { AuthShell } from "@/components/auth-shell";
+import { hostCompany } from "@/lib/company-host";
 import { MfaSetup } from "./mfa-setup";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default async function MfaPage() {
 
   return (
     <AuthShell
+      brand={await hostCompany()}
       title={
         mode === "challenge" ? "Two-factor verification" : "Secure your account"
       }
