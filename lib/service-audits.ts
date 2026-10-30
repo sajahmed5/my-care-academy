@@ -51,6 +51,8 @@ export interface ServiceAuditForm {
   ours: boolean;
   /** Only due for clients the company helps with their medicines. */
   medicationOnly?: boolean;
+  /** Fills itself in from the HR pack or the training records (lib/auto-audits.ts). */
+  auto?: "staff_file" | "training";
 }
 
 export const RATING_MAX = 5;
@@ -92,6 +94,32 @@ export const DEFAULT_SERVICE_FORMS: ServiceAuditForm[] = [
     due: months(3),
     ours: true,
   },
+  {
+    key: "staff_file",
+    label: "Staff file audit",
+    blurb: "Every member of staff's file, filled in from the HR pack: DBS and right to work in date, references held, probation done.",
+    scope: "service",
+    questions: [
+      { id: "originals", label: "Documents were checked against the originals where the law asks", type: "yes_no" },
+      { id: "contracts", label: "Everyone has a signed contract and job description on file", type: "yes_no" },
+    ],
+    due: months(3),
+    ours: true,
+    auto: "staff_file",
+  },
+  {
+    key: "training",
+    label: "Training compliance audit",
+    blurb: "Every member of staff's training, filled in from the training records.",
+    scope: "service",
+    questions: [
+      { id: "plan", label: "Anyone behind has been spoken to, with a date to catch up", type: "yes_no" },
+      { id: "matrix", label: "The training matrix matches what each role needs", type: "yes_no" },
+    ],
+    due: months(1),
+    ours: true,
+    auto: "training",
+  },
 ];
 
 /** A company's change to one form, as stored in service_audit_forms. */
@@ -117,7 +145,7 @@ export function resolveServiceForms(overrides: ServiceFormOverride[]): ServiceAu
     const o = byKey.get(d.key);
     if (!o) return [d];
     if (o.archived) return [];
-    return [{ ...d, label: o.label || d.label, questions: o.questions.length ? o.questions : d.questions, due: due(o) }];
+    return [{ ...d, label: o.label || d.label, questions: o.questions.length || d.auto ? o.questions : d.questions, due: due(o) }];
   });
   const own = overrides
     .filter((o) => !o.archived && !DEFAULT_SERVICE_FORMS.some((d) => d.key === o.key) && o.questions.length > 0)
@@ -202,6 +230,12 @@ export function readItems(
  * Null when nothing scored applies.
  */
 export function itemsScore(items: Pick<AuditItem, "type" | "answer">[]): number | null {
+  const { met, total } = itemsTally(items);
+  return total === 0 ? null : Math.round((met / total) * 100);
+}
+
+/** The scored questions: how many count, and how much of them was met. */
+export function itemsTally(items: Pick<AuditItem, "type" | "answer">[]): { met: number; total: number } {
   let total = 0;
   let met = 0;
   for (const i of items) {
@@ -213,7 +247,7 @@ export function itemsScore(items: Pick<AuditItem, "type" | "answer">[]): number 
       met += i.answer / RATING_MAX;
     }
   }
-  return total === 0 ? null : Math.round((met / total) * 100);
+  return { met, total };
 }
 
 /** What fell short: each No, and each rating of 2 or under. Each can become an action. */

@@ -30,6 +30,17 @@ PACKAGES.md), all on `quality.audits`.
   `client_qa`). From a QA in one click: praise to the compliments log, linked
   to the carers ticked; a problem raised as a concern waiting for triage,
   which links back (`client_qas.complaint_id`, shown on the concern).
+- **Staff file and training audits** (30 Oct 2026, migration 20261031112000)
+  — two more of ours, across the service, that fill themselves in
+  (`lib/auto-audits.ts`): the staff file audit from the HR pack (DBS and
+  right to work in date, references held — `staff_documents` — and probation
+  done: a probation review recorded, not due for 6 months from joining), the
+  training audit from the training records (up to date: training assigned,
+  nothing overdue or expired; plus course compliance across the company).
+  What the site found is kept with the audit (`audits.auto`); anyone with
+  something to put right can be given an action; the auditor's own questions
+  are editable and the score counts both. Probation is read in
+  `lib/auto-audits-data.ts` only, ready for the HR pack's own record.
 
 ## Today
 

@@ -7,7 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { intervalLabel, nextDueFrom } from "@/lib/audit-forms";
-import { RATING_MAX, itemFindings, itemsScore, type ItemAnswer, type ServiceAuditForm } from "@/lib/service-audits";
+import { RATING_MAX, itemFindings, itemsTally, type ItemAnswer, type ServiceAuditForm } from "@/lib/service-audits";
+import { autoTally, combinedScore, type AutoSnapshot } from "@/lib/auto-audits";
+import { AutoTable } from "../auto-table";
 import type { SaveState } from "@/app/platform/actions";
 import { ManagerSignatureFields } from "../../staff/[userId]/signature-fields";
 import { saveServiceAuditAction } from "../actions";
@@ -63,6 +65,7 @@ export function RunServiceAudit({
   staff,
   auditorName,
   reviewBelow,
+  auto,
 }: {
   form: ServiceAuditForm;
   clients: ClientOption[];
@@ -70,6 +73,8 @@ export function RunServiceAudit({
   staff: { id: string; name: string }[];
   auditorName: string;
   reviewBelow: number;
+  /** For the staff file and training audits: what the site found. */
+  auto?: AutoSnapshot | null;
 }) {
   const [rows, setRows] = useState<Record<string, Row>>({});
   const [photos, setPhotos] = useState<Record<string, { blob: Blob; url: string }>>({});
@@ -80,7 +85,7 @@ export function RunServiceAudit({
   const [clientId, setClientId] = useState(initialClient ?? "");
 
   const items = form.questions.map((q) => ({ id: q.id, label: q.label, type: q.type, answer: rows[q.id]?.answer ?? null, comment: rows[q.id]?.comment ?? "" }));
-  const score = itemsScore(items);
+  const score = combinedScore(autoTally(auto ?? null), itemsTally(items));
   const findings = new Set(itemFindings(items).map((f) => f.id));
   const toAnswer = form.questions.filter((q) => q.type === "yes_no" || q.type === "rating");
   const answered = toAnswer.filter((q) => rows[q.id]?.answer != null).length;
@@ -157,124 +162,145 @@ export function RunServiceAudit({
         </CardContent>
       </Card>
 
-      <section className="space-y-2">
-        <h2 className="text-base font-semibold">Questions</h2>
-        <Card>
-          <CardContent className="divide-y p-0">
-            {form.questions.map((q, n) => {
-              const r = rows[q.id];
-              const short = findings.has(q.id);
-              return (
-                <div key={q.id} className={`space-y-2 px-4 py-3 ${short ? "bg-rose-50/40" : ""}`}>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {n + 1}. {q.label}
-                    </p>
-                    {q.help && <p className="text-xs text-muted-foreground">{q.help}</p>}
-                  </div>
+      {auto && (
+        <AutoTable
+          snapshot={auto}
+          action={(personId) => (
+            <div className="grid gap-2 text-xs sm:grid-cols-[1fr_auto] sm:items-center">
+              <select name={`owner_person_${personId}`} className={selectClass} defaultValue="" aria-label="Who will put it right">
+                <option value="">Action: no owner — note it only</option>
+                {staff.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    Action: {s.name}
+                  </option>
+                ))}
+              </select>
+              <Input name={`due_person_${personId}`} type="date" className={`${field} sm:w-auto`} aria-label="Done by" />
+            </div>
+          )}
+        />
+      )}
 
-                  {q.type === "yes_no" && (
-                    <div className="grid grid-cols-3 gap-2 sm:flex">
-                      {YES_NO.map((o) => (
-                        <button
-                          key={o.value}
-                          type="button"
-                          aria-pressed={r?.answer === o.value}
-                          aria-label={`${q.label}: ${o.label}`}
-                          onClick={() => set(q.id, { answer: o.value })}
-                          className={`min-h-11 rounded-lg border px-4 text-sm font-medium sm:min-h-9 ${r?.answer === o.value ? o.on : "bg-background"}`}
-                        >
-                          {o.label}
-                        </button>
-                      ))}
+      {form.questions.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-base font-semibold">{auto ? "Your checks" : "Questions"}</h2>
+          <Card>
+            <CardContent className="divide-y p-0">
+              {form.questions.map((q, n) => {
+                const r = rows[q.id];
+                const short = findings.has(q.id);
+                return (
+                  <div key={q.id} className={`space-y-2 px-4 py-3 ${short ? "bg-rose-50/40" : ""}`}>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {n + 1}. {q.label}
+                      </p>
+                      {q.help && <p className="text-xs text-muted-foreground">{q.help}</p>}
                     </div>
-                  )}
 
-                  {q.type === "rating" && (
-                    <div className="flex gap-2">
-                      {Array.from({ length: RATING_MAX }, (_, i) => i + 1).map((v) => (
-                        <button
-                          key={v}
-                          type="button"
-                          aria-pressed={r?.answer === v}
-                          aria-label={`${q.label}: ${v} of ${RATING_MAX}`}
-                          onClick={() => set(q.id, { answer: v })}
-                          className={`min-h-11 w-11 rounded-lg border text-sm font-medium sm:min-h-9 sm:w-9 ${
-                            r?.answer === v ? (v <= 2 ? "border-rose-600 bg-rose-50 text-rose-800" : "border-foreground bg-foreground text-background") : "bg-background"
-                          }`}
-                        >
-                          {v}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {q.type === "text" && (
-                    <textarea
-                      aria-label={q.label}
-                      rows={3}
-                      maxLength={5000}
-                      className={textareaClass}
-                      value={typeof r?.answer === "string" ? r.answer : ""}
-                      onChange={(e) => set(q.id, { answer: e.target.value })}
-                    />
-                  )}
-
-                  {q.type === "photo" && (
-                    <div className="space-y-2">
-                      {photos[q.id] ? (
-                        <div className="relative inline-block">
-                          {/* eslint-disable-next-line @next/next/no-img-element -- a local preview, never optimised */}
-                          <img src={photos[q.id].url} alt={q.label} className="max-h-48 rounded-lg border" />
+                    {q.type === "yes_no" && (
+                      <div className="grid grid-cols-3 gap-2 sm:flex">
+                        {YES_NO.map((o) => (
                           <button
+                            key={o.value}
                             type="button"
-                            aria-label="Remove the photo"
-                            onClick={() => setPhotos(({ [q.id]: _gone, ...rest }) => rest)}
-                            className="absolute right-1 top-1 rounded-full bg-background/90 p-1"
+                            aria-pressed={r?.answer === o.value}
+                            aria-label={`${q.label}: ${o.label}`}
+                            onClick={() => set(q.id, { answer: o.value })}
+                            className={`min-h-11 rounded-lg border px-4 text-sm font-medium sm:min-h-9 ${r?.answer === o.value ? o.on : "bg-background"}`}
                           >
-                            <X className="size-4" />
+                            {o.label}
                           </button>
-                        </div>
-                      ) : (
-                        <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-4 text-sm font-medium sm:min-h-9">
-                          <Camera className="size-4" /> Take or choose a photo
-                          <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => takePhoto(q.id, e.target.files?.[0])} />
-                        </label>
-                      )}
-                    </div>
-                  )}
-
-                  {q.type !== "text" && (
-                    <Input
-                      aria-label={`Comment on ${q.label}`}
-                      placeholder={short ? "What was wrong?" : "Comment (optional)"}
-                      maxLength={1000}
-                      className={field}
-                      value={r?.comment ?? ""}
-                      onChange={(e) => set(q.id, { comment: e.target.value })}
-                    />
-                  )}
-
-                  {short && (
-                    <div className="grid gap-2 text-xs sm:grid-cols-[1fr_auto] sm:items-center">
-                      <select name={`owner_${q.id}`} className={selectClass} defaultValue="" aria-label={`Who will act on ${q.label}`}>
-                        <option value="">Action: no owner — note it only</option>
-                        {staff.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            Action: {s.name}
-                          </option>
                         ))}
-                      </select>
-                      <Input name={`due_${q.id}`} type="date" className={`${field} sm:w-auto`} aria-label="Done by" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-        {photoError && <p className="text-sm text-rose-600">{photoError}</p>}
-      </section>
+                      </div>
+                    )}
+
+                    {q.type === "rating" && (
+                      <div className="flex gap-2">
+                        {Array.from({ length: RATING_MAX }, (_, i) => i + 1).map((v) => (
+                          <button
+                            key={v}
+                            type="button"
+                            aria-pressed={r?.answer === v}
+                            aria-label={`${q.label}: ${v} of ${RATING_MAX}`}
+                            onClick={() => set(q.id, { answer: v })}
+                            className={`min-h-11 w-11 rounded-lg border text-sm font-medium sm:min-h-9 sm:w-9 ${
+                              r?.answer === v ? (v <= 2 ? "border-rose-600 bg-rose-50 text-rose-800" : "border-foreground bg-foreground text-background") : "bg-background"
+                            }`}
+                          >
+                            {v}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {q.type === "text" && (
+                      <textarea
+                        aria-label={q.label}
+                        rows={3}
+                        maxLength={5000}
+                        className={textareaClass}
+                        value={typeof r?.answer === "string" ? r.answer : ""}
+                        onChange={(e) => set(q.id, { answer: e.target.value })}
+                      />
+                    )}
+
+                    {q.type === "photo" && (
+                      <div className="space-y-2">
+                        {photos[q.id] ? (
+                          <div className="relative inline-block">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- a local preview, never optimised */}
+                            <img src={photos[q.id].url} alt={q.label} className="max-h-48 rounded-lg border" />
+                            <button
+                              type="button"
+                              aria-label="Remove the photo"
+                              onClick={() => setPhotos(({ [q.id]: _gone, ...rest }) => rest)}
+                              className="absolute right-1 top-1 rounded-full bg-background/90 p-1"
+                            >
+                              <X className="size-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-4 text-sm font-medium sm:min-h-9">
+                            <Camera className="size-4" /> Take or choose a photo
+                            <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(e) => takePhoto(q.id, e.target.files?.[0])} />
+                          </label>
+                        )}
+                      </div>
+                    )}
+
+                    {q.type !== "text" && (
+                      <Input
+                        aria-label={`Comment on ${q.label}`}
+                        placeholder={short ? "What was wrong?" : "Comment (optional)"}
+                        maxLength={1000}
+                        className={field}
+                        value={r?.comment ?? ""}
+                        onChange={(e) => set(q.id, { comment: e.target.value })}
+                      />
+                    )}
+
+                    {short && (
+                      <div className="grid gap-2 text-xs sm:grid-cols-[1fr_auto] sm:items-center">
+                        <select name={`owner_${q.id}`} className={selectClass} defaultValue="" aria-label={`Who will act on ${q.label}`}>
+                          <option value="">Action: no owner — note it only</option>
+                          {staff.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              Action: {s.name}
+                            </option>
+                          ))}
+                        </select>
+                        <Input name={`due_${q.id}`} type="date" className={`${field} sm:w-auto`} aria-label="Done by" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+          {photoError && <p className="text-sm text-rose-600">{photoError}</p>}
+        </section>
+      )}
 
       <div className="space-y-1">
         <Label htmlFor="sa-notes">Notes (optional)</Label>

@@ -54,7 +54,8 @@ export async function saveServiceFormAction(_prev: SaveState, formData: FormData
   if (!label) return { ok: false, error: "Give the audit a name." };
   if (!(dueEvery >= 1 && dueEvery <= 104)) return { ok: false, error: "Say how often it falls due: between 1 and 104." };
   if (dueUnit !== "weeks" && dueUnit !== "months") return { ok: false, error: "Weeks or months?" };
-  const questions = readServiceQuestions(parse(formData, "questions"));
+  // An audit that fills itself in is scored by what it finds; its questions are extra.
+  const questions = readServiceQuestions(parse(formData, "questions"), { requireScored: !ours?.auto, allowEmpty: !!ours?.auto });
   if (!questions.ok) return { ok: false, error: questions.error };
 
   const supabase = await createClient();

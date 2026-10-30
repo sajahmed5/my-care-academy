@@ -87,7 +87,7 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
     home: "/org/audits",
     heading: "Audit your service on a schedule",
     bullets: [
-      "Client QAs, and medication and care plan audits for each client, with infection control across the service",
+      "Client QAs, medication and care plan audits for each client; infection control, staff file and training audits",
       "Your own questions and audits, done on a phone with photos, and signed off",
       "Anything that fails becomes an action with an owner and a date",
       "Low scores wait for a manager to review them",

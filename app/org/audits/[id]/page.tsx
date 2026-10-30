@@ -12,6 +12,8 @@ import { formatDate } from "@/lib/dates";
 import { reviewAuditAction } from "../actions";
 import { ReviewForm } from "../review-form";
 import { ReviewChip } from "../review-chip";
+import { AutoTable } from "../auto-table";
+import type { AutoSnapshot } from "@/lib/auto-audits";
 
 const fmt = (d: string) => formatDate(d, { day: "numeric", month: "long", year: "numeric" });
 const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
@@ -28,7 +30,7 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
     supabase
       .from("audits")
       .select(
-        "id, kind, title, subject, client_id, client_name, held_on, answers, items, score, notes, next_due, auditor_signature, auditor_signed_name, auditor_signed_at, review_status, review_below, reviewed_at, review_note, auditor:users!audits_auditor_id_fkey (full_name, email), reviewer:users!audits_reviewed_by_fkey (full_name, email)",
+        "id, kind, title, subject, client_id, client_name, held_on, answers, items, auto, score, notes, next_due, auditor_signature, auditor_signed_name, auditor_signed_at, review_status, review_below, reviewed_at, review_note, auditor:users!audits_auditor_id_fkey (full_name, email), reviewer:users!audits_reviewed_by_fkey (full_name, email)",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -106,35 +108,39 @@ export default async function AuditPage({ params }: { params: Promise<{ id: stri
           </Card>
         )}
 
-        <Card>
-          <CardContent className="divide-y pt-2">
-            {items.map((q, i) => (
-              <div key={q.id} className="space-y-1 py-2 text-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <span>
-                    {i + 1}. {q.label}
-                  </span>
-                  {q.type !== "text" && q.type !== "photo" && (
-                    <span className={`shrink-0 text-xs font-medium ${findings.has(q.id) ? "text-rose-700" : "text-muted-foreground"}`}>
-                      {answerLabel(q)}
+        {audit.auto && <AutoTable snapshot={audit.auto as AutoSnapshot} />}
+
+        {items.length > 0 && (
+          <Card>
+            <CardContent className="divide-y pt-2">
+              {items.map((q, i) => (
+                <div key={q.id} className="space-y-1 py-2 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <span>
+                      {i + 1}. {q.label}
                     </span>
-                  )}
+                    {q.type !== "text" && q.type !== "photo" && (
+                      <span className={`shrink-0 text-xs font-medium ${findings.has(q.id) ? "text-rose-700" : "text-muted-foreground"}`}>
+                        {answerLabel(q)}
+                      </span>
+                    )}
+                  </div>
+                  {q.type === "text" && <p className="whitespace-pre-wrap text-muted-foreground">{answerLabel(q)}</p>}
+                  {q.type === "photo" &&
+                    (q.photo && photoUrls.get(q.photo) ? (
+                      <a href={photoUrls.get(q.photo)} target="_blank" rel="noreferrer">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- a private, signed link */}
+                        <img src={photoUrls.get(q.photo)} alt={q.label} className="max-h-56 rounded-lg border" />
+                      </a>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No photo taken.</p>
+                    ))}
+                  {q.comment && <p className="text-xs text-muted-foreground">{q.comment}</p>}
                 </div>
-                {q.type === "text" && <p className="whitespace-pre-wrap text-muted-foreground">{answerLabel(q)}</p>}
-                {q.type === "photo" &&
-                  (q.photo && photoUrls.get(q.photo) ? (
-                    <a href={photoUrls.get(q.photo)} target="_blank" rel="noreferrer">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- a private, signed link */}
-                      <img src={photoUrls.get(q.photo)} alt={q.label} className="max-h-56 rounded-lg border" />
-                    </a>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">No photo taken.</p>
-                  ))}
-                {q.comment && <p className="text-xs text-muted-foreground">{q.comment}</p>}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {audit.notes && (
           <Card>

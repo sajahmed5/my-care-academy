@@ -25,7 +25,7 @@ const Q: ServiceQuestion[] = [
 describe("service audit forms", () => {
   it("starts from ours, with unique question ids", () => {
     const forms = resolveServiceForms([]);
-    expect(forms.map((f) => f.key)).toEqual(["medication", "care_plan", "infection_control"]);
+    expect(forms.map((f) => f.key)).toEqual(["medication", "care_plan", "infection_control", "staff_file", "training"]);
     for (const f of DEFAULT_SERVICE_FORMS) expect(new Set(f.questions.map((q) => q.id)).size).toBe(f.questions.length);
     expect(forms.find((f) => f.key === "medication")?.scope).toBe("client");
     expect(forms.find((f) => f.key === "infection_control")?.scope).toBe("service");
@@ -48,12 +48,12 @@ describe("service audit forms", () => {
       o({ key: "own_falls", label: "Falls", scope: "client", questions: [Q[0]] }),
       o({ key: "own_empty", label: "Empty", questions: [] }),
     ]);
-    expect(forms.map((f) => f.key)).toEqual(["medication", "infection_control", "own_falls"]);
+    expect(forms.map((f) => f.key)).toEqual(["medication", "infection_control", "staff_file", "training", "own_falls"]);
     const med = forms[0];
     expect(med.questions).toEqual([Q[0]]);
     expect(med.due).toEqual({ every: 2, unit: "months" });
     expect(med.medicationOnly).toBe(true);
-    expect(forms[2]).toMatchObject({ scope: "client", ours: false, label: "Falls" });
+    expect(forms[4]).toMatchObject({ scope: "client", ours: false, label: "Falls" });
   });
 });
 
