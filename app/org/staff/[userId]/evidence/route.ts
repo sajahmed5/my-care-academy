@@ -89,12 +89,14 @@ export async function GET(
         on["complaints.register"]
           ? loadConcernsForPerson(supabase, userId)
           : Promise.resolve([]),
-        // Their completed library forms, with the questions to read them by.
+        // Their completed library forms, with the questions to read them by —
+        // their own carer forms, not client or company forms they filled in.
         on["forms.builder"]
           ? supabase
               .from("form_responses")
               .select("answers, signed_name, submitted_at, template:form_templates (title, fields)")
               .eq("user_id", userId)
+              .eq("subject", "carer")
               .order("submitted_at", { ascending: false })
               .limit(200)
               .then((r) => r.data ?? [])

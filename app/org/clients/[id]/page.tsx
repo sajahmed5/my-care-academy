@@ -6,6 +6,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { ClientForm, type ClientValues } from "../client-form";
 import { ClientConcerns } from "./concerns";
 import { ClientQuality } from "./quality";
+import { ClientForms } from "./forms";
 
 /**
  * One client: their details, and everything about them over time — QAs,
@@ -55,6 +56,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
           {enabled["quality.audits"] && <h2 className="text-sm font-semibold">Details</h2>}
           <ClientForm id={id} values={client as ClientValues} regions={regions} />
         </section>
+        {enabled["forms.builder"] && <ClientForms supabase={supabase} context={context} clientId={id} />}
         {!enabled["quality.audits"] && complaintsOn && <ClientConcerns supabase={supabase} clientId={id} />}
       </div>
     </DashboardShell>

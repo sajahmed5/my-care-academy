@@ -5,15 +5,15 @@ import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { categoryLabel, loadFormLibrary } from "@/lib/form-library";
+import { FORM_AUDIENCES, categoryLabel, loadFormLibrary } from "@/lib/form-library";
 import { fetchAll } from "@/lib/fetch-all";
 
 /**
- * The forms an organisation can ask its staff to complete.
- *
- * We make the forms; the organisation uses them (Saj, 24 Oct 2026). Filed by
- * category, with how many asks are open against each. The old builder is
- * still reachable under "your own forms" for anything bespoke.
+ * The organisation's forms, in the three kinds FORMS.md sets out: client
+ * forms the office fills in about a client, carer forms asked of staff, and
+ * company forms about the business. Carer forms show how many asks are open.
+ * The old builder is still reachable under "your own forms" for anything
+ * bespoke.
  */
 export default async function OrgFormsPage() {
   const context = await requireConsole();
@@ -47,12 +47,9 @@ export default async function OrgFormsPage() {
     openCount.set(a.template_id as string, (openCount.get(a.template_id as string) ?? 0) + 1);
   }
 
-  const groups = new Map<string, typeof templates>();
-  for (const t of templates) {
-    const list = groups.get(t.category) ?? [];
-    list.push(t);
-    groups.set(t.category, list);
-  }
+  const kinds = FORM_AUDIENCES.map((a) => ({ ...a, items: templates.filter((t) => t.audience === a.value) })).filter(
+    (k) => k.items.length > 0,
+  );
 
   return (
     <DashboardShell title="Forms" context={context}>
@@ -63,12 +60,6 @@ export default async function OrgFormsPage() {
           </Link>
         </div>
 
-        <p className="text-sm text-muted-foreground">
-          Ask a member of staff to complete a form and it appears in their task
-          list; what they submit is kept against their file. A form that is
-          yours to fill in — a client check, an audit — you complete yourself.
-        </p>
-
         {templates.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-sm text-muted-foreground">
@@ -76,11 +67,14 @@ export default async function OrgFormsPage() {
             </CardContent>
           </Card>
         ) : (
-          [...groups.entries()].map(([category, items]) => (
-            <section key={category} className="space-y-2">
-              <h3 className="text-sm font-semibold text-muted-foreground">{categoryLabel(category)}</h3>
+          kinds.map((k) => (
+            <section key={k.value} className="space-y-2">
+              <div>
+                <h3 className="text-base font-semibold">{k.label}</h3>
+                <p className="text-sm text-muted-foreground">{k.hint}</p>
+              </div>
               <div className="space-y-2">
-                {items.map((t) => (
+                {k.items.map((t) => (
                   <Card key={t.id}>
                     <CardContent className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-6">
                       <div className="flex min-w-0 items-start gap-3">
