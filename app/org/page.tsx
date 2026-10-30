@@ -18,6 +18,7 @@ import { StatTile } from "@/components/learner-ui";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { bucketOf, isActiveLearner, isInactive30d, isNeverActive, loadOrgLearners } from "@/lib/org-learners";
 import { ChooseWhoLink } from "./choose-who-link";
+import { WhosOff } from "./hr/holidays/whos-off";
 
 export default async function OrgDashboard() {
   const context = await requireConsole();
@@ -181,6 +182,8 @@ export default async function OrgDashboard() {
             </ul>
           )}
         </section>
+
+        <WhosOff context={context} />
 
         <section className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">

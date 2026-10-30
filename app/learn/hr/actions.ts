@@ -12,6 +12,7 @@ import { siteOrigin } from "@/lib/site-url";
 import { formatDate } from "@/lib/dates";
 import { ABSENCE_REASONS } from "@/lib/hr/absence";
 import { personName } from "@/lib/hr/server";
+import { unitFor, validateLeave, type LeaveInput } from "@/lib/hr/holidays-server";
 
 /**
  * What a member of staff does from their own login (HR-PACK.md). Reporting
@@ -74,6 +75,41 @@ ${emailButton(`${origin}/org/hr/absence`, "Open Absence")}`,
     }
   });
   await logAudit({ context, action: "hr.absence_self_reported", entity: "user", entityId: context.userId, detail: { start: input.startDate, reason: input.reason } });
+  revalidatePath("/learn/hr");
+  return { ok: true };
+}
+
+/** Ask for leave from their own login: the office decides. */
+export async function requestLeaveAction(input: LeaveInput): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireStaff();
+  if (!(await hasFeature(context, "recruitment.tracker"))) return { ok: false, error: "Not available." };
+  const admin = createAdminClient();
+  const orgId = context.organisationId!;
+  const { row, error } = await validateLeave(admin, orgId, input);
+  if (!row) return { ok: false, error };
+  if (input.start < new Date().toISOString().slice(0, 10)) return { ok: false, error: "Ask for leave from today on. For leave already taken, speak to the office." };
+  const { error: insErr } = await admin.from("leave_requests").insert({
+    ...row,
+    organisation_id: orgId,
+    user_id: context.userId,
+    unit: await unitFor(admin, orgId, context.userId, input.start),
+    status: "requested",
+    requested_by: context.userId,
+  });
+  if (insErr) return { ok: false, error: "That didn't send. Try again." };
+  await logAudit({ context, action: "hr.leave_requested", entity: "user", entityId: context.userId, detail: { ...row } });
+  revalidatePath("/learn/hr");
+  return { ok: true };
+}
+
+/** Take back a request that hasn't been decided. */
+export async function cancelMyLeaveAction(id: string): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireStaff();
+  const admin = createAdminClient();
+  const { data: r } = await admin.from("leave_requests").select("user_id, status").eq("id", id).maybeSingle();
+  if (!r || r.user_id !== context.userId) return { ok: false, error: "Not found." };
+  if (r.status !== "requested") return { ok: false, error: "It has been decided: speak to the office to change it." };
+  await admin.from("leave_requests").update({ status: "cancelled" }).eq("id", id).eq("status", "requested");
   revalidatePath("/learn/hr");
   return { ok: true };
 }

@@ -36,7 +36,7 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
     (x): x is string => !!x,
   );
   if (entitled.length === 0) return out;
-  const [docs, emps, reviews, settings, absences, meetings] = await Promise.all([
+  const [docs, emps, reviews, settings, absences, meetings, waiting] = await Promise.all([
     fetchAll((f, t) =>
       admin
         .from("staff_documents")
@@ -69,6 +69,7 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
         .range(f, t),
     ),
     fetchAll((f, t) => admin.from("absence_welfare_meetings").select("absence_id, organisation_id, held_on").in("organisation_id", entitled).order("absence_id").range(f, t)),
+    fetchAll((f, t) => admin.from("leave_requests").select("id, organisation_id").in("organisation_id", entitled).eq("status", "requested").order("id").range(f, t)),
   ]);
   const today = now.toISOString().slice(0, 10);
   for (const orgId of entitled) {
@@ -118,6 +119,8 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
       sick.triggers.length && `${sick.triggers.length} ${sick.triggers.length === 1 ? "person" : "people"} at a trigger point`,
     ].filter(Boolean);
     if (absenceText.length) lines.push({ label: "Absence", text: absenceText.join(", "), href: "/org/hr/absence" });
+    const asks = waiting.filter((w) => w.organisation_id === orgId).length;
+    if (asks) lines.push({ label: "Holidays", text: `${asks} request${asks === 1 ? "" : "s"} waiting for a decision`, href: "/org/hr/holidays" });
     if (lines.length) out.set(orgId, lines);
   }
   return out;
