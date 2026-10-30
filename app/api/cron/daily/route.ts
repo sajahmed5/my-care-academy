@@ -9,6 +9,7 @@ import {
   processEngagement,
 } from "@/lib/engine";
 import { processFaceToFaceReminders } from "@/lib/face-to-face-email";
+import { processOverdueAlerts, retryFailedAlerts } from "@/lib/alerts";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -20,7 +21,8 @@ function authorized(req: NextRequest): boolean {
 
 /**
  * Daily engine run: renewals (expire + remind), learner reminders, engagement
- * alerts, and the day-before reminder for face-to-face sessions.
+ * alerts, the day-before reminder for face-to-face sessions, and overdue
+ * alerts to other systems.
  */
 export async function GET(req: NextRequest) {
   if (!authorized(req)) {
@@ -43,6 +45,10 @@ export async function GET(req: NextRequest) {
   const faceToFace = await processFaceToFaceReminders(admin, now, dryRun);
   // Referees who haven't answered: a reminder after 3 days, twice at most.
   const references = await chaseReferences(admin, now, dryRun);
+  // Alerts to other systems: today's newly overdue courses, and another go
+  // at any alert that didn't get through.
+  const overdueAlerts = await processOverdueAlerts(now, dryRun);
+  const retried = await retryFailedAlerts(now, dryRun);
 
   return NextResponse.json({
     ok: true,
@@ -52,5 +58,7 @@ export async function GET(req: NextRequest) {
     ...engagement,
     ...faceToFace,
     referenceReminders: references,
+    ...overdueAlerts,
+    ...retried,
   });
 }

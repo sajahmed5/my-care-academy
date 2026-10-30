@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateCertificatePdf } from "@/lib/certificate";
 import { orgBranding } from "@/lib/branding";
 import { computeExpiry, makeCertificateNumber } from "@/lib/quiz";
+import { alertCertificateIssued } from "@/lib/alerts";
 
 /**
  * Issue a certificate for a course: the row, then the PDF in the private
@@ -77,6 +78,10 @@ export async function issueCertificate({
   } catch (e) {
     console.error("Certificate PDF generation failed:", e);
   }
+
+  // Any other system the company has asked to be told (lib/alerts), after
+  // the response: an alert never holds up or fails the certificate.
+  alertCertificateIssued(organisationId, cert.id as string);
 
   return cert.id as string;
 }

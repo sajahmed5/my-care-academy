@@ -20,6 +20,9 @@ export const TOPICS = {
   // than Stockport, or a course on a date that isn't listed.
   "face-to-face": "Face-to-face training",
   "management-support": "Management support",
+  // From Settings, Integration: a connection built into another rota or care
+  // system, or white label set up (e.g. sending from the company's own email).
+  integration: "Integration and white label",
   other: "Something else",
 } as const;
 

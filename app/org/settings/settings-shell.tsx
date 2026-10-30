@@ -91,6 +91,11 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         label: "MyRoster",
         hint: "Connect MyRoster, replace or remove its key, and see how the connection is doing.",
       },
+      {
+        href: "/org/settings/integration/other",
+        label: "Other systems and alerts",
+        hint: "Keys for another rota or care system built against our API, and the alerts we send it.",
+      },
     ],
   },
 ];

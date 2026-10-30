@@ -16,6 +16,7 @@ const PAGES: { path: string; changeFrequency: "monthly" | "yearly"; priority: nu
   { path: "/training/pricing", changeFrequency: "monthly", priority: 0.8 },
   { path: "/contact", changeFrequency: "yearly", priority: 0.7 },
   { path: "/verify", changeFrequency: "yearly", priority: 0.5 },
+  { path: "/developers", changeFrequency: "yearly", priority: 0.3 },
   { path: "/privacy", changeFrequency: "yearly", priority: 0.1 },
 ];
 

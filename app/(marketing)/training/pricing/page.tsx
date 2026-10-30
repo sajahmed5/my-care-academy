@@ -44,7 +44,7 @@ const COMPARE: { label: string; detail: string; from: number }[] = [
   { label: "Care Certificate", detail: "Workplace observations and sign-off", from: 3 },
   { label: "Classroom sessions", detail: "Your own sessions, with QR sign-in, on the training matrix", from: 3 },
   { label: "Your own logo", detail: "On certificates, the portal and your policies", from: 3 },
-  { label: "Rostering integration", detail: "Connected to MyRoster", from: 3 },
+  { label: "Rostering integration", detail: "MyRoster, or any system through our API", from: 3 },
   { label: "Priority support", detail: "", from: 3 },
 ];
 
