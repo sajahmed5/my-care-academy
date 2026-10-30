@@ -89,6 +89,16 @@ export const SECTIONS: SectionDef[] = [
     built: true,
   },
   {
+    // The rest of the HR pack on one person (HR-PACK.md): start date and
+    // probation, and the letters sent to them. Absence, holidays and leaving
+    // join it as they are built.
+    key: "employment",
+    label: "Employment",
+    blurb: "Their start date, probation reviews, and the HR letters sent to them.",
+    feature: "recruitment.tracker",
+    built: true,
+  },
+  {
     key: "supervisions",
     label: "Supervisions & appraisals",
     blurb:

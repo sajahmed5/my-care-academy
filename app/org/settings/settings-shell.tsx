@@ -35,7 +35,9 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     ],
   },
   {
-    title: "Recruitment",
+    // The HR pack (HR-PACK.md), all under one heading: recruitment, then
+    // employing someone.
+    title: "HR",
     features: ["recruitment.tracker"],
     pages: [
       {
@@ -52,6 +54,16 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         href: "/org/settings/recruitment/documents",
         label: "Documents to sign",
         hint: "Role acceptance, the contract and the refund of training agreement, in your wording.",
+      },
+      {
+        href: "/org/settings/hr",
+        label: "Probation",
+        hint: "How long probation lasts, when it's reviewed, and who signs HR letters.",
+      },
+      {
+        href: "/org/settings/hr/letters",
+        label: "Letters",
+        hint: "The wording of every HR letter. The right to be accompanied and to appeal are always added.",
       },
     ],
   },

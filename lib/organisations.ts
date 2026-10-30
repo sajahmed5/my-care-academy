@@ -47,7 +47,7 @@ export const TIER_DETAILS: Record<
       "Certificates with verification and expiry tracking",
       "Training matrix and CSV exports",
       "Automated reminders and weekly digest emails",
-      "HR pack: recruitment, and every carer's documents with expiry reminders",
+      "HR pack: recruitment, staff documents with expiry reminders, and probation reviews with their letters",
     ],
   },
   core_forms: {

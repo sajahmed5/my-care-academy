@@ -69,13 +69,15 @@ describe("purgeUserFiles", () => {
       care_cert_observations: [{ evidence_path: "obs/1.jpg" }],
       care_cert_signoffs: [{ pdf_path: "obs/signoff.pdf" }],
       staff_documents: [{ file_path: "org/u1/dbs.pdf" }],
+      hr_letters: [{ pdf_path: "org/u1/letters/l1.pdf" }],
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await purgeUserFiles(client as any, "u1");
-    expect(res.removed).toBe(5);
+    expect(res.removed).toBe(6);
     expect(res.failures).toEqual([]);
     expect(removed.map((r) => r.bucket).sort()).toEqual([
       "certificates",
+      "hr-docs",
       "observation-evidence",
       "staff-docs",
     ]);

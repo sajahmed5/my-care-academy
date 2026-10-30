@@ -100,6 +100,7 @@ const ORG_MENU: MenuItem[] = [
     children: [
       { href: "/org/recruitment", label: "Recruitment", feature: "recruitment.tracker" },
       { href: "/org/hr/documents", label: "Documents due", feature: "recruitment.tracker" },
+      { href: "/org/hr/probation", label: "Probation reviews", feature: "recruitment.tracker" },
     ],
   },
   {
@@ -140,6 +141,7 @@ const MENUS: Record<string, MenuItem[]> = {
     { label: "My actions", href: "/learn/actions" },
     // Their booked supervisions and appraisal self-assessment (STAFF-AUDITS.md).
     { label: "Supervisions", href: "/learn/reviews", feature: "people.supervisions" },
+    { label: "My HR", href: "/learn/hr", feature: "recruitment.tracker" },
     { label: "Policies", href: "/learn/policies", feature: "documents.library" },
     { label: "Forms", href: "/learn/forms", feature: "forms.builder" },
     { label: "Notifications", href: "/learn/notifications" },
