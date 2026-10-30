@@ -1,4 +1,41 @@
-import { emailButton, emailLayout, emailLinkFallback, esc } from "./email-layout";
+import { brandEmailHtml, emailButton, emailLayout, emailLinkFallback, esc } from "./email-layout";
+
+const DEFAULT_FROM = "My Care Academy <onboarding@resend.dev>";
+
+/** The From line with another name in front of our sending address. */
+export function fromAs(from: string, name: string): string {
+  const address = from.match(/<([^>]+)>/)?.[1] ?? from.trim();
+  const clean = name.replace(/["\\<>\r\n]/g, "").trim().slice(0, 80);
+  return clean ? `"${clean}" <${address}>` : from;
+}
+
+/**
+ * A company's emails go out as the company, with white label
+ * (lib/email-brand): its logo and colour, its name as the sender, replies to
+ * its own address unless the caller names someone. Loaded only when asked,
+ * so this file stays free of the database for its tests.
+ */
+async function asCompany(
+  organisationId: string | null | undefined,
+  html: string,
+  replyTo: string | undefined,
+): Promise<{ html: string; from: string; replyTo?: string }> {
+  const from = process.env.EMAIL_FROM ?? DEFAULT_FROM;
+  if (!organisationId) return { html, from, replyTo };
+  try {
+    const { companyEmail } = await import("./email-brand");
+    const company = await companyEmail(organisationId);
+    if (!company) return { html, from, replyTo };
+    return {
+      html: brandEmailHtml(html, company.brand),
+      from: fromAs(from, company.senderName),
+      replyTo: replyTo ?? company.replyTo ?? undefined,
+    };
+  } catch (err) {
+    console.error("Company email branding failed:", err);
+    return { html, from, replyTo };
+  }
+}
 
 /**
  * Send an email via Resend. Returns true if dispatched.
@@ -6,6 +43,9 @@ import { emailButton, emailLayout, emailLinkFallback, esc } from "./email-layout
  * `replyTo` exists for mail we send on someone else's behalf — a website
  * enquiry lands in the team inbox from our own sending domain, so without it
  * hitting Reply answers us rather than the person who asked.
+ *
+ * `organisationId` is the company the email is for: pass it wherever there is
+ * one, and with white label the email goes out in its name and dress.
  */
 export async function sendEmail({
   to,
@@ -13,6 +53,7 @@ export async function sendEmail({
   html,
   replyTo,
   attachments,
+  organisationId,
 }: {
   to: string;
   subject: string;
@@ -20,11 +61,11 @@ export async function sendEmail({
   replyTo?: string;
   /** Files to attach, as base64 (Resend's limit is 40MB for the whole email). */
   attachments?: { filename: string; content: string }[];
+  organisationId?: string | null;
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from =
-    process.env.EMAIL_FROM ?? "My Care Academy <onboarding@resend.dev>";
   if (!apiKey) return false;
+  const company = await asCompany(organisationId, html, replyTo);
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -33,11 +74,11 @@ export async function sendEmail({
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from,
+        from: company.from,
         to,
         subject,
-        html,
-        ...(replyTo ? { reply_to: replyTo } : {}),
+        html: company.html,
+        ...(company.replyTo ? { reply_to: company.replyTo } : {}),
         ...(attachments?.length ? { attachments } : {}),
       }),
     });
@@ -67,16 +108,26 @@ const BATCH_MAX = 100;
  * email log rather than retried here.
  */
 export async function sendEmailBatch(
-  messages: { to: string; subject: string; html: string }[],
+  messages: { to: string; subject: string; html: string; organisationId?: string | null }[],
 ): Promise<boolean[]> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from =
-    process.env.EMAIL_FROM ?? "My Care Academy <onboarding@resend.dev>";
   if (!apiKey) return messages.map(() => false);
+  const ready = await Promise.all(
+    messages.map(async ({ to, subject, html, organisationId }) => {
+      const company = await asCompany(organisationId, html, undefined);
+      return {
+        from: company.from,
+        to,
+        subject,
+        html: company.html,
+        ...(company.replyTo ? { reply_to: company.replyTo } : {}),
+      };
+    }),
+  );
 
   const results: boolean[] = [];
-  for (let i = 0; i < messages.length; i += BATCH_MAX) {
-    const chunk = messages.slice(i, i + BATCH_MAX);
+  for (let i = 0; i < ready.length; i += BATCH_MAX) {
+    const chunk = ready.slice(i, i + BATCH_MAX);
     let ok = false;
     try {
       const res = await fetch("https://api.resend.com/emails/batch", {
@@ -85,7 +136,7 @@ export async function sendEmailBatch(
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(chunk.map((m) => ({ from, ...m }))),
+        body: JSON.stringify(chunk),
       });
       ok = res.ok;
       if (!ok) console.error("Resend batch failed:", res.status, await res.text());
@@ -104,6 +155,8 @@ interface InviteEmailOptions {
   roleLabel: string;
   /** Organisation the invitee is joining, if any. */
   orgName?: string | null;
+  /** The same organisation, for its own name and dress with white label. */
+  organisationId?: string | null;
 }
 
 export interface SendResult {
@@ -111,6 +164,21 @@ export interface SendResult {
   sent: boolean;
   /** The invite URL — returned so the UI can show a copyable link fallback. */
   link: string;
+}
+
+/**
+ * The name an account email speaks in: the company's, with white label, and
+ * ours otherwise. An invitation to "My Care Academy" under a company's own
+ * logo would read as if from someone else.
+ */
+async function accountName(organisationId: string | null | undefined): Promise<string | null> {
+  if (!organisationId) return null;
+  try {
+    const { companyEmail } = await import("./email-brand");
+    return (await companyEmail(organisationId))?.brand.name ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -123,46 +191,27 @@ export async function sendInviteEmail({
   inviteUrl,
   roleLabel,
   orgName,
+  organisationId,
 }: InviteEmailOptions): Promise<SendResult> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from =
-    process.env.EMAIL_FROM ?? "My Care Academy <onboarding@resend.dev>";
+  if (!process.env.RESEND_API_KEY) return { sent: false, link: inviteUrl };
 
-  if (!apiKey) return { sent: false, link: inviteUrl };
-
-  const joining = orgName ? ` for <strong>${esc(orgName)}</strong>` : "";
+  const company = await accountName(organisationId);
+  const joining = orgName && !company ? ` for <strong>${esc(orgName)}</strong>` : "";
   const html = emailLayout({
-    heading: "You've been invited to My Care Academy",
+    heading: company ? `You've been invited to ${esc(company)}'s training` : "You've been invited to My Care Academy",
     body: `<p>You've been invited as ${esc(roleLabel)}${joining}. Click below to set your
       password and get started.</p>
       ${emailButton(inviteUrl, "Accept invitation")}
       ${emailLinkFallback(inviteUrl)}`,
     footer: "My Care Academy — you're receiving this because someone invited you.",
   });
-
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to,
-        subject: "Your My Care Academy invitation",
-        html,
-      }),
-    });
-    if (!res.ok) {
-      console.error("Resend send failed:", res.status, await res.text());
-      return { sent: false, link: inviteUrl };
-    }
-    return { sent: true, link: inviteUrl };
-  } catch (err) {
-    console.error("Resend send error:", err);
-    return { sent: false, link: inviteUrl };
-  }
+  const sent = await sendEmail({
+    to,
+    subject: company ? `Your invitation from ${company}` : "Your My Care Academy invitation",
+    html,
+    organisationId,
+  });
+  return { sent, link: inviteUrl };
 }
 
 /**
@@ -173,12 +222,16 @@ export async function sendInviteEmail({
 export async function sendPasswordResetEmail({
   to,
   resetUrl,
+  organisationId,
 }: {
   to: string;
   resetUrl: string;
+  /** The account's company, for its own name and dress with white label. */
+  organisationId?: string | null;
 }): Promise<SendResult> {
+  const company = await accountName(organisationId);
   const html = emailLayout({
-    heading: "Reset your My Care Academy password",
+    heading: company ? `Reset your ${esc(company)} training password` : "Reset your My Care Academy password",
     body: `<p>We received a request to reset your password. Click below to choose a
       new one. If you didn't ask for this, you can safely ignore this email.</p>
       ${emailButton(resetUrl, "Reset password")}
@@ -187,8 +240,9 @@ export async function sendPasswordResetEmail({
   });
   const sent = await sendEmail({
     to,
-    subject: "Reset your My Care Academy password",
+    subject: company ? `Reset your ${company} training password` : "Reset your My Care Academy password",
     html,
+    organisationId,
   });
   return { sent, link: resetUrl };
 }

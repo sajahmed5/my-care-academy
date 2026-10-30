@@ -1,3 +1,4 @@
+import { PdfLogo, withPoweredBy } from "@/lib/pdf-brand";
 import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { PIP_OUTCOMES, PIP_SUPPORT_TYPES, PIP_WEEK_RATINGS, label, type Pip } from "./plan";
 import { formatDate } from "../dates";
@@ -51,12 +52,13 @@ function Meta({ label: l, value }: { label: string; value: string | null | undef
   );
 }
 
-export function renderPipPdf(pip: Pip, organisationName: string): Promise<Buffer> {
+export function renderPipPdf(pip: Pip, organisationName: string, logoUrl?: string | null): Promise<Buffer> {
   const kind = pip.kind === "disciplinary" ? "Disciplinary record" : "Performance improvement plan";
-  const footer = `${organisationName} — ${kind.toLowerCase()} — ${pip.carerName}`;
+  const footer = withPoweredBy(`${organisationName} — ${kind.toLowerCase()} — ${pip.carerName}`, logoUrl);
   return renderToBuffer(
     <Document title={`${kind} — ${pip.carerName}`} author={organisationName}>
       <Page size="A4" style={styles.page}>
+        <PdfLogo url={logoUrl} />
         <Text style={styles.brand}>{organisationName.toUpperCase()}</Text>
         <Text style={styles.title}>{kind}</Text>
         <Text style={styles.subtitle}>{pip.carerName}</Text>

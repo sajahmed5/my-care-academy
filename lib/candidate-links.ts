@@ -53,6 +53,8 @@ export async function emailApplicationLink(opts: {
   company: string;
   link: string;
   note?: string | null;
+  /** The company, for its own name and dress with white label. */
+  organisationId?: string | null;
 }): Promise<boolean> {
   const hello = opts.firstName ? `Hello ${esc(opts.firstName)},` : "Hello,";
   const html = emailLayout({
@@ -73,5 +75,6 @@ export async function emailApplicationLink(opts: {
     to: opts.to,
     subject: opts.note ? `Please update your application to ${opts.company}` : `Your application to ${opts.company}`,
     html,
+    organisationId: opts.organisationId,
   });
 }

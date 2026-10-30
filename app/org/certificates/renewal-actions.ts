@@ -82,7 +82,7 @@ export async function remindRenewalAction(
   }.</p>
 <p>Thank you.</p>`;
 
-  const sent = await sendEmail({ to: u.email, subject, html });
+  const sent = await sendEmail({ to: u.email, subject, html, organisationId: context.organisationId });
   await admin.from("email_log").insert({
     organisation_id: context.organisationId,
     to_email: u.email,

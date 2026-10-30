@@ -1,3 +1,4 @@
+import { PdfLogo, withPoweredBy } from "@/lib/pdf-brand";
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import type { Complaint, ComplaintAction } from "./data";
 import type { ComplaintStage } from "./stages";
@@ -149,6 +150,8 @@ function Letter({ answers }: { answers: Record<string, unknown> }) {
 
 export interface PdfContext {
   complaint: Complaint;
+  /** The company's logo, with white label (lib/pdf-brand). */
+  organisationLogoUrl?: string | null;
   stages: ComplaintStage[];
   organisationName: string;
   /** Resolve a user id to a name, for the people pickers' answers. */
@@ -169,6 +172,7 @@ export function renderStagePdf(ctx: PdfContext, stage: ComplaintStage): Promise<
   return renderToBuffer(
     <Document title={`${complaint.reference} — ${title}`} author={ctx.organisationName}>
       <Page size="A4" style={styles.page}>
+        <PdfLogo url={ctx.organisationLogoUrl} />
         <Text style={styles.brand}>{ctx.organisationName.toUpperCase()}</Text>
         <Text style={styles.title}>{title}</Text>
         <Text style={styles.subtitle}>{kindLabel(complaint.kind)} {complaint.reference}</Text>
@@ -185,7 +189,7 @@ export function renderStagePdf(ctx: PdfContext, stage: ComplaintStage): Promise<
             {tag && <Actions list={complaint.actions.filter((a) => a.stageTag === tag)} />}
           </>
         )}
-        <Footer left={`${ctx.organisationName} — ${complaint.reference} — ${title.toLowerCase()}`} />
+        <Footer left={withPoweredBy(`${ctx.organisationName} — ${complaint.reference} — ${title.toLowerCase()}`, ctx.organisationLogoUrl)} />
       </Page>
     </Document>,
   );
@@ -200,11 +204,12 @@ export function renderResponsePdf(ctx: PdfContext): Promise<Buffer> {
   const letters = stages.filter((s) => LETTER_KINDS.has(s.kind) && typeof answersOf(s.id)?.sentOn === "string");
   const people = complaint.people.map((p) => `${p.name ?? "—"}${p.involvement !== "involved" ? ` (${p.involvement})` : ""}`).join(", ");
   const docs = complaint.documents;
-  const footer = `${ctx.organisationName} — ${complaint.reference} — response`;
+  const footer = withPoweredBy(`${ctx.organisationName} — ${complaint.reference} — response`, ctx.organisationLogoUrl);
 
   return renderToBuffer(
     <Document title={`${complaint.reference} — response`} author={ctx.organisationName}>
       <Page size="A4" style={styles.page}>
+        <PdfLogo url={ctx.organisationLogoUrl} />
         <Text style={styles.brand}>{ctx.organisationName.toUpperCase()}</Text>
         <Text style={styles.title}>{kindLabel(complaint.kind)} response</Text>
         <Text style={styles.subtitle}>Reference {complaint.reference}</Text>
@@ -309,10 +314,11 @@ export function renderInterimPdf(
 ): Promise<Buffer> {
   const { complaint } = ctx;
   const due = complaint.completeBy ? ukDate(complaint.completeBy) : "the date we have given you";
-  const footer = `${ctx.organisationName} — ${complaint.reference} — interim update — confidential`;
+  const footer = withPoweredBy(`${ctx.organisationName} — ${complaint.reference} — interim update — confidential`, ctx.organisationLogoUrl);
   return renderToBuffer(
     <Document title={`${complaint.reference} — interim update`} author={ctx.organisationName}>
       <Page size="A4" style={styles.page}>
+        <PdfLogo url={ctx.organisationLogoUrl} />
         <Text style={styles.brand}>{ctx.organisationName.toUpperCase()}</Text>
         <Text style={styles.title}>{kindLabel(complaint.kind)}: interim update</Text>
         <Text style={styles.subtitle}>Reference {complaint.reference}</Text>
@@ -376,11 +382,12 @@ export function renderInterimPdf(
 }
 
 /** "What to do", as a PDF to hand to a client, a council or CQC. */
-export function renderGuidancePdf(g: ComplaintGuidance, organisationName: string): Promise<Buffer> {
+export function renderGuidancePdf(g: ComplaintGuidance, organisationName: string, logoUrl?: string | null): Promise<Buffer> {
   const list = (items: string[]) => items.map((p) => <Text key={p} style={styles.bullet}>• {p}</Text>);
   return renderToBuffer(
     <Document title={g.title} author={organisationName}>
       <Page size="A4" style={styles.page}>
+        <PdfLogo url={logoUrl} />
         <Text style={styles.brand}>{organisationName.toUpperCase()}</Text>
         <Text style={styles.title}>{g.title}</Text>
         {g.intro.map((p) => (
@@ -414,7 +421,7 @@ export function renderGuidancePdf(g: ComplaintGuidance, organisationName: string
             <Meta key={c.name} label={c.name} value={c.detail} />
           ))}
         </View>
-        <Footer left={`${organisationName} — how we handle complaints`} />
+        <Footer left={withPoweredBy(`${organisationName} — how we handle complaints`, logoUrl)} />
       </Page>
     </Document>,
   );

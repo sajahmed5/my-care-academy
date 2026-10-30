@@ -83,3 +83,26 @@ export async function saveBrandColourAction(colour: string | null): Promise<Save
   revalidatePath("/", "layout");
   return { ok: true };
 }
+
+/**
+ * Who the company's emails come from, and where replies go. A blank name is
+ * the company's own; a blank address leaves replies as they were.
+ */
+export async function saveEmailSenderAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
+  const context = await requireRole("org_admin");
+  const orgId = context.organisationId!;
+  const admin = createAdminClient();
+  if (!(await hasFeatureForOrg(admin, orgId, "platform.white_label"))) {
+    return { ok: false, error: "Emails in your name are not included in your package." };
+  }
+  const name = String(formData.get("senderName") ?? "").replace(/["\\<>\r\n]/g, "").trim().slice(0, 80) || null;
+  const replyTo = String(formData.get("replyTo") ?? "").trim().toLowerCase() || null;
+  if (replyTo && !/^[^@\s<>"]+@[^@\s<>"]+\.[^@\s<>"]+$/.test(replyTo)) {
+    return { ok: false, error: "That doesn't look like an email address." };
+  }
+  const { error } = await admin.from("organisations").update({ email_sender_name: name, email_reply_to: replyTo }).eq("id", orgId);
+  if (error) return { ok: false, error: error.message };
+  await logAudit({ context, action: "organisation.email_sender_set", entity: "organisation", entityId: orgId, detail: { name, replyTo } });
+  revalidatePath("/org/settings/white-label");
+  return { ok: true };
+}

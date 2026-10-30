@@ -170,8 +170,15 @@ interface Outgoing {
  */
 async function flush(admin: Admin, outbox: Outgoing[], dryRun: boolean): Promise<number> {
   if (dryRun || outbox.length === 0) return outbox.length;
+  // In the company's own name and dress, with white label — except the
+  // alerts that go to us about a company.
   const sent = await sendEmailBatch(
-    outbox.map(({ to, subject, html }) => ({ to, subject, html })),
+    outbox.map(({ orgId, to, type, subject, html }) => ({
+      to,
+      subject,
+      html,
+      organisationId: type === "engagement_alert" ? null : orgId,
+    })),
   );
   for (const rows of chunk(
     outbox.map((m, i) => ({

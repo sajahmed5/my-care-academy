@@ -36,7 +36,7 @@ export async function importReferees(admin: Admin, candidateId: string, orgId: s
 export async function sendReferenceRequest(admin: Admin, referenceId: string, by: string | null, reminder: boolean): Promise<boolean> {
   const { data: r } = await admin
     .from("candidate_references")
-    .select("id, email, referee_name, reminder_count, candidates(full_name), organisations(name)")
+    .select("id, email, referee_name, reminder_count, organisation_id, candidates(full_name), organisations(name)")
     .eq("id", referenceId)
     .maybeSingle();
   if (!r?.email) return false;
@@ -59,6 +59,7 @@ export async function sendReferenceRequest(admin: Admin, referenceId: string, by
   const link = `${await siteOrigin()}/reference?t=${raw}`;
   return sendEmail({
     to: r.email as string,
+    organisationId: r.organisation_id as string,
     subject: `${reminder ? "Reminder: r" : "R"}eference for ${candidate}`,
     html: emailLayout({
       heading: `A reference for ${candidate}`,

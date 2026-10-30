@@ -1,3 +1,4 @@
+import { orgBranding } from "@/lib/branding";
 import { NextResponse, type NextRequest } from "next/server";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -276,6 +277,7 @@ export async function GET(
     personName: name,
     personEmail: profile.email ?? null,
     organisationName: (org?.name as string) ?? "This organisation",
+    orgLogoUrl: (await orgBranding(context.organisationId))?.logoUrl ?? null,
     generatedAt: new Date(),
     generatedBy: context.email ?? "An administrator",
     from,

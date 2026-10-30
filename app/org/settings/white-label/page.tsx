@@ -6,10 +6,12 @@ import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogoCard } from "./logo-card";
 import { ColourCard } from "./colour-card";
+import { EmailCard } from "./email-card";
 
 /**
  * White label (INTEGRATION-WHITE-LABEL.md, 29 Oct 2026): the company's logo
- * and colour, which replace ours across its carers' and office's pages.
+ * and colour, which replace ours across its carers' and office's pages, its
+ * PDFs and its emails; and who those emails come from.
  * Managers only. The logo was on the Account page until 31 Oct 2026.
  */
 export default async function WhiteLabelPage() {
@@ -17,8 +19,10 @@ export default async function WhiteLabelPage() {
   await requireFeature(context, "platform.white_label");
   const [branding, { data: org }] = await Promise.all([
     orgBranding(context.organisationId),
-    createAdminClient().from("organisations").select("brand_colour").eq("id", context.organisationId!).maybeSingle(),
+    createAdminClient().from("organisations").select("brand_colour, email_sender_name, email_reply_to").eq("id", context.organisationId!).maybeSingle(),
   ]);
+  const from = process.env.EMAIL_FROM ?? "";
+  const sendingAddress = from.match(/<([^>]+)>/)?.[1] ?? (from || "our own address");
   return (
     <SettingsShell context={context} active="/org/settings/white-label">
       <Card>
@@ -40,6 +44,23 @@ export default async function WhiteLabelPage() {
         </CardHeader>
         <CardContent>
           <ColourCard saved={(org?.brand_colour as string | null) ?? null} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Your emails</CardTitle>
+          <CardDescription>
+            Every email we send your staff and candidates — invitations, password resets, reminders, letters — comes
+            in your name, with your logo and colour.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EmailCard
+            orgName={branding?.name ?? "Your company"}
+            senderName={(org?.email_sender_name as string | null) ?? null}
+            replyTo={(org?.email_reply_to as string | null) ?? null}
+            sendingAddress={sendingAddress}
+          />
         </CardContent>
       </Card>
       <p className="px-1 text-xs text-muted-foreground">

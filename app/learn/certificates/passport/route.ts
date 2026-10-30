@@ -1,3 +1,4 @@
+import { orgBranding } from "@/lib/branding";
 import { isStaff } from "@/lib/roles";
 import { NextResponse } from "next/server";
 import { getUserContext } from "@/lib/auth";
@@ -43,7 +44,8 @@ export async function GET() {
   });
 
   const name = me?.full_name || me?.email || "Learner";
-  const pdf = await generateTrainingRecordPdf(name, rows, now);
+  const logo = (await orgBranding(context.organisationId))?.logoUrl ?? null;
+  const pdf = await generateTrainingRecordPdf(name, rows, now, logo);
 
   return new NextResponse(new Uint8Array(pdf), {
     headers: {

@@ -1,3 +1,4 @@
+import { PdfLogo, withPoweredBy } from "@/lib/pdf-brand";
 import {
   Document,
   Page,
@@ -38,6 +39,8 @@ export interface EvidencePackData {
   personName: string;
   personEmail: string | null;
   organisationName: string;
+  /** The company's logo in place of ours, with white label. */
+  orgLogoUrl?: string | null;
   generatedAt: Date;
   generatedBy: string;
   from: string | null;
@@ -98,7 +101,7 @@ function EvidencePackDoc({ data }: { data: EvidencePackData }) {
   const footer = (
     <View style={styles.footer} fixed>
       <Text>
-        {data.personName} — evidence pack — {data.organisationName}
+        {withPoweredBy(`${data.personName} — evidence pack — ${data.organisationName}`, data.orgLogoUrl)}
       </Text>
       <Text
         render={({ pageNumber, totalPages }) => `${pageNumber} of ${totalPages}`}
@@ -112,7 +115,7 @@ function EvidencePackDoc({ data }: { data: EvidencePackData }) {
       author={data.organisationName}
     >
       <Page size="A4" style={styles.page}>
-        <Text style={styles.brand}>MY CARE ACADEMY</Text>
+        {data.orgLogoUrl ? <PdfLogo url={data.orgLogoUrl} /> : <Text style={styles.brand}>MY CARE ACADEMY</Text>}
         <Text style={styles.title}>{data.personName}</Text>
         <Text style={styles.subtitle}>Staff evidence pack</Text>
 

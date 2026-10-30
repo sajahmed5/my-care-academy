@@ -66,7 +66,7 @@ ${emailButton(`${origin}/learn`, "Finish my training")}
     footer: "My Care Academy — a reminder sent by your manager.",
   });
 
-  const sent = await sendEmail({ to: learner.email, subject, html });
+  const sent = await sendEmail({ to: learner.email, subject, html, organisationId });
   await admin.from("email_log").insert({
     organisation_id: organisationId,
     to_email: learner.email,
@@ -227,7 +227,7 @@ dashboard.</p>`,
     footer: `My Care Academy — sent by ${esc(orgName)} to help you sign in.`,
   });
 
-  const sent = await sendEmail({ to: learner.email, subject, html });
+  const sent = await sendEmail({ to: learner.email, subject, html, organisationId });
   await admin.from("email_log").insert({
     organisation_id: organisationId,
     to_email: learner.email,

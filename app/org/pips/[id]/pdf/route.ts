@@ -1,3 +1,4 @@
+import { orgBranding } from "@/lib/branding";
 import { NextResponse } from "next/server";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -20,7 +21,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   ]);
   if (!pip) return new NextResponse("Not found.", { status: 404 });
 
-  const pdf = await renderPipPdf(pip, (org?.name as string) ?? "This organisation");
+  const logo = (await orgBranding(context.organisationId))?.logoUrl ?? null;
+  const pdf = await renderPipPdf(pip, (org?.name as string) ?? "This organisation", logo);
   // A plan is personal data about a named member of staff.
   await logAudit({ context, action: "pip.pdf", entity: "pip", entityId: id });
 

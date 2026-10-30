@@ -165,5 +165,5 @@ export async function sendWelcomePack(admin: Admin, candidateId: string, orgId: 
     values: { firstName: String(c.full_name ?? "").trim().split(/\s+/)[0] || "there", companyName, startDate },
     signInUrl: `${await siteOrigin()}/login`,
   });
-  return sendEmail({ to: c.email as string, subject: `Welcome to ${companyName || "the team"}`, html });
+  return sendEmail({ to: c.email as string, subject: `Welcome to ${companyName || "the team"}`, html, organisationId: orgId });
 }
