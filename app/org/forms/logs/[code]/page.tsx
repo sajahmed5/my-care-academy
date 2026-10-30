@@ -8,7 +8,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { loadFormTemplate, visibleFormPacks } from "@/lib/form-library";
+import { loadFormTemplate, templateVisible } from "@/lib/form-library";
 import { lineFlagged, loadLogEntries, logCell, logColumns } from "@/lib/form-logs";
 import { ukToday } from "@/lib/form-reviews";
 import { formatDate } from "@/lib/dates";
@@ -38,10 +38,7 @@ export default async function LogPage({
   const orgId = context.organisationId!;
   const [enabled, template] = await Promise.all([enabledMap(context), loadFormTemplate(supabase, code)]);
   if (!template || !template.is_log) notFound();
-  const { packs, collections } = visibleFormPacks(enabled);
-  if (!packs.includes(template.pack) || (template.pack === "addon" && !collections.includes(template.collection ?? ""))) {
-    notFound();
-  }
+  if (!templateVisible(template, enabled, orgId)) notFound();
 
   const date = (s?: string) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null);
   const from = date(rawFrom);

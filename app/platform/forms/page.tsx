@@ -16,6 +16,8 @@ export default async function PlatformFormsPage() {
   const { data } = await supabase
     .from("form_templates")
     .select("code, title, category, pack, status, version, fields")
+    // Ours only: a company's own forms are its business.
+    .is("organisation_id", null)
     .order("category")
     .order("sort_order")
     .limit(500);

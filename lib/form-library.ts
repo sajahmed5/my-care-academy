@@ -70,6 +70,11 @@ export interface FormTemplateSummary {
   is_log: boolean;
   /** What a log's "who" column is called: "Checked by", "Champion". */
   log_person_label: string | null;
+  /** Set on a company's own form; null for ours. */
+  organisation_id: string | null;
+  /** On a company's copy: the library form it came from, and that form's version then. */
+  based_on_id: string | null;
+  based_on_version: number | null;
   /** Null when the template was read for a list, without its fields. */
   fieldCount: number | null;
 }
@@ -104,7 +109,7 @@ function appliesTo(serviceTypes: string[] | null, orgServiceType: string | null)
   return serviceTypes.includes(orgServiceType);
 }
 
-function toSummary(r: Record<string, unknown>): FormTemplateSummary {
+export function toSummary(r: Record<string, unknown>): FormTemplateSummary {
   return {
     id: r.id as string,
     code: r.code as string,
@@ -120,32 +125,112 @@ function toSummary(r: Record<string, unknown>): FormTemplateSummary {
     review_months: (r.review_months as number | null) ?? null,
     is_log: r.is_log === true,
     log_person_label: (r.log_person_label as string | null) ?? null,
+    organisation_id: (r.organisation_id as string | null) ?? null,
+    based_on_id: (r.based_on_id as string | null) ?? null,
+    based_on_version: (r.based_on_version as number | null) ?? null,
     fieldCount: Array.isArray(r.fields) ? (r.fields as unknown[]).length : null,
   };
 }
 
+export const SUMMARY_COLUMNS =
+  "id, code, title, description, category, pack, audience, collection, service_types, version, status, review_months, is_log, log_person_label, organisation_id, based_on_id, based_on_version";
+
 /**
- * The published forms this organisation can assign. RLS already hides drafts.
- * Without the fields: the list shows a title and a description, and a
- * template's questions are read when one is opened (loadFormTemplate).
+ * Whether this organisation may open a form: its own, or one of ours in a
+ * pack its package includes.
+ */
+export function templateVisible(
+  t: Pick<FormTemplateSummary, "organisation_id" | "pack" | "collection">,
+  enabled: Record<string, boolean>,
+  organisationId: string,
+): boolean {
+  if (t.organisation_id) return t.organisation_id === organisationId && !!enabled["forms.builder"];
+  const { packs, collections } = visibleFormPacks(enabled);
+  return packs.includes(t.pack) && (t.pack !== "addon" || collections.includes(t.collection ?? ""));
+}
+
+/** A company's own choices about one of our forms (Settings → Forms). */
+export interface FormChoice {
+  hidden: boolean;
+  review_months: number | null;
+}
+
+export async function loadFormChoices(supabase: SupabaseClient, organisationId: string): Promise<Map<string, FormChoice>> {
+  const { data } = await supabase
+    .from("organisation_form_settings")
+    .select("template_id, hidden, review_months")
+    .eq("organisation_id", organisationId)
+    .limit(1000);
+  return new Map(
+    (data ?? []).map((r) => [r.template_id as string, { hidden: r.hidden === true, review_months: (r.review_months as number | null) ?? null }]),
+  );
+}
+
+/**
+ * What a company's list shows (FORMS.md, "Editable"): its own published
+ * forms, and ours — less any it has switched off, and less any it has
+ * published its own copy of, which takes the original's place. A company's
+ * own review period overrides ours. Pure.
+ */
+export function companyList(
+  library: FormTemplateSummary[],
+  own: FormTemplateSummary[],
+  choices: Map<string, FormChoice>,
+): FormTemplateSummary[] {
+  const replaced = new Set(own.filter((t) => t.status === "published" && t.based_on_id).map((t) => t.based_on_id as string));
+  const ours = library
+    .filter((t) => !replaced.has(t.id) && !choices.get(t.id)?.hidden)
+    .map((t) => ({ ...t, review_months: choices.get(t.id)?.review_months ?? t.review_months }));
+  return [...ours, ...own.filter((t) => t.status === "published")];
+}
+
+/**
+ * The forms this organisation uses, ours and its own. RLS already hides
+ * drafts and other companies' forms. Without the fields: the list shows a
+ * title and a description, and a template's questions are read when one is
+ * opened (loadFormTemplate).
  */
 export async function loadFormLibrary(
   supabase: SupabaseClient,
-  { enabled, serviceType }: { enabled: Record<string, boolean>; serviceType: string | null },
+  { enabled, serviceType, organisationId }: { enabled: Record<string, boolean>; serviceType: string | null; organisationId: string },
 ): Promise<FormTemplateSummary[]> {
   const { packs, collections } = visibleFormPacks(enabled);
   if (packs.length === 0) return [];
-  const { data } = await supabase
-    .from("form_templates")
-    .select("id, code, title, description, category, pack, audience, collection, service_types, version, status, review_months, is_log, log_person_label")
-    .in("pack", packs)
-    .order("category")
-    .order("sort_order")
-    .limit(500);
-  return (data ?? [])
-    .map(toSummary)
+  const [{ data }, choices] = await Promise.all([
+    supabase
+      .from("form_templates")
+      .select(SUMMARY_COLUMNS)
+      .eq("status", "published")
+      .or(`organisation_id.is.null,organisation_id.eq.${organisationId}`)
+      .order("category")
+      .order("sort_order")
+      .order("title")
+      .limit(1000),
+    loadFormChoices(supabase, organisationId),
+  ]);
+  const rows = (data ?? []).map(toSummary);
+  const library = rows
+    .filter((t) => !t.organisation_id && packs.includes(t.pack))
     .filter((t) => appliesTo(t.service_types, serviceType))
     .filter((t) => t.pack !== "addon" || collections.includes(t.collection ?? ""));
+  const own = rows.filter((t) => t.organisation_id === organisationId);
+  return companyList(library, own, choices);
+}
+
+/** The review period that applies to a form here: the company's own, or ours. */
+export async function reviewMonthsFor(
+  supabase: SupabaseClient,
+  organisationId: string,
+  template: Pick<FormTemplateSummary, "id" | "organisation_id" | "review_months">,
+): Promise<number | null> {
+  if (template.organisation_id) return template.review_months;
+  const { data } = await supabase
+    .from("organisation_form_settings")
+    .select("review_months")
+    .eq("organisation_id", organisationId)
+    .eq("template_id", template.id)
+    .maybeSingle();
+  return (data?.review_months as number | null | undefined) ?? template.review_months;
 }
 
 export async function loadFormTemplate(
@@ -154,7 +239,7 @@ export async function loadFormTemplate(
 ): Promise<FormTemplateRecord | null> {
   const { data } = await supabase
     .from("form_templates")
-    .select("id, code, title, description, category, pack, audience, collection, service_types, version, status, review_months, is_log, log_person_label, fields")
+    .select(`${SUMMARY_COLUMNS}, fields`)
     .eq("code", code)
     .maybeSingle();
   if (!data) return null;
@@ -240,7 +325,7 @@ export async function loadAssignment(
   const { data } = await supabase
     .from("form_assignments")
     .select(
-      "id, template_id, user_id, due_date, note, completed_at, created_at, template:form_templates (id, code, title, description, category, pack, audience, collection, service_types, version, status, review_months, fields), person:users!form_assignments_user_id_fkey (full_name, email)",
+      "id, template_id, user_id, due_date, note, completed_at, created_at, template:form_templates (id, code, title, description, category, pack, audience, collection, service_types, version, status, review_months, is_log, log_person_label, organisation_id, based_on_id, based_on_version, fields), person:users!form_assignments_user_id_fkey (full_name, email)",
     )
     .eq("id", id)
     .maybeSingle();

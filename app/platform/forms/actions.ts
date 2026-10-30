@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
-import { FIELD_TYPES, type FormField } from "@/lib/forms";
+import { cleanFields, type FormField } from "@/lib/forms";
 import { FORM_AUDIENCES, FORM_CATEGORIES } from "@/lib/form-library";
 import type { SaveState } from "@/app/platform/actions";
 
@@ -65,25 +65,7 @@ export async function saveFormTemplateAction(
 
   let fields: FormField[];
   try {
-    const raw = JSON.parse(String(formData.get("fields") ?? "[]")) as Partial<FormField>[];
-    const validTypes = new Set(FIELD_TYPES.map((t) => t.value));
-    fields = raw
-      .filter((f) => f && typeof f.label === "string" && f.label.trim())
-      .map((f, i) => ({
-        id: typeof f.id === "string" && f.id ? f.id : randomUUID(),
-        label: (f.label as string).trim(),
-        type: validTypes.has(f.type as FormField["type"]) ? (f.type as FormField["type"]) : "text",
-        options: Array.isArray(f.options) ? f.options.map(String).filter(Boolean) : [],
-        required: !!f.required,
-        conditional:
-          f.conditional && typeof f.conditional.whenFieldId === "string" && f.conditional.whenFieldId
-            ? { whenFieldId: f.conditional.whenFieldId, equals: String(f.conditional.equals ?? "") }
-            : null,
-        sort_order: i,
-        // A number's safe range, as the log flags it; kept only when it is a number.
-        ...(f.type === "number" && typeof f.min === "number" ? { min: f.min } : {}),
-        ...(f.type === "number" && typeof f.max === "number" ? { max: f.max } : {}),
-      }));
+    fields = cleanFields(JSON.parse(String(formData.get("fields") ?? "[]")));
   } catch {
     return { ok: false, error: "The fields could not be read." };
   }

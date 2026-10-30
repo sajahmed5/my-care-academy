@@ -94,6 +94,17 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     ],
   },
   {
+    title: "Forms",
+    features: ["forms.builder"],
+    pages: [
+      {
+        href: "/org/settings/forms",
+        label: "Your forms",
+        hint: "Which of our forms you use and how often each is reviewed, your own copies of ours, and forms you build yourself.",
+      },
+    ],
+  },
+  {
     title: "Complaints & safeguarding",
     features: ["complaints.register"],
     pages: [

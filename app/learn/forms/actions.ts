@@ -5,7 +5,7 @@ import { assertActiveMember, requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
-import { loadAssignment, pruneAnswers, validateAnswers } from "@/lib/form-library";
+import { loadAssignment, pruneAnswers, reviewMonthsFor, validateAnswers } from "@/lib/form-library";
 import { discardFormFiles, storeFormFiles } from "@/lib/form-uploads";
 import { defaultReviewDue } from "@/lib/form-reviews";
 
@@ -80,7 +80,7 @@ export async function submitFormResponseAction(
     answers: pruneAnswers(fields, answers),
     signed_name: signedName || null,
     // A carer form that needs reviewing is due again after its period.
-    review_due: defaultReviewDue(new Date(), assignment.template.review_months),
+    review_due: defaultReviewDue(new Date(), await reviewMonthsFor(supabase, context.organisationId, assignment.template)),
   });
   if (error) {
     await discardUploads();

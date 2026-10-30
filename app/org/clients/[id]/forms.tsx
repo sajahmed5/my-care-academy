@@ -30,7 +30,11 @@ export async function ClientForms({
     loadRecordsForClient(supabase, clientId),
     loadLogEntriesForClient(supabase, clientId),
   ]);
-  const library = await loadFormLibrary(supabase, { enabled, serviceType: (org?.service_type as string | null) ?? null });
+  const library = await loadFormLibrary(supabase, {
+    enabled,
+    serviceType: (org?.service_type as string | null) ?? null,
+    organisationId: context.organisationId!,
+  });
   const clientForms = library.filter((t) => t.audience === "client" && !t.is_log);
 
   return (

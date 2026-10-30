@@ -12,8 +12,8 @@ import { fetchAll } from "@/lib/fetch-all";
  * The organisation's forms, in the three kinds FORMS.md sets out: client
  * forms the office fills in about a client, carer forms asked of staff, and
  * company forms about the business. Carer forms show how many asks are open.
- * The old builder is still reachable under "your own forms" for anything
- * bespoke.
+ * A company's own forms sit beside ours, its copy of one of ours in that
+ * one's place; managers set them up under Settings → Forms.
  */
 export default async function OrgFormsPage() {
   const context = await requireConsole();
@@ -40,6 +40,7 @@ export default async function OrgFormsPage() {
   const templates = await loadFormLibrary(supabase, {
     enabled,
     serviceType: (org?.service_type as string | null) ?? null,
+    organisationId: orgId,
   });
 
   const openCount = new Map<string, number>();
@@ -60,11 +61,13 @@ export default async function OrgFormsPage() {
   return (
     <DashboardShell title="Forms" context={context}>
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Link href="/org/forms/own" className="text-sm text-primary hover:underline">
-            Your own forms →
-          </Link>
-        </div>
+        {context.role === "org_admin" && (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Link href="/org/settings/forms" className="text-sm text-primary hover:underline">
+              Choose, edit and build your forms →
+            </Link>
+          </div>
+        )}
 
         {templates.length === 0 ? (
           <Card>
@@ -93,6 +96,7 @@ export default async function OrgFormsPage() {
                             {t.title}
                           </Link>
                           <p className="text-xs text-muted-foreground">
+                            {t.organisation_id && <span className="mr-1.5 rounded bg-teal-50 px-1.5 py-0.5 font-medium text-teal-800">Yours</span>}
                             {t.description ?? categoryLabel(t.category)}
                           </p>
                         </div>

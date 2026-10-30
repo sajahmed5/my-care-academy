@@ -1,7 +1,7 @@
 import type { UserContext } from "@/lib/auth";
 import { enabledMap, hasFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
-import { loadFormTemplate, visibleFormPacks, type FormTemplateRecord } from "@/lib/form-library";
+import { loadFormTemplate, templateVisible, type FormTemplateRecord } from "@/lib/form-library";
 import { loadLogEntries, type LogEntry } from "@/lib/form-logs";
 
 /** A log and its lines for a download: the same checks as the page, the same date range. */
@@ -18,8 +18,7 @@ export async function loadLogForDownload(
     supabase.from("organisations").select("name").eq("id", context.organisationId).maybeSingle(),
   ]);
   if (!template || !template.is_log) return null;
-  const { packs, collections } = visibleFormPacks(enabled);
-  if (!packs.includes(template.pack) || (template.pack === "addon" && !collections.includes(template.collection ?? ""))) return null;
+  if (!templateVisible(template, enabled, context.organisationId)) return null;
   const date = (s: string | null) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null);
   const from = date(url.searchParams.get("from"));
   const to = date(url.searchParams.get("to"));

@@ -13,7 +13,7 @@ import {
   categoryLabel,
   loadAssignmentsForTemplate,
   loadFormTemplate,
-  visibleFormPacks,
+  templateVisible,
 } from "@/lib/form-library";
 import { loadRecordsForTemplate } from "@/lib/form-records";
 import { startOwnFormAction } from "../../library-actions";
@@ -39,10 +39,7 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
   ]);
   if (!template) notFound();
   if (template.is_log) redirect(`/org/forms/logs/${encodeURIComponent(template.code)}`);
-  const { packs, collections } = visibleFormPacks(enabled);
-  if (!packs.includes(template.pack) || (template.pack === "addon" && !collections.includes(template.collection ?? ""))) {
-    notFound();
-  }
+  if (!templateVisible(template, enabled, context.organisationId!)) notFound();
 
   const orgId = context.organisationId!;
   const isCarer = template.audience === "carer";
