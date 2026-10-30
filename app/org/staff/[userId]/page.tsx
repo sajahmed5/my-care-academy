@@ -38,6 +38,8 @@ import { SectionRail, SectionTabs, SectionTabsAfter, type SectionCount } from ".
 import { sectionByKey, sectionState } from "./sections";
 import { CompetencyList } from "./competency-list";
 import { EvidencePackButton } from "./evidence-pack-button";
+import { StatusToggle } from "../../status-toggle";
+import { DeleteStaffButton } from "../../delete-staff-button";
 import { ConcernList } from "./concern-list";
 import { SupervisionList } from "./supervision-list";
 import { StaffDocuments } from "./staff-documents";
@@ -370,6 +372,15 @@ export default async function StaffDetailPage({
                 )}
                 <EvidencePackButton userId={userId} />
               </div>
+              {/* Removing someone from their own page, where a manager looks
+                  for it (#78) — the same buttons and rule as the staff list:
+                  never yourself, and only a manager removes console staff. */}
+              {userId !== context.userId && (profile.role === "learner" || context.role === "org_admin") && (
+                <div className="flex flex-wrap items-center gap-1 border-t pt-3">
+                  <StatusToggle userId={userId} status={profile.status ?? "active"} name={name} />
+                  <DeleteStaffButton userId={userId} name={name} redirectTo="/org/learners#learners" />
+                </div>
+              )}
             </CardContent>
           </Card>
 

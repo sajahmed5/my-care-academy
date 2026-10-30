@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { deleteStaffAction } from "./actions";
 import type { SaveState } from "@/app/platform/actions";
@@ -12,19 +13,24 @@ import type { SaveState } from "@/app/platform/actions";
 export function DeleteStaffButton({
   userId,
   name,
+  redirectTo,
 }: {
   userId: string;
   name: string;
+  /** Where to go once they're gone — from their own page, which goes with them. */
+  redirectTo?: string;
 }) {
   const [state, formAction, pending] = useActionState(
     deleteStaffAction,
     {} as SaveState,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (state.error) window.alert(state.error);
-  }, [state]);
+    else if (state.ok && redirectTo) router.replace(redirectTo);
+  }, [state, redirectTo, router]);
 
   function onSubmit(e: React.FormEvent) {
     if (
