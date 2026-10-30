@@ -101,14 +101,6 @@
     #f6fafc;
 }
 
-/* Handwritten aside. */
-.mca-hand {
-  font-family: var(--font-caveat), "Comic Sans MS", cursive;
-  font-size: 1.6rem;
-  line-height: 1.05;
-  color: #8a4d0c;
-}
-
 /* Desktop monitor: bezel with a browser bar, then neck and foot — so the
    product reads as a computer screen, not a phone. */
 .mca-bezel {

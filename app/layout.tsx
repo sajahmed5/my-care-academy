@@ -9,10 +9,9 @@ const inter = Inter({
   display: "swap",
 });
 
-// Outfit and Caveat (marketing headlines and handwritten asides) live in
-// app/(marketing)/layout.tsx: a font declared here is preloaded on EVERY
-// route, and they cost a carer's phone ~83 KB of woff2 on pages that never
-// use them.
+// Outfit (marketing headlines) lives in app/(marketing)/layout.tsx: a font
+// declared here is preloaded on EVERY route, and it would cost a carer's
+// phone woff2 on pages that never use it.
 
 // Monospace appears on a handful of console tables (references, timestamps)
 // and the marketing mock-ups — never on a learner page — so it is not

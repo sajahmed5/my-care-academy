@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { OrganisationLd } from "@/components/structured-data";
-import { caveat, outfit } from "@/lib/fonts";
+import { outfit } from "@/lib/fonts";
 import { VERSION_LABEL } from "@/lib/version";
 import { MobileMenu } from "./mobile-menu";
 import "./marketing.css";
@@ -20,7 +20,7 @@ export default function MarketingLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <div className={`${outfit.variable} ${caveat.variable} flex flex-1 flex-col bg-white text-[#0f2f3c]`}>
+    <div className={`${outfit.variable} flex flex-1 flex-col bg-white text-[#0f2f3c]`}>
       <OrganisationLd />
       {/* White pill bar floating over each page's gradient opener. */}
       <header className="sticky top-0 z-40 px-4 pt-4">

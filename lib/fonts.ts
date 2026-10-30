@@ -1,4 +1,4 @@
-import { Caveat, Outfit } from "next/font/google";
+import { Outfit } from "next/font/google";
 
 /*
  * The public site's faces, declared once so the marketing layout and the
@@ -11,13 +11,5 @@ export const outfit = Outfit({
   variable: "--font-outfit",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
-  display: "swap",
-});
-
-// Handwritten asides on the marketing home page (.mca-hand).
-export const caveat = Caveat({
-  variable: "--font-caveat",
-  subsets: ["latin"],
-  weight: ["600"],
   display: "swap",
 });

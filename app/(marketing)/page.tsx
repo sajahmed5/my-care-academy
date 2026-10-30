@@ -144,7 +144,6 @@ export default function Home() {
                 See what&apos;s covered
               </PillLink>
             </div>
-            <p className="mca-hand mt-5 inline-block -rotate-2">↳ no per-carer fees. Ever.</p>
           </div>
 
           {/* On a phone the screenshot shrank to something no one could read,
