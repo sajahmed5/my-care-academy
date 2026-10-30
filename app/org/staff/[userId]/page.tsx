@@ -33,6 +33,7 @@ import { loadConcernTraining, loadConcernsForPerson } from "@/lib/complaints/per
 import { loadComplimentsForPerson } from "@/lib/complaints/compliments";
 import { loadBookings, loadSupervisions } from "@/lib/supervisions";
 import { SectionPanel } from "./section-panel";
+import { PersonPolicies } from "./policy-list";
 import { SectionRail, SectionTabs, SectionTabsAfter, type SectionCount } from "./section-tabs";
 import { sectionByKey, sectionState } from "./sections";
 import { CompetencyList } from "./competency-list";
@@ -86,6 +87,7 @@ const INLINE_SECTIONS = new Set([
   "competency",
   "complaints",
   "forms",
+  "policies",
 ]);
 
 /** The pages of the Employment section (HR-PACK.md). */
@@ -710,6 +712,10 @@ export default async function StaffDetailPage({
             </h3>
             <TaskList userId={userId} tasks={tasks} completed={doneActions} />
           </div>
+        )}
+
+        {section.key === "policies" && state === "open" && (
+          <PersonPolicies organisationId={context.organisationId!} userId={userId} />
         )}
 
         {section.key === "documents" && state === "open" && (

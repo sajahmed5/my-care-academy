@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   COMPANY_FIELDS,
   appliesTo,
-  loadAcceptance,
   loadCopy,
   loadPolicy,
   loadPolicySettings,
@@ -22,7 +21,9 @@ import { PolicyEditor } from "./policy-editor";
 import { PolicyBody } from "@/components/policy-body";
 import { orgBranding } from "@/lib/branding";
 import { PolicyAcceptButton } from "@/components/policy-accept-button";
-import { AcceptancePanel } from "./acceptance-panel";
+import { AcceptancePanel, type AcceptanceRow } from "./acceptance-panel";
+import { loadReading } from "@/lib/policy-reading-data";
+import { AUDIENCES } from "@/lib/policy-reading";
 import { FillDetailsButton, ReviewPanel, type ReviewEntry } from "./review-panel";
 
 /**
@@ -63,9 +64,20 @@ export default async function PolicyPage({
   const copy = await loadCopy(supabase, context.organisationId!, doc.id);
   const publishedCopy = copy && copy.status === "published" && copy.version > 0 ? copy : null;
   // Who has accepted the published version — the manager's half of the evidence.
-  const acceptance = publishedCopy
-    ? await loadAcceptance(supabase, doc.id, publishedCopy.version, context.organisationId, publishedCopy.id)
-    : { accepted: [], outstanding: [], total: 0 };
+  // Who it is for, by when, and who is late — the same answer as every other view.
+  const reading = publishedCopy ? await loadReading(supabase, context.organisationId!) : null;
+  const personOf = new Map((reading?.people ?? []).map((p) => [p.id, p]));
+  const acceptance: AcceptanceRow[] = (reading?.entries ?? [])
+    .filter((e) => e.copyId === publishedCopy?.id)
+    .map((e) => ({
+      userId: e.userId,
+      name: personOf.get(e.userId)?.name ?? "Unnamed",
+      role: personOf.get(e.userId)?.role ?? "learner",
+      status: e.status,
+      dueOn: e.dueOn,
+      acceptedVersion: e.acceptedVersion,
+      acceptedAt: e.acceptedAt,
+    }));
   const toComplete = blocks.filter((b) => b.type === "guidance").length;
   const templateRevised = !!copy && (doc.version ?? 1) > (copy.template_version ?? 1);
   const myAck = publishedCopy
@@ -217,7 +229,12 @@ export default async function PolicyPage({
                     />
                   </CardContent>
                 </Card>
-                <AcceptancePanel summary={acceptance} version={publishedCopy.version} />
+                <AcceptancePanel
+                  rows={acceptance}
+                  version={publishedCopy.version}
+                  audienceLabel={AUDIENCES[copy.audience].label}
+                  days={copy.accept_within_days ?? reading?.companyDays ?? 14}
+                />
               </>
             )}
           </>

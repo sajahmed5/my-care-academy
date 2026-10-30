@@ -115,8 +115,8 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     pages: [
       {
         href: "/org/settings/policies",
-        label: "Reviews and your details",
-        hint: "How often your policies are reviewed, and the details put into every policy you adopt.",
+        label: "Reading, reviews and your details",
+        hint: "Who must read each policy and by when, how often they are reviewed, and the details put into every policy you adopt.",
       },
     ],
   },

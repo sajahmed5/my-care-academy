@@ -7,13 +7,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { DUE_GROUP_LABEL } from "@/lib/due-view";
 import { formatDate } from "@/lib/dates";
 import { reviewsDue, type PolicyReviewRow } from "@/lib/policy-digest";
+import { loadReading } from "@/lib/policy-reading-data";
 
 const fmt = (d: string) => formatDate(d, { day: "numeric", month: "short", year: "numeric" });
 
 /**
- * Policies due (POLICIES.md, "Review dates"): every published policy and when
- * its review falls, overdue first — beside the other Who's due lists, and the
- * same count the weekly email gives.
+ * Policies due (POLICIES.md): who is late accepting a policy, and every
+ * published policy's next review, overdue first — beside the other Who's due
+ * lists, and the same counts the weekly email gives.
  */
 export default async function PoliciesDuePage() {
   const context = await requireConsole();
@@ -39,6 +40,19 @@ export default async function PoliciesDuePage() {
     };
   });
   const due = reviewsDue(rows, new Date());
+
+  // Late acceptances, by policy, longest overdue first.
+  const reading = await loadReading(supabase, context.organisationId!);
+  const nameOf = new Map(reading.people.map((p) => [p.id, p.name]));
+  const lateByCopy = reading.copies
+    .map((c) => ({
+      copy: c,
+      late: reading.entries
+        .filter((e) => e.copyId === c.copyId && e.status === "late")
+        .sort((a, b) => a.dueOn.localeCompare(b.dueOn)),
+    }))
+    .filter((g) => g.late.length > 0)
+    .sort((a, b) => a.late[0].dueOn.localeCompare(b.late[0].dueOn));
   const groups = (["overdue", "due_soon", "scheduled", "none"] as const)
     .map((status) => ({ status, items: due.filter((r) => r.status === status) }))
     .filter((g) => g.items.length > 0);
@@ -46,7 +60,41 @@ export default async function PoliciesDuePage() {
   return (
     <DashboardShell title="Policies due" context={context}>
       <div className="space-y-6">
-        <p className="text-sm text-muted-foreground">
+        <section className="space-y-2">
+          <h3 className={`text-sm font-semibold ${lateByCopy.length ? "text-rose-700" : "text-muted-foreground"}`}>
+            Late accepting ({lateByCopy.reduce((n, g) => n + g.late.length, 0)})
+          </h3>
+          {lateByCopy.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nobody is late reading a policy.</p>
+          ) : (
+            <Card>
+              <CardContent className="divide-y p-0">
+                {lateByCopy.map((g) => (
+                  <Link
+                    key={g.copy.copyId}
+                    href={`/org/policies/${g.copy.code}`}
+                    className="block px-4 py-3 text-sm hover:bg-muted/50"
+                  >
+                    <span className="font-medium">{g.copy.title}</span>
+                    <span className="ml-2 text-xs text-rose-700">{g.late.length} late</span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                      {g.late.map((e) => `${nameOf.get(e.userId) ?? "Someone"} (due ${fmt(e.dueOn)})`).join(", ")}
+                    </span>
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+          <p className="text-xs text-muted-foreground">
+            They are reminded by email.{" "}
+            <Link href="/org/policies/people" className="font-medium text-primary hover:underline">
+              Everyone, policy by policy
+            </Link>
+          </p>
+        </section>
+
+        <h3 className="pt-2 text-base font-semibold">Reviews</h3>
+        <p className="-mt-4 text-sm text-muted-foreground">
           Each published policy and when it is next reviewed. Open one to mark it reviewed, or to change it and publish a new
           version.
         </p>

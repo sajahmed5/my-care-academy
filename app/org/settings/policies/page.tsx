@@ -7,12 +7,14 @@ import { createClient } from "@/lib/supabase/server";
 import { SettingsShell } from "@/app/org/settings/settings-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadPolicySettings, serviceLabel } from "@/lib/policy-library";
-import { CompanyForm, PeriodsForm, type PolicyRow } from "./settings-forms";
+import { CompanyForm, PolicyRowsForm, type PolicyRow } from "./settings-forms";
+import { isAudience } from "@/lib/policy-reading";
 
 /**
- * The company's policy setup (POLICIES.md): how often its policies are
- * reviewed, each one's own period, and the details merged into them. Managers
- * only, under Settings — the policies themselves are worked on from the menu.
+ * The company's policy setup (POLICIES.md): who must read each policy and by
+ * when, how often they are reviewed, and the details merged into them.
+ * Managers only, under Settings — the policies themselves are worked on from
+ * the menu.
  */
 export default async function PolicySettingsPage() {
   const context = await requireRole("org_admin");
@@ -23,10 +25,11 @@ export default async function PolicySettingsPage() {
     loadPolicySettings(supabase, orgId),
     supabase
       .from("organisation_policies")
-      .select("id, status, version, review_months, policy_documents(title, category, service_types, sort_order)")
+      .select("id, status, version, review_months, audience, accept_within_days, policy_documents(title, category, service_types, sort_order)")
       .eq("organisation_id", orgId)
       .limit(500),
   ]);
+  const acceptDays = settings.accept_within_days;
 
   const rows: PolicyRow[] = (copies ?? [])
     .map((c) => {
@@ -39,6 +42,8 @@ export default async function PolicySettingsPage() {
         service: serviceLabel(doc?.service_types ?? null),
         status: c.status === "published" && (c.version as number) > 0 ? `Published, version ${c.version}` : "Draft",
         reviewMonths: (c.review_months as number | null) ?? null,
+        audience: isAudience(c.audience) ? c.audience : "everyone",
+        acceptWithinDays: (c.accept_within_days as number | null) ?? null,
       };
     })
     .sort((a, b) => a.title.localeCompare(b.title));
@@ -46,10 +51,16 @@ export default async function PolicySettingsPage() {
   return (
     <SettingsShell context={context} active="/org/settings/policies">
       <div className="space-y-8">
-        <CompanyForm settings={settings} />
+        <CompanyForm settings={settings} acceptDays={acceptDays} />
 
         <section className="space-y-2">
-          <h3 className="font-semibold">Each policy&apos;s review period</h3>
+          <div>
+            <h3 className="font-semibold">Each policy</h3>
+            <p className="text-sm text-muted-foreground">
+              Who must read it, how long they have, and how often it is reviewed. Office staff and managers can read any
+              policy; only the people it is for are asked to accept it.
+            </p>
+          </div>
           {rows.length === 0 ? (
             <Card>
               <CardContent className="py-6 text-sm text-muted-foreground">
@@ -61,7 +72,7 @@ export default async function PolicySettingsPage() {
               </CardContent>
             </Card>
           ) : (
-            <PeriodsForm rows={rows} companyMonths={settings.review_months} />
+            <PolicyRowsForm rows={rows} companyMonths={settings.review_months} companyDays={acceptDays} />
           )}
         </section>
       </div>

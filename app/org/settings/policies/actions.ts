@@ -7,14 +7,20 @@ import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
 import { COMPANY_FIELDS, REVIEW_PERIODS } from "@/lib/policy-library";
 import { addMonths } from "@/lib/records";
+import { ACCEPT_PERIODS, isAudience } from "@/lib/policy-reading";
 import type { SaveState } from "@/app/platform/actions";
 
 /**
- * The company's policy setup (POLICIES.md): review periods and the details
- * merged into its policies. Managers only — it sits under Settings.
+ * The company's policy setup (POLICIES.md): review periods, who must read
+ * each policy and by when, and the details merged into its policies.
+ * Managers only — it sits under Settings.
  */
 
 const str = (fd: FormData, key: string) => String(fd.get(key) ?? "").trim();
+const days = (raw: string): number | null => {
+  const n = parseInt(raw, 10);
+  return (ACCEPT_PERIODS as readonly number[]).includes(n) ? n : null;
+};
 const period = (raw: string): number | null => {
   const n = parseInt(raw, 10);
   return (REVIEW_PERIODS as readonly number[]).includes(n) ? n : null;
@@ -73,6 +79,8 @@ export async function savePolicySettingsAction(_prev: SaveState, formData: FormD
   const orgId = context.organisationId!;
   const months = period(str(formData, "review_months"));
   if (!months) return { ok: false, error: "Choose how often policies are reviewed." };
+  const acceptDays = days(str(formData, "accept_within_days"));
+  if (!acceptDays) return { ok: false, error: "Choose how long staff have to read a policy." };
 
   const details: Record<string, string | null> = {};
   for (const f of COMPANY_FIELDS) details[f.key] = str(formData, f.key).slice(0, 300) || null;
@@ -85,7 +93,7 @@ export async function savePolicySettingsAction(_prev: SaveState, formData: FormD
     .maybeSingle();
   const { error } = await supabase
     .from("organisation_policy_settings")
-    .upsert({ organisation_id: orgId, review_months: months, ...details, updated_by: context.userId });
+    .upsert({ organisation_id: orgId, review_months: months, accept_within_days: acceptDays, ...details, updated_by: context.userId });
   if (error) return { ok: false, error: error.message };
 
   // Every policy on the company's period follows a change to it.
@@ -104,31 +112,46 @@ export async function savePolicySettingsAction(_prev: SaveState, formData: FormD
   return { ok: true };
 }
 
-/** Each policy's own review period: "default" follows the company's. */
-export async function savePolicyPeriodsAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
+/**
+ * Each policy's own settings: who must read it, its days to accept and its
+ * review period ("default" follows the company's).
+ */
+export async function savePolicyRowsAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
   const context = await gate();
   if (!context) return { ok: false, error: "Policies are not included in your plan." };
   const orgId = context.organisationId!;
   const supabase = await createClient();
   const [{ data: copies }, { data: settings }] = await Promise.all([
-    supabase.from("organisation_policies").select("id, review_months").eq("organisation_id", orgId).limit(500),
+    supabase.from("organisation_policies").select("id, review_months, audience, accept_within_days").eq("organisation_id", orgId).limit(500),
     supabase.from("organisation_policy_settings").select("review_months").eq("organisation_id", orgId).maybeSingle(),
   ]);
   const companyMonths = (settings?.review_months as number | undefined) ?? 12;
   const changed: { id: string; months: number }[] = [];
+  let updated = 0;
   for (const c of copies ?? []) {
     const raw = formData.get(`period:${c.id}`);
     if (raw === null) continue;
     const own = String(raw) === "default" ? null : period(String(raw));
     if (String(raw) !== "default" && own === null) return { ok: false, error: "Choose a review period for each policy." };
-    if (own === ((c.review_months as number | null) ?? null)) continue;
-    const { error } = await supabase.from("organisation_policies").update({ review_months: own }).eq("id", c.id);
+    const rawDays = String(formData.get(`days:${c.id}`) ?? "default");
+    const ownDays = rawDays === "default" ? null : days(rawDays);
+    if (rawDays !== "default" && ownDays === null) return { ok: false, error: "Choose how long staff have for each policy." };
+    const audience = String(formData.get(`audience:${c.id}`) ?? "");
+    if (!isAudience(audience)) return { ok: false, error: "Choose who must read each policy." };
+
+    const periodChanged = own !== ((c.review_months as number | null) ?? null);
+    if (!periodChanged && ownDays === ((c.accept_within_days as number | null) ?? null) && audience === c.audience) continue;
+    const { error } = await supabase
+      .from("organisation_policies")
+      .update({ review_months: own, accept_within_days: ownDays, audience })
+      .eq("id", c.id);
     if (error) return { ok: false, error: error.message };
-    changed.push({ id: c.id as string, months: own ?? companyMonths });
+    updated++;
+    if (periodChanged) changed.push({ id: c.id as string, months: own ?? companyMonths });
   }
   await rescheduleReviews(supabase, orgId, changed);
-  if (changed.length) {
-    await logAudit({ context, action: "policy.periods", entity: "organisation", entityId: orgId, detail: { changed: changed.length } });
+  if (updated) {
+    await logAudit({ context, action: "policy.reading_settings", entity: "organisation", entityId: orgId, detail: { changed: updated } });
   }
   done();
   return { ok: true };

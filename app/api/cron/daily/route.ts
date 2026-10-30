@@ -7,6 +7,7 @@ import {
   processRenewals,
   processReminders,
   processEngagement,
+  processPolicyReminders,
 } from "@/lib/engine";
 import { processFaceToFaceReminders } from "@/lib/face-to-face-email";
 import { processCaseReminders } from "@/lib/hr/case-reminders";
@@ -22,7 +23,8 @@ function authorized(req: NextRequest): boolean {
 
 /**
  * Daily engine run: renewals (expire + remind), learner reminders, engagement
- * alerts, and the day-before reminder for face-to-face sessions.
+ * alerts, the day-before reminder for face-to-face sessions, and policy
+ * reminders.
  */
 export async function GET(req: NextRequest) {
   if (!authorized(req)) {
@@ -43,6 +45,8 @@ export async function GET(req: NextRequest) {
   const reminders = await processReminders(settings, now, dryRun, refs);
   const engagement = await processEngagement(settings, now, dryRun, refs);
   const faceToFace = await processFaceToFaceReminders(admin, now, dryRun);
+  // Policies staff still have to accept: when published to them, and as the date nears or passes.
+  const policies = await processPolicyReminders(settings, now, dryRun, refs);
   // Referees who haven't answered: a reminder after 3 days, twice at most.
   const references = await chaseReferences(admin, now, dryRun);
   // HR cases: deadlines missed or in the next 2 days, to whoever can see them.
@@ -57,6 +61,7 @@ export async function GET(req: NextRequest) {
     ...reminders,
     ...engagement,
     ...faceToFace,
+    ...policies,
     referenceReminders: references,
     ...cases,
     ...leavers,

@@ -14,7 +14,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fetchAll } from "./fetch-all";
+import { DEFAULT_ACCEPT_DAYS, isAudience, type Audience } from "./policy-reading";
 
 export type PolicyKind = "policy" | "form" | "log";
 
@@ -176,154 +176,6 @@ export function byCategory<T extends { category: string }>(items: T[]): [string,
 }
 
 // ---------------------------------------------------------------------------
-// Who has accepted what — the manager's side of the acknowledgement.
-// ---------------------------------------------------------------------------
-
-export interface Acceptance {
-  user_id: string;
-  name: string;
-  role: string;
-  /** The version they accepted, or null if they never have. */
-  version: number | null;
-  acknowledged_at: string | null;
-}
-
-export interface AcceptanceSummary {
-  /** Active staff who have accepted the current version. */
-  accepted: Acceptance[];
-  /** Active staff who have not, or who accepted an older version. */
-  outstanding: Acceptance[];
-  total: number;
-}
-
-/**
- * Every active member of the organisation against one policy: who has
- * accepted the current version, and who has not.
- *
- * "Accepted an older version" counts as outstanding. A revision is a new
- * document as far as the reader is concerned, and the old acceptance stays on
- * the row as the truth about the old text — which is exactly why the version
- * is stored there rather than looked up.
- *
- * RLS scopes the acknowledgements: an org admin reads their own
- * organisation's, and the users read is the same org_admin_reads_org_users
- * the rest of the console relies on.
- */
-export async function loadAcceptance(
-  supabase: SupabaseClient,
-  policyId: string,
-  currentVersion: number,
-  organisationId?: string | null,
-  /** The organisation's copy: only acceptances of that copy count. */
-  copyId?: string | null,
-): Promise<AcceptanceSummary> {
-  let staffQ = supabase
-    .from("users")
-    .select("id, full_name, email, role")
-    .in("role", ["learner", "org_admin", "org_office"])
-    .eq("status", "active");
-  let acksQ = supabase
-    .from("policy_acknowledgements")
-    .select("user_id, version, acknowledged_at")
-    .eq("policy_id", policyId);
-  acksQ = copyId ? acksQ.eq("organisation_policy_id", copyId) : acksQ.is("organisation_policy_id", null);
-  // (organisation_id, policy_id) is the acknowledgements' index.
-  if (organisationId) {
-    staffQ = staffQ.eq("organisation_id", organisationId);
-    acksQ = acksQ.eq("organisation_id", organisationId);
-  }
-  const [{ data: staff }, { data: acks }] = await Promise.all([
-    staffQ.order("full_name").limit(1000),
-    acksQ.limit(1000),
-  ]);
-
-  // Latest acceptance per person: the highest version they have signed.
-  const latest = new Map<string, { version: number; at: string }>();
-  for (const a of acks ?? []) {
-    const prev = latest.get(a.user_id as string);
-    if (!prev || (a.version as number) > prev.version) {
-      latest.set(a.user_id as string, {
-        version: a.version as number,
-        at: a.acknowledged_at as string,
-      });
-    }
-  }
-
-  const accepted: Acceptance[] = [];
-  const outstanding: Acceptance[] = [];
-  for (const u of staff ?? []) {
-    const ack = latest.get(u.id as string);
-    const row: Acceptance = {
-      user_id: u.id as string,
-      name: (u.full_name as string | null) ?? (u.email as string) ?? "Unnamed",
-      role: u.role as string,
-      version: ack?.version ?? null,
-      acknowledged_at: ack?.at ?? null,
-    };
-    (ack && ack.version >= currentVersion ? accepted : outstanding).push(row);
-  }
-
-  return { accepted, outstanding, total: accepted.length + outstanding.length };
-}
-
-/**
- * Accepted-count per policy for a list of ids, for the list's "12 of 40".
- *
- * Read by organisation and paged. It used to send every policy id in the URL
- * with `.limit(5000)` — but the server caps a read at 1,000 rows whatever the
- * limit says, so past 1,000 acceptances (25 policies × 40 staff) the counts
- * quietly came up short. Acceptances for policies not on the list are skipped.
- */
-export async function loadAcceptanceCounts(
-  supabase: SupabaseClient,
-  /** copyId: count acceptances of the organisation's copy, at its version. */
-  policies: { id: string; version: number | null; copyId?: string | null }[],
-  organisationId?: string | null,
-): Promise<{ counts: Map<string, number>; staff: number }> {
-  const counts = new Map<string, number>();
-  if (policies.length === 0) return { counts, staff: 0 };
-
-  let staffQ = supabase
-    .from("users")
-    .select("id", { count: "exact", head: true })
-    .in("role", ["learner", "org_admin", "org_office"])
-    .eq("status", "active");
-  if (organisationId) staffQ = staffQ.eq("organisation_id", organisationId);
-
-  const [{ count: staff }, acks] = await Promise.all([
-    staffQ,
-    fetchAll<{ policy_id: string; user_id: string; version: number; organisation_policy_id: string | null }>((from, to) => {
-      let q = supabase.from("policy_acknowledgements").select("policy_id, user_id, version, organisation_policy_id");
-      q = organisationId
-        ? q.eq("organisation_id", organisationId)
-        : q.in(
-            "policy_id",
-            policies.map((p) => p.id),
-          );
-      return q.order("id").range(from, to);
-    }),
-  ]);
-
-  const currentOf = new Map(policies.map((p) => [p.id, p.version ?? 1]));
-  const copyOf = new Map(policies.map((p) => [p.id, p.copyId ?? null]));
-  const seen = new Set<string>();
-  for (const a of acks) {
-    const current = currentOf.get(a.policy_id);
-    if (current === undefined) continue;
-    // An acceptance counts only for the text it was given against: the
-    // organisation's copy, or the template where there is no copy.
-    if ((a.organisation_policy_id ?? null) !== copyOf.get(a.policy_id)) continue;
-    const key = `${a.policy_id}|${a.user_id}`;
-    if (seen.has(key)) continue;
-    if (a.version >= current) {
-      seen.add(key);
-      counts.set(a.policy_id, (counts.get(a.policy_id) ?? 0) + 1);
-    }
-  }
-  return { counts, staff: staff ?? 0 };
-}
-
-// ---------------------------------------------------------------------------
 // The organisation's own copies (ROADMAP §1): adopted from a template,
 // completed, and published to staff, who accept that version.
 // ---------------------------------------------------------------------------
@@ -344,10 +196,14 @@ export interface OrgPolicyCopy {
   review_months: number | null;
   /** When the next review falls; set on every publish and every review. */
   review_due_on: string | null;
+  /** Who must read it (POLICIES.md, "Who must read what"). */
+  audience: Audience;
+  /** Days to accept; null means the company's. */
+  accept_within_days: number | null;
 }
 
 const COPY_COLUMNS =
-  "id, policy_id, status, version, template_version, published_at, blocks, draft_blocks, review_months, review_due_on";
+  "id, policy_id, status, version, template_version, published_at, blocks, draft_blocks, review_months, review_due_on, audience, accept_within_days";
 
 function toCopy(r: Record<string, unknown>): OrgPolicyCopy {
   return {
@@ -361,6 +217,8 @@ function toCopy(r: Record<string, unknown>): OrgPolicyCopy {
     draft_blocks: (r.draft_blocks as PolicyBlock[] | null) ?? null,
     review_months: (r.review_months as number | null) ?? null,
     review_due_on: (r.review_due_on as string | null) ?? null,
+    audience: isAudience(r.audience) ? r.audience : "everyone",
+    accept_within_days: (r.accept_within_days as number | null) ?? null,
   };
 }
 
@@ -448,13 +306,15 @@ export type CompanyFieldKey = (typeof COMPANY_FIELDS)[number]["key"];
 
 export interface PolicySettings {
   review_months: number;
+  /** Days staff have to accept a policy (POLICIES.md, "Who must read what"). */
+  accept_within_days: number;
   details: Partial<Record<CompanyFieldKey, string>>;
 }
 
 export async function loadPolicySettings(supabase: SupabaseClient, organisationId: string): Promise<PolicySettings> {
   const { data } = await supabase
     .from("organisation_policy_settings")
-    .select(`review_months, ${COMPANY_FIELDS.map((f) => f.key).join(", ")}`)
+    .select(`review_months, accept_within_days, ${COMPANY_FIELDS.map((f) => f.key).join(", ")}`)
     .eq("organisation_id", organisationId)
     .maybeSingle();
   const row = (data ?? {}) as Record<string, unknown>;
@@ -463,7 +323,11 @@ export async function loadPolicySettings(supabase: SupabaseClient, organisationI
     const v = String(row[f.key] ?? "").trim();
     if (v) details[f.key] = v;
   }
-  return { review_months: (row.review_months as number | undefined) ?? DEFAULT_REVIEW_MONTHS, details };
+  return {
+    review_months: (row.review_months as number | undefined) ?? DEFAULT_REVIEW_MONTHS,
+    accept_within_days: (row.accept_within_days as number | undefined) ?? DEFAULT_ACCEPT_DAYS,
+    details,
+  };
 }
 
 /**

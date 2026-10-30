@@ -123,6 +123,13 @@ export const SECTIONS: SectionDef[] = [
     built: true,
   },
   {
+    key: "policies",
+    label: "Policies",
+    blurb: "The policies this person must read, the version they accepted and when, and any that are late.",
+    feature: "documents.library",
+    built: true,
+  },
+  {
     // Not feature-gated, and deliberately: the list is mostly a view over
     // training, which every package includes. What is paid for is what feeds
     // it — supervision actions exist only where supervisions do.

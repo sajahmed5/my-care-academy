@@ -15,7 +15,10 @@ import { hasFeatureForOrg } from "@/lib/entitlements";
 import { resolveForms, type FormOverride } from "@/lib/audit-forms";
 import { staffAuditDigest, staffAuditDigestHtml } from "@/lib/staff-audit-digest";
 import { hrDigestHtml, loadHrDigests } from "@/lib/hr-digest";
-import { policyDigest, policyDigestHtml, type PolicyDigest } from "@/lib/policy-digest";
+import { policyDigest, policyDigestHtml, policyReminderEmail, type PolicyDigest } from "@/lib/policy-digest";
+import { loadReadingForOrgs } from "@/lib/policy-reading-data";
+import { planPolicyReminders } from "@/lib/policy-reading";
+import { ukToday } from "@/lib/policy-library";
 import {
   chunk,
   esc,
@@ -603,8 +606,8 @@ async function loadStaffAuditDigests(
 }
 
 /**
- * Policy reviews due, per organisation with the policies (POLICIES.md): what
- * the weekly email adds after Staff audits. Entitlement asked per
+ * Policy reviews due and late acceptances, per organisation with the
+ * policies (POLICIES.md): what the weekly email adds after Staff audits. Entitlement asked per
  * organisation, as for Staff audits — the service role has no organisation.
  */
 async function loadPolicyDigests(admin: Admin, orgIds: string[], now: Date): Promise<Map<string, PolicyDigest>> {
@@ -613,21 +616,81 @@ async function loadPolicyDigests(admin: Admin, orgIds: string[], now: Date): Pro
     await Promise.all(orgIds.map(async (id) => ((await hasFeatureForOrg(admin, id, "documents.library")) ? id : null)))
   ).filter((id): id is string => !!id);
   if (entitled.length === 0) return out;
-  const copies = await fetchAll((f, t) =>
-    admin
-      .from("organisation_policies")
-      .select("id, organisation_id, review_due_on")
-      .in("organisation_id", entitled)
-      .eq("status", "published")
-      .gt("version", 0)
-      .order("id")
-      .range(f, t),
-  );
+  const [copies, reading] = await Promise.all([
+    fetchAll((f, t) =>
+      admin
+        .from("organisation_policies")
+        .select("id, organisation_id, review_due_on")
+        .in("organisation_id", entitled)
+        .eq("status", "published")
+        .gt("version", 0)
+        .order("id")
+        .range(f, t),
+    ),
+    loadReadingForOrgs(admin, entitled, ukToday(now)),
+  ]);
   for (const id of entitled) {
     const rows = copies
       .filter((c) => c.organisation_id === id)
       .map((c) => ({ copyId: c.id as string, title: "", code: "", reviewDueOn: (c.review_due_on as string | null) ?? null }));
-    out.set(id, policyDigest(rows, now));
+    out.set(id, policyDigest(rows, now, reading.get(id)?.entries ?? []));
   }
   return out;
+}
+
+/**
+ * Policy reminders (POLICIES.md, "Who must read what"): one email per person
+ * listing every policy they still have to accept — when one is newly
+ * published to them, and again every reminderRepeatDays while one is due
+ * within three days or late. planPolicyReminders() decides; the log
+ * remembers when each person was last sent one.
+ */
+export async function processPolicyReminders(
+  settings: EngineSettings,
+  now: Date,
+  dryRun: boolean,
+  refs?: EngineRefs,
+): Promise<RunSummary> {
+  const admin = createAdminClient();
+  const r = refs ?? (await loadEngineRefs(admin));
+  const entitled = (
+    await Promise.all([...r.orgs.keys()].map(async (id) => ((await hasFeatureForOrg(admin, id, "documents.library")) ? id : null)))
+  ).filter((id): id is string => !!id);
+  if (entitled.length === 0) return { policyRemindersSent: 0 };
+
+  const today = ukToday(now);
+  const [reading, log] = await Promise.all([
+    loadReadingForOrgs(admin, entitled, today),
+    fetchAll((f, t) => admin.from("policy_reminder_log").select("user_id, last_sent_at").order("user_id").range(f, t)),
+  ]);
+  const lastSent = new Map(log.map((l) => [l.user_id as string, l.last_sent_at as string]));
+  const origin = await siteOrigin();
+  const outbox: Outgoing[] = [];
+  const sentTo: { user_id: string; organisation_id: string; last_sent_at: string }[] = [];
+  for (const [orgId, rd] of reading) {
+    const plans = planPolicyReminders({
+      entries: rd.entries,
+      copies: rd.copies,
+      lastSent,
+      repeatDays: settings.reminderRepeatDays,
+      today,
+    });
+    const copyOf = new Map(rd.copies.map((c) => [c.copyId, c]));
+    for (const plan of plans) {
+      const to = rd.emails.get(plan.userId);
+      if (!to) continue;
+      const person = rd.people.find((p) => p.id === plan.userId);
+      const items = rd.entries
+        .filter((e) => e.userId === plan.userId && plan.copyIds.includes(e.copyId))
+        .map((e) => ({ title: copyOf.get(e.copyId)?.title ?? "A policy", dueOn: e.dueOn, late: e.status === "late" }));
+      const { subject, html } = policyReminderEmail(person?.name ?? "there", r.orgs.get(orgId) ?? "Your employer", items, origin);
+      outbox.push({ orgId, to, type: "policy_reminder", subject, html: wrap(subject, html) });
+      sentTo.push({ user_id: plan.userId, organisation_id: orgId, last_sent_at: now.toISOString() });
+    }
+  }
+  if (!dryRun && sentTo.length) {
+    for (const part of chunk(sentTo, 500)) await admin.from("policy_reminder_log").upsert(part);
+  }
+  const emails = await flush(admin, outbox, dryRun);
+  return { policyRemindersSent: emails };
 }

@@ -6,7 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { EmptyState } from "@/components/learner-ui";
 import { Card, CardContent } from "@/components/ui/card";
-import { byCategory, loadCopies, loadLibrary } from "@/lib/policy-library";
+import { loadCopies, loadLibrary } from "@/lib/policy-library";
+import { loadReading } from "@/lib/policy-reading-data";
+import { formatDate } from "@/lib/dates";
 
 /**
  * The policies a carer is asked to read and accept.
@@ -29,33 +31,28 @@ export default async function LearnerPoliciesPage() {
   // Only what the organisation has adopted, completed and published — a
   // carer never reads a template (ROADMAP §1). The version is the copy's, and
   // so is the acceptance.
-  const [library, copies, { data: acks }] = await Promise.all([
+  // Only the policies meant for this person (POLICIES.md, "Who must read
+  // what"), each with the date to accept it by.
+  const [library, copies, reading] = await Promise.all([
     loadLibrary(supabase, {
       serviceType: (org?.service_type as string | null) ?? null,
       userId: context.userId,
     }),
     loadCopies(supabase, context.organisationId!),
-    supabase
-      .from("policy_acknowledgements")
-      .select("organisation_policy_id, version")
-      .eq("user_id", context.userId)
-      .not("organisation_policy_id", "is", null),
+    loadReading(supabase, context.organisationId!, { userId: context.userId }),
   ]);
-  const ackOf = new Map<string, number>();
-  for (const a of acks ?? []) {
-    const id = a.organisation_policy_id as string;
-    ackOf.set(id, Math.max(ackOf.get(id) ?? 0, a.version as number));
-  }
+  const entryOf = new Map(reading.entries.map((e) => [e.copyId, e]));
   const policies = library.flatMap((d) => {
     const c = copies.get(d.id);
-    if (d.kind !== "policy" || !c || c.status !== "published" || c.version < 1) return [];
-    return [{ ...d, version: c.version, acknowledgedVersion: ackOf.get(c.id) ?? null }];
+    const entry = c ? entryOf.get(c.id) : undefined;
+    if (!c || !entry) return [];
+    return [{ ...d, version: c.version, acknowledgedVersion: entry.acceptedVersion, entry }];
   });
 
-  const isAccepted = (p: (typeof policies)[number]) =>
-    p.acknowledgedVersion != null && p.acknowledgedVersion >= (p.version ?? 1);
-  const outstanding = policies.filter((p) => !isAccepted(p));
-  const done = policies.filter(isAccepted);
+  const outstanding = policies
+    .filter((p) => p.entry.status !== "accepted")
+    .sort((a, b) => a.entry.dueOn.localeCompare(b.entry.dueOn));
+  const done = policies.filter((p) => p.entry.status === "accepted");
 
   return (
     <DashboardShell learn title="Policies" context={context}>
@@ -79,23 +76,27 @@ export default async function LearnerPoliciesPage() {
                 : "You have accepted every policy."}
             </EmptyState>
           ) : (
-            byCategory(outstanding).map(([category, items]) => (
-              <div key={category} className="space-y-2">
-                <p className="pt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {category}
-                </p>
-                {items.map((p) => (
-                  <Card key={p.id}>
-                    <CardContent className="flex items-center gap-3 pt-6">
-                      <ShieldCheck className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                      <Link href={`/learn/policies/${p.code}`} className="font-medium hover:underline">
-                        {p.title}
-                      </Link>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ))
+            // Soonest deadline first: that is the order to read them in.
+            <div className="space-y-2">
+              {outstanding.map((p) => (
+                <Card key={p.id}>
+                  <CardContent className="flex flex-wrap items-center gap-3 pt-6">
+                    <ShieldCheck className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <Link href={`/learn/policies/${p.code}`} className="min-w-0 flex-1 font-medium hover:underline">
+                      {p.title}
+                    </Link>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        p.entry.status === "late" ? "bg-rose-100 text-rose-700" : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {p.entry.status === "late" ? "Overdue — " : "Read by "}
+                      {formatDate(p.entry.dueOn, { day: "numeric", month: "short" })}
+                    </span>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </section>
 
