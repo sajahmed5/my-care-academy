@@ -7,6 +7,7 @@ import { ClientForm, type ClientValues } from "../client-form";
 import { ClientConcerns } from "./concerns";
 import { ClientQuality } from "./quality";
 import { ClientForms } from "./forms";
+import { ClientFeedback } from "./feedback";
 
 /**
  * One client: their details, and everything about them over time — QAs,
@@ -58,6 +59,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
         </section>
         {enabled["forms.builder"] && <ClientForms supabase={supabase} context={context} clientId={id} />}
         {!enabled["quality.audits"] && complaintsOn && <ClientConcerns supabase={supabase} clientId={id} />}
+        {enabled["quality.feedback"] && <ClientFeedback supabase={supabase} clientId={id} />}
       </div>
     </DashboardShell>
   );

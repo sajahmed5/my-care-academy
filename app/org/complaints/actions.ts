@@ -317,6 +317,13 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
   if (error) return { ok: false, error: error.message };
   const complaintId = row.id as string;
 
+  // Raised from an answer to a named feedback survey: the answer remembers it,
+  // so the same low score is never raised twice.
+  const feedbackResponseId = str(formData, "feedbackResponseId");
+  if (feedbackResponseId) {
+    await supabase.from("feedback_responses").update({ complaint_id: complaintId }).eq("id", feedbackResponseId);
+  }
+
   // Raised from a member of staff's file: they are named on it from the start.
   if (personId) {
     await supabase.from("complaint_people").insert({ complaint_id: complaintId, user_id: personId, involvement: "involved" });

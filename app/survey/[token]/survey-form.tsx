@@ -15,7 +15,7 @@ const SCALE = [
   { v: 5, label: "Very good" },
 ];
 
-export function SurveyForm({ token, questions }: { token: string; questions: SurveyQuestion[] }) {
+export function SurveyForm({ token, questions, named = false }: { token: string; questions: SurveyQuestion[]; named?: boolean }) {
   const [state, action, pending] = useActionState<SurveySubmitState, FormData>(submitSurveyAction, {});
   if (state.ok) {
     return <p className="rounded-lg bg-green-50 p-4 text-center text-sm text-green-900">Thank you — your answers have been sent.</p>;
@@ -46,7 +46,11 @@ export function SurveyForm({ token, questions }: { token: string; questions: Sur
       ))}
       {state.error && <p className="text-sm text-rose-600">{state.error}</p>}
       <Button type="submit" disabled={pending}>{pending ? "Sending…" : "Send"}</Button>
-      <p className="text-xs text-muted-foreground">Your answers are anonymous: your name is not asked for or kept.</p>
+      <p className="text-xs text-muted-foreground">
+        {named
+          ? "Your answers go to the care provider with your name, so they can follow up anything you raise."
+          : "Your answers are anonymous: your name is not asked for or kept."}
+      </p>
     </form>
   );
 }
