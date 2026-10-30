@@ -23,13 +23,19 @@ export function ChangePackage({
   current,
   preselect,
   asked,
+  trial = false,
 }: {
   options: PackageOption[];
   current: string;
   preselect: string | null;
   asked: { label: string; on: string } | null;
+  /** On a free trial (TRIAL.md): the trial's package is marked as theirs,
+   *  and can be asked for like any other. */
+  trial?: boolean;
 }) {
-  const [chosen, setChosen] = useState<string | null>(preselect && preselect !== current ? preselect : null);
+  const [chosen, setChosen] = useState<string | null>(
+    preselect && (trial || preselect !== current) ? preselect : null,
+  );
   const [note, setNote] = useState("");
   const [sent, setSent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +58,7 @@ export function ChangePackage({
                 <h3 className="font-semibold">{o.label}</h3>
                 {isCurrent && (
                   <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground">
-                    Your package
+                    {trial ? "Your trial" : "Your package"}
                   </span>
                 )}
               </div>
@@ -69,7 +75,7 @@ export function ChangePackage({
                 ))}
               </ul>
               <div className="mt-auto pt-4">
-                {isCurrent ? (
+                {isCurrent && !trial ? (
                   <p className="flex min-h-11 items-center justify-center text-sm text-muted-foreground">
                     You&apos;re on this package
                   </p>
@@ -84,7 +90,7 @@ export function ChangePackage({
                       setError(null);
                     }}
                   >
-                    Ask to move to {o.label}
+                    {trial ? `Ask for ${o.label}` : `Ask to move to ${o.label}`}
                   </Button>
                 )}
               </div>
@@ -95,7 +101,7 @@ export function ChangePackage({
 
       {chosen && !sent && (
         <div className="mt-5 rounded-xl border border-primary bg-accent/40 p-5">
-          <h3 className="font-semibold">Ask to move to {chosenLabel}</h3>
+          <h3 className="font-semibold">{trial ? `Ask for ${chosenLabel}` : `Ask to move to ${chosenLabel}`}</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             We&apos;ll get back to you within one working day to confirm the price and the date it starts.
           </p>
@@ -141,7 +147,7 @@ export function ChangePackage({
         <div role="status" className="mt-5 flex gap-3 rounded-xl bg-accent p-5">
           <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
           <div>
-            <p className="font-semibold">Request sent: move to {sent}</p>
+            <p className="font-semibold">{trial ? `Request sent: ${sent}` : `Request sent: move to ${sent}`}</p>
             <p className="mt-1 text-sm text-accent-foreground">
               We&apos;ll be in touch within one working day to set it up.
             </p>

@@ -30,6 +30,7 @@ import {
   type ReminderItem,
   type RenewalNotice,
 } from "@/lib/engine-digest";
+import { trialState } from "@/lib/trial";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -104,7 +105,7 @@ export async function loadEngineRefs(admin: Admin): Promise<EngineRefs> {
         .range(f, t),
     ),
     fetchAll((f, t) => admin.from("courses").select("id, title, retired_at").order("id").range(f, t)),
-    fetchAll((f, t) => admin.from("organisations").select("id, name").order("id").range(f, t)),
+    fetchAll((f, t) => admin.from("organisations").select("id, name, status, trial_ends_at").order("id").range(f, t)),
     fetchAll<EngineEnrolment>((f, t) =>
       admin
         .from("enrolments")
@@ -113,6 +114,14 @@ export async function loadEngineRefs(admin: Admin): Promise<EngineRefs> {
         .range(f, t),
     ),
   ]);
+  // A suspended company, or one whose free trial has ended (TRIAL.md), is
+  // paused: nobody in it can sign in, so nobody in it is sent reminders.
+  // Every job checks status === "active", so its people read as paused.
+  const paused = new Set(
+    orgs
+      .filter((o) => o.status === "suspended" || trialState(o.trial_ends_at as string | null).kind === "ended")
+      .map((o) => o.id as string),
+  );
   return {
     users: new Map(
       users.map((u) => [
@@ -122,7 +131,7 @@ export async function loadEngineRefs(admin: Admin): Promise<EngineRefs> {
           name: (u.full_name as string) || (u.email as string),
           org: u.organisation_id as string | null,
           role: u.role as string,
-          status: (u.status as string) ?? "active",
+          status: paused.has(u.organisation_id as string) ? "paused" : ((u.status as string) ?? "active"),
           signedIn: !!u.last_seen_at,
         },
       ]),

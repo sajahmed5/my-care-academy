@@ -2,6 +2,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isStaff } from "@/lib/roles";
+import { trialState } from "@/lib/trial";
 
 /** "candidate": someone applying, with a login to follow it and no organisation (RECRUITMENT.md). */
 export type UserRole = "platform_admin" | "org_admin" | "org_office" | "learner" | "candidate";
@@ -131,15 +132,21 @@ export const requireAdminMfa = cache(async (): Promise<void> => {
 });
 
 /**
- * Blocks access for members whose account is deactivated or whose organisation
- * is suspended. platform_admin is global and unaffected. Degrades gracefully if
+ * Blocks access for members whose account is deactivated, whose organisation
+ * is suspended, or whose organisation's free trial has ended. platform_admin is global and unaffected. Degrades gracefully if
  * users.status doesn't exist yet (pre-migration).
  */
-export async function assertActiveMember(context: UserContext): Promise<void> {
+export async function assertActiveMember(
+  context: UserContext,
+  opts: { allowEndedTrial?: boolean } = {},
+): Promise<void> {
   if (context.role === "platform_admin") return;
   const member = await memberStatus(context.userId, context.organisationId);
   if (member.status === "deactivated") redirect("/suspended");
   if (member.orgStatus === "suspended") redirect("/suspended");
+  // A free trial that has ended pauses the whole company (TRIAL.md). The
+  // trial-ended page's own package request is the one thing let through.
+  if (!opts.allowEndedTrial && trialState(member.trialEndsAt).kind === "ended") redirect("/trial-ended");
 }
 
 export interface MemberStatus {
@@ -192,11 +199,14 @@ export const memberStatus = cache(
  * Admin roles additionally require MFA (AAL2); org members are blocked if their
  * organisation is suspended.
  */
-export async function requireRole(role: UserRole): Promise<UserContext> {
+export async function requireRole(
+  role: UserRole,
+  opts: { allowEndedTrial?: boolean } = {},
+): Promise<UserContext> {
   const context = await requireUser();
   if (context.role !== role) redirect(dashboardPathForRole(context.role));
   if (MFA_REQUIRED_ROLES.includes(role)) await requireAdminMfa();
-  if (role !== "platform_admin") await assertActiveMember(context);
+  if (role !== "platform_admin") await assertActiveMember(context, opts);
   return context;
 }
 

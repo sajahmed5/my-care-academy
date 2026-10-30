@@ -75,7 +75,7 @@ export async function loadPlatformAnalytics(
   ] = await Promise.all([
     supabase
       .from("organisations")
-      .select("id, package_tier, status, subscription_status"),
+      .select("id, package_tier, status, subscription_status, trial_ends_at"),
     supabase
       .from("users")
       .select("id", { count: "exact", head: true })
@@ -127,7 +127,8 @@ export async function loadPlatformAnalytics(
     subCount.set(sub, (subCount.get(sub) ?? 0) + 1);
     // MRR at list price. The agreed-amount field that used to feed this was
     // removed on 24 Oct 2026 as confusing; discounts belong in Stripe.
-    if (o.status !== "suspended") mrr += LIST_PRICE_GBP[tier] ?? 0;
+    // A company on a free trial (TRIAL.md) pays nothing yet.
+    if (o.status !== "suspended" && !o.trial_ends_at) mrr += LIST_PRICE_GBP[tier] ?? 0;
   }
 
   // Adoption, resolved the way has_feature() resolves it: an organisation's

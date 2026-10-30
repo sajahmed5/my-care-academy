@@ -27,6 +27,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { aiStatus, monthCharge } from "@/lib/ai";
 import { AI_MARKUP, formatGbp } from "@/lib/ai-cost";
 import { AiSettingsForm } from "./ai-card";
+import { trialState } from "@/lib/trial";
 
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -68,7 +69,7 @@ export default async function AccountPage({
     supabase
       .from("organisations")
       .select(
-        "package_tier, subscription_status, stripe_customer_id, stripe_subscription_id",
+        "package_tier, subscription_status, stripe_customer_id, stripe_subscription_id, trial_ends_at",
       )
       .eq("id", context.organisationId!)
       .maybeSingle(),
@@ -110,6 +111,7 @@ export default async function AccountPage({
   ]);
 
   const tier = (org?.package_tier ?? "core") as PackageTier;
+  const trial = trialState((org?.trial_ends_at as string | null) ?? null);
   const details = TIER_DETAILS[tier];
   const billing = await getBillingSummary({
     stripe_customer_id: org?.stripe_customer_id ?? null,
@@ -123,7 +125,7 @@ export default async function AccountPage({
         <Card className="overflow-hidden">
           <div className="bg-gradient-to-r from-teal-600 to-sky-600 px-6 py-5 text-white">
             <p className="text-xs font-semibold uppercase tracking-widest opacity-80">
-              Your package
+              {trial.kind === "active" ? "Your free trial" : "Your package"}
             </p>
             <div className="mt-1 flex items-baseline justify-between gap-3">
               <h2 className="text-2xl font-bold">{tierLabel(tier)}</h2>
@@ -136,7 +138,11 @@ export default async function AccountPage({
                 </p>
               )}
             </div>
-            <p className="mt-1 text-sm opacity-90">{details.tagline}</p>
+            <p className="mt-1 text-sm opacity-90">
+              {trial.kind === "active"
+                ? `Everything in ${tierLabel(tier)} until the end of ${fmtDate(trial.endsAt.toISOString())}. Choose a package below to carry on.`
+                : details.tagline}
+            </p>
           </div>
           <CardContent className="pt-4">
             <ul className="grid gap-2 sm:grid-cols-2">
@@ -161,6 +167,7 @@ export default async function AccountPage({
           <CardContent>
             <ChangePackage
               current={tier}
+              trial={trial.kind !== "none"}
               preselect={preselect ?? null}
               asked={
                 openAsk
