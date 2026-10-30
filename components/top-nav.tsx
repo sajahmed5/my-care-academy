@@ -114,6 +114,7 @@ const ORG_MENU: MenuItem[] = [
       { href: "/org/policies", label: "Policies", feature: "documents.library" },
       { href: "/org/due/policies", label: "Policies due", feature: "documents.library" },
       { href: "/org/forms", label: "Forms", feature: "forms.builder" },
+      { href: "/org/due/forms", label: "Form reviews due", feature: "forms.builder" },
       { href: "/org/reports", label: "Evidence & exports" },
     ],
   },

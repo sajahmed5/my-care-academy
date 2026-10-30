@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { pruneAnswers, validateAnswers, type FormTemplateRecord } from "@/lib/form-library";
 import { cleanSignatures, recordHref } from "@/lib/form-records";
+import { cleanReviewDue } from "@/lib/form-reviews";
 import { discardFormFiles, storeFormFiles } from "@/lib/form-uploads";
 import type { FormField } from "@/lib/forms";
 import type { SubmitState } from "@/app/learn/forms/actions";
@@ -29,6 +30,7 @@ export async function submitFormRecordAction(_prev: SubmitState, formData: FormD
 
   const templateId = String(formData.get("templateId") ?? "");
   const clientId = String(formData.get("clientId") ?? "") || null;
+  const reviewOfRaw = String(formData.get("reviewOf") ?? "") || null;
   const signedName = String(formData.get("signedName") ?? "").trim();
   let answers: Record<string, unknown> = {};
   let rawSignatures: unknown = [];
@@ -57,6 +59,18 @@ export async function submitFormRecordAction(_prev: SubmitState, formData: FormD
     if (!client) return { ok: false, error: "That client is not on your list." };
   }
 
+  // A review points back at the record it reviews — the same form, about the
+  // same client (or the company). Anything else is simply not linked.
+  let reviewOf: string | null = null;
+  if (reviewOfRaw) {
+    const { data: prev } = await supabase
+      .from("form_responses")
+      .select("id, template_id, client_id")
+      .eq("id", reviewOfRaw)
+      .maybeSingle();
+    if (prev && prev.template_id === template.id && (prev.client_id ?? null) === clientId) reviewOf = prev.id as string;
+  }
+
   const fields = (template.fields as FormField[]) ?? [];
   for (const f of fields) if (f.type === "signature" && signedName) answers[f.id] = signedName;
 
@@ -83,6 +97,8 @@ export async function submitFormRecordAction(_prev: SubmitState, formData: FormD
       answers: pruneAnswers(fields, answers),
       signed_name: signedName || null,
       signatures,
+      review_due: cleanReviewDue(formData.get("reviewDue"), new Date()),
+      review_of: reviewOf,
     })
     .select("id")
     .single();
@@ -96,10 +112,11 @@ export async function submitFormRecordAction(_prev: SubmitState, formData: FormD
     action: "form.recorded",
     entity: "form_response",
     entityId: created.id as string,
-    detail: { template: template.code, version: template.version, subject: template.audience, clientId, signed: signatures.length },
+    detail: { template: template.code, version: template.version, subject: template.audience, clientId, signed: signatures.length, reviewOf },
   });
 
   revalidatePath("/org/forms");
+  revalidatePath("/org/due/forms");
   revalidatePath(`/org/forms/library/${encodeURIComponent(template.code)}`);
   if (clientId) revalidatePath(`/org/clients/${clientId}`);
   return { ok: true, href: recordHref(created.id as string) };

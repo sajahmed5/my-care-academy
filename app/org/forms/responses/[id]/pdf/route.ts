@@ -6,6 +6,7 @@ import { logAudit } from "@/lib/audit";
 import { responseRows } from "@/lib/form-library";
 import { loadRecord } from "@/lib/form-records";
 import { renderFormPdf } from "@/lib/form-pdf";
+import { formatDate } from "@/lib/dates";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     rows: responseRows(record.fields, record.answers),
     signedName: record.signed_name,
     signatures: record.signatures,
+    meta: record.review_due
+      ? [{ label: "Review by", value: formatDate(`${record.review_due}T12:00:00Z`, { day: "numeric", month: "long", year: "numeric" }) }]
+      : [],
   });
   // A form about a client or a member of staff is personal data.
   await logAudit({ context, action: "form.pdf", entity: "form_response", entityId: id });

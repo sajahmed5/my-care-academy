@@ -37,7 +37,15 @@ export function FormComplete({
   doneLabel = "Back",
 }: {
   assignmentId?: string;
-  record?: { templateId: string; clientId?: string; deviceSigning?: boolean };
+  record?: {
+    templateId: string;
+    clientId?: string;
+    deviceSigning?: boolean;
+    /** The review date it starts with; undefined for a form that is never reviewed. */
+    reviewDue?: string | null;
+    /** The earlier record this one reviews. */
+    reviewOf?: string;
+  };
   fields: FormField[];
   /** Answers to start from — the previous version, when a form is reviewed. */
   initialValues?: Record<string, unknown>;
@@ -98,6 +106,7 @@ export function FormComplete({
       {assignmentId && <input type="hidden" name="assignmentId" value={assignmentId} />}
       {record && <input type="hidden" name="templateId" value={record.templateId} />}
       {record?.clientId && <input type="hidden" name="clientId" value={record.clientId} />}
+      {record?.reviewOf && <input type="hidden" name="reviewOf" value={record.reviewOf} />}
       <input type="hidden" name="answers" value={JSON.stringify(values)} />
       {record?.deviceSigning && (
         <input
@@ -200,6 +209,18 @@ export function FormComplete({
           </Card>
         );
       })}
+
+      {record && record.reviewDue !== undefined && (
+        <Card>
+          <CardContent className="space-y-2 pt-6">
+            <Label htmlFor="review-due">Review by</Label>
+            <Input id="review-due" type="date" name="reviewDue" defaultValue={record.reviewDue ?? ""} className="max-w-48" />
+            <p className="text-xs text-muted-foreground">
+              It shows in Who&apos;s due when this date comes round. Change it if this one needs looking at sooner.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {record?.deviceSigning && (
         <Card>

@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { FIELD_TYPES, type FormField } from "@/lib/forms";
-import { FORM_CATEGORIES } from "@/lib/form-library";
+import { FORM_AUDIENCES, FORM_CATEGORIES } from "@/lib/form-library";
 import type { SaveState } from "@/app/platform/actions";
 
 /**
@@ -49,7 +49,14 @@ export async function saveFormTemplateAction(
   const description = String(formData.get("description") ?? "").trim();
   const category = String(formData.get("category") ?? "other");
   const pack = String(formData.get("pack") ?? "full");
+  const audience = String(formData.get("audience") ?? "carer");
+  const reviewRaw = String(formData.get("reviewMonths") ?? "").trim();
+  const reviewMonths = reviewRaw ? Number(reviewRaw) : null;
   if (!code) return { ok: false, error: "No form given." };
+  if (!FORM_AUDIENCES.some((a) => a.value === audience)) return { ok: false, error: "Say who the form is about." };
+  if (reviewMonths !== null && !(Number.isInteger(reviewMonths) && reviewMonths >= 1 && reviewMonths <= 60)) {
+    return { ok: false, error: "A review period is a whole number of months, 1 to 60." };
+  }
   if (!title) return { ok: false, error: "Give the form a title." };
   if (!FORM_CATEGORIES.some((c) => c.value === category)) return { ok: false, error: "Pick a category." };
   if (!["basic", "full", "addon"].includes(pack)) return { ok: false, error: "Pick a pack." };
@@ -88,6 +95,8 @@ export async function saveFormTemplateAction(
       description: description || null,
       category,
       pack,
+      audience,
+      review_months: reviewMonths,
       fields,
       version: changed ? (current.version as number) + 1 : (current.version as number),
     })

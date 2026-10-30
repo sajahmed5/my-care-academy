@@ -64,6 +64,8 @@ export interface FormTemplateSummary {
   service_types: string[] | null;
   version: number;
   status: string;
+  /** Months until a completed one is due for review; null if never reviewed. */
+  review_months: number | null;
   /** Null when the template was read for a list, without its fields. */
   fieldCount: number | null;
 }
@@ -111,6 +113,7 @@ function toSummary(r: Record<string, unknown>): FormTemplateSummary {
     service_types: (r.service_types as string[] | null) ?? null,
     version: (r.version as number) ?? 1,
     status: (r.status as string) ?? "draft",
+    review_months: (r.review_months as number | null) ?? null,
     fieldCount: Array.isArray(r.fields) ? (r.fields as unknown[]).length : null,
   };
 }
@@ -128,7 +131,7 @@ export async function loadFormLibrary(
   if (packs.length === 0) return [];
   const { data } = await supabase
     .from("form_templates")
-    .select("id, code, title, description, category, pack, audience, collection, service_types, version, status")
+    .select("id, code, title, description, category, pack, audience, collection, service_types, version, status, review_months")
     .in("pack", packs)
     .order("category")
     .order("sort_order")
@@ -145,7 +148,7 @@ export async function loadFormTemplate(
 ): Promise<FormTemplateRecord | null> {
   const { data } = await supabase
     .from("form_templates")
-    .select("id, code, title, description, category, pack, audience, collection, service_types, version, status, fields")
+    .select("id, code, title, description, category, pack, audience, collection, service_types, version, status, review_months, fields")
     .eq("code", code)
     .maybeSingle();
   if (!data) return null;
@@ -231,7 +234,7 @@ export async function loadAssignment(
   const { data } = await supabase
     .from("form_assignments")
     .select(
-      "id, template_id, user_id, due_date, note, completed_at, created_at, template:form_templates (id, code, title, description, category, pack, audience, collection, service_types, version, status, fields), person:users!form_assignments_user_id_fkey (full_name, email)",
+      "id, template_id, user_id, due_date, note, completed_at, created_at, template:form_templates (id, code, title, description, category, pack, audience, collection, service_types, version, status, review_months, fields), person:users!form_assignments_user_id_fkey (full_name, email)",
     )
     .eq("id", id)
     .maybeSingle();

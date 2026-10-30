@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { FIELD_TYPES, fieldHasOptions, type FormField } from "@/lib/forms";
-import { FORM_CATEGORIES, type FormTemplateRecord } from "@/lib/form-library";
+import { FORM_AUDIENCES, FORM_CATEGORIES, type FormTemplateRecord } from "@/lib/form-library";
 import { saveFormTemplateAction, setFormStatusAction } from "../actions";
 import type { SaveState } from "@/app/platform/actions";
 
@@ -123,6 +123,20 @@ export function TemplateEditor({ template }: { template: FormTemplateRecord }) {
                   <option value="full">Full compliance pack</option>
                   <option value="addon">Add-on</option>
                 </select>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
+              <div className="space-y-1">
+                <Label htmlFor="te-audience">Who it is about</Label>
+                <select id="te-audience" name="audience" className={selectClass} defaultValue={template.audience}>
+                  {FORM_AUDIENCES.map((a) => (
+                    <option key={a.value} value={a.value}>{a.label.replace(/ forms$/, "")} — {a.hint.split(".")[0].toLowerCase()}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="te-review">Review every (months)</Label>
+                <Input id="te-review" name="reviewMonths" type="number" min={1} max={60} placeholder="Never" defaultValue={template.review_months ?? ""} />
               </div>
             </div>
             <div className="space-y-1">
