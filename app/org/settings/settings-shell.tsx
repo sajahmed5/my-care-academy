@@ -107,6 +107,11 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         label: "Logo, colour and emails",
         hint: "Your logo and colour in place of ours, on every page, PDF and email, and who your emails come from.",
       },
+      {
+        href: "/org/settings/white-label/domain",
+        label: "Web address",
+        hint: "Your staff sign in at your own address, like training.yourcompany.co.uk, and every emailed link points there.",
+      },
     ],
   },
 ];

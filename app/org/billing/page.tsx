@@ -184,7 +184,7 @@ export default async function AccountPage({
             <CardHeader>
               <CardTitle>Your logo and colour</CardTitle>
               <CardDescription>
-                Your own logo and colour in place of ours are included in Enterprise.{" "}
+                Your own logo and colour in place of ours, and your own web address, are included in Enterprise.{" "}
                 <Link href="/org/billing?package=full#change" className="font-medium text-primary hover:underline">
                   Ask to move to Enterprise
                 </Link>

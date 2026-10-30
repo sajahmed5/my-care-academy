@@ -109,3 +109,16 @@ export function brandEmailHtml(html: string, brand: EmailBrand): string {
   }
   return out;
 }
+
+/**
+ * Point an email's links at a company's own web address (white label:
+ * "every link we send points there"). Links to any of our origins move,
+ * apart from certificate verification, which stays on our own neutral site.
+ */
+export function pointLinksAt(html: string, ourOrigins: (string | null | undefined)[], companyOrigin: string): string {
+  const to = companyOrigin.replace(/\/+$/, "");
+  const froms = [...new Set(ourOrigins.filter((o): o is string => !!o).map((o) => o.replace(/\/+$/, "")))].filter((o) => o !== to);
+  if (!froms.length) return html;
+  const escaped = froms.map((o) => o.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  return html.replace(new RegExp(`(${escaped})(?=/|"|<|\\s|$)(?!/verify)`, "g"), to);
+}

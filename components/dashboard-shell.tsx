@@ -3,6 +3,8 @@ import Link from "next/link";
 import { orgBranding } from "@/lib/branding";
 import { TopNav } from "@/components/top-nav";
 import { BrandStyle } from "@/components/brand-style";
+import { redirect } from "next/navigation";
+import { hostCompany, ourSite } from "@/lib/company-host";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { loadBadgeData, loadStarTotal } from "@/lib/learner-data";
 import { deriveNotifications, unreadCount } from "@/lib/notifications";
@@ -84,6 +86,11 @@ export async function DashboardShell({
   back?: { href: string; label: string };
   children?: React.ReactNode;
 }) {
+  // A company's own web address is for its own staff: anyone else signed in
+  // there goes back to ours (white label).
+  const host = await hostCompany();
+  if (host && context.role !== "platform_admin" && context.organisationId !== host.id) redirect(`${ourSite()}/login`);
+
   const [badges, starTotal, addOns, , branding, member] = await Promise.all([
     learnerBadges(context, learn || context.role === "learner"),
     learnerStarTotal(context, learn || context.role === "learner"),
