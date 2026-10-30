@@ -74,7 +74,10 @@ export function renderFormPdf(input: FormPdfInput): Promise<Buffer> {
         ))}
 
         <Text style={styles.heading}>Answers</Text>
-        {input.rows.map((r) => (
+        {input.rows.map((r) =>
+          r.heading ? (
+            <Text key={r.fieldId} style={styles.heading}>{r.label}</Text>
+          ) : (
           <View key={r.fieldId} style={styles.qa} wrap={false}>
             <Text style={styles.q}>{r.label}</Text>
             {r.value ? (
@@ -83,7 +86,8 @@ export function renderFormPdf(input: FormPdfInput): Promise<Buffer> {
               <Text style={styles.blank}>Not answered</Text>
             )}
           </View>
-        ))}
+          ),
+        )}
 
         {(input.signedName || input.signatures.length > 0) && (
           <View wrap={false}>

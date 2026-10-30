@@ -1,8 +1,43 @@
 # Forms — agreed plan (29 Oct 2026)
 
-Agreed with Saj on 29 Oct 2026. Nothing below is built yet beyond what's
-marked as today's. Forms, with feedback surveys, are in Pro and up (see
-PACKAGES.md).
+Agreed with Saj on 29 Oct 2026. Forms, with feedback surveys, are in Pro and
+up (see PACKAGES.md).
+
+## Built (30–31 Oct 2026)
+
+Six releases, one PR each, migrations 20261031120100 to 20261031120500.
+
+- **Three kinds of form** (Forms 1) — `form_templates.audience`. A client
+  form is filled in by the office from the form's page or the client page
+  (`/org/forms/fill/<code>?client=`), the client or family signs on the
+  device, and it shows on the client page. A company form keeps each
+  filling-in as a version. Every completed form reads back at
+  `/org/forms/responses/<id>` and downloads as a PDF.
+- **Review dates** (Forms 2) — `review_months` on a form, `review_due` on
+  each record; Documents → Form reviews due (`/org/due/forms`) lists the
+  latest of each form per client, carer and the company. Reviewing fills the
+  form in again from the last answers (`review_of`).
+- **Logs** (Forms 3) — `is_log` forms and `form_log_entries`;
+  `/org/forms/logs/<code>` adds a line and reads the log as one table, with
+  a safe range on number questions flagged, and downloads as a spreadsheet or
+  PDF. Twelve logs from the spreadsheets; the complaints, incident, staff
+  training/DBS, audit schedule and risk matrix spreadsheets are not repeated,
+  as the platform does those jobs.
+- **Editable** (Forms 4) — Settings → Forms: switch our forms off, set review
+  periods, make the company's own copy of one (it replaces ours in its
+  list), or build its own form or log. The old builder is retired and its one
+  form carried across.
+- **Feedback surveys** (Forms 5) — rounds with response rates; emailed to
+  families from the client list or to staff, each with their own link, or a
+  printed QR code; the company's own wording (Settings → Forms → Feedback
+  surveys); named client rounds link answers to the client, with one-click
+  concern and compliment; "you said, we did" with a one-page report.
+- **The drafts read** (Forms 6) — 25 library forms published from Saj's Word
+  originals, duplicates merged (`scripts/seed-library-forms.mjs`,
+  `scripts/library-forms.json`); the drafts that moved to other add-ons
+  retired. Forms gained section headings and guidance under a question. The
+  published job application and client QA are left for the HR pack and
+  Service audits to retire when theirs replace them.
 
 ## Today
 

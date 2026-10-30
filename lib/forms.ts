@@ -7,7 +7,9 @@ export type FieldType =
   | "radio"
   | "checkbox"
   | "file"
-  | "signature";
+  | "signature"
+  /** Not a question: a section title, to break a long form into parts. */
+  | "heading";
 
 export interface Conditional {
   /** Show this field only when another field's value matches. */
@@ -23,6 +25,8 @@ export interface FormField {
   required: boolean;
   conditional: Conditional | null;
   sort_order: number;
+  /** Guidance shown under the question, or under a heading. */
+  hint?: string;
   /** A number's safe range, where it has one (a fridge at 1–5°C); outside it is flagged. */
   min?: number;
   max?: number;
@@ -42,6 +46,7 @@ export const FIELD_TYPES: {
   { value: "checkbox", label: "Multiple choice", hasOptions: true },
   { value: "file", label: "File upload", hasOptions: false },
   { value: "signature", label: "Signature", hasOptions: false },
+  { value: "heading", label: "Section heading", hasOptions: false },
 ];
 
 export function fieldHasOptions(type: FieldType): boolean {
@@ -72,7 +77,7 @@ export function isFieldVisible(
 export function cleanFields(raw: unknown): FormField[] {
   if (!Array.isArray(raw)) return [];
   const validTypes = new Set(FIELD_TYPES.map((t) => t.value));
-  const list = (raw as Partial<FormField>[]).filter((f) => f && typeof f.label === "string" && f.label.trim()).slice(0, 300);
+  const list = (raw as Partial<FormField>[]).filter((f) => f && typeof f.label === "string" && f.label.trim()).slice(0, 500);
   return list.map((f, i) => {
     const type = validTypes.has(f.type as FieldType) ? (f.type as FieldType) : "text";
     return {
@@ -80,7 +85,8 @@ export function cleanFields(raw: unknown): FormField[] {
       label: (f.label as string).trim().slice(0, 500),
       type,
       options: fieldHasOptions(type) && Array.isArray(f.options) ? f.options.map(String).map((o) => o.trim()).filter(Boolean).slice(0, 100) : [],
-      required: !!f.required,
+      required: type === "heading" ? false : !!f.required,
+      ...(typeof f.hint === "string" && f.hint.trim() ? { hint: f.hint.trim().slice(0, 600) } : {}),
       conditional:
         f.conditional && typeof f.conditional.whenFieldId === "string" && f.conditional.whenFieldId
           ? { whenFieldId: f.conditional.whenFieldId, equals: String(f.conditional.equals ?? "") }
