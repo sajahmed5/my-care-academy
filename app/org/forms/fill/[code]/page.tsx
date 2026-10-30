@@ -32,7 +32,7 @@ export default async function FillFormPage({
 
   const supabase = await createClient();
   const [enabled, template] = await Promise.all([enabledMap(context), loadFormTemplate(supabase, decodeURIComponent(code))]);
-  if (!template || template.audience === "carer") notFound();
+  if (!template || template.audience === "carer" || template.is_log) notFound();
   const { packs, collections } = visibleFormPacks(enabled);
   if (!packs.includes(template.pack) || (template.pack === "addon" && !collections.includes(template.collection ?? ""))) {
     notFound();

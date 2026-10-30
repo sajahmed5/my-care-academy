@@ -1,6 +1,6 @@
 import { STAFF_ROLES } from "@/lib/roles";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
@@ -38,6 +38,7 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
     loadFormTemplate(supabase, decodeURIComponent(code)),
   ]);
   if (!template) notFound();
+  if (template.is_log) redirect(`/org/forms/logs/${encodeURIComponent(template.code)}`);
   const { packs, collections } = visibleFormPacks(enabled);
   if (!packs.includes(template.pack) || (template.pack === "addon" && !collections.includes(template.collection ?? ""))) {
     notFound();
