@@ -61,6 +61,11 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         hint: "How long probation lasts, when it's reviewed, and who signs HR letters.",
       },
       {
+        href: "/org/settings/hr/absence",
+        label: "Absence",
+        hint: "Whether staff can report sick from their own login, and your Bradford Factor trigger points.",
+      },
+      {
         href: "/org/settings/hr/letters",
         label: "Letters",
         hint: "The wording of every HR letter. The right to be accompanied and to appeal are always added.",

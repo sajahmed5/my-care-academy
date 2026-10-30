@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/learner-ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/lib/dates";
 import { PROBATION_STATUS_LABEL } from "@/lib/hr/probation";
+import { ReportSick } from "./report-sick";
 
 const fmt = (d: string) => formatDate(d, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 const short = (d: string) => formatDate(d, { day: "numeric", month: "short", year: "numeric" });
@@ -22,11 +23,12 @@ export default async function MyHrPage() {
   const context = await requireStaff();
   await requireFeature(context, "recruitment.tracker", "/learn");
   const supabase = await createClient();
-  const [{ data: letters }, { data: emp }, { data: booked }] = await Promise.all([
+  const admin = createAdminClient();
+  const [{ data: letters }, { data: emp }, { data: booked }, { data: settings }, { data: absences }] = await Promise.all([
     supabase.from("hr_letters").select("id, subject, sent_at").eq("user_id", context.userId).eq("status", "sent").order("sent_at", { ascending: false }).limit(100),
     supabase.from("staff_employment").select("start_date, job_title, probation_status, probation_ends_on").eq("user_id", context.userId).maybeSingle(),
     // Only the booked dates: the review itself is the manager's record.
-    createAdminClient()
+    admin
       .from("probation_reviews")
       .select("due_on, booked_on, booked_time, is_final")
       .eq("user_id", context.userId)
@@ -34,7 +36,11 @@ export default async function MyHrPage() {
       .not("booked_on", "is", null)
       .gte("booked_on", new Date().toISOString().slice(0, 10))
       .order("booked_on"),
+    admin.from("hr_settings").select("self_report_sickness").eq("organisation_id", context.organisationId!).maybeSingle(),
+    // Their own absences: the dates and reason only, never the manager's notes.
+    admin.from("sickness_absences").select("id, start_date, returned_on, reason").eq("user_id", context.userId).order("start_date", { ascending: false }).limit(20),
   ]);
+  const offNow = (absences ?? []).find((a) => !a.returned_on);
   const inProbation = emp && (emp.probation_status === "in_probation" || emp.probation_status === "extended");
 
   return (
@@ -53,6 +59,35 @@ export default async function MyHrPage() {
             </CardContent>
           </Card>
         )}
+
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-muted-foreground">Sickness</h2>
+          <Card>
+            <CardContent className="space-y-3 pt-6 text-sm">
+              {offNow ? (
+                <p>
+                  You&apos;re off sick from {short(offNow.start_date as string)} ({offNow.reason as string}). The office records the day you&apos;re back.
+                </p>
+              ) : settings?.self_report_sickness ? (
+                <ReportSick />
+              ) : (
+                <p className="text-muted-foreground">If you&apos;re too ill to work, ring the office or the on-call line as soon as you can.</p>
+              )}
+              {(absences ?? []).filter((a) => a.returned_on).length > 0 && (
+                <ul className="space-y-0.5 text-muted-foreground">
+                  {(absences ?? [])
+                    .filter((a) => a.returned_on)
+                    .slice(0, 5)
+                    .map((a) => (
+                      <li key={a.id as string}>
+                        {short(a.start_date as string)}: {a.reason as string}, back {short(a.returned_on as string)}
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </section>
 
         {(booked ?? []).length > 0 && (
           <section className="space-y-2">

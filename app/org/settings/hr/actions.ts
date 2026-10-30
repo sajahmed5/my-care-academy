@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { sanitiseProbation } from "@/lib/hr/probation";
 import { sanitiseOverrides, templateFor } from "@/lib/hr/letters";
+import { sanitiseTriggers } from "@/lib/hr/absence";
 
 /**
  * The company's HR setup (HR-PACK.md), under Settings → HR. Managers only:
@@ -60,5 +61,16 @@ export async function saveLetterTemplateAction(kind: string, subject: string, bo
   if (!ok) return { ok: false, error: "That didn't save. Try again." };
   await logAudit({ context, action: "hr.letter_template_saved", entity: "organisation", entityId: context.organisationId!, detail: { kind, ours: !Object.keys(own).length } });
   revalidatePath("/org/settings/hr/letters");
+  return { ok: true };
+}
+
+export async function saveAbsenceSettingsAction(input: { selfReport: boolean; triggers: number[] }): Promise<{ ok: boolean; error?: string }> {
+  const context = await gate();
+  const triggers = sanitiseTriggers(input.triggers);
+  const ok = await patchSettings(context.organisationId!, context.userId, { self_report_sickness: input.selfReport, bradford_triggers: triggers });
+  if (!ok) return { ok: false, error: "The settings couldn't be saved. Try again." };
+  await logAudit({ context, action: "hr.absence_settings_saved", entity: "organisation", entityId: context.organisationId!, detail: { selfReport: input.selfReport, triggers } });
+  revalidatePath("/org/settings/hr/absence");
+  revalidatePath("/org/hr/absence");
   return { ok: true };
 }

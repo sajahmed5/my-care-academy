@@ -6,13 +6,15 @@ import { esc } from "@/lib/email-layout";
 import { staffDocSummary, type StaffDoc } from "@/lib/staff-documents";
 import { probationDue } from "@/lib/hr/probation-due";
 import { probationFromRow } from "@/lib/hr/probation";
+import { absenceDue, sanitiseTriggers, type Absence } from "@/lib/hr/absence";
 
 /**
  * The HR pack in the weekly email (HR-PACK.md): one line per part with
  * anything waiting — documents expired or expiring, so a document's
  * reminders carry on after it moves onto the staff file. Each line links to
  * the list that says who. Probation reviews overdue or due in the next two
- * weeks.
+ * weeks; return-to-work interviews and welfare meetings due, and anyone at a
+ * trigger point.
  */
 
 type Admin = ReturnType<typeof createAdminClient>;
@@ -34,7 +36,7 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
     (x): x is string => !!x,
   );
   if (entitled.length === 0) return out;
-  const [docs, emps, reviews, settings] = await Promise.all([
+  const [docs, emps, reviews, settings, absences, meetings] = await Promise.all([
     fetchAll((f, t) =>
       admin
         .from("staff_documents")
@@ -54,7 +56,19 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
         .order("id")
         .range(f, t),
     ),
-    fetchAll((f, t) => admin.from("hr_settings").select("organisation_id, probation_months, probation_review_months").in("organisation_id", entitled).order("organisation_id").range(f, t)),
+    fetchAll((f, t) =>
+      admin.from("hr_settings").select("organisation_id, probation_months, probation_review_months, bradford_triggers").in("organisation_id", entitled).order("organisation_id").range(f, t),
+    ),
+    fetchAll((f, t) =>
+      admin
+        .from("sickness_absences")
+        .select("id, organisation_id, user_id, start_date, returned_on, reason, certification, fit_note_until, excluded_from_triggers, rtw_status")
+        .in("organisation_id", entitled)
+        .gte("start_date", new Date(now.getTime() - 400 * 86_400_000).toISOString().slice(0, 10))
+        .order("id")
+        .range(f, t),
+    ),
+    fetchAll((f, t) => admin.from("absence_welfare_meetings").select("absence_id, organisation_id, held_on").in("organisation_id", entitled).order("absence_id").range(f, t)),
   ]);
   const today = now.toISOString().slice(0, 10);
   for (const orgId of entitled) {
@@ -91,6 +105,19 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
         href: "/org/hr/probation",
       });
     }
+    const sick = absenceDue(
+      absences.filter((a) => a.organisation_id === orgId) as unknown as Absence[],
+      meetings.filter((m) => m.organisation_id === orgId) as never,
+      sanitiseTriggers(settings.find((x) => x.organisation_id === orgId)?.bradford_triggers),
+      today,
+      new Set(current),
+    );
+    const absenceText = [
+      sick.rtw.length && `${sick.rtw.length} return-to-work interview${sick.rtw.length === 1 ? "" : "s"} due`,
+      sick.welfare.length && `${sick.welfare.length} welfare meeting${sick.welfare.length === 1 ? "" : "s"} due`,
+      sick.triggers.length && `${sick.triggers.length} ${sick.triggers.length === 1 ? "person" : "people"} at a trigger point`,
+    ].filter(Boolean);
+    if (absenceText.length) lines.push({ label: "Absence", text: absenceText.join(", "), href: "/org/hr/absence" });
     if (lines.length) out.set(orgId, lines);
   }
   return out;
