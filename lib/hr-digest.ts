@@ -1,7 +1,8 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAll } from "@/lib/fetch-all";
-import { hasFeatureForOrg } from "@/lib/entitlements";
+import { chunk } from "@/lib/engine-digest";
+import { IDS_PER_REQUEST, orgsWithFeature } from "@/lib/hr/features";
 import { esc } from "@/lib/email-layout";
 import { staffDocSummary, type StaffDoc } from "@/lib/staff-documents";
 import { probationDue } from "@/lib/hr/probation-due";
@@ -32,57 +33,79 @@ type People = Map<string, { org: string | null; role: string; status: string }>;
 
 const STAFF = ["learner", "org_admin", "org_office"];
 
-export async function loadHrDigests(admin: Admin, people: People, orgIds: string[], now: Date): Promise<Map<string, HrLine[]>> {
-  const out = new Map<string, HrLine[]>();
-  const entitled = (await Promise.all(orgIds.map(async (id) => ((await hasFeatureForOrg(admin, id, "recruitment.tracker")) ? id : null)))).filter(
-    (x): x is string => !!x,
-  );
-  if (entitled.length === 0) return out;
+type Row = Record<string, unknown>;
+type HrRows = Record<"docs" | "emps" | "reviews" | "settings" | "absences" | "meetings" | "waiting" | "cases" | "leavers", Row[]>;
+
+/** Everything the digest reads, for up to IDS_PER_REQUEST companies. */
+async function readCompanies(admin: Admin, ids: string[], now: Date): Promise<HrRows> {
   const [docs, emps, reviews, settings, absences, meetings, waiting, cases, leavers] = await Promise.all([
-    fetchAll((f, t) =>
+    fetchAll<Row>((f, t) =>
       admin
         .from("staff_documents")
         .select("id, organisation_id, user_id, doc_type, file_name, file_path, expires_at, not_required, not_required_reason")
-        .in("organisation_id", entitled)
+        .in("organisation_id", ids)
         .order("id")
         .range(f, t),
     ),
-    fetchAll((f, t) =>
-      admin.from("staff_employment").select("user_id, organisation_id, start_date, probation_status, probation_ends_on").in("organisation_id", entitled).order("user_id").range(f, t),
+    fetchAll<Row>((f, t) =>
+      admin.from("staff_employment").select("user_id, organisation_id, start_date, probation_status, probation_ends_on").in("organisation_id", ids).order("user_id").range(f, t),
     ),
-    fetchAll((f, t) =>
+    fetchAll<Row>((f, t) =>
       admin
         .from("probation_reviews")
         .select("id, user_id, organisation_id, due_on, status, booked_on, booked_time, held_on, outcome, is_final")
-        .in("organisation_id", entitled)
+        .in("organisation_id", ids)
         .order("id")
         .range(f, t),
     ),
-    fetchAll((f, t) =>
-      admin.from("hr_settings").select("*").in("organisation_id", entitled).order("organisation_id").range(f, t),
-    ),
-    fetchAll((f, t) =>
+    fetchAll<Row>((f, t) => admin.from("hr_settings").select("*").in("organisation_id", ids).order("organisation_id").range(f, t)),
+    fetchAll<Row>((f, t) =>
       admin
         .from("sickness_absences")
         .select("id, organisation_id, user_id, start_date, returned_on, reason, certification, fit_note_until, excluded_from_triggers, rtw_status")
-        .in("organisation_id", entitled)
+        .in("organisation_id", ids)
         .gte("start_date", new Date(now.getTime() - 400 * 86_400_000).toISOString().slice(0, 10))
         .order("id")
         .range(f, t),
     ),
-    fetchAll((f, t) => admin.from("absence_welfare_meetings").select("absence_id, organisation_id, held_on").in("organisation_id", entitled).order("absence_id").range(f, t)),
-    fetchAll((f, t) => admin.from("leave_requests").select("id, organisation_id").in("organisation_id", entitled).eq("status", "requested").order("id").range(f, t)),
-    fetchAll((f, t) => admin.from("hr_cases").select("*").in("organisation_id", entitled).is("closed_on", null).order("id").range(f, t)),
-    fetchAll((f, t) =>
+    // absence_id isn't unique (several meetings per absence): id breaks the tie so pages don't overlap.
+    fetchAll<Row>((f, t) =>
+      admin.from("absence_welfare_meetings").select("absence_id, organisation_id, held_on").in("organisation_id", ids).order("absence_id").order("id").range(f, t),
+    ),
+    fetchAll<Row>((f, t) => admin.from("leave_requests").select("id, organisation_id").in("organisation_id", ids).eq("status", "requested").order("id").range(f, t)),
+    fetchAll<Row>((f, t) => admin.from("hr_cases").select("*").in("organisation_id", ids).is("closed_on", null).order("id").range(f, t)),
+    fetchAll<Row>((f, t) =>
       admin
         .from("hr_leavers")
         .select("id, organisation_id, last_day, checklist")
-        .in("organisation_id", entitled)
+        .in("organisation_id", ids)
         .gte("last_day", new Date(now.getTime() - 90 * 86_400_000).toISOString().slice(0, 10))
         .order("id")
         .range(f, t),
     ),
   ]);
+  return { docs, emps, reviews, settings, absences, meetings, waiting, cases, leavers };
+}
+
+export async function loadHrDigests(admin: Admin, people: People, orgIds: string[], now: Date): Promise<Map<string, HrLine[]>> {
+  const out = new Map<string, HrLine[]>();
+  const has = await orgsWithFeature(admin, orgIds, "recruitment.tracker");
+  const entitled = orgIds.filter((id) => has.has(id));
+  if (entitled.length === 0) return out;
+  // A hundred companies a request: every company in one .in() overflows the URL past ~390.
+  const parts = await Promise.all(chunk(entitled, IDS_PER_REQUEST).map((ids) => readCompanies(admin, ids, now)));
+  const all = <K extends keyof HrRows>(key: K): HrRows[K] => parts.flatMap((p) => p[key]) as HrRows[K];
+  const [docs, emps, reviews, settings, absences, meetings, waiting, cases, leavers] = [
+    all("docs"),
+    all("emps"),
+    all("reviews"),
+    all("settings"),
+    all("absences"),
+    all("meetings"),
+    all("waiting"),
+    all("cases"),
+    all("leavers"),
+  ];
   const today = now.toISOString().slice(0, 10);
   for (const orgId of entitled) {
     const current = [...people.entries()].filter(([, p]) => p.org === orgId && p.status === "active" && STAFF.includes(p.role)).map(([id]) => id);

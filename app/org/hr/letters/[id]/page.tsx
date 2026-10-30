@@ -70,7 +70,13 @@ export default async function LetterPage({ params, searchParams }: { params: Pro
       )}
       {letter.status !== "sent" && (
         <p className="mt-4 max-w-3xl text-xs text-muted-foreground">
-          The wording starts from your company&apos;s template, under <Link href="/org/settings/hr/letters" className="underline">Settings → HR → Letters</Link> (managers).
+          {context.role === "org_admin" ? (
+            <>
+              The wording starts from your company&apos;s template, under <Link href="/org/settings/hr/letters" className="underline">Settings → HR → Letters</Link>.
+            </>
+          ) : (
+            <>The wording starts from your company&apos;s template, which a manager can change.</>
+          )}
         </p>
       )}
     </DashboardShell>

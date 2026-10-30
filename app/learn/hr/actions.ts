@@ -6,7 +6,7 @@ import { requireStaff } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeature } from "@/lib/entitlements";
 import { logAudit } from "@/lib/audit";
-import { sendEmail } from "@/lib/email";
+import { sendEmailBatch } from "@/lib/email";
 import { emailButton, emailLayout, esc } from "@/lib/email-layout";
 import { siteOrigin } from "@/lib/site-url";
 import { formatDate } from "@/lib/dates";
@@ -62,20 +62,17 @@ export async function reportSickAction(input: { startDate: string; reason: strin
     siteOrigin(),
   ]);
   const who = personName({ full_name: (me?.full_name as string | null) ?? null, email: (me?.email as string | null) ?? null });
-  after(async () => {
-    for (const email of to) {
-      await sendEmail({
-        to: email,
-        subject: `${who} has reported sick`,
-        html: emailLayout({
-          heading: `${esc(who)} has reported sick`,
-          body: `<p>From ${esc(formatDate(input.startDate, { weekday: "long", day: "numeric", month: "long" }))}: ${esc(input.reason)}.</p>
+  const html = emailLayout({
+    heading: `${esc(who)} has reported sick`,
+    body: `<p>From ${esc(formatDate(input.startDate, { weekday: "long", day: "numeric", month: "long" }))}: ${esc(input.reason)}.</p>
 <p>Their visits may need covering. When they're back, record the date and hold their return-to-work interview within 3 days.</p>
 ${emailButton(`${origin}/org/hr/absence`, "Open Absence")}`,
-        }),
-      });
-    }
   });
+  if (to.length) {
+    after(async () => {
+      await sendEmailBatch(to.map((email) => ({ to: email, subject: `${who} has reported sick`, html, organisationId: orgId })));
+    });
+  }
   await logAudit({ context, action: "hr.absence_self_reported", entity: "user", entityId: context.userId, detail: { start: input.startDate, reason: input.reason } });
   revalidatePath("/learn/hr");
   return { ok: true };

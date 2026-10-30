@@ -7,9 +7,10 @@ import { logAudit } from "@/lib/audit";
 import { askClaudeJson } from "@/lib/ai";
 import { sendEmail } from "@/lib/email";
 import { esc } from "@/lib/email-layout";
+import { orgBranding } from "@/lib/branding";
 import { renderHrPdf, ukDate } from "@/lib/hr-pdf";
 import { hrLetterHtml, LETTER_DRAFT_SCHEMA } from "@/lib/hr/letters";
-import { CHECKLIST, LEAVING_REASONS, factualReference, sanitiseChecklist } from "@/lib/hr/leavers";
+import { CHECKLIST, LEAVING_REASONS, factualReference, leaverConsoleBlock, sanitiseChecklist } from "@/lib/hr/leavers";
 import { emailTrainingRecord, sendExitLink, switchOffLogin } from "@/lib/hr/leavers-server";
 import { HR_BUCKET, hrPerson, letterSigner, personName, type Admin } from "@/lib/hr/server";
 
@@ -32,7 +33,8 @@ const done = (userId: string, id?: string) => {
 async function loadLeaver(admin: Admin, context: UserContext, id: string) {
   const { data } = await admin.from("hr_leavers").select("*").eq("id", id).maybeSingle();
   if (!data || data.organisation_id !== context.organisationId) return null;
-  return (await hrPerson(admin, context.organisationId, data.user_id as string)) ? data : null;
+  const person = await hrPerson(admin, context.organisationId, data.user_id as string);
+  return person ? { ...data, person_role: person.role } : null;
 }
 
 export interface LeaverInput {
@@ -68,6 +70,8 @@ export async function recordLeaverAction(userId: string, input: LeaverInput): Pr
   const person = await hrPerson(admin, context.organisationId, userId);
   if (!person) return { ok: false, error: "That person is not one of your staff." };
   if (person.id === context.userId) return { ok: false, error: "Another manager records your leaving." };
+  const blocked = leaverConsoleBlock(context.role, person.role);
+  if (blocked) return { ok: false, error: blocked };
   const { row, error } = clean(input);
   if (!row) return { ok: false, error };
   const { data: existing } = await admin.from("hr_leavers").select("id").eq("user_id", userId).maybeSingle();
@@ -88,6 +92,9 @@ export async function updateLeaverAction(id: string, input: LeaverInput): Promis
   const admin = createAdminClient();
   const l = await loadLeaver(admin, context, id);
   if (!l) return { ok: false, error: "Not found." };
+  // The last day decides when their login goes off.
+  const blocked = leaverConsoleBlock(context.role, l.person_role);
+  if (blocked) return { ok: false, error: blocked };
   const { row, error } = clean(input);
   if (!row) return { ok: false, error };
   await admin.from("hr_leavers").update(row).eq("id", id);
@@ -159,6 +166,8 @@ export async function switchOffNowAction(id: string): Promise<Result> {
   const l = await loadLeaver(admin, context, id);
   if (!l) return { ok: false, error: "Not found." };
   if (l.user_id === context.userId) return { ok: false, error: "You can't switch off your own login." };
+  const blocked = leaverConsoleBlock(context.role, l.person_role);
+  if (blocked) return { ok: false, error: blocked };
   const r = await switchOffLogin(admin, context.organisationId!, l.user_id as string);
   if (r.ok) await logAudit({ context, action: "hr.leaver_login_off", entity: "user", entityId: l.user_id as string, detail: { by: "hand" } });
   done(l.user_id as string, id);
@@ -293,10 +302,11 @@ export async function sendReferenceAction(id: string, body: string): Promise<Res
   if (!r.requester_email) return { ok: false, error: "Add the email address to send it to (or download it and post it)." };
   const content = text(body, 8000);
   if (!content) return { ok: false, error: "The reference is empty." };
-  const [{ data: org }, signer, facts] = await Promise.all([
+  const [{ data: org }, signer, facts, brand] = await Promise.all([
     admin.from("organisations").select("name").eq("id", context.organisationId!).maybeSingle(),
     letterSigner(admin, context.organisationId!, context.userId),
     referenceFacts(admin, context.organisationId!, r.user_id as string),
+    orgBranding(context.organisationId),
   ]);
   const company = (org?.name as string | undefined) ?? "";
   const today = ukDate(new Date().toISOString());
@@ -313,12 +323,13 @@ export async function sendReferenceAction(id: string, body: string): Promise<Res
         { type: "signature", name: signer.name || company, title: [signer.title, company].filter(Boolean).join(", ") },
       ],
     },
-  ]);
+  ], brand?.logoUrl);
   const path = `${context.organisationId}/${r.user_id as string}/references/${id}.pdf`;
   const { error: upErr } = await admin.storage.from(HR_BUCKET).upload(path, pdf, { contentType: "application/pdf", upsert: true });
   if (upErr) return { ok: false, error: "It couldn't be saved as a PDF. Try again." };
   const sent = await sendEmail({
     to: r.requester_email as string,
+    organisationId: context.organisationId,
     subject: `${subject}${company ? `, from ${company}` : ""}`,
     html: hrLetterHtml({ company, date: today, greeting, body: content, fixed: [], signer }).replace(
       "A copy is kept on your file, and you can read it when you sign in.",

@@ -62,6 +62,7 @@ export async function emailLeaveDecision(
     const ok = r.status === "approved";
     await sendEmail({
       to: person.email,
+      organisationId: orgId,
       subject: ok ? `Your ${what} is approved` : `Your ${what} request`,
       html: emailLayout({
         body: `<p>Hi ${esc(firstName(person))},</p>

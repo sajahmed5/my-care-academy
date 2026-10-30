@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getUserContext, isConsoleRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { orgBranding } from "@/lib/branding";
 import { logAudit } from "@/lib/audit";
 import { renderHrPdf, ukDate, type HrBlock, type HrDoc } from "@/lib/hr-pdf";
 import { appealLabel, kindLabel, outcomeLabel, recommendationLabel } from "@/lib/hr/cases";
@@ -20,22 +21,35 @@ const paras = (t: string | null | undefined): HrBlock[] => String(t ?? "").split
  * listed by name. Each download is written to the audit log.
  */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const context = await getUserContext();
-  if (!context || !isConsoleRole(context.role) || !context.organisationId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // MFA and the deactivated-account check, as every console page has.
+  const context = await requireConsole();
+  if (!context.organisationId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
   const admin = createAdminClient();
   const c = await loadCase(admin, context, id);
   if (!c) return NextResponse.json({ error: "not found" }, { status: 404 });
   const person = await hrPerson(admin, context.organisationId, c.user_id as string);
   if (!person) return NextResponse.json({ error: "not found" }, { status: 404 });
-  const [{ data: org }, { data: notes }, { data: meetings }, { data: statements }, { data: letters }, { data: users }] = await Promise.all([
+  const [{ data: org }, { data: notes }, { data: meetings }, { data: statements }, { data: letters }, brand] = await Promise.all([
     admin.from("organisations").select("name").eq("id", context.organisationId).maybeSingle(),
     admin.from("hr_case_notes").select("kind, body, file_name, created_at, created_by").eq("case_id", id).order("created_at"),
     admin.from("hr_case_meetings").select("*").eq("case_id", id).order("held_on"),
     admin.from("hr_case_statements").select("*").eq("case_id", id).order("created_at"),
     admin.from("hr_letters").select("subject, body, fixed, status, sent_at, sent_to").eq("source_type", "case").eq("source_id", id).order("created_at"),
-    admin.from("users").select("id, full_name, email").eq("organisation_id", context.organisationId),
+    orgBranding(context.organisationId),
   ]);
+  // Only the people the file names: who wrote each note, and who held each part of the case.
+  const named = [
+    ...(notes ?? []).map((n) => n.created_by),
+    c.about_user_id,
+    c.investigator_id,
+    c.decided_by,
+    c.appeal_manager_id,
+  ].filter((v): v is string => typeof v === "string" && v.length > 0);
+  const ids = [...new Set(named)];
+  const { data: users } = ids.length
+    ? await admin.from("users").select("id, full_name, email").eq("organisation_id", context.organisationId).in("id", ids)
+    : { data: [] as { id: string; full_name: string | null; email: string | null }[] };
   const nameOf = (uid: unknown) => {
     const u = (users ?? []).find((x) => x.id === uid);
     return u ? personName(u as never) : "—";
@@ -117,7 +131,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       }),
     ),
   ];
-  const pdf = await renderHrPdf((org?.name as string | undefined) ?? "", docs);
+  const pdf = await renderHrPdf((org?.name as string | undefined) ?? "", docs, brand?.logoUrl);
   await logAudit({ context, action: "hr.case_file_downloaded", entity: "hr_case", entityId: id });
   return new NextResponse(new Uint8Array(pdf), {
     headers: {

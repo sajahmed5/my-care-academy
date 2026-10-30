@@ -1,11 +1,13 @@
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
+import { PdfLogo, withPoweredBy } from "@/lib/pdf-brand";
 
 /**
  * Paper for the HR pack (HR-PACK.md): a record as it was filled in (a
  * reference, a DBS risk assessment, a probation review), a letter as it was
  * sent, or a whole case file. One shape for all of them, so a case bundle is
  * its parts one after another. The company's name heads it; My Care Academy
- * is only in the footer, as on every letter.
+ * is only in the footer, as on every letter. With white label the company's
+ * logo sits above its name and the footer says "Powered by My Care Academy".
  *
  * Plain on purpose, like the evidence pack: it may be read by a tribunal.
  */
@@ -85,11 +87,13 @@ function Block({ b }: { b: HrBlock }) {
   }
 }
 
-function HrDocument({ company, docs }: { company: string; docs: HrDoc[] }) {
+function HrDocument({ company, docs, logoUrl }: { company: string; docs: HrDoc[]; logoUrl: string | null | undefined }) {
+  const footer = withPoweredBy(`${company ? `${company} · ` : ""}made with My Care Academy`, logoUrl);
   return (
     <Document>
       {docs.map((d, n) => (
         <Page key={n} size="A4" style={styles.page}>
+          <PdfLogo url={logoUrl} />
           <Text style={styles.company}>{company || "—"}</Text>
           <Text style={styles.title}>{d.title}</Text>
           {d.subtitle ? <Text style={styles.subtitle}>{d.subtitle}</Text> : null}
@@ -97,7 +101,7 @@ function HrDocument({ company, docs }: { company: string; docs: HrDoc[] }) {
             <Block key={i} b={b} />
           ))}
           <View style={styles.footer} fixed>
-            <Text>{company ? `${company} · ` : ""}made with My Care Academy</Text>
+            <Text>{footer}</Text>
             <Text render={({ pageNumber, totalPages }) => `${pageNumber} of ${totalPages}`} />
           </View>
         </Page>
@@ -106,9 +110,12 @@ function HrDocument({ company, docs }: { company: string; docs: HrDoc[] }) {
   );
 }
 
-/** One PDF; each doc starts on a new page. */
-export function renderHrPdf(company: string, docs: HrDoc[]): Promise<Buffer> {
-  return renderToBuffer(<HrDocument company={company} docs={docs} />);
+/**
+ * One PDF; each doc starts on a new page. logoUrl is orgBranding(orgId)?.logoUrl:
+ * null without white label, so nothing changes.
+ */
+export function renderHrPdf(company: string, docs: HrDoc[], logoUrl: string | null | undefined): Promise<Buffer> {
+  return renderToBuffer(<HrDocument company={company} docs={docs} logoUrl={logoUrl} />);
 }
 
 /** "12 March 2026" from an ISO date or timestamp; "—" for nothing. */

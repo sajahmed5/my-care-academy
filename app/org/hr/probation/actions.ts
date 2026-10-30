@@ -107,6 +107,7 @@ export async function bookProbationReviewAction(
     after(() =>
       sendEmail({
         to: person.email!,
+        organisationId: context.organisationId,
         subject: `Your ${point.label.toLowerCase()} is booked: ${formatDate(input.bookedOn, { day: "numeric", month: "short" })}`,
         html: emailLayout({
           body: `<p>Hi ${esc(firstName(person))},</p>

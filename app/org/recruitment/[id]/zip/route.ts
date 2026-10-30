@@ -1,19 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 import JSZip from "jszip";
-import { getUserContext, isConsoleRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { docLabel } from "@/lib/recruitment";
 import { hasFeatureForOrg } from "@/lib/entitlements";
 
 export const dynamic = "force-dynamic";
 
-/** Download all of a candidate's documents as a ZIP (org_admin, own org only). */
+/** Download all of a candidate's documents as a ZIP (console users, own org only). */
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const context = await getUserContext();
-  if (!context || !isConsoleRole(context.role) || !context.organisationId) {
+  // MFA and the deactivated-account check, as every console page has.
+  const context = await requireConsole();
+  if (!context.organisationId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { id } = await params;

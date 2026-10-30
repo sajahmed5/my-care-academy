@@ -10,6 +10,7 @@ import { companyQuestions } from "@/lib/company-questions";
 import { DBS_RISK_CUSTOM_TITLE, dbsRiskSections } from "@/lib/recruitment-dbs-risk";
 import { REFERENCE_CUSTOM_TITLE, customSection } from "@/lib/custom-questions";
 import { renderHrPdf, ukDate, type HrBlock, type HrDoc } from "@/lib/hr-pdf";
+import { orgBranding } from "@/lib/branding";
 
 /**
  * What hiring does beyond the status (RECRUITMENT.md, release 6): the checked
@@ -69,7 +70,7 @@ export function answerBlocks(sections: FormSection[], answers: Answers): HrBlock
  * what moved.
  */
 export async function copyRecordsToStaffFile(admin: Admin, candidateId: string, orgId: string, userId: string, by: string): Promise<string[]> {
-  const [{ data: held }, { data: cand }, { data: refs }, { data: risk }, { data: org }, { custom }] = await Promise.all([
+  const [{ data: held }, { data: cand }, { data: refs }, { data: risk }, { data: org }, { custom }, brand] = await Promise.all([
     admin.from("staff_documents").select("doc_type").eq("user_id", userId),
     admin.from("candidates").select("full_name, dbs_conviction").eq("id", candidateId).maybeSingle(),
     admin
@@ -80,6 +81,7 @@ export async function copyRecordsToStaffFile(admin: Admin, candidateId: string, 
     admin.from("candidate_dbs_assessments").select("status, answers, completed_at").eq("candidate_id", candidateId).maybeSingle(),
     admin.from("organisations").select("name").eq("id", orgId).maybeSingle(),
     companyQuestions(admin, orgId),
+    orgBranding(orgId),
   ]);
   const has = new Set((held ?? []).map((h) => h.doc_type as string));
   const company = (org?.name as string | undefined) ?? "";
@@ -87,7 +89,7 @@ export async function copyRecordsToStaffFile(admin: Admin, candidateId: string, 
   const moved: string[] = [];
 
   const put = async (docType: string, docs: HrDoc[], fileName: string) => {
-    const pdf = await renderHrPdf(company, docs);
+    const pdf = await renderHrPdf(company, docs, brand?.logoUrl);
     const path = `${orgId}/${userId}/${docType}-${crypto.randomUUID()}-${fileName}`;
     const { error: upErr } = await admin.storage.from("staff-docs").upload(path, pdf, { contentType: "application/pdf" });
     if (upErr) return;

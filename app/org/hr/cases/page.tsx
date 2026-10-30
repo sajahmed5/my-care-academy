@@ -36,7 +36,7 @@ export default async function CasesPage() {
   const orgId = context.organisationId!;
   const [cases, { data: settings }] = await Promise.all([
     fetchAll((f, t) =>
-      supabase.from("hr_cases").select("*, person:users!hr_cases_user_id_fkey(full_name, email)").eq("organisation_id", orgId).order("raised_on", { ascending: false }).range(f, t),
+      supabase.from("hr_cases").select("*, person:users!hr_cases_user_id_fkey(full_name, email)").eq("organisation_id", orgId).order("raised_on", { ascending: false }).order("id").range(f, t),
     ),
     supabase.from("hr_settings").select("*").eq("organisation_id", orgId).maybeSingle(),
   ]);

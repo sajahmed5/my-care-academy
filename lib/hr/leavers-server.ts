@@ -3,11 +3,15 @@ import { fetchAll } from "@/lib/fetch-all";
 import { sendEmail } from "@/lib/email";
 import { emailButton, emailLayout, esc } from "@/lib/email-layout";
 import { siteOrigin } from "@/lib/site-url";
-import { hasFeatureForOrg } from "@/lib/entitlements";
+import { orgBranding } from "@/lib/branding";
 import { logAudit } from "@/lib/audit";
 import { hashToken, newToken } from "@/lib/candidate-links";
+import { chunk } from "@/lib/engine-digest";
+import { ukToday } from "@/lib/policy-library";
 import { renderHrPdf, ukDate, type HrBlock } from "@/lib/hr-pdf";
-import { EXIT_SECTIONS, loginDueOff } from "@/lib/hr/leavers";
+import { EXIT_SECTIONS, TRAINING_RETRY_DAYS, jobMaySwitchOff, loginDueOff } from "@/lib/hr/leavers";
+import { IDS_PER_REQUEST, orgsWithFeature } from "@/lib/hr/features";
+import { addDays } from "@/lib/hr/probation";
 import { sanitiseWith, validateSection } from "@/lib/recruitment-application";
 import { firstName, personName, type Admin } from "@/lib/hr/server";
 
@@ -21,7 +25,7 @@ import { firstName, personName, type Admin } from "@/lib/hr/server";
 const MAX_CERTIFICATES = 25;
 
 export async function emailTrainingRecord(admin: Admin, orgId: string, userId: string): Promise<{ ok: boolean; error?: string }> {
-  const [{ data: person }, { data: org }, { data: enrolments }, { data: certs }] = await Promise.all([
+  const [{ data: person }, { data: org }, { data: enrolments }, { data: certs }, brand] = await Promise.all([
     admin.from("users").select("id, full_name, email").eq("id", userId).maybeSingle(),
     admin.from("organisations").select("name").eq("id", orgId).maybeSingle(),
     admin.from("enrolments").select("status, courses(title)").eq("user_id", userId).limit(1000),
@@ -31,6 +35,7 @@ export async function emailTrainingRecord(admin: Admin, orgId: string, userId: s
       .eq("user_id", userId)
       .order("issued_at", { ascending: false })
       .limit(500),
+    orgBranding(orgId),
   ]);
   if (!person?.email) return { ok: false, error: "They have no email address." };
   const company = (org?.name as string | undefined) ?? "";
@@ -59,14 +64,28 @@ export async function emailTrainingRecord(admin: Admin, orgId: string, userId: s
       : [{ type: "para" as const, text: "None." }]),
     { type: "para", text: "Certificates can be checked by anyone on My Care Academy's certificate checker, using the certificate number." },
   ];
-  const record = await renderHrPdf(company, [{ title: "Training record", subtitle: `${personName(person as never)} · ${ukDate(new Date().toISOString())}`, blocks }]);
-  const attachments = [{ filename: "Training record.pdf", content: record.toString("base64") }];
-  for (const c of (certs ?? []).filter((c) => c.pdf_path).slice(0, MAX_CERTIFICATES)) {
-    const { data } = await admin.storage.from("certificates").download(c.pdf_path as string);
-    if (data) attachments.push({ filename: `${title(c).replace(/[^\w .-]+/g, "").slice(0, 60)} ${c.certificate_number as string}.pdf`, content: Buffer.from(await data.arrayBuffer()).toString("base64") });
-  }
+  // The record renders while the certificates download, all at once.
+  const [record, files] = await Promise.all([
+    renderHrPdf(company, [{ title: "Training record", subtitle: `${personName(person as never)} · ${ukDate(new Date().toISOString())}`, blocks }], brand?.logoUrl),
+    Promise.all(
+      (certs ?? [])
+        .filter((c) => c.pdf_path)
+        .slice(0, MAX_CERTIFICATES)
+        .map(async (c) => {
+          const { data } = await admin.storage.from("certificates").download(c.pdf_path as string);
+          return data
+            ? { filename: `${title(c).replace(/[^\w .-]+/g, "").slice(0, 60)} ${c.certificate_number as string}.pdf`, content: Buffer.from(await data.arrayBuffer()).toString("base64") }
+            : null;
+        }),
+    ),
+  ]);
+  const attachments = [
+    { filename: "Training record.pdf", content: record.toString("base64") },
+    ...files.filter((f): f is { filename: string; content: string } => f !== null),
+  ];
   const sent = await sendEmail({
     to: person.email as string,
+    organisationId: orgId,
     subject: `Your training record from ${company || "your employer"}`,
     html: emailLayout({
       body: `<p>Hi ${esc(firstName(person as never))},</p>
@@ -117,6 +136,7 @@ export async function sendExitLink(admin: Admin, orgId: string, leaverId: string
   const company = (org?.name as string | undefined) ?? "your employer";
   return sendEmail({
     to: person.email as string,
+    organisationId: orgId,
     subject: `${company}: a few questions as you leave`,
     html: emailLayout({
       body: `<p>Hi ${esc(firstName(person as never))},</p>
@@ -129,28 +149,102 @@ ${emailButton(`${origin}/exit?t=${encodeURIComponent(raw)}`, "Answer the questio
 }
 
 /**
- * Each morning: everyone whose last working day has passed has their login
- * switched off and, if it hasn't gone, their training record emailed.
+ * Stop starting new training-record emails after this long: the daily job
+ * shares its 60 seconds with every other morning job, and each record is a
+ * PDF plus up to 25 certificates.
  */
-export async function processLeavers(admin: Admin, now: Date, dryRun: boolean): Promise<{ loginsSwitchedOff: number; trainingRecordsSent: number }> {
-  const today = now.toISOString().slice(0, 10);
-  const due = await fetchAll((f, t) => admin.from("hr_leavers").select("id, organisation_id, user_id, last_day, training_sent_at").is("login_off_at", null).lt("last_day", today).order("id").range(f, t));
+const BUDGET_MS = 15_000;
+
+/** Training records emailed at once. */
+const SEND_AT_ONCE = 3;
+
+/**
+ * Each morning: everyone whose last working day has passed (in the UK) has
+ * their login switched off and, if it hasn't gone, their training record
+ * emailed.
+ *
+ * Logins go first, for everyone: they are quick and they matter. Training
+ * records follow under a time budget; whoever isn't reached keeps
+ * training_sent_at empty and is picked up tomorrow, for TRAINING_RETRY_DAYS
+ * after their last day.
+ *
+ * A manager's or office worker's login is switched off only if a manager
+ * recorded their leaving (jobMaySwitchOff): otherwise a manager switches it
+ * off by hand from the leaver's page.
+ */
+export async function processLeavers(
+  admin: Admin,
+  now: Date,
+  dryRun: boolean,
+): Promise<{ loginsSwitchedOff: number; trainingRecordsSent: number; trainingRecordsLeft: number }> {
+  const started = Date.now();
+  const today = ukToday(now);
+  const retryFrom = addDays(today, -TRAINING_RETRY_DAYS);
+  const rows = await fetchAll((f, t) =>
+    admin
+      .from("hr_leavers")
+      .select("id, organisation_id, user_id, last_day, training_sent_at, login_off_at, created_by")
+      .lt("last_day", today)
+      .or(`login_off_at.is.null,and(training_sent_at.is.null,last_day.gte.${retryFrom})`)
+      .order("id")
+      .range(f, t),
+  );
+  const due = rows.filter((l) => loginDueOff(l.last_day as string, today));
+  if (!due.length) return { loginsSwitchedOff: 0, trainingRecordsSent: 0, trainingRecordsLeft: 0 };
+  const entitled = await orgsWithFeature(admin, due.map((l) => l.organisation_id as string), "recruitment.tracker");
+  const mine = due.filter((l) => entitled.has(l.organisation_id as string));
+
+  // 1. Logins, for everyone due.
+  const toSwitch = mine.filter((l) => !l.login_off_at);
+  const people = await rolesOf(admin, toSwitch.flatMap((l) => [l.user_id as string, l.created_by as string | null]));
   let off = 0;
-  let sent = 0;
-  for (const l of due) {
-    if (!loginDueOff(l.last_day as string, today)) continue;
-    if (!(await hasFeatureForOrg(admin, l.organisation_id as string, "recruitment.tracker"))) continue;
+  for (const l of toSwitch) {
+    const orgId = l.organisation_id as string;
+    const person = people.get(l.user_id as string);
+    // Not read: leave them for tomorrow rather than guess who they are.
+    if (!person || !jobMaySwitchOff(person.role, people.get(l.created_by as string), orgId)) continue;
     if (dryRun) {
       off++;
       continue;
     }
-    if (!l.training_sent_at && (await emailTrainingRecord(admin, l.organisation_id as string, l.user_id as string)).ok) sent++;
-    if ((await switchOffLogin(admin, l.organisation_id as string, l.user_id as string)).ok) {
+    if ((await switchOffLogin(admin, orgId, l.user_id as string)).ok) {
       off++;
-      await logAudit({ organisationId: l.organisation_id as string, action: "hr.leaver_login_off", entity: "user", entityId: l.user_id as string, detail: { lastDay: l.last_day } });
+      await logAudit({ organisationId: orgId, action: "hr.leaver_login_off", entity: "user", entityId: l.user_id as string, detail: { lastDay: l.last_day } });
     }
   }
-  return { loginsSwitchedOff: off, trainingRecordsSent: sent };
+
+  // 2. Training records, while there's time.
+  const toSend = mine.filter((l) => !l.training_sent_at);
+  if (dryRun) return { loginsSwitchedOff: off, trainingRecordsSent: 0, trainingRecordsLeft: toSend.length };
+  let sent = 0;
+  let next = 0;
+  const worker = async () => {
+    while (next < toSend.length && Date.now() - started < BUDGET_MS) {
+      const l = toSend[next++];
+      try {
+        if ((await emailTrainingRecord(admin, l.organisation_id as string, l.user_id as string)).ok) sent++;
+      } catch (err) {
+        console.error("training record email failed:", err);
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: SEND_AT_ONCE }, worker));
+  return { loginsSwitchedOff: off, trainingRecordsSent: sent, trainingRecordsLeft: toSend.length - sent };
+}
+
+/** Role and company for each of these people, a hundred ids a request. */
+async function rolesOf(admin: Admin, ids: (string | null)[]): Promise<Map<string, { role: string | null; organisation_id: string | null }>> {
+  const out = new Map<string, { role: string | null; organisation_id: string | null }>();
+  const unique = [...new Set(ids.filter((id): id is string => !!id))];
+  for (const part of chunk(unique, IDS_PER_REQUEST)) {
+    const { data, error } = await admin.from("users").select("id, role, organisation_id").in("id", part);
+    if (error) {
+      console.error("leavers: reading roles failed:", error.message);
+      continue;
+    }
+    for (const u of data ?? []) out.set(u.id as string, { role: (u.role as string | null) ?? null, organisation_id: (u.organisation_id as string | null) ?? null });
+  }
+  return out;
 }
 
 /** Save an exit interview's answers, from their login or the link. */

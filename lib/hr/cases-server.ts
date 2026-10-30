@@ -1,6 +1,6 @@
 import "server-only";
 import { after } from "next/server";
-import { sendEmail } from "@/lib/email";
+import { sendEmailBatch } from "@/lib/email";
 import { emailButton, emailLayout } from "@/lib/email-layout";
 import { siteOrigin } from "@/lib/site-url";
 import { caseRef, firstStage, type CaseKind } from "@/lib/hr/cases";
@@ -73,16 +73,12 @@ export async function emailNewGrievance(admin: Admin, orgId: string, caseId: str
     siteOrigin(),
   ]);
   const to = (managers ?? []).filter((m) => m.id !== aboutUserId && m.id !== raisedBy).map((m) => m.email as string).filter(Boolean);
+  if (!to.length) return;
+  const html = emailLayout({
+    heading: "A grievance has been raised",
+    body: `<p>A member of staff has raised a grievance from their own login. Acknowledge it in writing and arrange a meeting without unreasonable delay.</p>${emailButton(`${origin}/org/hr/cases/${caseId}`, "Open the case")}`,
+  });
   after(async () => {
-    for (const email of to) {
-      await sendEmail({
-        to: email,
-        subject: "A grievance has been raised",
-        html: emailLayout({
-          heading: "A grievance has been raised",
-          body: `<p>A member of staff has raised a grievance from their own login. Acknowledge it in writing and arrange a meeting without unreasonable delay.</p>${emailButton(`${origin}/org/hr/cases/${caseId}`, "Open the case")}`,
-        }),
-      });
-    }
+    await sendEmailBatch(to.map((email) => ({ to: email, subject: "A grievance has been raised", html, organisationId: orgId })));
   });
 }

@@ -1,6 +1,7 @@
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { STAFF_ROLES } from "@/lib/roles";
 import { hasCaseAccess } from "@/lib/hr/case-access";
@@ -22,14 +23,18 @@ export default async function NewCasePage({
   const q = await searchParams;
   const admin = createAdminClient();
   const allowed = await hasCaseAccess(admin, context);
-  const { data: people } = await admin
-    .from("users")
-    .select("id, full_name, email, role")
-    .eq("organisation_id", context.organisationId!)
-    .in("role", STAFF_ROLES)
-    .eq("status", "active")
-    .order("full_name")
-    .limit(2000);
+  // Every active member of staff: the server returns 1,000 rows a request.
+  const people = await fetchAll((f, t) =>
+    admin
+      .from("users")
+      .select("id, full_name, email, role")
+      .eq("organisation_id", context.organisationId!)
+      .in("role", STAFF_ROLES)
+      .eq("status", "active")
+      .order("full_name")
+      .order("id")
+      .range(f, t),
+  );
   const list = (people ?? []).filter((p) => p.id !== context.userId).map((p) => ({ id: p.id as string, name: personName(p as never) }));
   return (
     <DashboardShell title="Open a case" context={context} back={{ href: "/org/hr/cases", label: "Cases" }}>

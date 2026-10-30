@@ -28,6 +28,7 @@ export default async function LeaversPage() {
         .select("id, user_id, reason, last_day, checklist, login_off_at, exit_status, person:users!hr_leavers_user_id_fkey(full_name, email)")
         .eq("organisation_id", orgId)
         .order("last_day", { ascending: false })
+        .order("id")
         .range(f, t),
     ),
     fetchAll((f, t) => supabase.from("users").select("id, full_name, email").eq("organisation_id", orgId).in("role", STAFF_ROLES).eq("status", "active").order("id").range(f, t)),

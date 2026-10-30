@@ -37,7 +37,7 @@ export default async function AbsenceOverviewPage() {
         .order("id")
         .range(f, t),
     ),
-    fetchAll((f, t) => supabase.from("absence_welfare_meetings").select("absence_id, held_on").eq("organisation_id", orgId).order("absence_id").range(f, t)),
+    fetchAll((f, t) => supabase.from("absence_welfare_meetings").select("absence_id, held_on").eq("organisation_id", orgId).order("absence_id").order("id").range(f, t)),
     supabase.from("hr_settings").select("bradford_triggers").eq("organisation_id", orgId).maybeSingle(),
   ]);
   const names = new Map(people.map((p) => [p.id, p.name]));
