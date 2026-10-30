@@ -19,6 +19,8 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { bucketOf, isActiveLearner, isInactive30d, isNeverActive, loadOrgLearners } from "@/lib/org-learners";
 import { ChooseWhoLink } from "./choose-who-link";
 import { WhosOff } from "./hr/holidays/whos-off";
+import { enabledMap } from "@/lib/entitlements";
+import { loadOrgTodo, type TodoLine } from "@/lib/org-todo";
 
 export default async function OrgDashboard() {
   const context = await requireConsole();
@@ -29,13 +31,14 @@ export default async function OrgDashboard() {
   // on every row in the table.
   const orgId = context.organisationId;
   const supabase = await createClient();
-  const [{ data: organisation }, allLearners] = await Promise.all([
+  const [{ data: organisation }, allLearners, enabled] = await Promise.all([
     supabase
       .from("organisations")
       .select("name, package_tier")
       .eq("id", orgId!)
       .single(),
     loadOrgLearners(supabase, orgId),
+    enabledMap(context),
   ]);
 
   // Headline numbers count active staff only; deactivated stay in the matrix.
@@ -78,10 +81,7 @@ export default async function OrgDashboard() {
     totals.assigned > 0 ? Math.round((n / totals.assigned) * 100) : 0;
   const overallPct = pct(totals.completed);
 
-  // Reminders for the manager. Each entry can carry a `show` flag so
-  // package-gated sources (e.g. the future document matrix) simply slot in.
-  //
-  // These link through to the filtered list rather than offering a one-tap
+  // Training's lines in the to-do list. These link through to the filtered list rather than offering a one-tap
   // "remind everyone": some people should not be chased, for reasons the
   // system cannot know (issue #27). Bulk chasing still lives on
   // Learners → Admin, where the group and its headcount are explicit.
@@ -102,44 +102,46 @@ export default async function OrgDashboard() {
   // prevents a breach rather than recording one (issue #29).
   const dueSoonRows = learners.filter((r) => r.stats.dueSoon > 0);
 
-  const reminders = [
+  const training: TodoLine[] = [
     overdueRows.length > 0 && {
       key: "overdue",
       tone: "alert" as const,
-      text: `Overdue training: ${nameList(overdueRows)}.`,
+      text: `Overdue training: ${nameList(overdueRows)}`,
       href: "/org/learners?filter=overdue#learners",
-      action: <ChooseWhoLink href="/org/learners?filter=overdue#learners" />,
+      action: "",
     },
     neverRows.length > 0 && {
       key: "never",
       tone: "alert" as const,
-      text: `Never signed in, so can't start training: ${nameList(neverRows)}.`,
+      text: `Never signed in, so can't start training: ${nameList(neverRows)}`,
       href: "/org/learners?filter=never#learners",
-      action: <ChooseWhoLink href="/org/learners?filter=never#learners" />,
+      action: "",
     },
     dueSoonRows.length > 0 && {
       key: "due_soon",
       tone: "warn" as const,
-      text: `Training due in the next 60 days: ${nameList(dueSoonRows)}.`,
+      text: `Training due in the next 60 days: ${nameList(dueSoonRows)}`,
       // Both links go to the same people the sentence names. They used to
       // point at an unfiltered table and a different filter respectively.
       href: "/org/learners?filter=due_soon#learners",
-      action: <ChooseWhoLink href="/org/learners?filter=due_soon#learners" />,
+      action: "",
     },
     totals.expiring > 0 && {
       key: "expiring",
       tone: "warn" as const,
-      text: `${totals.expiring} certificate${totals.expiring === 1 ? " is" : "s are"} expiring soon or already expired.`,
+      text: `${totals.expiring} certificate${totals.expiring === 1 ? " is" : "s are"} expiring soon or already expired`,
       href: "/org/certificates",
-      action: null,
+      action: "See which",
     },
-  ].filter(Boolean) as {
-    key: string;
-    tone: "alert" | "warn";
-    text: string;
-    href: string;
-    action: React.ReactNode;
-  }[];
+  ].filter((r): r is TodoLine => !!r);
+
+  // One list for everything waiting, from every add-on the company has
+  // (ease-of-use review, 30 Oct 2026): it used to show training only, so a
+  // new concern or an overdue supervision never reached this page. Late
+  // things first; within each, training leads.
+  const todo = [...training, ...(await loadOrgTodo(supabase, context, enabled))].sort(
+    (a, b) => (a.tone === b.tone ? 0 : a.tone === "alert" ? -1 : 1),
+  );
 
   return (
     <DashboardShell
@@ -153,20 +155,18 @@ export default async function OrgDashboard() {
       <div className="space-y-8">
         <section className="space-y-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-lg font-semibold tracking-tight">
-              {reminders.length === 0 ? "All on track" : "Needs your attention"}
-            </h2>
+            <h2 className="text-lg font-semibold tracking-tight">To do today</h2>
             <p className="text-sm text-muted-foreground">
               {tierLabel(organisation?.package_tier ?? "core")} plan
             </p>
           </div>
-          {reminders.length === 0 ? (
+          {todo.length === 0 ? (
             <p className="rounded-2xl border bg-card px-5 py-6 text-sm text-muted-foreground">
-              Nothing needs your attention — everyone&apos;s on track ✓
+              You&apos;re all up to date ✓
             </p>
           ) : (
             <ul className="space-y-2">
-              {reminders.map((r) => (
+              {todo.map((r) => (
                 <li
                   key={r.key}
                   className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-l-4 bg-card px-5 py-4 shadow-sm ${
@@ -176,7 +176,18 @@ export default async function OrgDashboard() {
                   <Link href={r.href} className="min-w-0 flex-1 text-sm font-medium hover:underline">
                     {r.text}
                   </Link>
-                  {r.action}
+                  {/* Training is chased person by person (issue #27); everything
+                      else has one button to where it is done. */}
+                  {r.action ? (
+                    <Link
+                      href={r.href}
+                      className="inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-sm font-medium transition-colors hover:bg-accent"
+                    >
+                      {r.action}
+                    </Link>
+                  ) : (
+                    <ChooseWhoLink href={r.href} />
+                  )}
                 </li>
               ))}
             </ul>
