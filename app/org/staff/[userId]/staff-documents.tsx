@@ -36,64 +36,56 @@ export interface ApplicationDoc {
 }
 
 /**
- * A current staff member's compliance documents (ROADMAP §3), each with its
- * status and expiry, and what was collected when they applied beneath.
+ * A current staff member's documents (ROADMAP §3; the documents page in
+ * HR-PACK.md), each with its status and expiry. What was collected when they
+ * applied is on the Recruitment sub-page.
  */
-export function StaffDocuments({
-  userId,
-  docs,
-  applicationDocs,
-}: {
-  userId: string;
-  docs: StaffDoc[];
-  applicationDocs: ApplicationDoc[];
-}) {
+export function StaffDocuments({ userId, docs }: { userId: string; docs: StaffDoc[] }) {
   const byType = new Map(docs.map((d) => [d.doc_type, d]));
   return (
-    <div className="space-y-4">
-      <div className="grid gap-2">
-        {STAFF_DOCS.map((def) => (
-          <DocRow key={def.key} userId={userId} def={def} doc={byType.get(def.key)} />
-        ))}
-      </div>
-      {applicationDocs.length > 0 && (
-        <Card>
-          <CardContent className="space-y-2 pt-6">
-            <p className="text-sm font-semibold">From their application</p>
-            <p className="text-xs text-muted-foreground">
-              Collected by the recruitment tracker before they started. Kept there; listed here so the file is complete.
-            </p>
-            <ul className="divide-y text-sm">
-              {applicationDocs.map((d) => (
-                <li key={d.file_path} className="flex items-center justify-between gap-2 py-1.5">
-                  <span>
-                    {d.label}
-                    {d.expires_at && <span className="ml-2 text-xs text-muted-foreground">expires {fmt(d.expires_at)}</span>}
-                  </span>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    onClick={async () => {
-                      const { url } = await getDocUrlAction(d.file_path);
-                      if (url) window.open(url, "_blank");
-                    }}
-                  >
-                    View
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+    <div className="grid gap-2">
+      {STAFF_DOCS.map((def) => (
+        <DocRow key={def.key} userId={userId} def={def} doc={byType.get(def.key)} />
+      ))}
     </div>
+  );
+}
+
+/** Every file collected while they were a candidate, to view. */
+export function ApplicationFiles({ docs }: { docs: ApplicationDoc[] }) {
+  return (
+    <Card>
+      <CardContent className="space-y-2 pt-6">
+        <p className="text-sm font-semibold">Files from their recruitment</p>
+        <ul className="divide-y text-sm">
+          {docs.map((d) => (
+            <li key={d.file_path} className="flex items-center justify-between gap-2 py-1.5">
+              <span>
+                {d.label}
+                {d.expires_at && <span className="ml-2 text-xs text-muted-foreground">expires {fmt(d.expires_at)}</span>}
+              </span>
+              <Button
+                size="xs"
+                variant="outline"
+                onClick={async () => {
+                  const { url } = await getDocUrlAction(d.file_path);
+                  if (url) window.open(url, "_blank");
+                }}
+              >
+                View
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
 
 function DocRow({ userId, def, doc }: { userId: string; def: StaffDocDef; doc: StaffDoc | undefined }) {
   const router = useRouter();
-  const state = staffDocState(doc, new Date());
-  const chip = CHIP[state];
+  const state = staffDocState(doc, new Date(), def);
+  const chip = !doc && def.onlyIfNeeded ? { label: "If needed", className: "bg-muted text-muted-foreground" } : CHIP[state];
   const [file, setFile] = useState<File | null>(null);
   const [expires, setExpires] = useState(doc?.expires_at ?? "");
   const [waiving, setWaiving] = useState(false);
@@ -184,7 +176,7 @@ function DocRow({ userId, def, doc }: { userId: string; def: StaffDocDef; doc: S
           >
             {doc ? "Upload new" : "Upload"}
           </Button>
-          {!doc && (
+          {!doc && !def.onlyIfNeeded && (
             <Button size="xs" variant="ghost" disabled={busy} onClick={() => setWaiving(true)}>
               Mark not needed…
             </Button>

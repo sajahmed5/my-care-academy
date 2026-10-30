@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { staffDocState, staffDocTasks, type StaffDoc } from "../lib/staff-documents";
+import { STAFF_DOCS, staffDocState, staffDocSummary, staffDocTasks, type StaffDoc } from "../lib/staff-documents";
 
 const now = new Date("2026-10-25T12:00:00Z");
 const doc = (doc_type: string, over: Partial<StaffDoc> = {}): StaffDoc => ({
@@ -21,6 +21,12 @@ describe("a staff document's state", () => {
     expect(staffDocState(doc("references"), now)).toBe("held");
     expect(staffDocState(doc("insurance", { not_required: true, file_path: null }), now)).toBe("not_required");
     expect(staffDocState(undefined, now)).toBe("missing");
+  });
+  it("never counts a document only some people need as missing", () => {
+    const def = STAFF_DOCS.find((d) => d.key === "dbs_risk_assessment")!;
+    expect(staffDocState(undefined, now, def)).toBe("not_required");
+    const licence = STAFF_DOCS.find((d) => d.key === "driving_licence")!;
+    expect(staffDocState(doc("driving_licence", { expires_at: "2026-10-20" }), now, licence)).toBe("expired");
   });
 });
 
@@ -47,5 +53,15 @@ describe("what goes on the task list", () => {
         now,
       ),
     ).toEqual([]);
+  });
+});
+
+describe("the summary across the company", () => {
+  it("names what is expired, expiring and missing, leaving out what only some need", () => {
+    expect(staffDocSummary([doc("dbs", { expires_at: "2026-10-01" }), doc("driving_licence", { expires_at: "2026-11-01" })], now)).toEqual({
+      expired: ["DBS"],
+      expiring: ["Driving licence"],
+      missing: ["Right to work", "References", "Business car insurance"],
+    });
   });
 });

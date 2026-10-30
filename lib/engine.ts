@@ -14,6 +14,7 @@ import {
 import { hasFeatureForOrg } from "@/lib/entitlements";
 import { resolveForms, type FormOverride } from "@/lib/audit-forms";
 import { staffAuditDigest, staffAuditDigestHtml } from "@/lib/staff-audit-digest";
+import { hrDigestHtml, loadHrDigests } from "@/lib/hr-digest";
 import {
   chunk,
   esc,
@@ -482,7 +483,8 @@ export async function processWeeklyDigest(
 
   const outbox: Outgoing[] = [];
   let digests = 0;
-  const audits = await loadStaffAuditDigests(admin, r, [...r.orgs.keys()].filter((id) => stats.get(id)?.any), now);
+  const digestOrgs = [...r.orgs.keys()].filter((id) => stats.get(id)?.any);
+  const [audits, hr] = await Promise.all([loadStaffAuditDigests(admin, r, digestOrgs, now), loadHrDigests(admin, r.users, digestOrgs, now)]);
   const origin = await siteOrigin();
   for (const [orgId, orgName] of r.orgs) {
     const s = stats.get(orgId);
@@ -490,7 +492,7 @@ export async function processWeeklyDigest(
     const admins = orgAdminEmails(r, orgId);
     if (admins.length === 0) continue;
     digests += 1;
-    const auditHtml = staffAuditDigestHtml(audits.get(orgId) ?? [], origin);
+    const auditHtml = staffAuditDigestHtml(audits.get(orgId) ?? [], origin) + hrDigestHtml(hr.get(orgId) ?? [], origin);
     for (const to of admins) {
       outbox.push({
         orgId,
