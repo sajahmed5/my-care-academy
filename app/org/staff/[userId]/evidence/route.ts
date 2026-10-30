@@ -14,6 +14,7 @@ import { packContents, since } from "@/lib/evidence-pack";
 import { responseRows, type FormTemplateRecord } from "@/lib/form-library";
 import { renderEvidencePack, type PackSectionData } from "@/lib/evidence-pack-pdf";
 import { formatDate } from "@/lib/dates";
+import { loadReading } from "@/lib/policy-reading-data";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +76,7 @@ export async function GET(
     actions,
     [supervisions, checks, concerns, formResponses, spotChecks],
     { data: classroomRows },
+    reading,
   ] = await Promise.all([
     enabledRead,
     loadOrgLearnerTraining(supabase, userId),
@@ -106,6 +108,9 @@ export async function GET(
       .select("certificate_id, session:classroom_sessions (title, held_on, trainer_name, duration_minutes)")
       .eq("user_id", userId)
       .limit(200),
+    enabledRead.then((on) =>
+      on["documents.library"] ? loadReading(supabase, context.organisationId!, { userId }) : null,
+    ),
   ]);
   if (!profile) return new NextResponse("Not found.", { status: 404 });
 
@@ -129,6 +134,12 @@ export async function GET(
   const spotRows = since(spotChecks, (c) => c.checked_on, from);
   const concernRows = since(concerns, (c) => c.occurredOn, from);
   const formRows = since(formResponses, (f) => f.submitted_at as string, from);
+  // Accepted ones by the day they were accepted; outstanding ones always, as
+  // what is still owed is true whatever the range.
+  const policyCopy = new Map((reading?.copies ?? []).map((c) => [c.copyId, c]));
+  const policyRows = (reading?.entries ?? []).filter(
+    (e) => e.status !== "accepted" || !from || (e.acceptedAt ?? "") >= from,
+  );
 
   const contents = packContents({
     enabled,
@@ -140,6 +151,7 @@ export async function GET(
       competency: checkRows.length + spotRows.length,
       complaints: concernRows.length,
       forms: formRows.length,
+      policies: policyRows.length,
     },
   });
 
@@ -240,6 +252,16 @@ export async function GET(
       };
     }),
   };
+
+  bySection.policies = policyRows.map((e) => {
+    const c = policyCopy.get(e.copyId);
+    return {
+      when: fmt(e.acceptedAt ?? e.dueOn),
+      what: `${c?.title ?? "Policy"} (version ${c?.version ?? "?"})`,
+      detail: e.status === "accepted" ? null : `To accept by ${fmt(e.dueOn)}`,
+      status: e.status === "accepted" ? "Accepted" : e.status === "late" ? "Late — not accepted" : "Not accepted yet",
+    };
+  });
 
   const sections: PackSectionData[] = contents.included.map((s) => ({
     key: s.key,

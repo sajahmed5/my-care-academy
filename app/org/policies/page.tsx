@@ -5,12 +5,13 @@ import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { dueStatus } from "@/lib/records";
 import { formatDate } from "@/lib/dates";
+import { loadReading } from "@/lib/policy-reading-data";
+import { tallyByCopy } from "@/lib/policy-reading";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   byCategory,
-  loadAcceptanceCounts,
   loadCopies,
   loadLibrary,
   type OrgPolicyCopy,
@@ -58,7 +59,10 @@ export default async function PoliciesPage() {
     return c && !(c.status === "published" && c.version > 0);
   }).length;
   const notAdopted = policies.length - published.length - drafts;
-  const { counts, staff } = await loadAcceptanceCounts(supabase, published, context.organisationId);
+  // "12 of 40 accepted" counts only the people each policy is for.
+  const reading = await loadReading(supabase, context.organisationId!);
+  const tally = tallyByCopy(reading.entries);
+  const late = reading.entries.filter((e) => e.status === "late").length;
 
   return (
     <DashboardShell title="Policies" context={context}>
@@ -74,7 +78,7 @@ export default async function PoliciesPage() {
             "Not adopted" in grey and nothing said what to do about it
             (design review, 28 Oct 2026). */}
         {policies.length > 0 && (
-          <div className="flex flex-wrap gap-2 text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="rounded-full bg-green-100 px-3 py-1 font-medium text-green-700">
               {published.length} published
             </span>
@@ -87,6 +91,16 @@ export default async function PoliciesPage() {
               <span className="rounded-full bg-muted px-3 py-1 font-medium text-muted-foreground">
                 {notAdopted} still to adopt
               </span>
+            )}
+            {late > 0 && (
+              <Link href="/org/due/policies" className="rounded-full bg-rose-100 px-3 py-1 font-medium text-rose-700 hover:underline">
+                {late} late {late === 1 ? "acceptance" : "acceptances"}
+              </Link>
+            )}
+            {published.length > 0 && (
+              <Link href="/org/policies/people" className="ml-auto text-sm font-medium text-primary hover:underline">
+                Who has read what →
+              </Link>
             )}
           </div>
         )}
@@ -108,8 +122,10 @@ export default async function PoliciesPage() {
                     item={item}
                     copy={copies.get(item.id) ?? null}
                     showService={showService}
-                    accepted={counts.get(item.id) ?? 0}
-                    staff={staff}
+                    tally={(() => {
+                      const c = copies.get(item.id);
+                      return c ? (tally.get(c.id) ?? { total: 0, accepted: 0, late: 0 }) : null;
+                    })()}
                   />
                 ))}
               </div>
@@ -125,14 +141,12 @@ function Row({
   item,
   copy,
   showService,
-  accepted: acceptedCount,
-  staff,
+  tally,
 }: {
   item: PolicySummary;
   copy: OrgPolicyCopy | null;
   showService: boolean;
-  accepted: number;
-  staff: number;
+  tally: { total: number; accepted: number; late: number } | null;
 }) {
   const live = copy && copy.status === "published" && copy.version > 0;
 
@@ -157,14 +171,17 @@ function Row({
                 Published · v{copy.version}
               </span>
               <ReviewBadge on={copy.review_due_on} />
-              {staff > 0 && (
+              {tally && tally.total > 0 && (
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    acceptedCount >= staff ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"
+                    tally.accepted >= tally.total ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {acceptedCount} of {staff} accepted
+                  {tally.accepted} of {tally.total} accepted
                 </span>
+              )}
+              {tally && tally.late > 0 && (
+                <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">{tally.late} late</span>
               )}
             </>
           ) : copy ? (

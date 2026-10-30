@@ -9,6 +9,7 @@ import { PolicyBody } from "@/components/policy-body";
 import { orgBranding } from "@/lib/branding";
 import { PolicyAcceptButton } from "@/components/policy-accept-button";
 import { loadCopy, loadPolicy } from "@/lib/policy-library";
+import { inAudience } from "@/lib/policy-reading";
 
 /**
  * One policy, read by the carer it is addressed to, with their employer's
@@ -33,6 +34,8 @@ export default async function LearnerPolicyPage({
   // never the template (ROADMAP §1).
   const copy = await loadCopy(supabase, context.organisationId!, doc.id);
   if (!copy || copy.status !== "published" || copy.version < 1) notFound();
+  // Only for the people it is set for (POLICIES.md, "Who must read what").
+  if (!context.role || !inAudience(copy.audience, context.role)) notFound();
   const version = copy.version;
   const blocks = copy.blocks;
   const { data: myAck } = await supabase

@@ -35,6 +35,9 @@ export const PACK_SECTIONS: PackSectionDef[] = [
   { key: "complaints", label: "Concerns", feature: "complaints.register" },
   // What they filled in from the forms library, answer by answer (ROADMAP §1).
   { key: "forms", label: "Completed forms", feature: "forms.builder" },
+  // Each policy set for them: the version they accepted and when, or that it
+  // is still to accept (POLICIES.md, "Records").
+  { key: "policies", label: "Policies read and accepted", feature: "documents.library" },
 ];
 
 export type OmissionReason = "not_in_plan" | "nothing_recorded";
