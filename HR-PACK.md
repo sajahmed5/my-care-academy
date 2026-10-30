@@ -28,6 +28,9 @@ expiry dates, so reminders carry on.
 
 Every package has it: the HR pack moved to Starter on 30 Oct 2026.
 
+*Built 31 Oct 2026: the file's Documents section, with a Recruitment
+sub-page; Documents due under HR; an HR line in the weekly email.*
+
 ## Disciplinary and grievance: the rules
 
 - **ACAS.** Both follow the ACAS Code of Practice on Disciplinary and
@@ -97,6 +100,14 @@ performance — a performance plan that fails leads to a capability hearing).
   an ending letter).
 - Reviews show in Who's due, and the carer is told the date, as with
   supervisions.
+
+*Built 31 Oct 2026: Employment on the carer's file (start date, job title,
+reviews), Probation reviews under HR, Settings → HR → Probation and Letters,
+and My HR for the carer (their letters and booked dates). What's agreed at a
+review becomes actions on their file. Every HR letter goes through one
+editor: the company's template, AI drafting if switched on, sent by a
+person, kept as a PDF. Not passing gives the ending letter with the right
+to appeal; the capability case itself comes with disciplinary.*
 
 ## Sickness absence and return to work
 

@@ -41,6 +41,7 @@ import { ConcernList } from "./concern-list";
 import { SupervisionList } from "./supervision-list";
 import { StaffDocuments } from "./staff-documents";
 import { RecruitmentRecord } from "./recruitment-record";
+import { LettersPanel, ProbationPanel } from "./employment";
 import { staffDocTasks, type StaffDoc } from "@/lib/staff-documents";
 import { TaskList } from "./task-list";
 import { SubTabs } from "./sub-tabs";
@@ -78,6 +79,7 @@ function statusVariant(e: OrgEnrolment, now: Date): StatusVariant {
 const INLINE_SECTIONS = new Set([
   "training",
   "documents",
+  "employment",
   "certificates",
   "actions",
   "supervisions",
@@ -85,6 +87,12 @@ const INLINE_SECTIONS = new Set([
   "complaints",
   "forms",
 ]);
+
+/** The pages of the Employment section (HR-PACK.md). */
+const EMPLOYMENT_TABS = [
+  { key: "", label: "Probation" },
+  { key: "letters", label: "Letters" },
+];
 
 /** Which courses the list below shows — the tiles switch between these. */
 type Show = "all" | "in_progress" | "completed" | "overdue";
@@ -711,6 +719,21 @@ export default async function StaffDetailPage({
               ]}
             />
             {sub === "recruitment" ? <RecruitmentRecord userId={userId} /> : <StaffDocuments userId={userId} docs={staffDocs} />}
+          </div>
+        )}
+
+        {section.key === "employment" && state === "open" && (
+          <div className="space-y-4">
+            <SubTabs
+              base={`/org/staff/${userId}?section=employment`}
+              active={sub === "letters" ? "letters" : ""}
+              tabs={EMPLOYMENT_TABS}
+            />
+            {sub === "letters" ? (
+              <LettersPanel supabase={supabase} userId={userId} />
+            ) : (
+              <ProbationPanel supabase={supabase} userId={userId} orgId={context.organisationId!} />
+            )}
           </div>
         )}
 

@@ -13,6 +13,7 @@ import { emailApplicationLink, issueApplicationLink, newToken } from "@/lib/cand
 import { inviteCandidate, makeCandidateStaff } from "@/lib/candidate-account";
 import { copyRecordsToStaffFile, copyToStaffFile, sendWelcomePack, startInduction } from "@/lib/hire";
 import { staffDocLabel } from "@/lib/staff-documents";
+import { setEmployment } from "@/lib/hr/server";
 import { unlockAttempt } from "@/lib/literacy-attempts";
 import { interviewSections, overallScore, sanitiseInterview, validateInterview } from "@/lib/recruitment-interview";
 import { companyQuestions } from "@/lib/company-questions";
@@ -567,8 +568,20 @@ export async function hireCandidateAction(
     moved = await copyToStaffFile(admin, candidateId, orgId, userId, context.userId);
     moved.push(...(await copyRecordsToStaffFile(admin, candidateId, orgId, userId, context.userId)));
     if (moved.length) said.push(`${moved.map(staffDocLabel).join(", ")} moved to their staff file, with expiry dates.`);
+    // Their employment record (HR-PACK.md): start date and job title, and
+    // probation running from the start date.
+    const { data: c } = await admin.from("candidates").select("start_date, role_applied").eq("id", candidateId).maybeSingle();
+    const { data: emp } = await admin.from("staff_employment").select("user_id").eq("user_id", userId).maybeSingle();
+    if (!emp) {
+      await setEmployment(
+        admin,
+        orgId,
+        userId,
+        { start_date: (c?.start_date as string | null) ?? new Date().toISOString().slice(0, 10), job_title: (c?.role_applied as string | null) ?? null },
+        context.userId,
+      );
+    }
     if (opts.induction) {
-      const { data: c } = await admin.from("candidates").select("start_date").eq("id", candidateId).maybeSingle();
       courses = await startInduction(admin, orgId, userId, (c?.start_date as string | null) ?? null);
       if (courses) said.push(`Induction started: ${courses} courses.`);
     }
