@@ -104,6 +104,7 @@ const ORG_MENU: MenuItem[] = [
       { href: "/org/hr/absence", label: "Absence", feature: "recruitment.tracker" },
       { href: "/org/hr/holidays", label: "Holidays", feature: "recruitment.tracker" },
       { href: "/org/hr/cases", label: "Disciplinary and grievance", feature: "recruitment.tracker" },
+      { href: "/org/hr/leavers", label: "Leavers", feature: "recruitment.tracker" },
     ],
   },
   {

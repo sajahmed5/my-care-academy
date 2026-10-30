@@ -10,6 +10,10 @@ import { bradford, daysOff, needsFitNote, rtwOutstanding, sanitiseTriggers, type
 import { addDays } from "@/lib/hr/probation";
 import { STATUS_LABEL, amountText, balance, canApprove, holidaySettingsFromRow, leaveTypeLabel, leaveTypesFor, leaveYear, type LeaveRequest } from "@/lib/hr/holidays";
 import { AllowanceForm, CancelLeave, DecideLeave, LeaveForm } from "@/app/org/hr/holidays/holiday-forms";
+import type { UserContext } from "@/lib/auth";
+import { CHECKLIST, checklistDone, reasonLabel as leavingReasonLabel, sanitiseChecklist } from "@/lib/hr/leavers";
+import { LeaverForm } from "@/app/org/hr/leavers/leaver-forms";
+import { References } from "@/app/org/hr/leavers/references";
 import { activeWarning, kindLabel as caseKindLabel, outcomeLabel as caseOutcomeLabel, stageLabel as caseStageLabel } from "@/lib/hr/cases";
 
 const fmt = (d: string | null) => (d ? formatDate(d, { day: "numeric", month: "short", year: "numeric" }) : "—");
@@ -300,6 +304,39 @@ export async function CasesPanel({ supabase, userId }: { supabase: Supabase; use
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+
+/** Their leaving record, or the way to start one; and references given (HR-PACK.md). */
+export async function LeavingPanel({ supabase, userId, context }: { supabase: Supabase; userId: string; context: UserContext }) {
+  const { data: l } = await supabase.from("hr_leavers").select("id, reason, last_day, login_off_at, checklist").eq("user_id", userId).maybeSingle();
+  return (
+    <div className="space-y-4">
+      {l ? (
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6 text-sm">
+            <span>
+              <span className="font-medium">{leavingReasonLabel(l.reason as string)}</span>
+              <span className="ml-2 text-muted-foreground">
+                last day {fmt(l.last_day as string)}
+                {l.login_off_at ? " · login switched off" : ""} · checklist {checklistDone(sanitiseChecklist(l.checklist))} of {CHECKLIST.length}
+              </span>
+            </span>
+            <Link href={`/org/hr/leavers/${l.id}`} className="font-medium text-primary hover:underline">Open the leaving record</Link>
+          </CardContent>
+        </Card>
+      ) : userId === context.userId ? (
+        <p className="text-sm text-muted-foreground">Another manager records your leaving.</p>
+      ) : (
+        <Card>
+          <CardContent className="space-y-3 pt-6">
+            <h3 className="font-semibold">Record that they&apos;re leaving</h3>
+            <LeaverForm userId={userId} />
+          </CardContent>
+        </Card>
+      )}
+      <References userId={userId} context={context} />
     </div>
   );
 }

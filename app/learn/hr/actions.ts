@@ -14,6 +14,7 @@ import { ABSENCE_REASONS } from "@/lib/hr/absence";
 import { personName } from "@/lib/hr/server";
 import { unitFor, validateLeave, type LeaveInput } from "@/lib/hr/holidays-server";
 import { createCase, emailNewGrievance } from "@/lib/hr/cases-server";
+import { saveExitAnswers } from "@/lib/hr/leavers-server";
 
 /**
  * What a member of staff does from their own login (HR-PACK.md). Reporting
@@ -151,4 +152,15 @@ export async function raiseGrievanceAction(input: { summary: string; aboutUserId
   await logAudit({ context, action: "hr.grievance_raised", entity: "hr_case", entityId: r.id });
   revalidatePath("/learn/hr");
   return { ok: true };
+}
+
+/** Their exit interview, from their own login while they still have it. */
+export async function submitExitInterviewAction(raw: unknown): Promise<{ ok: boolean; error?: string }> {
+  const context = await requireStaff();
+  const admin = createAdminClient();
+  const { data: l } = await admin.from("hr_leavers").select("id, exit_status").eq("user_id", context.userId).maybeSingle();
+  if (!l || l.exit_status !== "asked") return { ok: false, error: "There's no exit interview waiting for you." };
+  const r = await saveExitAnswers(admin, l.id as string, raw);
+  if (r.ok) revalidatePath("/learn/hr");
+  return r;
 }

@@ -10,6 +10,7 @@ import {
 } from "@/lib/engine";
 import { processFaceToFaceReminders } from "@/lib/face-to-face-email";
 import { processCaseReminders } from "@/lib/hr/case-reminders";
+import { processLeavers } from "@/lib/hr/leavers-server";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -46,6 +47,8 @@ export async function GET(req: NextRequest) {
   const references = await chaseReferences(admin, now, dryRun);
   // HR cases: deadlines missed or in the next 2 days, to whoever can see them.
   const cases = await processCaseReminders(admin, now, dryRun);
+  // Leavers: logins off after their last day, training record emailed.
+  const leavers = await processLeavers(admin, now, dryRun);
 
   return NextResponse.json({
     ok: true,
@@ -56,5 +59,6 @@ export async function GET(req: NextRequest) {
     ...faceToFace,
     referenceReminders: references,
     ...cases,
+    ...leavers,
   });
 }
