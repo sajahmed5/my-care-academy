@@ -25,7 +25,9 @@ const TONE: Record<SectionCount["tone"], string> = {
  *
  * It was a row of tabs across the top, which ran off the edge after the fifth
  * section, so it was not apparent the file had more than Training in it
- * (Saj, 27 Oct 2026). Sections the package leaves out sit at the bottom.
+ * (Saj, 27 Oct 2026). Sections the package leaves out are not listed (Saj,
+ * 30 Oct 2026), unless it is the one open — a link straight to it still
+ * says it isn't in the package.
  */
 export function SectionRail({
   userId,
@@ -38,8 +40,9 @@ export function SectionRail({
   enabled: Record<FeatureKey, boolean>;
   counts?: Record<string, SectionCount>;
 }) {
-  const open = SECTIONS.filter((s) => sectionState(s, enabled) === "open");
-  const shut = SECTIONS.filter((s) => sectionState(s, enabled) !== "open");
+  const shown = shownSections(enabled, active);
+  const open = shown.filter((s) => sectionState(s, enabled) === "open");
+  const shut = shown.filter((s) => sectionState(s, enabled) !== "open");
   return (
     <nav aria-label="Sections of this file" className="hidden rounded-xl border bg-card p-1.5 md:block">
       {[...open, ...shut].map((section) => {
@@ -87,13 +90,14 @@ export function SectionTabs({
   active: string;
   enabled: Record<FeatureKey, boolean>;
 }) {
-  const at = SECTIONS.findIndex((s) => s.key === active);
+  const shown = shownSections(enabled, active);
+  const at = shown.findIndex((s) => s.key === active);
   return (
     <StackedRows
       userId={userId}
       active={active}
       enabled={enabled}
-      sections={SECTIONS.slice(0, at < 0 ? SECTIONS.length : at + 1)}
+      sections={shown.slice(0, at < 0 ? shown.length : at + 1)}
     />
   );
 }
@@ -108,14 +112,15 @@ export function SectionTabsAfter({
   active: string;
   enabled: Record<FeatureKey, boolean>;
 }) {
-  const at = SECTIONS.findIndex((s) => s.key === active);
+  const shown = shownSections(enabled, active);
+  const at = shown.findIndex((s) => s.key === active);
   if (at < 0) return null;
   return (
     <StackedRows
       userId={userId}
       active={active}
       enabled={enabled}
-      sections={SECTIONS.slice(at + 1)}
+      sections={shown.slice(at + 1)}
       label="More sections of this file"
     />
   );
@@ -157,6 +162,11 @@ function StackedRows({
       })}
     </nav>
   );
+}
+
+/** The sections to list: all but those the package leaves out, bar the open one. */
+function shownSections(enabled: Record<FeatureKey, boolean>, active: string): SectionDef[] {
+  return SECTIONS.filter((s) => s.key === active || sectionState(s, enabled) !== "locked");
 }
 
 function StateMarks({ section, enabled }: { section: SectionDef; enabled: Record<FeatureKey, boolean> }) {

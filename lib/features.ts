@@ -225,38 +225,6 @@ export function lockedHref(feature: FeatureKey): string {
   return `/org/locked/${feature}`;
 }
 
-interface Lockable {
-  href?: string;
-  feature?: FeatureKey;
-  locked?: boolean;
-  children?: { href: string; feature?: FeatureKey; locked?: boolean }[];
-}
-
-/**
- * The console's menu: what the package leaves out stays in, marked locked and
- * pointing at the page that says which package has it (Saj, 29 Oct 2026 —
- * hiding it meant a manager never learned it existed). A drop-down whose
- * pages are all locked is marked locked too. Carers keep withoutGated: they
- * never see what their company hasn't bought.
- */
-export function withLocks<T extends Lockable>(
-  items: readonly T[],
-  enabled: Record<string, boolean>,
-): T[] {
-  const locked = (feature?: FeatureKey) => !!feature && !enabled[feature];
-  return items.map((item) => {
-    if (item.children) {
-      const children = item.children.map((c) =>
-        locked(c.feature) ? { ...c, locked: true, href: lockedHref(c.feature!) } : c,
-      );
-      return { ...item, children, locked: children.every((c) => c.locked) };
-    }
-    return locked(item.feature)
-      ? { ...item, locked: true, href: lockedHref(item.feature!) }
-      : item;
-  });
-}
-
 /**
  * Drop the nav entries an organisation does not have, children included.
  *

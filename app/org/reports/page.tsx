@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   ClipboardList,
   FileSpreadsheet,
-  Lock,
   ShieldCheck,
   Sparkles,
   Users,
@@ -16,7 +15,6 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { MatrixExport } from "../matrix-export";
 import { formatDateTime } from "@/lib/dates";
 import { hasFeature } from "@/lib/entitlements";
-import { lockedHref } from "@/lib/features";
 import { buttonVariants } from "@/components/ui/button";
 import { RequestDue, RequestStatus } from "@/components/bespoke/request-parts";
 import { isOpenRequest } from "@/lib/bespoke/requests";
@@ -115,7 +113,7 @@ export default async function OrgReportsPage() {
           export is a spreadsheet you can save, print or email.
         </p>
 
-        <OurReports bespoke={bespoke} manager={manager} requests={requests} reports={reports} />
+        {bespoke && <OurReports manager={manager} requests={requests} reports={reports} />}
 
         <section className="rounded-2xl border bg-card p-5">
           <div className="flex items-start gap-3">
@@ -205,44 +203,18 @@ export default async function OrgReportsPage() {
 
 /**
  * Our reports (BESPOKE-REPORTS.md): reports we build for this company alone,
- * and — for a manager — the requests for them. Without Enterprise it's a
- * padlocked card leading to the page that says which package has it.
+ * and — for a manager — the requests for them. Without Enterprise it isn't
+ * shown at all (Saj, 30 Oct 2026); it was a padlocked card.
  */
 function OurReports({
-  bespoke,
   manager,
   requests,
   reports,
 }: {
-  bespoke: boolean;
   manager: boolean;
   requests: { id: string; request_no: number; title: string; status: string; due_on: string; ready_at: string | null }[];
   reports: { id: string; title: string; description: string | null; managers_only: boolean }[];
 }) {
-  if (!bespoke) {
-    return (
-      <section id="our-reports" className="rounded-2xl border border-dashed bg-card p-5">
-        <div className="flex items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-foreground/70">
-            <Lock className="size-5" />
-          </span>
-          <div>
-            <h2 className="font-semibold">Our reports</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Reports built for your company: tell us what you need and we build it within {REPORT_WORKING_DAYS}{" "}
-              working days.
-            </p>
-            <Link
-              href={lockedHref("reports.bespoke")}
-              className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary hover:underline sm:min-h-0"
-            >
-              {manager ? "See which package has it" : "Find out more"} →
-            </Link>
-          </div>
-        </div>
-      </section>
-    );
-  }
   const today = ukToday();
   return (
     <section id="our-reports" className="space-y-4 rounded-2xl border bg-card p-5">

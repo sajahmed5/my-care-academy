@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Lock, Menu, X } from "lucide-react";
+import { ChevronDown, Menu, X } from "lucide-react";
 import { IntentLink } from "@/components/intent-link";
 import { BrandMark } from "@/components/brand-mark";
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
-import { withLocks, withoutGated, type FeatureKey } from "@/lib/features";
+import { withoutGated, type FeatureKey } from "@/lib/features";
 import { OPEN_REPORT_EVENT } from "@/components/report-widget";
 
 interface MenuLink {
@@ -20,8 +20,6 @@ interface MenuLink {
   exact?: boolean;
   /** Other paths that light this link up, e.g. a carer's file under Overview. */
   also?: string[];
-  /** Not in the package: the link goes to the page that says which one has it. */
-  locked?: boolean;
 }
 
 interface MenuItem {
@@ -36,25 +34,23 @@ interface MenuItem {
   children?: MenuLink[];
   /** Other paths that belong here, e.g. a carer's file under Learners. */
   also?: string[];
-  locked?: boolean;
 }
 
 /**
  * The menu across the top of every signed-in page (Saj, 27 Oct 2026). It
  * replaced the left-hand panel, whose fifteen-odd links became eight items:
  * a few plain links, the rest drop-downs grouped as the panel grouped them.
- * For a carer, anything the company's package leaves out is dropped by
- * withoutGated, and a drop-down left with nothing in it goes with it. For the
- * console it stays, padlocked, and leads to the page saying which package has
- * it (withLocks, 29 Oct 2026).
+ * Anything the company's package leaves out is dropped by withoutGated, and a
+ * drop-down left with nothing in it goes with it — for the console as for a
+ * carer (Saj, 30 Oct 2026: padlocked items "don't look good"; they were
+ * shown from 29 Oct). A direct visit still lands on the locked page.
  */
 const ORG_MENU: MenuItem[] = [
   { label: "Overview", href: "/org" },
   // Everything falling due, from every add-on, as tabs on one page (ease-of-
   // use review, 30 Oct 2026) — it was eight "…due" pages under four menus.
   // Staff documents is one of its tabs, though it lives under /org/hr.
-  // Every tab starts at Growth, so Starter gets the padlock, leading to
-  // what Staff Audits does.
+  // Every tab starts at Growth, so Starter doesn't get it.
   { label: "Who's due", href: "/org/due", also: ["/org/hr/documents"], feature: "people.supervisions" },
   {
     label: "Staff",
@@ -258,16 +254,6 @@ function useOpenMenu() {
 const panelClass =
   "absolute top-full z-40 mt-1 min-w-52 rounded-lg border bg-card p-1 text-card-foreground shadow-lg";
 
-/** The padlock beside anything the package leaves out, with words for a screen reader. */
-function LockMark() {
-  return (
-    <>
-      <Lock aria-hidden="true" className="size-3 shrink-0 opacity-70" />
-      <span className="sr-only">(not in your package)</span>
-    </>
-  );
-}
-
 function PanelLink({ link, pathname }: { link: MenuLink; pathname: string }) {
   const active = linkActive(pathname, link);
   return (
@@ -277,11 +263,9 @@ function PanelLink({ link, pathname }: { link: MenuLink; pathname: string }) {
       className={cn(
         "flex items-center gap-1.5 rounded-md px-3 py-2 text-sm transition-colors",
         active ? "bg-muted font-medium text-foreground" : "text-foreground/80 hover:bg-muted",
-        link.locked && !active && "text-muted-foreground",
       )}
     >
       {link.label}
-      {link.locked && <LockMark />}
     </IntentLink>
   );
 }
@@ -323,8 +307,8 @@ export function TopNav({
     : role
       ? (MENUS[role] ?? [])
       : [];
-  const items = (hasConsole(role) && !learnView ? withLocks(menu, enabled) : withoutGated(menu, enabled)).map((item) =>
-    item.href && item.children?.length ? { ...item, href: (item.children.find((c) => !c.locked) ?? item.children[0]).href } : item,
+  const items = withoutGated(menu, enabled).map((item) =>
+    item.href && item.children?.length ? { ...item, href: item.children[0].href } : item,
   );
   const person = personLinks(role, learnView);
   const showLearnerBits = role === "learner" || learnView;
@@ -376,7 +360,7 @@ export function TopNav({
         <nav aria-label="Main" className="hidden min-w-0 flex-1 items-center gap-0.5 lg:flex">
           {items.map((item) => {
             // Only the one whose sub-pages are showing: Audits sits under both
-            // Who's due and Quality, and a locked page is shared by both.
+            // Who's due and Quality.
             const active = item === current;
             const itemClass = cn(
               "inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-lg px-2.5 text-[13px] font-medium transition-colors",
@@ -394,7 +378,6 @@ export function TopNav({
                   className={itemClass}
                 >
                   {item.label}
-                  {item.locked && <LockMark />}
                   {badge > 0 && (
                     <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-xs font-semibold text-white">
                       {badge}
@@ -414,7 +397,6 @@ export function TopNav({
                   className={itemClass}
                 >
                   {item.label}
-                  {item.locked && <LockMark />}
                   <ChevronDown className={cn("size-3.5 transition-transform", isOpen && "rotate-180")} />
                 </button>
                 {isOpen && (
@@ -503,7 +485,6 @@ export function TopNav({
                   )}
                 >
                   {c.label}
-                  {c.locked && <LockMark />}
                 </IntentLink>
               );
             })}
@@ -521,7 +502,7 @@ export function TopNav({
             item.href ? (
               // A plain link after a drop-down's list would read as part of it.
               <div key={item.label} className={items[i - 1]?.children ? "mt-3" : undefined}>
-                <MobileLink href={item.href} label={item.label} badge={badges[item.href] ?? 0} active={itemActive(pathname, item)} locked={item.locked} />
+                <MobileLink href={item.href} label={item.label} badge={badges[item.href] ?? 0} active={itemActive(pathname, item)} />
               </div>
             ) : (
               <div key={item.label} className="pt-3">
@@ -529,7 +510,7 @@ export function TopNav({
                   {item.label}
                 </p>
                 {(item.children ?? []).map((c) => (
-                  <MobileLink key={c.href} href={c.href} label={c.label} active={linkActive(pathname, c)} locked={c.locked} />
+                  <MobileLink key={c.href} href={c.href} label={c.label} active={linkActive(pathname, c)} />
                 ))}
               </div>
             ),
@@ -562,7 +543,7 @@ export function TopNav({
   );
 }
 
-function MobileLink({ href, label, active, badge = 0, locked = false }: { href: string; label: string; active: boolean; badge?: number; locked?: boolean }) {
+function MobileLink({ href, label, active, badge = 0 }: { href: string; label: string; active: boolean; badge?: number }) {
   return (
     <IntentLink
       href={href}
@@ -573,7 +554,6 @@ function MobileLink({ href, label, active, badge = 0, locked = false }: { href: 
       )}
     >
       <span className="flex-1">{label}</span>
-      {locked && <LockMark />}
       {badge > 0 && (
         <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 text-xs font-semibold text-white">
           {badge}
