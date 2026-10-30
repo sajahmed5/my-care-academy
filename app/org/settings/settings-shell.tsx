@@ -110,6 +110,17 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     ],
   },
   {
+    title: "Service audits",
+    features: ["quality.audits"],
+    pages: [
+      {
+        href: "/org/settings/service-audits",
+        label: "Audits and due periods",
+        hint: "The questions on each audit, how often it falls due, your own audits, and the score that needs a manager's review.",
+      },
+    ],
+  },
+  {
     title: "Policies & procedures",
     features: ["documents.library"],
     pages: [

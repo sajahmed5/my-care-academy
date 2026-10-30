@@ -4,51 +4,76 @@ import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { AUDIT_KINDS } from "@/lib/audits";
-import { DUE_GROUP_LABEL, type DueRowStatus } from "@/lib/due-view";
-import { dueStatus } from "@/lib/records";
+import { DUE_GROUP_LABEL } from "@/lib/due-view";
+import { dueCounts } from "@/lib/service-audits";
+import { loadServiceDue } from "@/lib/service-audits-due";
 import { formatDate } from "@/lib/dates";
+import { ClientDueList } from "./client-due-list";
 
 const fmt = (d: string) => formatDate(d, { day: "numeric", month: "short", year: "numeric" });
 
-/** Which audits are due, across the service, beside supervisions and spot checks. */
-export default async function AuditsDuePage() {
+/**
+ * Which audits are due (SERVICE-AUDITS.md): each audit of the whole service,
+ * then client by client for the ones done per client — `?form=<key>` picks
+ * which one's clients are listed.
+ */
+export default async function AuditsDuePage({ searchParams }: { searchParams: Promise<{ form?: string }> }) {
   const context = await requireConsole();
   await requireFeature(context, "quality.audits");
+  const { form: key } = await searchParams;
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("audits")
-    .select("kind, held_on, next_due")
-    .eq("organisation_id", context.organisationId!)
-    .order("held_on", { ascending: false })
-    .limit(500);
-  const now = new Date();
-  const rows = AUDIT_KINDS.map((k) => {
-    const last = (data ?? []).find((a) => a.kind === k.key);
-    const status: DueRowStatus = last ? dueStatus((last.next_due as string | null) ?? null, now) : "never";
-    return { kind: k, last: (last?.held_on as string | undefined) ?? null, next: (last?.next_due as string | null | undefined) ?? null, status };
-  });
+  const due = await loadServiceDue(supabase, context.organisationId!);
+  const service = due.filter((d) => d.form.scope === "service");
+  const byClient = due.filter((d) => d.form.scope === "client");
+  const open = byClient.find((d) => d.form.key === key) ?? byClient[0];
+
   return (
     <DashboardShell title="Audits due" context={context}>
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">Each audit, when it was last carried out and when the next one falls.</p>
-        <Card>
-          <CardContent className="divide-y p-0">
-            {rows.map((r) => (
-              <Link
-                key={r.kind.key}
-                href={`/org/audits?run=${r.kind.key}#run`}
-                className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm hover:bg-muted/50"
-              >
-                <span className="font-medium">{r.kind.label}</span>
-                <span className="text-xs text-muted-foreground">
-                  {r.last ? `Last ${fmt(r.last)} · ` : ""}
-                  {r.status === "never" ? DUE_GROUP_LABEL.never : r.next ? `${DUE_GROUP_LABEL[r.status]} · next ${fmt(r.next)}` : "No date set"}
-                </span>
-              </Link>
-            ))}
-          </CardContent>
-        </Card>
+      <div className="space-y-6">
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold">Across the service</h3>
+          <Card>
+            <CardContent className="divide-y p-0">
+              {service.map((d) => (
+                <Link
+                  key={d.form.key}
+                  href={`/org/audits/new?form=${d.form.key}`}
+                  className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm hover:bg-muted/50"
+                >
+                  <span className="font-medium">{d.form.label}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {d.last ? `Last ${fmt(d.last)} · ` : ""}
+                    {d.status === "never" ? "Never carried out — due now" : d.next ? `${DUE_GROUP_LABEL[d.status]} · next ${fmt(d.next)}` : "No date set"}
+                  </span>
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        </section>
+
+        {open && (
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold">Client by client</h3>
+            <div className="flex flex-wrap gap-2">
+              {byClient.map((d) => {
+                const c = dueCounts(d.clients);
+                const on = d.form.key === open.form.key;
+                return (
+                  <Link
+                    key={d.form.key}
+                    href={`/org/due/audits?form=${d.form.key}`}
+                    aria-current={on ? "page" : undefined}
+                    className={`rounded-full border px-3 py-1 text-sm ${on ? "border-foreground bg-foreground text-background" : "hover:bg-accent"}`}
+                  >
+                    {d.form.label}
+                    {c.late ? ` · ${c.late} due` : ""}
+                  </Link>
+                );
+              })}
+            </div>
+            <ClientDueList rows={open.clients} noun="one" href={(id) => `/org/audits/new?form=${open.form.key}&client=${id}`} />
+          </section>
+        )}
       </div>
     </DashboardShell>
   );
