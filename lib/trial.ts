@@ -119,3 +119,27 @@ export function trialEmailDue(
   if (lastSent === key) return null;
   return { kind, key };
 }
+
+/** How long before a lapsed trial's records go that we're warned. */
+export const REMOVAL_WARNING_DAYS = 7;
+
+/**
+ * What happens to a lapsed trial (TRIAL.md): a warning to us
+ * REMOVAL_WARNING_DAYS before its records go, sent once per end date, then
+ * removal once TRIAL_KEEP_DAYS have passed. Nothing while it runs, or once
+ * it's converted (no end date).
+ */
+export function trialRemovalStep(
+  trialEndsAt: string | null,
+  lastSent: string | null,
+  now: Date = new Date(),
+): { step: "warn"; key: string } | { step: "remove" } | null {
+  const trial = trialState(trialEndsAt, now);
+  if (trial.kind !== "ended") return null;
+  if (now.getTime() >= trial.removeAt.getTime()) return { step: "remove" };
+  const key = `removal_warning@${trial.endsAt.toISOString()}`;
+  if (now.getTime() >= trial.removeAt.getTime() - REMOVAL_WARNING_DAYS * DAY_MS && lastSent !== key) {
+    return { step: "warn", key };
+  }
+  return null;
+}

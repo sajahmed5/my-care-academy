@@ -4,6 +4,7 @@ import {
   endOfUkDay,
   extendedTrialEnd,
   trialEmailDue,
+  trialRemovalStep,
   trialEndFrom,
   trialState,
   ukDateKey,
@@ -98,5 +99,29 @@ describe("trial emails", () => {
   it("owes nothing once it has ended or without a trial", () => {
     expect(trialEmailDue(ends, null, at("2026-11-10T07:00:00Z"))).toBeNull();
     expect(trialEmailDue(null, null)).toBeNull();
+  });
+});
+
+describe("removing a lapsed trial", () => {
+  const ends = "2026-11-09T23:59:59.999Z";
+  const at = (iso: string) => new Date(iso);
+
+  it("does nothing while the trial runs, or soon after it ends", () => {
+    expect(trialRemovalStep(ends, null, at("2026-11-08T07:00:00Z"))).toBeNull();
+    expect(trialRemovalStep(ends, null, at("2026-11-20T07:00:00Z"))).toBeNull();
+  });
+
+  it("warns us once, a week before the records go", () => {
+    const warn = trialRemovalStep(ends, null, at("2026-12-03T07:00:00Z"));
+    expect(warn).toEqual({ step: "warn", key: `removal_warning@${ends}` });
+    expect(trialRemovalStep(ends, `removal_warning@${ends}`, at("2026-12-04T07:00:00Z"))).toBeNull();
+  });
+
+  it("removes them once 30 days have passed", () => {
+    expect(trialRemovalStep(ends, `removal_warning@${ends}`, at("2026-12-10T07:00:00Z"))).toEqual({ step: "remove" });
+  });
+
+  it("never removes a company that has converted", () => {
+    expect(trialRemovalStep(null, null, at("2027-06-01T07:00:00Z"))).toBeNull();
   });
 });

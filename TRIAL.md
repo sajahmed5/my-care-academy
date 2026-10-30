@@ -1,8 +1,9 @@
 # Free trials and the "From the same team" card — agreed (30 Oct 2026)
 
-Agreed with Saj on 30 Oct 2026. Nothing below is built yet: the next step is
-mock-ups, then the build once they're approved. First company: **The Care
-Bureau**, trial from Monday 2 November 2026 to the end of Monday 9 November.
+Agreed with Saj on 30 Oct 2026, mock-ups approved the same day
+(https://claude.ai/artifact/UV6tmKp6tTQswczounMtAS), built in v3.5.0–v3.5.5.
+First company: **The Care Bureau**, trial from Monday 2 November 2026 to the
+end of Monday 9 November.
 
 ## The trial
 
@@ -61,12 +62,14 @@ in every company**, never to carers, with a Hide button.
 
 ## Build order
 
-One change per release commit, as always.
+One change per release commit, as always. All built 30 Oct 2026:
 
-1. Trial date, the platform buttons and the banner — before Monday 2 Nov.
-2. The trial ending, and the trial-ended pages — before Monday 2 Nov, so
-   it's tested.
-3. Trial limits: face-to-face, bespoke reports, AI.
-4. The day-5 and end-day emails.
-5. The From the same team card.
-6. Removing a lapsed trial's data after 30 days.
+1. Trial date, the platform buttons and the banner (v3.5.0).
+2. The trial ending, and the trial-ended pages (v3.5.1). The daily jobs also
+   send nothing to a paused company's people, and trials aren't in MRR.
+3. Trial limits: face-to-face, bespoke reports, AI (v3.5.2).
+4. The day-5 and end-day emails, from the daily job (v3.5.3).
+5. The From the same team card (v3.5.4). Hide is per browser (a cookie).
+6. Removing a lapsed trial's data after 30 days (v3.5.5): its own cron,
+   `/api/cron/trials` at 07:30, with a warning email to us a week before.
+   Never removes a company with a Stripe subscription; one per run.
