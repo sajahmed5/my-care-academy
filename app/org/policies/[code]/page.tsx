@@ -1,18 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
-import { enabledMap, requireFeature } from "@/lib/entitlements";
+import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  PACK_LABEL,
-  loadAcceptance,
-  loadCopy,
-  loadPolicy,
-  render,
-  visiblePacks,
-} from "@/lib/policy-library";
+import { appliesTo, loadAcceptance, loadCopy, loadPolicy, render, serviceLabel } from "@/lib/policy-library";
 import { formatDate } from "@/lib/dates";
 import { AdoptButton } from "./adopt-button";
 import { PolicyEditor } from "./policy-editor";
@@ -22,7 +15,7 @@ import { PolicyAcceptButton } from "@/components/policy-accept-button";
 import { AcceptancePanel } from "./acceptance-panel";
 
 /**
- * One policy or document, with the organisation's name already in it.
+ * One policy, with the organisation's name already in it.
  *
  * Guidance — the bracketed notes the template leaves for the provider to
  * complete — is shown as guidance rather than as policy text. A template that
@@ -39,31 +32,24 @@ export default async function PolicyPage({
   const { code } = await params;
 
   const supabase = await createClient();
-  const [enabled, { data: org }] = await Promise.all([
-    enabledMap(context),
+  const [{ data: org }, doc] = await Promise.all([
     supabase
       .from("organisations")
-      .select("name")
+      .select("name, service_type")
       .eq("id", context.organisationId!)
       .single(),
+    loadPolicy(supabase, decodeURIComponent(code), context.userId),
   ]);
-
-  const doc = await loadPolicy(supabase, decodeURIComponent(code), context.userId);
-  if (!doc) notFound();
-
-  // The same gate the list uses: a pack they do not have must not be readable
-  // by guessing a URL.
-  const { packs, collections } = visiblePacks(enabled);
-  const allowed =
-    packs.includes(doc.pack) &&
-    (doc.pack !== "addon" || collections.includes(doc.collection ?? ""));
-  if (!allowed) notFound();
+  // RLS shows published policies only; the list's own rule decides which
+  // service's version this company has.
+  if (!doc || doc.kind !== "policy") notFound();
+  if (!appliesTo(doc.service_types, (org?.service_type as string | null) ?? null)) notFound();
 
   const name = (org?.name as string) ?? "Your organisation";
   const blocks = render(doc.blocks, name);
   // A policy is adopted, completed and published as the organisation's own
   // copy (ROADMAP §1); staff read and accept that, never the template.
-  const copy = doc.kind === "policy" ? await loadCopy(supabase, context.organisationId!, doc.id) : null;
+  const copy = await loadCopy(supabase, context.organisationId!, doc.id);
   const publishedCopy = copy && copy.status === "published" && copy.version > 0 ? copy : null;
   // Who has accepted the published version — the manager's half of the evidence.
   const acceptance = publishedCopy
@@ -89,11 +75,8 @@ export default async function PolicyPage({
   return (
     <DashboardShell title={doc.title} context={context}>
       <div className="space-y-6">
-        <Link
-          href={doc.kind === "policy" ? "/org/policies" : "/org/policies?tab=documents"}
-          className="text-sm text-muted-foreground hover:underline"
-        >
-          ← {doc.kind === "policy" ? "All policies" : "All documents"}
+        <Link href="/org/policies" className="text-sm text-muted-foreground hover:underline">
+          ← All policies
         </Link>
 
         <div className="space-y-1">
@@ -104,25 +87,12 @@ export default async function PolicyPage({
           )}
           <h2 className="text-xl font-semibold">{doc.title}</h2>
           <p className="text-sm text-muted-foreground">
-            {PACK_LABEL[doc.pack]}
-            {doc.collection ? ` · ${doc.collection}` : ""} · {doc.category}
+            {doc.category}
+            {serviceLabel(doc.service_types) ? ` · ${serviceLabel(doc.service_types)} version` : ""}
           </p>
         </div>
 
-        {doc.kind === "log" ? (
-          <Card>
-            <CardContent className="space-y-2 py-8 text-center text-sm text-muted-foreground">
-              <p>This one is a spreadsheet — a log to keep, not text to read.</p>
-              <p>Downloading it is not built yet.</p>
-            </CardContent>
-          </Card>
-        ) : doc.kind !== "policy" ? (
-          <Card>
-            <CardContent className="pt-6">
-              <PolicyBody blocks={blocks} />
-            </CardContent>
-          </Card>
-        ) : !copy ? (
+        {!copy ? (
           <>
             <Card>
               <CardContent className="space-y-3 pt-6 text-sm">

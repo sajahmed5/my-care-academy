@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Check, ShieldCheck } from "lucide-react";
 import { requireStaff } from "@/lib/auth";
-import { enabledMap, requireFeature } from "@/lib/entitlements";
+import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { EmptyState } from "@/components/learner-ui";
@@ -20,21 +20,17 @@ export default async function LearnerPoliciesPage() {
   await requireFeature(context, "documents.library", "/learn");
 
   const supabase = await createClient();
-  const [enabled, { data: org }] = await Promise.all([
-    enabledMap(context),
-    supabase
-      .from("organisations")
-      .select("name, service_type")
-      .eq("id", context.organisationId!)
-      .single(),
-  ]);
+  const { data: org } = await supabase
+    .from("organisations")
+    .select("name, service_type")
+    .eq("id", context.organisationId!)
+    .single();
 
   // Only what the organisation has adopted, completed and published — a
   // carer never reads a template (ROADMAP §1). The version is the copy's, and
   // so is the acceptance.
   const [library, copies, { data: acks }] = await Promise.all([
     loadLibrary(supabase, {
-      enabled,
       serviceType: (org?.service_type as string | null) ?? null,
       userId: context.userId,
     }),

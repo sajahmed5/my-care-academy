@@ -4,7 +4,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { PACK_LABEL, render, type PolicyBlock, type PolicyPack } from "@/lib/policy-library";
+import { render, serviceLabel, type PolicyBlock } from "@/lib/policy-library";
 import { PolicyBody } from "@/components/policy-body";
 import { StatusForm } from "./status-form";
 
@@ -31,7 +31,7 @@ export default async function PlatformDocumentPage({
   const { data: row } = await supabase
     .from("policy_documents")
     .select(
-      "code, title, category, pack, collection, kind, status, version, blocks, source_file, service_types",
+      "code, title, category, kind, status, version, blocks, source_file, service_types",
     )
     .eq("code", decodeURIComponent(code))
     .maybeSingle();
@@ -46,10 +46,10 @@ export default async function PlatformDocumentPage({
     <DashboardShell title={row.title as string} context={context}>
       <div className="space-y-6">
         <Link
-          href="/platform/documents"
+          href={row.kind === "policy" ? "/platform/documents" : "/platform/documents?kind=form"}
           className="text-sm text-muted-foreground hover:underline"
         >
-          ← Document library
+          ← {row.kind === "policy" ? "Policy library" : "Forms waiting for Forms"}
         </Link>
 
         <Card>
@@ -57,16 +57,14 @@ export default async function PlatformDocumentPage({
             <div className="space-y-1">
               <h2 className="text-lg font-semibold">{row.title as string}</h2>
               <p className="text-sm text-muted-foreground">
-                {PACK_LABEL[row.pack as PolicyPack]}
-                {row.collection ? ` · ${row.collection}` : ""} · {row.kind as string} ·{" "}
-                {row.category as string}
+                {row.kind as string} · {row.category as string}
               </p>
             </div>
             <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
               <div className="flex gap-2">
                 <dt className="text-muted-foreground">Service</dt>
                 <dd>
-                  {(row.service_types as string[] | null)?.join(", ") ?? "any service"}
+                  {serviceLabel(row.service_types as string[] | null) ?? "every service"}
                 </dd>
               </div>
               <div className="flex gap-2">
@@ -87,7 +85,13 @@ export default async function PlatformDocumentPage({
                 From: {row.source_file as string}
               </p>
             )}
-            <StatusForm code={row.code as string} status={row.status as string} />
+            {row.kind === "policy" ? (
+              <StatusForm code={row.code as string} status={row.status as string} />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                A form waiting to move to Forms — it is never published from the policy library.
+              </p>
+            )}
           </CardContent>
         </Card>
 
