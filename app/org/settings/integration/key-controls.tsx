@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { issueKeyAction, revokeKeyAction } from "./actions";
 
 /** A key, shown once, with how to use it. */
@@ -88,5 +89,72 @@ export function MyRosterControls({
       )}
       {error && <p className="text-sm text-rose-600">{error}</p>}
     </div>
+  );
+}
+
+/** A key for another system: named, so the list says who holds which. */
+export function OtherSystemKey({ apiAddress }: { apiAddress: string }) {
+  const [pending, start] = useTransition();
+  const [label, setLabel] = useState("");
+  const [key, setKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  return (
+    <div className="space-y-3">
+      <form
+        className="flex flex-wrap items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setError(null);
+          start(async () => {
+            const r = await issueKeyAction("other", label);
+            if (!r.ok || !r.key) return setError(r.error ?? "Could not make a key.");
+            setKey(r.key);
+            setLabel("");
+          });
+        }}
+      >
+        <Input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="Which system, e.g. Birdie"
+          aria-label="Which system the key is for"
+          maxLength={80}
+          required
+          className="w-64"
+        />
+        <Button type="submit" size="sm" disabled={pending}>
+          Make a key
+        </Button>
+      </form>
+      {key && (
+        <NewKey value={key}>
+          <p>
+            Give it to that system&apos;s developers privately, with the address{" "}
+            <code className="rounded bg-white px-1">{apiAddress}</code> and a link to our API documentation.
+          </p>
+        </NewKey>
+      )}
+      {error && <p className="text-sm text-rose-600">{error}</p>}
+    </div>
+  );
+}
+
+/** Switch off one system's key. */
+export function RevokeKey({ keyId, label }: { keyId: string; label: string }) {
+  const [pending, start] = useTransition();
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      disabled={pending}
+      onClick={() => {
+        if (!window.confirm(`Switch off ${label}'s key? It stops working at once.`)) return;
+        start(async () => {
+          await revokeKeyAction(keyId);
+        });
+      }}
+    >
+      Switch off
+    </Button>
   );
 }

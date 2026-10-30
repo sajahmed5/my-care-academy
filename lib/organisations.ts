@@ -77,7 +77,7 @@ export const TIER_DETAILS: Record<
       "Care Certificate workplace assessment",
       "Your own classroom sessions, with QR sign-in, on the training matrix",
       "Your own logo on certificates, the portal and your policies",
-      "Rostering system integration (MyRoster)",
+      "Rostering integration: MyRoster, or any system through our API, with alerts",
       "Priority support",
     ],
   },

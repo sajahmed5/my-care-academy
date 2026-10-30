@@ -122,6 +122,9 @@ export default function MarketingLayout({
               <Link href="/privacy" className="hover:text-[#134f63]">
                 Privacy policy
               </Link>
+              <Link href="/developers" className="hover:text-[#134f63]">
+                API
+              </Link>
               <span>
                 A website by{" "}
                 <a
