@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitiseCustomQuestions, type CustomQuestions } from "@/lib/custom-questions";
+import { interviewHiddenOf } from "@/lib/recruitment-interview";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -9,6 +10,6 @@ export async function companyQuestions(admin: Admin, orgId: string): Promise<{ c
   const { data } = await admin.from("recruitment_settings").select("custom_questions, interview_hidden").eq("organisation_id", orgId).maybeSingle();
   return {
     custom: sanitiseCustomQuestions(data?.custom_questions),
-    interviewHidden: Array.isArray(data?.interview_hidden) ? (data.interview_hidden as string[]) : [],
+    interviewHidden: interviewHiddenOf(data?.interview_hidden),
   };
 }

@@ -2,7 +2,7 @@ import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { CUSTOM_FORMS, CUSTOM_FORM_LABELS, sanitiseCustomQuestions } from "@/lib/custom-questions";
-import { INTERVIEW_QUESTIONS } from "@/lib/recruitment-interview";
+import { INTERVIEW_QUESTIONS, interviewHiddenOf } from "@/lib/recruitment-interview";
 import { LITERACY_QUESTIONS, MIN_MARKS, sanitiseLiteracySettings } from "@/lib/literacy-test";
 import { REJECTION_REASONS, defaultConditions, sanitiseLetterSettings } from "@/lib/recruitment-letters";
 import { SettingsShell } from "@/app/org/settings/settings-shell";
@@ -46,8 +46,8 @@ export default async function RecruitmentFormsPage() {
             {form === "interview" && (
               <div className="mt-5 border-t pt-4">
                 <h3 className="text-sm font-semibold">Our general questions you ask</h3>
-                <p className="mb-2 mt-0.5 text-sm text-muted-foreground">The values questions always stay: the offer letter is written from them.</p>
-                <InterviewQuestionsPicker questions={INTERVIEW_QUESTIONS.map((q) => ({ id: q.id, text: q.text }))} hidden={(data?.interview_hidden as string[] | null) ?? []} canEdit={canEdit} />
+                <p className="mb-2 mt-0.5 text-sm text-muted-foreground">We start you on four of these: with the six values questions that makes ten, enough for most interviews. Tick any others you want to ask too, or untick any you don&apos;t. The values questions always stay: the offer letter is written from them.</p>
+                <InterviewQuestionsPicker questions={INTERVIEW_QUESTIONS.map((q) => ({ id: q.id, text: q.text }))} hidden={interviewHiddenOf(data?.interview_hidden)} canEdit={canEdit} />
               </div>
             )}
           </section>

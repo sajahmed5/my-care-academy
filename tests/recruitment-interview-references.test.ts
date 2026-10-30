@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Answers } from "../lib/recruitment-application";
-import { INTERVIEW_SECTIONS, overallScore, sanitiseInterview, validateInterview } from "../lib/recruitment-interview";
+import { DEFAULT_ASKED, INTERVIEW_QUESTIONS, INTERVIEW_SECTIONS, VALUES_QUESTIONS, interviewHiddenOf, overallScore, sanitiseInterview, validateInterview } from "../lib/recruitment-interview";
 import {
   isFreeWebmail,
   referenceFlags,
@@ -66,5 +66,19 @@ describe("references", () => {
   it("needs the two safeguarding answers", () => {
     const problems = validateReference("character", {}, TODAY);
     expect(problems.refSuitability?.map((p) => p.field)).toEqual(expect.arrayContaining(["recommend", "safeguardingConcern"]));
+  });
+});
+
+describe("interviewHiddenOf (issue #81)", () => {
+  it("asks ten questions by default: the six values questions and four general ones", () => {
+    const hidden = interviewHiddenOf(null);
+    const asked = INTERVIEW_QUESTIONS.filter((q) => !hidden.includes(q.id)).map((q) => q.id);
+    expect(asked.sort()).toEqual([...DEFAULT_ASKED].sort());
+    expect(VALUES_QUESTIONS.length + asked.length).toBe(10);
+  });
+
+  it("keeps what a company saved, even asking everything", () => {
+    expect(interviewHiddenOf([])).toEqual([]);
+    expect(interviewHiddenOf(["q1", 3])).toEqual(["q1"]);
   });
 });

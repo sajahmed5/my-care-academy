@@ -83,6 +83,19 @@ export const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
   { id: "q15", text: "If you went into a service user's home and found them on the floor, what would you do?", lookFor: "Does not move them; checks for response and injury; calls 999 if needed; rings the office; stays with them." },
 ];
 
+/**
+ * The general questions a company asks until it chooses its own (issue #81:
+ * 21 questions was too many). With the six values questions that makes ten.
+ * The rest are off by default and ticked on in Settings → Recruitment → Forms.
+ */
+export const DEFAULT_ASKED = ["q9", "q15", "q14", "q10"];
+
+/** The general questions a company leaves out: what it saved, or our default when it never has (null). */
+export function interviewHiddenOf(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.filter((h): h is string => typeof h === "string");
+  return INTERVIEW_QUESTIONS.map((q) => q.id).filter((id) => !DEFAULT_ASKED.includes(id));
+}
+
 const notesFor = (questions: InterviewQuestion[], prefix: string): FormField[] =>
   questions.map((q, i) => ({
     id: `${q.id}Notes`,
