@@ -35,6 +35,7 @@ import {
   type RecruitmentSettings,
   type ResolvedStep,
 } from "@/lib/recruitment";
+import { fileFromDataUrl } from "@/lib/data-url";
 
 /** Recruitment is a paid add-on; block if the org isn't entitled. */
 async function assertRecruitment(context: UserContext): Promise<void> {
@@ -129,10 +130,9 @@ export async function uploadDocumentAction(
   const step = openStep(loaded.stages, docType);
   if (typeof step === "string") return { ok: false, error: step };
 
-  const base64 = file.dataUrl.split(",")[1] ?? "";
-  const buffer = Buffer.from(base64, "base64");
+  const { buffer, contentType } = fileFromDataUrl(file.dataUrl);
   const path = `${context.organisationId}/${candidateId}/${docType}-${crypto.randomUUID()}-${file.name}`;
-  const { error: upErr } = await admin.storage.from("candidate-docs").upload(path, buffer, { upsert: true });
+  const { error: upErr } = await admin.storage.from("candidate-docs").upload(path, buffer, { upsert: true, contentType });
   if (upErr) return { ok: false, error: "The file couldn't be uploaded. Try again." };
 
   const previous = loaded.docs.find((d) => d.doc_type === docType);

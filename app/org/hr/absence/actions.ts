@@ -7,6 +7,7 @@ import { logAudit } from "@/lib/audit";
 import { sanitiseWith, validateSection, type FieldError } from "@/lib/recruitment-application";
 import { ABSENCE_REASONS, EXCLUDED_REASONS, RTW_SECTIONS } from "@/lib/hr/absence";
 import { HR_BUCKET, hrPerson, type Admin } from "@/lib/hr/server";
+import { fileFromDataUrl } from "@/lib/data-url";
 
 /**
  * Sickness absence (HR-PACK.md). Every action runs as the service role after
@@ -121,10 +122,10 @@ export async function uploadFitNoteAction(id: string, file: { name: string; data
   const absence = await loadAbsence(admin, context, id);
   if (!absence) return { ok: false, error: "Absence not found." };
   if (!ISO.test(until)) return { ok: false, error: "Enter the date the fit note runs to." };
-  const buffer = Buffer.from(file.dataUrl.split(",")[1] ?? "", "base64");
+  const { buffer, contentType } = fileFromDataUrl(file.dataUrl);
   if (buffer.length > 10 * 1024 * 1024) return { ok: false, error: "That file is over 10MB." };
   const path = `${context.organisationId}/${absence.user_id as string}/fit-notes/${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ]+/g, "")}`;
-  const { error: upErr } = await admin.storage.from(HR_BUCKET).upload(path, buffer);
+  const { error: upErr } = await admin.storage.from(HR_BUCKET).upload(path, buffer, { contentType });
   if (upErr) return { ok: false, error: "The file couldn't be uploaded. Try again." };
   if (absence.fit_note_path) await admin.storage.from(HR_BUCKET).remove([absence.fit_note_path as string]);
   await admin.from("sickness_absences").update({ fit_note_path: path, fit_note_name: file.name.slice(0, 200), fit_note_until: until, certification: "fit_note" }).eq("id", id);

@@ -16,6 +16,7 @@ import { APPEAL_IN_LETTER, appealLabel, appealable, caseSettingsFromRow, enoughN
 import { hasCaseAccess, loadCase } from "@/lib/hr/case-access";
 import { HR_BUCKET, createLetterDraft, hrPerson, personName, type Admin, type Person } from "@/lib/hr/server";
 import { createCase } from "@/lib/hr/cases-server";
+import { fileFromDataUrl } from "@/lib/data-url";
 
 /**
  * Disciplinary and grievance cases (HR-PACK.md). Every action runs as the
@@ -204,11 +205,11 @@ export async function uploadEvidenceAction(id: string, file: { name: string; dat
   const context = await requireConsole();
   const g = await gate(context, id);
   if (!g) return NOT_FOUND;
-  const buffer = Buffer.from(file.dataUrl.split(",")[1] ?? "", "base64");
+  const { buffer, contentType } = fileFromDataUrl(file.dataUrl);
   if (!buffer.length || buffer.length > 15 * 1024 * 1024) return { ok: false, error: "Choose a file up to 15MB." };
   const name = file.name.replace(/[^\w.\- ]+/g, "").slice(0, 120) || "evidence";
   const path = `${context.organisationId}/cases/${id}/${crypto.randomUUID()}-${name}`;
-  const { error } = await g.admin.storage.from(HR_BUCKET).upload(path, buffer);
+  const { error } = await g.admin.storage.from(HR_BUCKET).upload(path, buffer, { contentType });
   if (error) return { ok: false, error: "The file couldn't be uploaded. Try again." };
   await g.admin.from("hr_case_notes").insert({
     organisation_id: context.organisationId,

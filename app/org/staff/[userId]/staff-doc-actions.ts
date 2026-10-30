@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeatureForOrg } from "@/lib/entitlements";
 import { logAudit } from "@/lib/audit";
 import { STAFF_DOCS } from "@/lib/staff-documents";
+import { fileFromDataUrl } from "@/lib/data-url";
 
 const BUCKET = "staff-docs";
 
@@ -49,9 +50,9 @@ export async function uploadStaffDocAction(
     .eq("doc_type", docType)
     .maybeSingle();
 
-  const buffer = Buffer.from(file.dataUrl.split(",")[1] ?? "", "base64");
+  const { buffer, contentType } = fileFromDataUrl(file.dataUrl);
   const path = `${context.organisationId}/${userId}/${docType}-${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ]+/g, "")}`;
-  const { error: upErr } = await admin.storage.from(BUCKET).upload(path, buffer);
+  const { error: upErr } = await admin.storage.from(BUCKET).upload(path, buffer, { contentType });
   if (upErr) return { ok: false, error: upErr.message };
 
   const { error } = await admin.from("staff_documents").upsert(
