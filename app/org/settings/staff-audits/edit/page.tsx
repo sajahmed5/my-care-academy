@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireConsole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
@@ -13,7 +13,7 @@ import { FormEditor } from "./form-editor";
  * `competency:<skill>`, or `competency:new` for a skill of the company's own.
  */
 export default async function EditAuditFormPage({ searchParams }: { searchParams: Promise<{ form?: string }> }) {
-  const context = await requireConsole();
+  const context = await requireRole("org_admin");
   const { form: param = "" } = await searchParams;
   const [kind, area = ""] = param.split(":");
   if (kind !== "supervision" && kind !== "appraisal" && kind !== "spot_check" && kind !== "competency") notFound();
@@ -51,7 +51,7 @@ export default async function EditAuditFormPage({ searchParams }: { searchParams
   return (
     <DashboardShell title={title} context={context}>
       <div className="space-y-4">
-        <Link href="/org/staff-audits/forms" className="text-sm text-muted-foreground hover:underline">
+        <Link href="/org/settings/staff-audits" className="text-sm text-muted-foreground hover:underline">
           ← All forms
         </Link>
         <FormEditor initial={initial} isNew={area === "new"} changed={!!row} ours={ours} />

@@ -1,33 +1,28 @@
-import Link from "next/link";
-import { requireConsole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadStages } from "@/lib/complaints/data";
 import { buildSteps } from "@/lib/complaints/steps";
-import { SeedStages } from "../seed-stages";
+import { SeedStages } from "@/app/org/complaints/seed-stages";
 import { StageEditor } from "./stage-editor";
 
 /**
  * The organisation's process: its stages, what each opens, which kinds of
  * record it applies to. The seven steps are shown beside them so a renamed
- * stage can be seen landing in the right place.
+ * stage can be seen landing in the right place. Managers only, under Settings.
  */
 export default async function StagesPage() {
-  const context = await requireConsole();
+  const context = await requireRole("org_admin");
   await requireFeature(context, "complaints.register");
   const supabase = await createClient();
   const stages = await loadStages(supabase, context.organisationId);
   const steps = buildSteps(stages.filter((s) => s.enabled), [], false);
 
   return (
-    <DashboardShell title="The complaints process" context={context}>
+    <DashboardShell title="The complaints process" context={context} back={{ href: "/org/settings", label: "Settings" }}>
       <div className="space-y-6">
-        <Link href="/org/complaints" className="text-sm text-muted-foreground hover:underline">
-          ← Back to complaints
-        </Link>
-
         {stages.length === 0 ? (
           <SeedStages />
         ) : (

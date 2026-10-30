@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireConsole, type UserContext } from "@/lib/auth";
+import { requireRole, type UserContext } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
 import { hasFeature } from "@/lib/entitlements";
@@ -13,8 +13,8 @@ import type { SaveState } from "@/app/platform/actions";
  * A company's own Staff Audits forms (STAFF-AUDITS.md, Editable): the
  * questions, a skill's criteria, its own skills, and each due period.
  * Records already made keep the wording they were asked with, so a change
- * here only affects the next one. Managers and office staff both edit them —
- * only the Account page, billing and console access are manager-only.
+ * here only affects the next one. Managers only: they sit under Settings
+ * (30 Oct 2026).
  */
 
 const KINDS = ["supervision", "appraisal", "spot_check", "competency"] as const;
@@ -22,7 +22,7 @@ type Kind = (typeof KINDS)[number];
 const str = (fd: FormData, key: string) => String(fd.get(key) ?? "").trim();
 
 async function gate(kind: Kind): Promise<UserContext | null> {
-  const context = await requireConsole();
+  const context = await requireRole("org_admin");
   const feature = kind === "supervision" || kind === "appraisal" ? "people.supervisions" : "people.competency";
   return (await hasFeature(context, feature)) ? context : null;
 }
@@ -36,8 +36,8 @@ function parse(fd: FormData, key: string): unknown {
 }
 
 function done() {
-  revalidatePath("/org/staff-audits/forms");
-  redirect("/org/staff-audits/forms");
+  revalidatePath("/org/settings/staff-audits");
+  redirect("/org/settings/staff-audits");
 }
 
 export async function saveAuditFormAction(_prev: SaveState, formData: FormData): Promise<SaveState> {

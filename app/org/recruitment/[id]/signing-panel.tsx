@@ -19,7 +19,7 @@ const STATUS: Record<SigningView["status"], string> = {
  * Stage 4's documents to sign: send them (with the start date that goes into
  * the contract), see where each stands, and open each signed copy.
  */
-export function SigningPanel({ candidateId, docs, hasEmail, address: onFile }: { candidateId: string; docs: SigningView[]; hasEmail: boolean; address: string }) {
+export function SigningPanel({ candidateId, docs, hasEmail, address: onFile, manager }: { candidateId: string; docs: SigningView[]; hasEmail: boolean; address: string; manager: boolean }) {
   const router = useRouter();
   const [startDate, setStartDate] = useState("");
   const [address, setAddress] = useState(onFile);
@@ -44,7 +44,8 @@ export function SigningPanel({ candidateId, docs, hasEmail, address: onFile }: {
     <div className="space-y-3 text-sm">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <span className="font-medium">Documents to sign</span>
-        <Link href="/org/recruitment/documents" className="text-muted-foreground underline">The wording</Link>
+        {/* The wording is a setting: managers change it under Settings. */}
+        {manager && <Link href="/org/settings/recruitment/documents" className="text-muted-foreground underline">The wording</Link>}
       </div>
       <ul className="divide-y rounded-xl border bg-card">
         {docs.map((d) => (

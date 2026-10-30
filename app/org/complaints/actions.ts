@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { requireConsole } from "@/lib/auth";
+import { requireConsole, requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
@@ -52,6 +52,13 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 async function requireComplaints() {
   const context = await requireConsole();
+  if (!(await hasFeature(context, "complaints.register"))) return null;
+  return context;
+}
+
+/** Changing the process is a setting: managers only (Settings, 30 Oct 2026). */
+async function requireComplaintsManager() {
+  const context = await requireRole("org_admin");
   if (!(await hasFeature(context, "complaints.register"))) return null;
   return context;
 }
@@ -142,12 +149,12 @@ export async function seedStagesAction(): Promise<SaveState> {
   if (error) return { ok: false, error: error.message };
   await logAudit({ context, action: "complaint.stages_seeded", entity: "complaint_stages" });
   revalidatePath("/org/complaints");
-  revalidatePath("/org/complaints/stages");
+  revalidatePath("/org/settings/complaints/process");
   return { ok: true };
 }
 
 export async function saveStageAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
-  const context = await requireComplaints();
+  const context = await requireComplaintsManager();
   if (!context) return { ok: false, error: NOT_IN_PLAN };
   const id = str(formData, "stageId");
   const name = str(formData, "name");
@@ -165,13 +172,13 @@ export async function saveStageAction(_prev: SaveState, formData: FormData): Pro
     ? await supabase.from("complaint_stages").update(row).eq("id", id)
     : await supabase.from("complaint_stages").insert({ ...row, organisation_id: context.organisationId });
   if (error) return { ok: false, error: error.message };
-  revalidatePath("/org/complaints/stages");
+  revalidatePath("/org/settings/complaints/process");
   revalidatePath("/org/complaints");
   return { ok: true };
 }
 
 export async function deleteStageAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
-  const context = await requireComplaints();
+  const context = await requireComplaintsManager();
   if (!context) return { ok: false, error: NOT_IN_PLAN };
   const id = str(formData, "stageId");
   const supabase = await createClient();
@@ -183,12 +190,12 @@ export async function deleteStageAction(_prev: SaveState, formData: FormData): P
   if (count && count > 0) {
     const { error } = await supabase.from("complaint_stages").update({ enabled: false }).eq("id", id);
     if (error) return { ok: false, error: error.message };
-    revalidatePath("/org/complaints/stages");
+    revalidatePath("/org/settings/complaints/process");
     return { ok: true, error: undefined };
   }
   const { error } = await supabase.from("complaint_stages").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
-  revalidatePath("/org/complaints/stages");
+  revalidatePath("/org/settings/complaints/process");
   return { ok: true };
 }
 

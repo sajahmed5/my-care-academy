@@ -9,7 +9,7 @@
  *
  * THE WORDING IS A TEMPLATE. Pay, hours, holiday, notice and the rest are each
  * company's own terms, left as [blanks in square brackets]. A manager fills
- * them in under Recruitment → Documents to sign, and nothing can be sent to a
+ * them in under Settings → Recruitment → Documents to sign, and nothing can be sent to a
  * candidate while a blank remains. Every save is a new version, and a signed
  * copy keeps the exact wording that was signed. It is a draft for the company
  * to approve, not legal advice.
@@ -449,7 +449,7 @@ export function sendProblems(docs: DocumentInForce[], values: MergeValues): stri
   for (const d of docs) {
     for (const p of d.parts) {
       const blanks = blanksIn(p.body);
-      if (blanks.length) out.push(`${d.title}, ${p.title}: fill in ${blanks.join(", ")} under Documents to sign.`);
+      if (blanks.length) out.push(`${d.title}, ${p.title}: a manager needs to fill in ${blanks.join(", ")} under Settings → Documents to sign.`);
       const missing = missingFields(p.body, values);
       if (missing.length) out.push(`${d.title}, ${p.title}: we don't have ${missing.join(", ")} for them.`);
     }

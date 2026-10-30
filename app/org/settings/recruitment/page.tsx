@@ -1,4 +1,4 @@
-import { requireConsole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { RECRUITMENT_STEPS, settingsFromRow } from "@/lib/recruitment";
@@ -10,17 +10,17 @@ import { DEFAULT_WELCOME_GUIDE, sanitiseContacts } from "@/lib/welcome-pack";
 /**
  * How this company recruits (RECRUITMENT.md): stages in order or not, the
  * optional steps it uses, a third reference, and whether anyone starts before
- * their DBS is back. Everyone in the office can read them; managers change them.
+ * their DBS is back. Managers only, under Settings.
  */
 export default async function RecruitmentSettingsPage() {
-  const context = await requireConsole();
+  const context = await requireRole("org_admin");
   await requireFeature(context, "recruitment.tracker");
   const supabase = await createClient();
   const { data } = await supabase.from("recruitment_settings").select("*").eq("organisation_id", context.organisationId!).maybeSingle();
   const settings = settingsFromRow(data);
   const switchable = RECRUITMENT_STEPS.filter((s) => s.canSwitchOff).map((s) => ({ key: s.key, label: s.label, hint: s.hint }));
   return (
-    <DashboardShell title="Recruitment settings" context={context}>
+    <DashboardShell title="Recruitment settings" context={context} back={{ href: "/org/settings", label: "Settings" }}>
       <SettingsForm
         settings={settings}
         letters={letterDefaultsFromRow(data)}
@@ -28,7 +28,7 @@ export default async function RecruitmentSettingsPage() {
           onHire: data?.welcome_on_hire !== false,
           guide: (data?.welcome_guide as string | null) ?? DEFAULT_WELCOME_GUIDE,
           contacts: sanitiseContacts(data?.welcome_contacts),
-        }} switchable={switchable} canEdit={context.role === "org_admin"} />
+        }} switchable={switchable} canEdit />
     </DashboardShell>
   );
 }

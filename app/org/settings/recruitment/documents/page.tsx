@@ -1,4 +1,4 @@
-import { requireConsole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { wordingInForce } from "@/lib/signing";
@@ -13,7 +13,7 @@ import { WordingEditor } from "./wording-editor";
  * save is a new version, and signed copies keep the wording they were signed on.
  */
 export default async function DocumentsToSignPage() {
-  const context = await requireConsole();
+  const context = await requireRole("org_admin");
   await requireFeature(context, "recruitment.tracker");
   const wording = await wordingInForce(createAdminClient(), context.organisationId!);
   const docs = SIGNING_DOC_KEYS.map((k) => ({
@@ -31,7 +31,7 @@ export default async function DocumentsToSignPage() {
   }));
   const blankCount = docs.flatMap((d) => d.parts).reduce((n, p) => n + blanksIn(p.body).length, 0);
   return (
-    <DashboardShell title="Documents to sign" context={context}>
+    <DashboardShell title="Documents to sign" context={context} back={{ href: "/org/settings", label: "Settings" }}>
       <div className="max-w-4xl space-y-5">
         <p className="text-sm text-muted-foreground">
           What a new carer signs once their checks are done: role acceptance, the contract and the refund of training agreement. This is
@@ -51,7 +51,7 @@ export default async function DocumentsToSignPage() {
           </ul>
           <p className="mt-2 text-muted-foreground">&ldquo;## &rdquo; starts a heading, &ldquo;- &rdquo; a bullet, and a blank line a new paragraph.</p>
         </details>
-        <WordingEditor docs={docs} canEdit={context.role === "org_admin"} />
+        <WordingEditor docs={docs} canEdit />
       </div>
     </DashboardShell>
   );

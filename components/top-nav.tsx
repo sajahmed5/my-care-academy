@@ -70,18 +70,18 @@ const ORG_MENU: MenuItem[] = [
   },
   { label: "Certificates", href: "/org/certificates" },
   { label: "Clients", href: "/org/clients", feature: "clients.list" },
-  // Staff Audits (STAFF-AUDITS.md): who's due each one, performance plans,
-  // and the company's own forms. Audits of the service sit under Quality.
+  // Staff Audits (STAFF-AUDITS.md): who's due each one, and performance
+  // plans. Audits of the service sit under Quality. The company's own forms,
+  // questions and wording are under Settings, for managers (30 Oct 2026).
   {
     label: "Staff audits",
-    also: ["/org/due/supervisions", "/org/due/appraisals", "/org/due/spot-checks", "/org/due/competency", "/org/pips", "/org/staff-audits"],
+    also: ["/org/due/supervisions", "/org/due/appraisals", "/org/due/spot-checks", "/org/due/competency", "/org/pips"],
     children: [
       { href: "/org/due/supervisions", label: "Supervisions due", feature: "people.supervisions" },
       { href: "/org/due/appraisals", label: "Appraisals due", feature: "people.supervisions" },
       { href: "/org/due/spot-checks", label: "Spot checks due", feature: "people.competency" },
       { href: "/org/due/competency", label: "Competency due", feature: "people.competency" },
       { href: "/org/pips", label: "Performance plans", feature: "people.performance_plans" },
-      { href: "/org/staff-audits/forms", label: "Forms & due periods", feature: "people.supervisions" },
     ],
   },
   {
@@ -93,16 +93,7 @@ const ORG_MENU: MenuItem[] = [
       { href: "/org/complaints", label: "Complaints & safeguarding", feature: "complaints.register" },
     ],
   },
-  {
-    label: "Recruitment",
-    also: ["/org/recruitment"],
-    children: [
-      { href: "/org/recruitment", label: "Candidates", exact: true, feature: "recruitment.tracker" },
-      { href: "/org/recruitment/forms", label: "Forms and test", feature: "recruitment.tracker" },
-      { href: "/org/recruitment/documents", label: "Documents to sign", feature: "recruitment.tracker" },
-      { href: "/org/recruitment/settings", label: "Settings", feature: "recruitment.tracker" },
-    ],
-  },
+  { label: "Recruitment", href: "/org/recruitment", feature: "recruitment.tracker" },
   {
     label: "Documents",
     children: [
@@ -148,8 +139,8 @@ const MENUS: Record<string, MenuItem[]> = {
 };
 
 /**
- * The person menu, on the right. Account (billing, and who has console
- * access) is the one page an office worker does not get. A manager or office
+ * The person menu, on the right. Settings (the Account page, and every
+ * add-on's forms, questions and wording) is what an office worker does not get. A manager or office
  * worker is a member of staff too (29 Oct 2026), so they can step across to
  * their own training, and back.
  */
@@ -162,7 +153,7 @@ function personLinks(role: UserRole | null, learnView: boolean): MenuLink[] {
     return [
       across,
       { href: "/account", label: "My account" },
-      { href: "/org/billing", label: "Account" },
+      { href: "/org/settings", label: "Settings", also: ["/org/billing"] },
     ];
   }
   if (role === "org_office") return [across, { href: "/account", label: "My account" }];

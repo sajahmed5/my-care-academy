@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import type { RecruitmentSettings } from "@/lib/recruitment";
 import { DEFAULT_HOURS_LINE, type LetterDefaults } from "@/lib/recruitment-letters";
 import { MAX_CONTACTS, WELCOME_FIELDS, type WelcomeContact } from "@/lib/welcome-pack";
-import { saveRecruitmentSettingsAction } from "../actions";
+import { saveRecruitmentSettingsAction } from "@/app/org/recruitment/actions";
 
 function Option({ name, checked, title, children, disabled }: { name: string; checked: boolean; title: string; children: React.ReactNode; disabled: boolean }) {
   return (

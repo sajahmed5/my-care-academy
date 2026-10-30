@@ -29,7 +29,7 @@ PACKAGES.md).
   compliments. Compliments (`compliments`, `compliment_people`) are logged at
   `/org/complaints/compliments` and show on the carer's file; Staff Audits can
   read them into an appraisal. The raise-a-concern link
-  (`/org/complaints/link`, one per company, `concern_links`) opens
+  (`/org/settings/complaints/link`, managers only; one per company, `concern_links`) opens
   `/concern/<token>`: no account, five an hour from one address, a honeypot,
   and it lands as a concern waiting for triage with the person's contact
   details and a reference they are shown.

@@ -7,8 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { COMPLAINT_KINDS, STAGE_KINDS, stageKindLabel, type ComplaintStage } from "@/lib/complaints/stages";
-import { deleteStageAction, saveStageAction } from "../actions";
-import { selectClass } from "../new-complaint";
+import { deleteStageAction, saveStageAction } from "@/app/org/complaints/actions";
+import { selectClass } from "@/app/org/complaints/new-complaint";
 import type { SaveState } from "@/app/platform/actions";
 
 export function StageEditor({ stages }: { stages: ComplaintStage[] }) {

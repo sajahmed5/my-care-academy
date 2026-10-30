@@ -221,6 +221,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
                 <li className="border-t bg-muted/30 px-5 py-3.5">
                   <SigningPanel
                     candidateId={id}
+                    manager={context.role === "org_admin"}
                     hasEmail={!!candidate.email}
                     address={addressFromApplication(appAnswers?.answers as Record<string, unknown> | null)}
                     docs={s.steps

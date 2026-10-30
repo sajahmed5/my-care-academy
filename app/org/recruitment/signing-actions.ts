@@ -56,7 +56,7 @@ export async function saveWordingAction(docKey: string, partId: string, body: st
     .insert({ organisation_id: orgId, doc_key: docKey, part_id: partId, version, body: text, created_by: context.userId });
   if (error) return { ok: false, error: "The wording couldn't be saved. Try again." };
   await logAudit({ context, action: "recruitment.wording_saved", entity: "organisation", entityId: orgId, detail: { docKey, partId, version } });
-  revalidatePath("/org/recruitment/documents");
+  revalidatePath("/org/settings/recruitment/documents");
   return { ok: true, message: `Saved as version ${version}.` };
 }
 

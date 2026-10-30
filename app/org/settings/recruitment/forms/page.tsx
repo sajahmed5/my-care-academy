@@ -1,4 +1,4 @@
-import { requireConsole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { CUSTOM_FORMS, CUSTOM_FORM_LABELS, sanitiseCustomQuestions } from "@/lib/custom-questions";
@@ -19,10 +19,10 @@ const WHERE: Record<string, string> = {
 /**
  * A company's own questions, literacy test and letter wording (RECRUITMENT.md,
  * release 7). Our questions stay: the application's checks and the offer
- * letter depend on them. Everyone in the office can read this; managers change it.
+ * letter depend on them. Managers only, under Settings.
  */
 export default async function RecruitmentFormsPage() {
-  const context = await requireConsole();
+  const context = await requireRole("org_admin");
   await requireFeature(context, "recruitment.tracker");
   const supabase = await createClient();
   const { data } = await supabase
@@ -31,13 +31,12 @@ export default async function RecruitmentFormsPage() {
     .eq("organisation_id", context.organisationId!)
     .maybeSingle();
   const custom = sanitiseCustomQuestions(data?.custom_questions);
-  const canEdit = context.role === "org_admin";
+  const canEdit = true;
   const card = "rounded-2xl border bg-card p-5";
 
   return (
-    <DashboardShell title="Forms and test" context={context}>
+    <DashboardShell title="Recruitment forms and test" context={context} back={{ href: "/org/settings", label: "Settings" }}>
       <div className="max-w-3xl space-y-5">
-        {!canEdit && <p className="rounded-xl bg-muted px-4 py-3 text-sm">Only a manager can change these.</p>}
         {CUSTOM_FORMS.map((form) => (
           <section key={form} aria-labelledby={`f-${form}`} className={card}>
             <h2 id={`f-${form}`} className="font-semibold">{CUSTOM_FORM_LABELS[form]}: your questions</h2>

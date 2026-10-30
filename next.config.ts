@@ -25,6 +25,15 @@ const nextConfig: NextConfig = {
       { source: "/rostering/:path*", destination: "https://myroster.care", permanent: true },
       // /services became /training on 9 Sept 2026; a 301 passes the ranking on.
       { source: "/services", destination: "/training", permanent: true },
+      // Each add-on's own setup moved under Settings, for managers (30 Oct
+      // 2026). Saved links land in the new place; an office worker is sent home.
+      { source: "/org/recruitment/settings", destination: "/org/settings/recruitment", permanent: false },
+      { source: "/org/recruitment/forms", destination: "/org/settings/recruitment/forms", permanent: false },
+      { source: "/org/recruitment/documents", destination: "/org/settings/recruitment/documents", permanent: false },
+      { source: "/org/staff-audits/forms", destination: "/org/settings/staff-audits", permanent: false },
+      { source: "/org/staff-audits/forms/edit", destination: "/org/settings/staff-audits/edit", permanent: false },
+      { source: "/org/complaints/stages", destination: "/org/settings/complaints/process", permanent: false },
+      { source: "/org/complaints/link", destination: "/org/settings/complaints/link", permanent: false },
     ];
   },
 

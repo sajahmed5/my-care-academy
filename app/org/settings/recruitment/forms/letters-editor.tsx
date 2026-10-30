@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { LetterSettings, RejectionReason } from "@/lib/recruitment-letters";
-import { saveLetterSettingsAction } from "../editing-actions";
+import { saveLetterSettingsAction } from "@/app/org/recruitment/editing-actions";
 import { SaveLine, useSave } from "./questions-editor";
 
 const input = "mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50";

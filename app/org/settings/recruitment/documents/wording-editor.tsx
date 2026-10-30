@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { blanksIn } from "@/lib/signing-documents";
-import { saveWordingAction } from "../signing-actions";
+import { saveWordingAction } from "@/app/org/recruitment/signing-actions";
 
 interface PartView { id: string; title: string; body: string; ours: string; version: number; optional: boolean }
 interface DocView { key: string; title: string; countersigned: boolean; parts: PartView[] }

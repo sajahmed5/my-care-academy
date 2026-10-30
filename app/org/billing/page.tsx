@@ -120,7 +120,7 @@ export default async function AccountPage({
   });
 
   return (
-    <DashboardShell title="Account" context={context}>
+    <DashboardShell title="Account and package" context={context} back={{ href: "/org/settings", label: "Settings" }}>
       <div className="space-y-6">
         {/* Package */}
         <Card className="overflow-hidden">

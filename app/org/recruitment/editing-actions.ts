@@ -26,7 +26,7 @@ async function save(column: string, value: unknown, action: string, detail: Reco
     .upsert({ organisation_id: context.organisationId, [column]: value, updated_by: context.userId }, { onConflict: "organisation_id" });
   if (error) return { ok: false, error: "That couldn't be saved. Try again." };
   await logAudit({ context, action, entity: "organisation", entityId: context.organisationId!, detail });
-  revalidatePath("/org/recruitment/forms");
+  revalidatePath("/org/settings/recruitment/forms");
   return { ok: true };
 }
 

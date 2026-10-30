@@ -1,4 +1,4 @@
-import { requireConsole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { siteOrigin } from "@/lib/site-url";
@@ -13,7 +13,7 @@ import { LinkOpenToggle, MakeLink } from "./controls";
  * they can raise a concern without an account. What comes in waits for triage.
  */
 export default async function ConcernLinkPage() {
-  const context = await requireConsole();
+  const context = await requireRole("org_admin");
   await requireFeature(context, "complaints.register");
   const supabase = await createClient();
   const [{ data: link }, origin] = await Promise.all([
@@ -21,7 +21,7 @@ export default async function ConcernLinkPage() {
     siteOrigin(),
   ]);
   return (
-    <DashboardShell title="Raise-a-concern link" context={context} back={{ href: "/org/complaints", label: "Complaints & safeguarding" }}>
+    <DashboardShell title="Raise-a-concern link" context={context} back={{ href: "/org/settings", label: "Settings" }}>
       <Card>
         <CardContent className="space-y-4 pt-6 text-sm">
           <p className="text-muted-foreground">

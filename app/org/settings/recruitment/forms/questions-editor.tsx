@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CUSTOM_TYPES, MAX_CUSTOM, newQuestionId, type CustomQuestion, type CustomType } from "@/lib/custom-questions";
-import { saveCustomQuestionsAction, saveInterviewHiddenAction } from "../editing-actions";
+import { saveCustomQuestionsAction, saveInterviewHiddenAction } from "@/app/org/recruitment/editing-actions";
 
 const input = "mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
 

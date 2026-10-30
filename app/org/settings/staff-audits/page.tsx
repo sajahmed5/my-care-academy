@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { requireConsole } from "@/lib/auth";
+import { requireRole } from "@/lib/auth";
 import { enabledMap } from "@/lib/entitlements";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -15,10 +15,10 @@ import { SkillSwitch } from "./skill-switch";
 /**
  * Every Staff Audits form the company uses, with how often each falls due
  * (STAFF-AUDITS.md, Editable). Each starts as ours; a company changes any of
- * them, adds its own skills, or stops assessing one.
+ * them, adds its own skills, or stops assessing one. Managers only, under Settings.
  */
 export default async function AuditFormsPage() {
-  const context = await requireConsole();
+  const context = await requireRole("org_admin");
   const enabled = await enabledMap(context);
   const meetings = enabled["people.supervisions"];
   const checks = enabled["people.competency"];
@@ -52,7 +52,7 @@ export default async function AuditFormsPage() {
   );
 
   return (
-    <DashboardShell title="Staff audit forms" context={context}>
+    <DashboardShell title="Staff audit forms" context={context} back={{ href: "/org/settings", label: "Settings" }}>
       <div className="space-y-6">
         <p className="text-sm text-muted-foreground">
           The questions on each audit, and how often it falls due. Each starts as ours — change any of them to suit how you work.
@@ -64,9 +64,9 @@ export default async function AuditFormsPage() {
             <h2 className="text-sm font-semibold text-muted-foreground">Supervisions and appraisals</h2>
             <Card>
               <CardContent className="divide-y p-0">
-                {row("/org/staff-audits/forms/edit?form=supervision", "Supervision", `${forms.supervision.questions.length} questions`, forms.supervision.due, changed("supervision"))}
+                {row("/org/settings/staff-audits/edit?form=supervision", "Supervision", `${forms.supervision.questions.length} questions`, forms.supervision.due, changed("supervision"))}
                 {row(
-                  "/org/staff-audits/forms/edit?form=appraisal",
+                  "/org/settings/staff-audits/edit?form=appraisal",
                   "Appraisal",
                   `${forms.appraisal.questions.length} questions, ${forms.appraisal.selfAssessment.length} in the self-assessment`,
                   forms.appraisal.due,
@@ -81,16 +81,16 @@ export default async function AuditFormsPage() {
           <section className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-semibold text-muted-foreground">Spot checks and competency</h2>
-              <Link href="/org/staff-audits/forms/edit?form=competency:new" className={buttonVariants({ variant: "outline", size: "sm" })}>
+              <Link href="/org/settings/staff-audits/edit?form=competency:new" className={buttonVariants({ variant: "outline", size: "sm" })}>
                 <Plus className="size-4" /> Add a skill
               </Link>
             </div>
             <Card>
               <CardContent className="divide-y p-0">
-                {row("/org/staff-audits/forms/edit?form=spot_check", "Spot check", `${forms.spotCheck.items.length} items`, forms.spotCheck.due, changed("spot_check"))}
+                {row("/org/settings/staff-audits/edit?form=spot_check", "Spot check", `${forms.spotCheck.items.length} items`, forms.spotCheck.due, changed("spot_check"))}
                 {forms.competency.map((f) =>
                   row(
-                    `/org/staff-audits/forms/edit?form=competency:${f.key}`,
+                    `/org/settings/staff-audits/edit?form=competency:${f.key}`,
                     `Competency: ${f.label}`,
                     `${f.items.length} criteria${COMPETENCY_FORMS.some((d) => d.key === f.key) ? "" : " · your own skill"}`,
                     f.due,

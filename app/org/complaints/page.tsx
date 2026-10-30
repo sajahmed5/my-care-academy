@@ -2,16 +2,18 @@ import Link from "next/link";
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { siteOrigin } from "@/lib/site-url";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatTile } from "@/components/learner-ui";
-import { AlertTriangle, BarChart3, Clock, FolderOpen, Heart, Inbox, Link2, Plus, Settings2 } from "lucide-react";
+import { AlertTriangle, BarChart3, Clock, FolderOpen, Heart, Inbox, Plus } from "lucide-react";
 import { loadComplaintList, loadStages } from "@/lib/complaints/data";
 import { COMPLAINT_KINDS, UNTRIAGED, isUntriaged, stagesFor } from "@/lib/complaints/stages";
 import { buildSteps, nextStep } from "@/lib/complaints/steps";
 import { ComplaintRow } from "./complaint-row";
 import { SeedStages } from "./seed-stages";
+import { CopyConcernLink } from "./copy-concern-link";
 
 /**
  * The one front door (COMPLAINTS-SAFEGUARDING.md): every concern, whatever it
@@ -30,9 +32,11 @@ export default async function ComplaintsPage({
 
   const supabase = await createClient();
   const orgId = context.organisationId!;
-  const [{ complaints, entries }, stages] = await Promise.all([
+  const [{ complaints, entries }, stages, { data: link }, origin] = await Promise.all([
     loadComplaintList(supabase, orgId),
     loadStages(supabase, orgId),
+    supabase.from("concern_links").select("token, is_open").eq("organisation_id", orgId).maybeSingle(),
+    siteOrigin(),
   ]);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -80,14 +84,8 @@ export default async function ComplaintsPage({
               <Heart className="size-4" />
               Compliments
             </Link>
-            <Link href="/org/complaints/link" className={buttonVariants({ variant: "ghost", size: "sm" })}>
-              <Link2 className="size-4" />
-              Raise-a-concern link
-            </Link>
-            <Link href="/org/complaints/stages" className={buttonVariants({ variant: "ghost", size: "sm" })}>
-              <Settings2 className="size-4" />
-              The process
-            </Link>
+            {/* The link and the process themselves are set under Settings, by a manager. */}
+            {link?.is_open && <CopyConcernLink url={`${origin}/concern/${link.token}`} />}
           </div>
         </div>
 

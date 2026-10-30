@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 // the answer key, and browser code never imports it (tests/literacy-test.test.ts).
 interface OwnQuestion { id: string; prompt: string; options: string[]; answer: string }
 interface LiteracySettings { minutes: number; passPercent: number; off: string[]; own: OwnQuestion[] }
-import { saveLiteracySettingsAction } from "../editing-actions";
+import { saveLiteracySettingsAction } from "@/app/org/recruitment/editing-actions";
 import { SaveLine, useSave } from "./questions-editor";
 
 const input = "mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50";

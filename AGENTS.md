@@ -29,7 +29,10 @@ Two roles open the organisation console: `org_admin` (manager) and
 `org_office` (office worker). In the database they are one: every org-side
 RLS policy calls `public.is_console_user()`, never
 `current_user_role() = 'org_admin'` (a migration rewrote the old form; new
-policies use the function directly). The manager-only parts — the Account
-page, billing, and changing who has console access — are enforced in the app
-with `requireRole("org_admin")`; everything else org-side uses
-`requireConsole()` from `lib/auth.ts`.
+policies use the function directly). The manager-only parts — Settings
+(`/org/settings`: the Account page, billing, who has console access, and
+every add-on's own forms, questions, wording and process) — are enforced in
+the app with `requireRole("org_admin")` on the page and its actions;
+everything else org-side uses `requireConsole()` from `lib/auth.ts`. A new
+add-on's company-level setup goes under `/org/settings/<add-on>`, listed on
+the Settings page, never in the main menu.
