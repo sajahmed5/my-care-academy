@@ -145,7 +145,7 @@ export default async function PlatformDashboard() {
             <CardHeader>
               <CardTitle>Invite an organisation</CardTitle>
               <CardDescription>
-                Creates the org and invites its first administrator.
+                Creates the org with its package and invites its first administrator.
               </CardDescription>
             </CardHeader>
             <CardContent>

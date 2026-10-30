@@ -6,6 +6,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { StatTile } from "@/components/learner-ui";
 import { loadOrgEngagement } from "@/lib/platform-orgs";
 import { OrgsTable } from "./orgs-table";
+import { InviteOrgPanel } from "./invite-org-panel";
 
 export default async function OrganisationsPage() {
   const context = await requireRole("platform_admin");
@@ -35,6 +36,8 @@ export default async function OrganisationsPage() {
             on their page.
           </p>
         )}
+
+        <InviteOrgPanel />
 
         <OrgsTable rows={orgs} />
       </div>

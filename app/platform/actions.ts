@@ -35,20 +35,37 @@ export async function inviteOrganisationAction(
   _prev: InviteState,
   formData: FormData,
 ): Promise<InviteState> {
-  await requireRole("platform_admin");
+  const context = await requireRole("platform_admin");
 
   const orgName = String(formData.get("orgName") ?? "").trim();
   const adminEmail = String(formData.get("adminEmail") ?? "").trim();
   const adminName = String(formData.get("adminName") ?? "").trim();
+  const packageTier = String(formData.get("packageTier") ?? "");
+  const serviceType = String(formData.get("serviceType") ?? "");
+  const sizeBand = String(formData.get("sizeBand") ?? "");
 
   if (!orgName || !adminEmail) {
     return { ok: false, error: "Organisation name and admin email are required." };
+  }
+  if (!PACKAGE_TIERS.some((t) => t.value === packageTier)) {
+    return { ok: false, error: "Choose a package." };
+  }
+  if (serviceType && !SERVICE_TYPES.some((t) => t.value === serviceType)) {
+    return { ok: false, error: "Invalid service type." };
+  }
+  if (sizeBand && !SIZE_BANDS.some((b) => b.value === sizeBand)) {
+    return { ok: false, error: "Invalid size band." };
   }
 
   const admin = createAdminClient();
   const { data: org, error } = await admin
     .from("organisations")
-    .insert({ name: orgName })
+    .insert({
+      name: orgName,
+      package_tier: packageTier,
+      service_type: serviceType || null,
+      size_band: sizeBand || null,
+    })
     .select("id")
     .single();
   if (error) return { ok: false, error: error.message };
@@ -62,7 +79,20 @@ export async function inviteOrganisationAction(
       orgName,
       roleLabel: "organisation administrator",
     });
+    await logAudit({
+      context,
+      organisationId: org.id,
+      action: "organisation.invited",
+      entity: "organisation",
+      entityId: org.id,
+      detail: {
+        package_tier: packageTier,
+        service_type: serviceType || null,
+        size_band: sizeBand || null,
+      },
+    });
     revalidatePath("/platform");
+    revalidatePath("/platform/organisations");
     return {
       ok: true,
       sent: result.sent,
