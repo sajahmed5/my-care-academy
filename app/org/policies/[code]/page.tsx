@@ -5,7 +5,17 @@ import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { appliesTo, loadAcceptance, loadCopy, loadPolicy, render, serviceLabel } from "@/lib/policy-library";
+import {
+  COMPANY_FIELDS,
+  appliesTo,
+  loadAcceptance,
+  loadCopy,
+  loadPolicy,
+  loadPolicySettings,
+  render,
+  serviceLabel,
+} from "@/lib/policy-library";
+import { dueStatus } from "@/lib/records";
 import { formatDate } from "@/lib/dates";
 import { AdoptButton } from "./adopt-button";
 import { PolicyEditor } from "./policy-editor";
@@ -13,6 +23,7 @@ import { PolicyBody } from "@/components/policy-body";
 import { orgBranding } from "@/lib/branding";
 import { PolicyAcceptButton } from "@/components/policy-accept-button";
 import { AcceptancePanel } from "./acceptance-panel";
+import { FillDetailsButton, ReviewPanel, type ReviewEntry } from "./review-panel";
 
 /**
  * One policy, with the organisation's name already in it.
@@ -70,7 +81,37 @@ export default async function PolicyPage({
       ).data
     : null;
 
-  const branding = await orgBranding(context.organisationId);
+  const [branding, settings, { data: reviewRows }] = await Promise.all([
+    orgBranding(context.organisationId),
+    loadPolicySettings(supabase, context.organisationId!),
+    publishedCopy
+      ? supabase
+          .from("organisation_policy_reviews")
+          .select("id, reviewed_at, reviewed_by, outcome, version, note")
+          .eq("organisation_policy_id", publishedCopy.id)
+          .order("reviewed_at", { ascending: false })
+          .limit(50)
+      : Promise.resolve({ data: [] as Record<string, unknown>[] }),
+  ]);
+  const isManager = context.role === "org_admin";
+  // Who reviewed, by name: console users read their organisation's users.
+  const reviewerIds = [...new Set((reviewRows ?? []).map((r) => r.reviewed_by as string).filter(Boolean))];
+  const { data: reviewers } = reviewerIds.length
+    ? await supabase.from("users").select("id, full_name, email").in("id", reviewerIds)
+    : { data: [] as Record<string, unknown>[] };
+  const nameOf = new Map((reviewers ?? []).map((u) => [u.id as string, ((u.full_name as string | null) ?? (u.email as string)) || "Someone"]));
+  const history: ReviewEntry[] = (reviewRows ?? []).map((r) => ({
+    id: r.id as string,
+    at: formatDate(r.reviewed_at as string, { day: "numeric", month: "short", year: "numeric" }),
+    by: nameOf.get(r.reviewed_by as string) ?? "Someone",
+    outcome: r.outcome as ReviewEntry["outcome"],
+    version: r.version as number,
+    note: (r.note as string | null) ?? null,
+  }));
+  const reviewMonths = copy?.review_months ?? settings.review_months;
+  // Company details this copy still asks for, as [Registered manager]-style fill-ins.
+  const working = copy ? (copy.draft_blocks ?? copy.blocks) : [];
+  const missingDetails = COMPANY_FIELDS.filter((f) => working.some((b) => b.text.includes(`[${f.label}]`))).map((f) => f.label);
 
   return (
     <DashboardShell title={doc.title} context={context}>
@@ -125,16 +166,36 @@ export default async function PolicyPage({
                 below and bring across anything that applies.
               </p>
             )}
+            {missingDetails.length > 0 && <FillDetailsButton copyId={copy.id} code={doc.code} missing={missingDetails} />}
             <Card>
               <CardContent className="pt-6">
                 <PolicyEditor
+                  // A fresh editor when the saved text changes underneath it (details filled in).
+                  key={`${copy.id}:${blocksKey(working)}`}
                   copyId={copy.id}
                   code={doc.code}
-                  initial={copy.draft_blocks ?? copy.blocks}
+                  initial={working}
                   published={!!publishedCopy}
+                  canPublish={isManager}
                 />
               </CardContent>
             </Card>
+
+            {publishedCopy && (
+              <ReviewPanel
+                copyId={publishedCopy.id}
+                code={doc.code}
+                dueLabel={
+                  publishedCopy.review_due_on
+                    ? formatDate(publishedCopy.review_due_on, { day: "numeric", month: "long", year: "numeric" })
+                    : null
+                }
+                overdue={dueStatus(publishedCopy.review_due_on, new Date()) === "overdue"}
+                periodLabel={`Reviewed every ${reviewMonths} months${copy.review_months ? "" : " (your company's period)"}`}
+                canReview={isManager}
+                history={history}
+              />
+            )}
 
             {publishedCopy && (
               <>
@@ -164,4 +225,11 @@ export default async function PolicyPage({
       </div>
     </DashboardShell>
   );
+}
+
+/** A short fingerprint of a block list, to tell the editor its text was replaced. */
+function blocksKey(blocks: { text: string }[]): string {
+  let h = 5381;
+  for (const b of blocks) for (let i = 0; i < b.text.length; i++) h = ((h << 5) + h + b.text.charCodeAt(i)) | 0;
+  return `${blocks.length}-${h >>> 0}`;
 }

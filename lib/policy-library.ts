@@ -340,9 +340,14 @@ export interface OrgPolicyCopy {
   blocks: PolicyBlock[];
   /** The manager's working copy, when there are changes not yet published. */
   draft_blocks: PolicyBlock[] | null;
+  /** This policy's own review period; null means the company's. */
+  review_months: number | null;
+  /** When the next review falls; set on every publish and every review. */
+  review_due_on: string | null;
 }
 
-const COPY_COLUMNS = "id, policy_id, status, version, template_version, published_at, blocks, draft_blocks";
+const COPY_COLUMNS =
+  "id, policy_id, status, version, template_version, published_at, blocks, draft_blocks, review_months, review_due_on";
 
 function toCopy(r: Record<string, unknown>): OrgPolicyCopy {
   return {
@@ -354,6 +359,8 @@ function toCopy(r: Record<string, unknown>): OrgPolicyCopy {
     published_at: (r.published_at as string | null) ?? null,
     blocks: (r.blocks as PolicyBlock[] | null) ?? [],
     draft_blocks: (r.draft_blocks as PolicyBlock[] | null) ?? null,
+    review_months: (r.review_months as number | null) ?? null,
+    review_due_on: (r.review_due_on as string | null) ?? null,
   };
 }
 
@@ -410,4 +417,80 @@ export function cleanBlocks(raw: unknown): PolicyBlock[] | null {
     out.push({ type: type as PolicyBlock["type"], text: t, ...(typeof level === "number" ? { level } : {}) });
   }
   return out.length > 2000 ? null : out;
+}
+
+// ---------------------------------------------------------------------------
+// The company's own policy settings (POLICIES.md, under /org/settings/policies):
+// how often its policies are reviewed, and its details, merged into a template
+// when it is adopted.
+// ---------------------------------------------------------------------------
+
+export const DEFAULT_REVIEW_MONTHS = 12;
+export const REVIEW_PERIODS = [6, 12, 24, 36] as const;
+
+/**
+ * The details a policy names, written once for the company. A template
+ * carries {{registered_manager}} where the name goes; a company that has not
+ * given it gets "[Registered manager]" there instead — a fill-in, so the copy
+ * cannot be published until someone writes it.
+ */
+export const COMPANY_FIELDS = [
+  { key: "registered_manager", label: "Registered manager", hint: "Their full name, as registered with the CQC." },
+  { key: "nominated_individual", label: "Nominated individual", hint: "The person the CQC holds responsible for the service." },
+  { key: "office_address", label: "Office address", hint: "Where staff, clients and inspectors write to." },
+  { key: "office_phone", label: "Office phone", hint: "The number on your letters." },
+  { key: "office_email", label: "Office email", hint: "Where complaints and concerns can be sent." },
+  { key: "service_area", label: "Area you cover", hint: "For example: Stockport and south Manchester." },
+  { key: "cqc_provider_id", label: "CQC provider ID", hint: "From your registration certificate, e.g. 1-123456789." },
+] as const;
+
+export type CompanyFieldKey = (typeof COMPANY_FIELDS)[number]["key"];
+
+export interface PolicySettings {
+  review_months: number;
+  details: Partial<Record<CompanyFieldKey, string>>;
+}
+
+export async function loadPolicySettings(supabase: SupabaseClient, organisationId: string): Promise<PolicySettings> {
+  const { data } = await supabase
+    .from("organisation_policy_settings")
+    .select(`review_months, ${COMPANY_FIELDS.map((f) => f.key).join(", ")}`)
+    .eq("organisation_id", organisationId)
+    .maybeSingle();
+  const row = (data ?? {}) as Record<string, unknown>;
+  const details: PolicySettings["details"] = {};
+  for (const f of COMPANY_FIELDS) {
+    const v = String(row[f.key] ?? "").trim();
+    if (v) details[f.key] = v;
+  }
+  return { review_months: (row.review_months as number | undefined) ?? DEFAULT_REVIEW_MONTHS, details };
+}
+
+/**
+ * The company's name and details, into a template or a copy.
+ *
+ * {{tokens}} become the detail, or a [fill-in] naming it when the company has
+ * not given it. A [fill-in] left from an earlier merge is filled when the
+ * detail has been given since — so "Fill in your details" works on a copy
+ * adopted before the settings were.
+ */
+export function mergeDetails(
+  blocks: PolicyBlock[],
+  organisationName: string,
+  details: PolicySettings["details"],
+): PolicyBlock[] {
+  return render(blocks, organisationName).map((b) => {
+    let text = b.text;
+    for (const f of COMPANY_FIELDS) {
+      const value = details[f.key];
+      text = text.replaceAll(`{{${f.key}}}`, value ?? `[${f.label}]`);
+      if (value) text = text.replaceAll(`[${f.label}]`, value);
+    }
+    return text === b.text ? b : { ...b, text };
+  });
+}
+
+/** Today in the UK, as YYYY-MM-DD: a review date is a date, not a moment. */
+export function ukToday(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(now);
 }

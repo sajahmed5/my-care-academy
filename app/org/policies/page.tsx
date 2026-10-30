@@ -3,6 +3,8 @@ import { ShieldCheck } from "lucide-react";
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { dueStatus } from "@/lib/records";
+import { formatDate } from "@/lib/dates";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -154,6 +156,7 @@ function Row({
               <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                 Published · v{copy.version}
               </span>
+              <ReviewBadge on={copy.review_due_on} />
               {staff > 0 && (
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -182,5 +185,20 @@ function Row({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/** The review date, once it is within a month or past. */
+function ReviewBadge({ on }: { on: string | null }) {
+  const status = dueStatus(on, new Date());
+  if (!on || (status !== "overdue" && status !== "due_soon")) return null;
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+        status === "overdue" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
+      }`}
+    >
+      {status === "overdue" ? "Review overdue" : `Review by ${formatDate(on, { day: "numeric", month: "short" })}`}
+    </span>
   );
 }

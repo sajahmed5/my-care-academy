@@ -15,6 +15,7 @@ import { hasFeatureForOrg } from "@/lib/entitlements";
 import { resolveForms, type FormOverride } from "@/lib/audit-forms";
 import { staffAuditDigest, staffAuditDigestHtml } from "@/lib/staff-audit-digest";
 import { hrDigestHtml, loadHrDigests } from "@/lib/hr-digest";
+import { policyDigest, policyDigestHtml, type PolicyDigest } from "@/lib/policy-digest";
 import {
   chunk,
   esc,
@@ -484,7 +485,11 @@ export async function processWeeklyDigest(
   const outbox: Outgoing[] = [];
   let digests = 0;
   const digestOrgs = [...r.orgs.keys()].filter((id) => stats.get(id)?.any);
-  const [audits, hr] = await Promise.all([loadStaffAuditDigests(admin, r, digestOrgs, now), loadHrDigests(admin, r.users, digestOrgs, now)]);
+  const [audits, hr, policies] = await Promise.all([
+    loadStaffAuditDigests(admin, r, digestOrgs, now),
+    loadHrDigests(admin, r.users, digestOrgs, now),
+    loadPolicyDigests(admin, digestOrgs, now),
+  ]);
   const origin = await siteOrigin();
   for (const [orgId, orgName] of r.orgs) {
     const s = stats.get(orgId);
@@ -492,7 +497,10 @@ export async function processWeeklyDigest(
     const admins = orgAdminEmails(r, orgId);
     if (admins.length === 0) continue;
     digests += 1;
-    const auditHtml = staffAuditDigestHtml(audits.get(orgId) ?? [], origin) + hrDigestHtml(hr.get(orgId) ?? [], origin);
+    const auditHtml =
+      staffAuditDigestHtml(audits.get(orgId) ?? [], origin) +
+      hrDigestHtml(hr.get(orgId) ?? [], origin) +
+      policyDigestHtml(policies.get(orgId), origin);
     for (const to of admins) {
       outbox.push({
         orgId,
@@ -590,6 +598,36 @@ async function loadStaffAuditDigests(
         now,
       }),
     );
+  }
+  return out;
+}
+
+/**
+ * Policy reviews due, per organisation with the policies (POLICIES.md): what
+ * the weekly email adds after Staff audits. Entitlement asked per
+ * organisation, as for Staff audits — the service role has no organisation.
+ */
+async function loadPolicyDigests(admin: Admin, orgIds: string[], now: Date): Promise<Map<string, PolicyDigest>> {
+  const out = new Map<string, PolicyDigest>();
+  const entitled = (
+    await Promise.all(orgIds.map(async (id) => ((await hasFeatureForOrg(admin, id, "documents.library")) ? id : null)))
+  ).filter((id): id is string => !!id);
+  if (entitled.length === 0) return out;
+  const copies = await fetchAll((f, t) =>
+    admin
+      .from("organisation_policies")
+      .select("id, organisation_id, review_due_on")
+      .in("organisation_id", entitled)
+      .eq("status", "published")
+      .gt("version", 0)
+      .order("id")
+      .range(f, t),
+  );
+  for (const id of entitled) {
+    const rows = copies
+      .filter((c) => c.organisation_id === id)
+      .map((c) => ({ copyId: c.id as string, title: "", code: "", reviewDueOn: (c.review_due_on as string | null) ?? null }));
+    out.set(id, policyDigest(rows, now));
   }
   return out;
 }

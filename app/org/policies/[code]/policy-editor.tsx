@@ -22,12 +22,15 @@ export function PolicyEditor({
   code,
   initial,
   published,
+  canPublish,
 }: {
   copyId: string;
   code: string;
   initial: PolicyBlock[];
   /** Staff already have a version; publishing replaces it. */
   published: boolean;
+  /** Managers publish; office staff prepare (POLICIES.md, "Who publishes"). */
+  canPublish: boolean;
 }) {
   const [blocks, setBlocks] = useState<PolicyBlock[]>(initial);
   // What the provider has typed in place of each guidance note, by index.
@@ -60,7 +63,9 @@ export function PolicyEditor({
       <p className={`rounded-lg p-3 text-sm ${remaining ? "bg-amber-50 text-amber-900" : "bg-green-50 text-green-900"}`}>
         {remaining
           ? `${remaining} ${remaining === 1 ? "part" : "parts"} still to complete: ${left.guidance} guidance note${left.guidance === 1 ? "" : "s"} and ${left.fillIns} [bracketed] fill-in${left.fillIns === 1 ? "" : "s"}. Write over each one with what your service actually does, or remove what does not apply.`
-          : "Nothing left to complete. Publish it when you are ready for staff to read and accept it."}
+          : canPublish
+            ? "Nothing left to complete. Publish it when you are ready for staff to read and accept it."
+            : "Nothing left to complete. Save it, and ask a manager to publish it — only a manager can."}
       </p>
 
       <div className="space-y-3">
@@ -107,24 +112,26 @@ export function PolicyEditor({
         <Button type="button" variant="outline" disabled={saving} onClick={() => submit(saveAction)}>
           {saving ? "Saving…" : "Save draft"}
         </Button>
-        <Button
-          type="button"
-          disabled={publishing || remaining > 0}
-          onClick={() => {
-            if (!window.confirm(published ? "Publish this as a new version? Every member of staff will be asked to accept it again." : "Publish this to staff? They will be asked to read and accept it.")) return;
-            const fd = new FormData();
-            fd.set("copyId", copyId);
-            fd.set("code", code);
-            fd.set("blocks", JSON.stringify(resolved));
-            // Save the text as it stands, then publish it.
-            startTransition(async () => {
-              await savePolicyDraftAction({}, fd);
-              pubAction(fd);
-            });
-          }}
-        >
-          {publishing ? "Publishing…" : published ? "Publish new version" : "Publish to staff"}
-        </Button>
+        {canPublish && (
+          <Button
+            type="button"
+            disabled={publishing || remaining > 0}
+            onClick={() => {
+              if (!window.confirm(published ? "Publish this as a new version? Every member of staff will be asked to accept it again." : "Publish this to staff? They will be asked to read and accept it.")) return;
+              const fd = new FormData();
+              fd.set("copyId", copyId);
+              fd.set("code", code);
+              fd.set("blocks", JSON.stringify(resolved));
+              // Save the text as it stands, then publish it.
+              startTransition(async () => {
+                await savePolicyDraftAction({}, fd);
+                pubAction(fd);
+              });
+            }}
+          >
+            {publishing ? "Publishing…" : published ? "Publish new version" : "Publish to staff"}
+          </Button>
+        )}
         {saveState.error && <span className="text-sm text-rose-600">{saveState.error}</span>}
         {saveState.ok && !saveState.error && !pubState.ok && <span className="text-sm text-teal-700">Draft saved.</span>}
         {pubState.error && <span className="text-sm text-rose-600">{pubState.error}</span>}
