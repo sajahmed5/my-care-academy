@@ -170,6 +170,13 @@ interface Outgoing {
  */
 async function flush(admin: Admin, outbox: Outgoing[], dryRun: boolean): Promise<number> {
   if (dryRun || outbox.length === 0) return outbox.length;
+  await sendAndLog(admin, outbox);
+  return outbox.length;
+}
+
+/** Send and log a job's outbox; one delivered/failed flag per message, in order. */
+async function sendAndLog(admin: Admin, outbox: Outgoing[]): Promise<boolean[]> {
+  if (outbox.length === 0) return [];
   // In the company's own name and dress, with white label — except the
   // alerts that go to us about a company.
   const sent = await sendEmailBatch(
@@ -192,7 +199,7 @@ async function flush(admin: Admin, outbox: Outgoing[], dryRun: boolean): Promise
   )) {
     await admin.from("email_log").insert(rows);
   }
-  return outbox.length;
+  return outbox.map((_, i) => sent[i] ?? false);
 }
 
 /** Set the same columns on many rows, a URL-safe number of ids at a time. */
@@ -695,9 +702,11 @@ export async function processPolicyReminders(
       sentTo.push({ user_id: plan.userId, organisation_id: orgId, last_sent_at: now.toISOString() });
     }
   }
-  if (!dryRun && sentTo.length) {
-    for (const part of chunk(sentTo, 500)) await admin.from("policy_reminder_log").upsert(part);
-  }
-  const emails = await flush(admin, outbox, dryRun);
-  return { policyRemindersSent: emails };
+  if (dryRun) return { policyRemindersSent: outbox.length };
+  // Remember only the reminders that actually went: one that failed is due
+  // again on the next run, not after reminderRepeatDays.
+  const sent = await sendAndLog(admin, outbox);
+  const went = sentTo.filter((_, i) => sent[i]);
+  for (const part of chunk(went, 500)) await admin.from("policy_reminder_log").upsert(part);
+  return { policyRemindersSent: outbox.length };
 }

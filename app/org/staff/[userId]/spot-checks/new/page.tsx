@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
 import { hasFeature, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { loadAuditForms } from "@/lib/audit-forms-data";
 import { CheckForm, type ClientOption } from "../../check-form";
@@ -19,20 +20,22 @@ export default async function NewSpotCheckPage({ params }: { params: Promise<{ u
   const [{ data: person }, clients, forms] = await Promise.all([
     supabase.from("users").select("id, full_name, email, role").eq("id", userId).maybeSingle(),
     withClients
-      ? supabase
-          .from("clients")
-          .select("id, full_name, region")
-          .eq("organisation_id", context.organisationId!)
-          .eq("status", "active")
-          .order("full_name")
-          .limit(1000)
-          .then((r) =>
-            (r.data ?? []).map((c): ClientOption => ({
-              id: c.id as string,
-              name: c.full_name as string,
-              region: (c.region as string | null) ?? null,
-            })),
-          )
+      ? fetchAll((f, t) =>
+          supabase
+            .from("clients")
+            .select("id, full_name, region")
+            .eq("organisation_id", context.organisationId!)
+            .eq("status", "active")
+            .order("full_name")
+            .order("id")
+            .range(f, t),
+        ).then((rows) =>
+          rows.map((c): ClientOption => ({
+            id: c.id as string,
+            name: c.full_name as string,
+            region: (c.region as string | null) ?? null,
+          })),
+        )
       : Promise.resolve(null),
     loadAuditForms(context.organisationId!),
   ]);

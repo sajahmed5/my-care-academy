@@ -2,6 +2,7 @@ import { Document, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@
 import type { ResponseRow } from "./form-library";
 import { signerLabel, type DeviceSignature } from "./form-records";
 import { formatDateTime } from "./dates";
+import { PdfLogo, withPoweredBy } from "./pdf-brand";
 
 /**
  * A completed form as the document that gets filed (FORMS.md: "every
@@ -44,13 +45,19 @@ export interface FormPdfInput {
   signatures: DeviceSignature[];
   /** Extra lines for the header, such as the review date. */
   meta?: { label: string; value: string }[];
+  /** The company's logo, with white label (orgBranding().logoUrl). */
+  logoUrl?: string | null;
 }
 
 export function renderFormPdf(input: FormPdfInput): Promise<Buffer> {
-  const footer = `${input.organisationName} — ${input.title}${input.subject ? ` — ${input.subject.replace(/^About /, "")}` : ""}`;
+  const footer = withPoweredBy(
+    `${input.organisationName} — ${input.title}${input.subject ? ` — ${input.subject.replace(/^About /, "")}` : ""}`,
+    input.logoUrl,
+  );
   return renderToBuffer(
     <Document title={input.title} author={input.organisationName}>
       <Page size="A4" style={styles.page}>
+        <PdfLogo url={input.logoUrl} />
         <Text style={styles.brand}>{input.organisationName.toUpperCase()}</Text>
         <Text style={styles.title}>{input.title}</Text>
         {input.subject && <Text style={styles.subtitle}>{input.subject}</Text>}

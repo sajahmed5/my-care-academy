@@ -1,6 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hasFeatureForOrg } from "@/lib/entitlements";
+import { rateLimit } from "@/lib/rate-limit";
 import { cleanSurveyAnswers } from "@/lib/feedback";
 import { resolveSurveyToken } from "./load";
 
@@ -12,8 +15,9 @@ export interface SurveySubmitState {
 /**
  * One set of answers to a feedback survey, from someone with no account.
  * Written as the service role — anon has no privilege on any table — after
- * checking the token names a real, open round. A filled-in hidden field marks
- * a bot and is quietly dropped.
+ * checking the token names a real, open round and the company still has
+ * feedback in its package. A filled-in hidden field marks a bot and is
+ * quietly dropped; too many from one address in an hour is refused.
  *
  * From a personal link the invitation is marked answered, once. On a named
  * round the answer is linked to the client; on an anonymous one it is not
@@ -22,9 +26,16 @@ export interface SurveySubmitState {
  */
 export async function submitSurveyAction(_prev: SurveySubmitState, formData: FormData): Promise<SurveySubmitState> {
   if (String(formData.get("website") ?? "")) return { ok: true };
+  const h = await headers();
+  if (!rateLimit(`survey:${(h.get("x-forwarded-for") ?? "unknown").split(",")[0].trim()}`, 20, 60 * 60_000)) {
+    return { ok: false, error: "Too many answers sent from here in the last hour. Please try again later." };
+  }
   const admin = createAdminClient();
   const resolved = await resolveSurveyToken(admin, String(formData.get("token") ?? ""));
   if (!resolved || !resolved.survey.open) return { ok: false, error: "This survey has closed." };
+  if (!(await hasFeatureForOrg(admin, resolved.survey.organisation_id, "quality.feedback"))) {
+    return { ok: false, error: "Sorry, this survey is no longer taking answers. Thank you for your time." };
+  }
   const { survey, questions, invitation } = resolved;
   if (invitation?.responded) return { ok: false, error: "You have already answered — thank you." };
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { SignaturePad } from "@/app/org/forms/[id]/fill/signature-pad";
+import { SignaturePad } from "@/components/signature-pad";
 import { DocumentBody, SignatureLine } from "@/components/recruit/signed-document";
 import { partDone, type PartState, type Snapshot } from "@/lib/signing-documents";
 import { signPartAction } from "../../../actions";

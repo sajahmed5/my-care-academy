@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -45,18 +46,24 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
   const isCarer = template.audience === "carer";
   const [assignments, { data: staff }, records, { data: clientRows }] = await Promise.all([
     loadAssignmentsForTemplate(supabase, template.id),
+    // Pick-lists a page at a time: one read returns at most 1,000 rows.
     isCarer
-      ? supabase
-          .from("users")
-          .select("id, full_name, email")
-          .eq("status", "active")
-          .in("role", STAFF_ROLES)
-          .order("full_name")
-          .limit(1000)
+      ? fetchAll((f, t) =>
+          supabase
+            .from("users")
+            .select("id, full_name, email")
+            .eq("status", "active")
+            .in("role", STAFF_ROLES)
+            .order("full_name")
+            .order("id")
+            .range(f, t),
+        ).then((data) => ({ data }))
       : Promise.resolve({ data: [] as { id: string; full_name: string | null; email: string }[] }),
     isCarer ? Promise.resolve([]) : loadRecordsForTemplate(supabase, orgId, template.id, template.audience as "client" | "company"),
     template.audience === "client"
-      ? supabase.from("clients").select("id, full_name").eq("status", "active").order("full_name").limit(2000)
+      ? fetchAll((f, t) =>
+          supabase.from("clients").select("id, full_name").eq("status", "active").order("full_name").order("id").range(f, t),
+        ).then((data) => ({ data }))
       : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
   ]);
 

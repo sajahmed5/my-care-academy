@@ -112,7 +112,16 @@ export default async function ComplaintsPage({
           })}
         </nav>
 
-        {stages.length === 0 && <SeedStages />}
+        {stages.length === 0 &&
+          (context.role === "org_admin" ? (
+            <SeedStages />
+          ) : (
+            <Card>
+              <CardContent className="py-6 text-sm text-muted-foreground">
+                Your manager needs to set up the complaints process in Settings first.
+              </CardContent>
+            </Card>
+          ))}
 
         {shown.length === 0 ? (
           <Card>

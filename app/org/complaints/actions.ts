@@ -128,7 +128,7 @@ async function entryAnswers(supabase: Awaited<ReturnType<typeof createClient>>, 
 
 /** Give an organisation the default stages. Only when it has none. */
 export async function seedStagesAction(): Promise<SaveState> {
-  const context = await requireComplaints();
+  const context = await requireComplaintsManager();
   if (!context) return { ok: false, error: NOT_IN_PLAN };
   const supabase = await createClient();
   const { count: existing } = await supabase

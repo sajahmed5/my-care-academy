@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireConsole } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
+import { orgBranding } from "@/lib/branding";
 import { renderLogPdf } from "@/lib/log-pdf";
 import { loadLogForDownload, safeName } from "../load";
 
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request, { params }: { params: Promise<{ code: string }> }) {
   const context = await requireConsole();
   const { code } = await params;
-  const log = await loadLogForDownload(context, code, new URL(req.url));
+  const [log, branding] = await Promise.all([loadLogForDownload(context, code, new URL(req.url)), orgBranding(context.organisationId)]);
   if (!log) return new NextResponse("Not found.", { status: 404 });
   const pdf = await renderLogPdf({
     organisationName: log.organisationName,
@@ -22,6 +23,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ code: st
     entries: log.entries,
     from: log.from,
     to: log.to,
+    logoUrl: branding?.logoUrl ?? null,
   });
   await logAudit({ context, action: "form_log.pdf", entity: "form_template", entityId: log.template.id, detail: { lines: log.entries.length } });
   const filename = safeName(`${log.template.title} - ${new Date().toISOString().slice(0, 10)}`);

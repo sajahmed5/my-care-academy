@@ -4,7 +4,7 @@ import { fetchAll } from "@/lib/fetch-all";
 import { hasFeatureForOrg } from "@/lib/entitlements";
 import { sendEmail } from "@/lib/email";
 import { REPORT_COLUMNS, reportFile, type StoredReport } from "./render";
-import { nextSendOn, scheduleLabel, SEND_FROM_HOUR, storedRecipients, ukHour, type Recipient } from "./schedule";
+import { movesScheduleOn, nextSendOn, scheduleLabel, SEND_FROM_HOUR, storedRecipients, ukHour, type Recipient } from "./schedule";
 import { ukToday } from "./working-days";
 import { scheduledReportEmail } from "./schedule-email";
 
@@ -43,6 +43,7 @@ export async function sendReportNow(
         to: r.email,
         ...scheduledReportEmail(report, organisationName, r, opts.how, opts.format, now),
         attachments: [attachment],
+        organisationId: report.organisation_id,
       }),
     ),
   );
@@ -76,7 +77,7 @@ interface DueSchedule {
 /**
  * Send every scheduled report that is due (next_send_on today or before,
  * from 7am UK time). The cron runs hourly, so anything the 60 seconds don't
- * reach goes on the next run. A dry run reads and counts, and neither sends
+ * reach, or that failed, goes on the next run. A dry run reads and counts, and neither sends
  * nor writes.
  */
 export async function processScheduledReports(
@@ -108,8 +109,10 @@ export async function processScheduledReports(
       continue;
     }
     const sched = { frequency: s.frequency, weekday: s.weekday, dayOfMonth: s.day_of_month, format: s.format };
-    // Move it on first, so a send that fails part-way never repeats every hour.
-    await admin.from("report_schedules").update({ next_send_on: nextSendOn(sched, today) }).eq("id", s.id);
+    // Moved on only after the report has run and gone (movesScheduleOn); a
+    // run the 60 seconds cut short is tried again next hour. One that can
+    // never go — feature off, report archived, nobody to send to — moves on.
+    const moveOn = () => admin.from("report_schedules").update({ next_send_on: nextSendOn(sched, today) }).eq("id", s.id);
 
     if (!allowed.has(s.organisation_id)) {
       allowed.set(s.organisation_id, await hasFeatureForOrg(admin, s.organisation_id, "reports.bespoke"));
@@ -117,6 +120,7 @@ export async function processScheduledReports(
     const { data: report } = await admin.from("bespoke_reports").select(REPORT_COLUMNS).eq("id", s.report_id).is("archived_at", null).maybeSingle();
     const recipients = storedRecipients(s.recipients);
     if (!allowed.get(s.organisation_id) || !report || recipients.length === 0) {
+      await moveOn();
       result.reportsSkipped += 1;
       continue;
     }
@@ -129,10 +133,13 @@ export async function processScheduledReports(
         sentBy: null,
         now,
       });
-      await admin.from("report_schedules").update({ last_sent_at: now.toISOString() }).eq("id", s.id);
-      result.reportsSent += 1;
       result.reportEmails += out.sent;
       result.reportEmailsFailed += out.failed;
+      if (movesScheduleOn(out.sent, s.next_send_on, today)) await moveOn();
+      if (out.sent > 0) {
+        await admin.from("report_schedules").update({ last_sent_at: now.toISOString() }).eq("id", s.id);
+        result.reportsSent += 1;
+      }
     } catch (err) {
       console.error("Scheduled report failed:", s.id, (err as Error)?.message);
       await admin.from("report_sends").insert({
@@ -144,6 +151,7 @@ export async function processScheduledReports(
         error: "The report couldn't be run.",
       });
       result.reportEmailsFailed += recipients.length;
+      if (movesScheduleOn(0, s.next_send_on, today)) await moveOn();
     }
   }
   return result;

@@ -1,6 +1,7 @@
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { QA_HEADINGS } from "./client-qa";
 import type { GovernanceReport } from "./governance";
+import { PdfLogo, withPoweredBy } from "./pdf-brand";
 
 /**
  * The monthly governance report as one PDF (SERVICE-AUDITS.md): for CQC's
@@ -68,11 +69,12 @@ function Table({ head, rows }: { head: [string, string, string]; rows: { cells: 
 
 const pct = (n: number | null) => (n === null ? "–" : `${n}%`);
 
-function GovernanceDocument({ g, generatedOn }: { g: GovernanceReport; generatedOn: string }) {
+function GovernanceDocument({ g, generatedOn, logoUrl }: { g: GovernanceReport; generatedOn: string; logoUrl?: string | null }) {
   const low = (n: number | null) => n !== null && n < g.reviewBelow;
   return (
     <Document title={`Governance report — ${g.range.label}`} author={g.organisationName}>
       <Page size="A4" style={styles.page}>
+        <PdfLogo url={logoUrl} />
         <Text style={styles.brand}>{g.organisationName.toUpperCase()}</Text>
         <Text style={styles.title}>Governance report</Text>
         <Text style={styles.subtitle}>
@@ -206,9 +208,7 @@ function GovernanceDocument({ g, generatedOn }: { g: GovernanceReport; generated
         </Text>
 
         <View style={styles.footer} fixed>
-          <Text>
-            {g.organisationName} · Governance report · {g.range.label}
-          </Text>
+          <Text>{withPoweredBy(`${g.organisationName} · Governance report · ${g.range.label}`, logoUrl)}</Text>
           <Text render={({ pageNumber, totalPages }) => `${pageNumber} of ${totalPages}`} />
         </View>
       </Page>
@@ -216,6 +216,11 @@ function GovernanceDocument({ g, generatedOn }: { g: GovernanceReport; generated
   );
 }
 
-export async function renderGovernancePdf(g: GovernanceReport, generatedOn = new Date().toISOString()): Promise<Buffer> {
-  return renderToBuffer(<GovernanceDocument g={g} generatedOn={generatedOn} />);
+/** `logoUrl` is the company's logo with white label (orgBranding().logoUrl). */
+export async function renderGovernancePdf(
+  g: GovernanceReport,
+  generatedOn = new Date().toISOString(),
+  logoUrl: string | null = null,
+): Promise<Buffer> {
+  return renderToBuffer(<GovernanceDocument g={g} generatedOn={generatedOn} logoUrl={logoUrl} />);
 }

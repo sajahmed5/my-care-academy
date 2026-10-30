@@ -127,3 +127,14 @@ export function storedRecipients(v: unknown): Recipient[] {
 export function ukHour(now = new Date()): number {
   return Number(now.toLocaleString("en-GB", { timeZone: "Europe/London", hour: "2-digit", hour12: false })) % 24;
 }
+
+/**
+ * Whether a scheduled send moves the schedule on to its next date. Only once
+ * the report has run and at least one email went: a run that failed, or sent
+ * nothing, is tried again on the next hourly run. Past its due day it is
+ * given up on, so a report that keeps failing doesn't run every hour for
+ * ever — each failure is in report_sends for the manager to see.
+ */
+export function movesScheduleOn(emailsSent: number, dueOn: string, today: string): boolean {
+  return emailsSent > 0 || dueOn < today;
+}

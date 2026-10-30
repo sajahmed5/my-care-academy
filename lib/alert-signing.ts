@@ -88,3 +88,22 @@ export function checkAlertUrl(raw: string, production: boolean): { ok: true; url
   if (u.username || u.password) return { ok: false, error: "Leave any password out of the address." };
   return { ok: true, url: u.toString() };
 }
+
+/**
+ * After this many alerts in a row don't get through, alerts to the address
+ * are paused (lib/alerts), so a dead address isn't tried every day for ever.
+ * The manager sees why on the integration page and resumes it there, which
+ * starts the count again.
+ */
+export const AUTO_PAUSE_AFTER = 20;
+
+/** The new failure count after a try, and whether that pauses the address. */
+export function afterAlertTry(ok: boolean, consecutiveFailures: number): { consecutiveFailures: number; pause: boolean } {
+  const failures = ok ? 0 : consecutiveFailures + 1;
+  return { consecutiveFailures: failures, pause: failures >= AUTO_PAUSE_AFTER };
+}
+
+/** Paused by us after too many failures, rather than by the manager (who resets the count). */
+export function autoPaused(e: { active: boolean; consecutive_failures: number | null }): boolean {
+  return !e.active && (e.consecutive_failures ?? 0) >= AUTO_PAUSE_AFTER;
+}

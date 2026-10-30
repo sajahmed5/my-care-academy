@@ -29,15 +29,19 @@ export async function loadReading(
   /** Just this person (their own page, or one carer's file). */
   only?: { userId: string },
 ): Promise<Reading> {
-  let peopleQ = supabase
-    .from("users")
-    .select("id, full_name, email, role")
-    .eq("organisation_id", organisationId)
-    .in("role", ["learner", "org_admin", "org_office"])
-    .eq("status", "active");
-  if (only) peopleQ = peopleQ.eq("id", only.userId);
+  // Everyone, a page at a time: one read returns at most 1,000 rows.
+  const peoplePage = (from: number, to: number) => {
+    let q = supabase
+      .from("users")
+      .select("id, full_name, email, role")
+      .eq("organisation_id", organisationId)
+      .in("role", ["learner", "org_admin", "org_office"])
+      .eq("status", "active");
+    if (only) q = q.eq("id", only.userId);
+    return q.order("full_name").order("id").range(from, to);
+  };
 
-  const [{ data: copyRows }, { data: users }, acks, { data: started }, { data: settings }] = await Promise.all([
+  const [{ data: copyRows }, users, acks, started, { data: settings }] = await Promise.all([
     supabase
       .from("organisation_policies")
       .select("id, policy_id, version, published_at, audience, accept_within_days, policy_documents(code, title)")
@@ -45,7 +49,7 @@ export async function loadReading(
       .eq("status", "published")
       .gt("version", 0)
       .limit(500),
-    peopleQ.order("full_name").limit(1000),
+    fetchAll<{ id: string; full_name: string | null; email: string | null; role: string }>(peoplePage),
     fetchAll<{ user_id: string; organisation_policy_id: string; version: number; acknowledged_at: string }>((from, to) => {
       let q = supabase
         .from("policy_acknowledgements")
@@ -55,7 +59,10 @@ export async function loadReading(
       if (only) q = q.eq("user_id", only.userId);
       return q.order("id").range(from, to);
     }),
-    supabase.rpc("staff_started_at"),
+    // The RPC is capped at 1,000 rows like any read, so paged the same way.
+    fetchAll<{ user_id: string; started_at: string }>((from, to) =>
+      supabase.rpc("staff_started_at").order("user_id").range(from, to),
+    ),
     supabase.from("organisation_policy_settings").select("accept_within_days").eq("organisation_id", organisationId).maybeSingle(),
   ]);
 
@@ -77,12 +84,12 @@ export async function loadReading(
       },
     ];
   });
-  const startOf = new Map(((started ?? []) as { user_id: string; started_at: string }[]).map((s) => [s.user_id, s.started_at]));
-  const people: ReadingPerson[] = (users ?? []).map((u) => ({
-    id: u.id as string,
-    name: ((u.full_name as string | null) ?? (u.email as string | null)) || "Unnamed",
-    role: u.role as string,
-    startedAt: startOf.get(u.id as string) ?? null,
+  const startOf = new Map(started.map((s) => [s.user_id, s.started_at]));
+  const people: ReadingPerson[] = users.map((u) => ({
+    id: u.id,
+    name: (u.full_name ?? u.email) || "Unnamed",
+    role: u.role,
+    startedAt: startOf.get(u.id) ?? null,
   }));
   const companyDays = (settings?.accept_within_days as number | undefined) ?? DEFAULT_ACCEPT_DAYS;
   const entries = buildReading({
@@ -109,55 +116,22 @@ export async function loadReadingForOrgs(
 ): Promise<Map<string, Reading & { emails: Map<string, string> }>> {
   const out = new Map<string, Reading & { emails: Map<string, string> }>();
   if (orgIds.length === 0) return out;
-  const [copyRows, users, acks, hires, settings] = await Promise.all([
-    fetchAll((f, t) =>
-      admin
-        .from("organisation_policies")
-        .select("id, organisation_id, policy_id, version, published_at, audience, accept_within_days, policy_documents(code, title)")
-        .in("organisation_id", orgIds)
-        .eq("status", "published")
-        .gt("version", 0)
-        .order("id")
-        .range(f, t),
-    ),
-    fetchAll((f, t) =>
-      admin
-        .from("users")
-        .select("id, organisation_id, full_name, email, role, created_at")
-        .in("organisation_id", orgIds)
-        .in("role", ["learner", "org_admin", "org_office"])
-        .eq("status", "active")
-        .order("id")
-        .range(f, t),
-    ),
-    fetchAll((f, t) =>
-      admin
-        .from("policy_acknowledgements")
-        .select("user_id, organisation_id, organisation_policy_id, version, acknowledged_at")
-        .in("organisation_id", orgIds)
-        .not("organisation_policy_id", "is", null)
-        .order("id")
-        .range(f, t),
-    ),
-    fetchAll((f, t) =>
-      admin
-        .from("candidates")
-        .select("id, user_id, organisation_id, hired_at")
-        .in("organisation_id", orgIds)
-        .not("hired_at", "is", null)
-        .not("user_id", "is", null)
-        .order("id")
-        .range(f, t),
-    ),
-    fetchAll((f, t) =>
-      admin
-        .from("organisation_policy_settings")
-        .select("organisation_id, accept_within_days")
-        .in("organisation_id", orgIds)
-        .order("organisation_id")
-        .range(f, t),
-    ),
-  ]);
+  // The organisation ids travel in the URL, which fails somewhere past ~390
+  // of them: read 100 organisations at a time.
+  const copyRows: Record<string, unknown>[] = [];
+  const users: Record<string, unknown>[] = [];
+  const acks: Record<string, unknown>[] = [];
+  const hires: Record<string, unknown>[] = [];
+  const settings: Record<string, unknown>[] = [];
+  for (let i = 0; i < orgIds.length; i += ORGS_PER_REQUEST) {
+    const part = orgIds.slice(i, i + ORGS_PER_REQUEST);
+    const loaded = await loadOrgsPart(admin, part);
+    copyRows.push(...loaded[0]);
+    users.push(...loaded[1]);
+    acks.push(...loaded[2]);
+    hires.push(...loaded[3]);
+    settings.push(...loaded[4]);
+  }
 
   const hiredAt = new Map<string, string>();
   for (const h of hires) {
@@ -219,4 +193,61 @@ export async function loadReadingForOrgs(
     });
   }
   return out;
+}
+
+const ORGS_PER_REQUEST = 100;
+
+type Row = Record<string, unknown>;
+
+/** One batch of organisations' rows for loadReadingForOrgs. */
+function loadOrgsPart(admin: SupabaseClient, ids: string[]): Promise<[Row[], Row[], Row[], Row[], Row[]]> {
+  return Promise.all([
+    fetchAll((f, t) =>
+      admin
+        .from("organisation_policies")
+        .select("id, organisation_id, policy_id, version, published_at, audience, accept_within_days, policy_documents(code, title)")
+        .in("organisation_id", ids)
+        .eq("status", "published")
+        .gt("version", 0)
+        .order("id")
+        .range(f, t),
+    ),
+    fetchAll((f, t) =>
+      admin
+        .from("users")
+        .select("id, organisation_id, full_name, email, role, created_at")
+        .in("organisation_id", ids)
+        .in("role", ["learner", "org_admin", "org_office"])
+        .eq("status", "active")
+        .order("id")
+        .range(f, t),
+    ),
+    fetchAll((f, t) =>
+      admin
+        .from("policy_acknowledgements")
+        .select("user_id, organisation_id, organisation_policy_id, version, acknowledged_at")
+        .in("organisation_id", ids)
+        .not("organisation_policy_id", "is", null)
+        .order("id")
+        .range(f, t),
+    ),
+    fetchAll((f, t) =>
+      admin
+        .from("candidates")
+        .select("id, user_id, organisation_id, hired_at")
+        .in("organisation_id", ids)
+        .not("hired_at", "is", null)
+        .not("user_id", "is", null)
+        .order("id")
+        .range(f, t),
+    ),
+    fetchAll((f, t) =>
+      admin
+        .from("organisation_policy_settings")
+        .select("organisation_id, accept_within_days")
+        .in("organisation_id", ids)
+        .order("organisation_id")
+        .range(f, t),
+    ),
+  ]);
 }

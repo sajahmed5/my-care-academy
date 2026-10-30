@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { STAFF_ROLES } from "@/lib/roles";
@@ -52,14 +53,18 @@ export default async function NewAuditPage({ searchParams }: { searchParams: Pro
   const supabase = await createClient();
   const [allClients, { data: staff }, reviewBelow, { data: me }, auto] = await Promise.all([
     form.scope === "client" ? loadDueClients(supabase, orgId) : Promise.resolve([]),
-    supabase
-      .from("users")
-      .select("id, full_name, email")
-      .eq("organisation_id", orgId)
-      .eq("status", "active")
-      .in("role", STAFF_ROLES)
-      .order("full_name")
-      .limit(1000),
+    // Everyone, a page at a time: one read returns at most 1,000 rows.
+    fetchAll((f, t) =>
+      supabase
+        .from("users")
+        .select("id, full_name, email")
+        .eq("organisation_id", orgId)
+        .eq("status", "active")
+        .in("role", STAFF_ROLES)
+        .order("full_name")
+        .order("id")
+        .range(f, t),
+    ).then((data) => ({ data })),
     loadReviewBelow(orgId),
     supabase.from("users").select("full_name").eq("id", context.userId).maybeSingle(),
     form.auto ? loadAutoSnapshot(supabase, orgId, form.auto) : Promise.resolve(null),

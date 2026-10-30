@@ -14,6 +14,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isFieldVisible, isOutOfRange, type FormField } from "./forms";
 import { formatDate } from "./dates";
+import { fetchAll } from "./fetch-all";
 
 export interface LogEntry {
   id: string;
@@ -54,20 +55,34 @@ function toEntry(r: Record<string, unknown>): LogEntry {
   };
 }
 
-/** A log's lines, newest first, optionally between two dates. */
+/**
+ * A log's lines, newest first, optionally between two dates, up to `limit`.
+ * Read a page at a time: one read returns at most 1,000 rows, so a download
+ * asking for 5,000 used to get 1,000 without saying so.
+ */
 export async function loadLogEntries(
   supabase: SupabaseClient,
   { organisationId, templateId, from, to, limit = 1000 }: { organisationId: string; templateId: string; from?: string | null; to?: string | null; limit?: number },
 ): Promise<LogEntry[]> {
-  let q = supabase
-    .from("form_log_entries")
-    .select(ENTRY_SELECT)
-    .eq("organisation_id", organisationId)
-    .eq("template_id", templateId);
-  if (from) q = q.gte("entry_date", from);
-  if (to) q = q.lte("entry_date", to);
-  const { data } = await q.order("entry_date", { ascending: false }).order("created_at", { ascending: false }).limit(limit);
-  return (data ?? []).map(toEntry);
+  const page = (start: number, end: number) => {
+    let q = supabase
+      .from("form_log_entries")
+      .select(ENTRY_SELECT)
+      .eq("organisation_id", organisationId)
+      .eq("template_id", templateId);
+    if (from) q = q.gte("entry_date", from);
+    if (to) q = q.lte("entry_date", to);
+    // id last, so the pages never overlap.
+    return q
+      .order("entry_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(start, end);
+  };
+  const rows = await fetchAll<Record<string, unknown>>((start, end) =>
+    start >= limit ? Promise.resolve({ data: [], error: null }) : page(start, Math.min(end, limit - 1)),
+  );
+  return rows.map(toEntry);
 }
 
 /** The lines about one client across every log, newest first, with the log's title. */

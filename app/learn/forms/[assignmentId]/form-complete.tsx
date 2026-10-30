@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { isFieldVisible, type FormField } from "@/lib/forms";
 import { SIGNER_ROLES, type SignerRole } from "@/lib/form-records";
-import { SignaturePad } from "@/app/org/forms/[id]/fill/signature-pad";
+import { SignaturePad } from "@/components/signature-pad";
 import { submitFormRecordAction } from "@/app/org/forms/record-actions";
 import { submitFormResponseAction, type SubmitState } from "../actions";
 

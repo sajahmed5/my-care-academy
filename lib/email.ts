@@ -9,6 +9,32 @@ export function fromAs(from: string, name: string): string {
   return clean ? `"${clean}" <${address}>` : from;
 }
 
+type CompanyEmail = import("./email-brand").CompanyEmail;
+type CompanyLookup = (organisationId: string) => Promise<CompanyEmail | null>;
+
+/** The company's email dress, looked up afresh (React's cache() when there is a request). */
+const lookUpCompany: CompanyLookup = async (organisationId) => {
+  const { companyEmail } = await import("./email-brand");
+  return companyEmail(organisationId);
+};
+
+/**
+ * One lookup per company for a whole batch. React's cache() only works inside
+ * a request render, so in a cron route every message asked the database again
+ * — about four queries each — for the same handful of companies.
+ */
+export function companyLookupOnce(lookup: CompanyLookup = lookUpCompany): CompanyLookup {
+  const seen = new Map<string, Promise<CompanyEmail | null>>();
+  return (organisationId) => {
+    let found = seen.get(organisationId);
+    if (!found) {
+      found = lookup(organisationId);
+      seen.set(organisationId, found);
+    }
+    return found;
+  };
+}
+
 /**
  * A company's emails go out as the company, with white label
  * (lib/email-brand): its logo and colour, its name as the sender, replies to
@@ -19,12 +45,12 @@ async function asCompany(
   organisationId: string | null | undefined,
   html: string,
   replyTo: string | undefined,
+  lookup: CompanyLookup = lookUpCompany,
 ): Promise<{ html: string; from: string; replyTo?: string }> {
   const from = process.env.EMAIL_FROM ?? DEFAULT_FROM;
   if (!organisationId) return { html, from, replyTo };
   try {
-    const { companyEmail } = await import("./email-brand");
-    const company = await companyEmail(organisationId);
+    const company = await lookup(organisationId);
     if (!company) return { html, from, replyTo };
     let branded = brandEmailHtml(html, company.brand);
     if (company.origin) {
@@ -120,9 +146,10 @@ export async function sendEmailBatch(
 ): Promise<boolean[]> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return messages.map(() => false);
+  const lookup = companyLookupOnce();
   const ready = await Promise.all(
     messages.map(async ({ to, subject, html, organisationId }) => {
-      const company = await asCompany(organisationId, html, undefined);
+      const company = await asCompany(organisationId, html, undefined, lookup);
       return {
         from: company.from,
         to,

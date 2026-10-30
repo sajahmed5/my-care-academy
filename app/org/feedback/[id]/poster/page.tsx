@@ -6,6 +6,7 @@ import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { surveyKind } from "@/lib/feedback";
 import { siteOrigin } from "@/lib/site-url";
+import { companyOrigin } from "@/lib/company-host";
 import { orgBranding } from "@/lib/branding";
 import { BrandMark } from "@/components/brand-mark";
 import { PrintButton } from "../print-button";
@@ -22,7 +23,9 @@ export default async function SurveyPosterPage({ params }: { params: Promise<{ i
   const { data: survey } = await supabase.from("feedback_surveys").select("id, kind, title, token").eq("id", id).maybeSingle();
   const kind = survey ? surveyKind(survey.kind as string) : undefined;
   if (!survey || !kind) notFound();
-  const [origin, branding] = await Promise.all([siteOrigin(), orgBranding(context.organisationId!)]);
+  // The company's own web address once it's live, so the poster carries it.
+  const [own, branding] = await Promise.all([companyOrigin(context.organisationId!), orgBranding(context.organisationId!)]);
+  const origin = own ?? (await siteOrigin());
   const url = `${origin}/survey/${survey.token}`;
   const qr = await QRCode.toDataURL(url, { margin: 1, width: 600, errorCorrectionLevel: "M" });
   const orgName = branding?.name ?? "Us";

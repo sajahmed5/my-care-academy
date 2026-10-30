@@ -3,6 +3,7 @@ import { requireConsole } from "@/lib/auth";
 import { hasFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { orgBranding } from "@/lib/branding";
 import { responseRows } from "@/lib/form-library";
 import { loadRecord } from "@/lib/form-records";
 import { renderFormPdf } from "@/lib/form-pdf";
@@ -20,9 +21,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return new NextResponse("Not found.", { status: 404 });
   }
   const supabase = await createClient();
-  const [record, { data: org }] = await Promise.all([
+  const [record, { data: org }, branding] = await Promise.all([
     loadRecord(supabase, id),
     supabase.from("organisations").select("name").eq("id", context.organisationId).maybeSingle(),
+    orgBranding(context.organisationId),
   ]);
   if (!record) return new NextResponse("Not found.", { status: 404 });
 
@@ -45,6 +47,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     meta: record.review_due
       ? [{ label: "Review by", value: formatDate(`${record.review_due}T12:00:00Z`, { day: "numeric", month: "long", year: "numeric" }) }]
       : [],
+    logoUrl: branding?.logoUrl ?? null,
   });
   // A form about a client or a member of staff is personal data.
   await logAudit({ context, action: "form.pdf", entity: "form_response", entityId: id });

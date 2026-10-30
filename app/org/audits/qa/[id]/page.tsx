@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
 import { hasFeature, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { answerLabel, type AuditItem } from "@/lib/service-audits";
@@ -41,14 +42,19 @@ export default async function ClientQaPage({ params }: { params: Promise<{ id: s
   ]);
   if (!qa) notFound();
   const { data: carers } = complaintsOn && qa.went_well && !qa.compliment_id
-    ? await supabase
-        .from("users")
-        .select("id, full_name, email")
-        .eq("organisation_id", context.organisationId!)
-        .eq("role", "learner")
-        .eq("status", "active")
-        .order("full_name")
-        .limit(1000)
+    ? {
+        data: await fetchAll((f, t) =>
+          supabase
+            .from("users")
+            .select("id, full_name, email")
+            .eq("organisation_id", context.organisationId!)
+            .eq("role", "learner")
+            .eq("status", "active")
+            .order("full_name")
+            .order("id")
+            .range(f, t),
+        ),
+      }
     : { data: [] };
   const complaint = one(qa.complaint as { id: string; reference: string } | null);
   const medication = (qa.medication as AuditItem[] | null) ?? [];

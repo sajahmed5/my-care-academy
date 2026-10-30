@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkAlertUrl, isPrivateAddress, signAlert, verifyAlert } from "@/lib/alert-signing";
+import { afterAlertTry, AUTO_PAUSE_AFTER, autoPaused, checkAlertUrl, isPrivateAddress, signAlert, verifyAlert } from "@/lib/alert-signing";
 
 describe("alert signatures", () => {
   const secret = "whsec_test";
@@ -40,5 +40,24 @@ describe("where alerts may go", () => {
   it("allows a local receiver outside production", () => {
     expect(checkAlertUrl("http://localhost:4010/hook", false).ok).toBe(true);
     expect(checkAlertUrl("http://hooks.example.com", false).ok).toBe(false);
+  });
+});
+
+describe("pausing an address that keeps failing", () => {
+  it("counts failures in a row and clears them on success", () => {
+    expect(afterAlertTry(false, 3)).toEqual({ consecutiveFailures: 4, pause: false });
+    expect(afterAlertTry(true, 7)).toEqual({ consecutiveFailures: 0, pause: false });
+  });
+
+  it("pauses once the count reaches the threshold", () => {
+    expect(afterAlertTry(false, AUTO_PAUSE_AFTER - 2).pause).toBe(false);
+    expect(afterAlertTry(false, AUTO_PAUSE_AFTER - 1).pause).toBe(true);
+  });
+
+  it("tells our pause from the manager's", () => {
+    expect(autoPaused({ active: false, consecutive_failures: AUTO_PAUSE_AFTER })).toBe(true);
+    // The manager's pause resets the count.
+    expect(autoPaused({ active: false, consecutive_failures: 0 })).toBe(false);
+    expect(autoPaused({ active: true, consecutive_failures: AUTO_PAUSE_AFTER })).toBe(false);
   });
 });

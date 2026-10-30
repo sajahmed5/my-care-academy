@@ -56,6 +56,8 @@ export const TIER_DETAILS: Record<
       "Everything in Starter",
       "Supervisions and appraisals, with agreed actions tracked",
       "Spot checks and competency assessments",
+      "Performance plans, raised when a check isn't met, with reviews and an outcome",
+      "A client list, uploaded from a spreadsheet and linked to checks, audits and concerns",
     ],
   },
   core_recruitment: {

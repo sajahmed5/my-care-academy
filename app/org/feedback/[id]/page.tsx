@@ -19,6 +19,7 @@ import {
   type SurveyResponseRow,
 } from "@/lib/feedback";
 import { siteOrigin } from "@/lib/site-url";
+import { companyOrigin } from "@/lib/company-host";
 import { formatDate } from "@/lib/dates";
 import { fetchAll } from "@/lib/fetch-all";
 import { logComplimentFromFeedbackAction, raiseConcernFromFeedbackAction } from "../actions";
@@ -65,7 +66,7 @@ export default async function SurveyResultsPage({ params }: { params: Promise<{ 
     ),
     supabase.from("feedback_invitations").select("id, responded").eq("survey_id", id).limit(5000),
     supabase.from("feedback_actions").select("id, you_said, we_did").eq("survey_id", id).order("created_at").limit(200),
-    siteOrigin(),
+    companyOrigin(context.organisationId!).then(async (own) => own ?? (await siteOrigin())),
     hasFeature(context, "complaints.register"),
   ]);
   const responses = rows as unknown as Row[];

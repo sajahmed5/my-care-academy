@@ -4,6 +4,7 @@ import { STAFF_ROLES } from "@/lib/roles";
 import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,16 +47,22 @@ export default async function LogPage({
   const aboutClients = template.audience === "client";
   const [entries, { data: staffRows }, { data: clientRows }] = await Promise.all([
     loadLogEntries(supabase, { organisationId: orgId, templateId: template.id, from, to }),
-    supabase
-      .from("users")
-      .select("id, full_name, email")
-      .eq("organisation_id", orgId)
-      .eq("status", "active")
-      .in("role", STAFF_ROLES)
-      .order("full_name")
-      .limit(1000),
+    // Pick-lists a page at a time: one read returns at most 1,000 rows.
+    fetchAll((f, t) =>
+      supabase
+        .from("users")
+        .select("id, full_name, email")
+        .eq("organisation_id", orgId)
+        .eq("status", "active")
+        .in("role", STAFF_ROLES)
+        .order("full_name")
+        .order("id")
+        .range(f, t),
+    ).then((data) => ({ data })),
     aboutClients
-      ? supabase.from("clients").select("id, full_name").eq("status", "active").order("full_name").limit(2000)
+      ? fetchAll((f, t) =>
+          supabase.from("clients").select("id, full_name").eq("status", "active").order("full_name").order("id").range(f, t),
+        ).then((data) => ({ data }))
       : Promise.resolve({ data: null }),
   ]);
 

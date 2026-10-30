@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { ClientForm, type ClientValues } from "../client-form";
 import { ClientConcerns } from "./concerns";
@@ -25,12 +26,15 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
       .select("full_name, date_of_birth, region, postcode, funder_type, funder_name, medication_support, start_date, status")
       .eq("id", id)
       .maybeSingle(),
-    supabase
-      .from("clients")
-      .select("region")
-      .eq("organisation_id", context.organisationId!)
-      .not("region", "is", null)
-      .limit(1000),
+    fetchAll((f, t) =>
+      supabase
+        .from("clients")
+        .select("id, region")
+        .eq("organisation_id", context.organisationId!)
+        .not("region", "is", null)
+        .order("id")
+        .range(f, t),
+    ).then((data) => ({ data })),
     enabledMap(context),
   ]);
   if (!client) notFound();

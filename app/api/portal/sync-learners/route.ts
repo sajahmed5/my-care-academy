@@ -71,15 +71,14 @@ export async function POST(req: Request) {
   const byRef = new Map(existing.filter((u) => u.external_ref).map((u) => [u.external_ref as string, u]));
   const byEmail = new Map(existing.map((u) => [(u.email ?? "").toLowerCase(), u]));
 
-  const results: { externalRef: string; outcome: string; userId?: string; error?: string }[] = [];
+  type Result = { externalRef: string; outcome: string; userId?: string; error?: string };
 
-  for (const row of learners) {
+  const syncOne = async (row: LearnerRow): Promise<Result> => {
     const ref = (row.externalRef ?? "").trim();
     const email = (row.email ?? "").trim().toLowerCase();
     const wantActive = (row.status ?? "active") === "active";
     if (!ref) {
-      results.push({ externalRef: ref, outcome: "error", error: "externalRef is required" });
-      continue;
+      return { externalRef: ref, outcome: "error", error: "externalRef is required" };
     }
 
     try {
@@ -88,16 +87,13 @@ export async function POST(req: Request) {
       if (!user) {
         if (!wantActive) {
           // Never provision an account for somebody who has already left.
-          results.push({ externalRef: ref, outcome: "skipped_archived" });
-          continue;
+          return { externalRef: ref, outcome: "skipped_archived" };
         }
         if (updateOnly) {
-          results.push({ externalRef: ref, outcome: "skipped_not_on_platform" });
-          continue;
+          return { externalRef: ref, outcome: "skipped_not_on_platform" };
         }
         if (!email) {
-          results.push({ externalRef: ref, outcome: "error", error: "No email address — cannot create a learner" });
-          continue;
+          return { externalRef: ref, outcome: "error", error: "No email address — cannot create a learner" };
         }
         const invite = await createInvite({
           email,
@@ -108,12 +104,10 @@ export async function POST(req: Request) {
           roleLabel: "Learner",
         });
         if (!invite.userId) {
-          results.push({ externalRef: ref, outcome: "error", error: "Invite failed — no user id returned" });
-          continue;
+          return { externalRef: ref, outcome: "error", error: "Invite failed — no user id returned" };
         }
         await admin.from("users").update({ external_ref: ref }).eq("id", invite.userId);
-        results.push({ externalRef: ref, outcome: "invited", userId: invite.userId });
-        continue;
+        return { externalRef: ref, outcome: "invited", userId: invite.userId };
       }
 
       // Existing learner — adopt and/or update.
@@ -133,10 +127,18 @@ export async function POST(req: Request) {
           ban_duration: wantActive ? "none" : "876000h",
         });
       }
-      results.push({ externalRef: ref, outcome: user.external_ref ? "updated" : "adopted", userId: user.id });
+      return { externalRef: ref, outcome: user.external_ref ? "updated" : "adopted", userId: user.id };
     } catch (e) {
-      results.push({ externalRef: ref, outcome: "error", error: e instanceof Error ? e.message : "Failed" });
+      return { externalRef: ref, outcome: "error", error: e instanceof Error ? e.message : "Failed" };
     }
+  };
+
+  // Ten at a time: one after another, a large first sync (each new carer an
+  // invite and an email) couldn't finish inside the 60 seconds. Results stay
+  // one per row, in the order sent.
+  const results: Result[] = [];
+  for (let i = 0; i < learners.length; i += 10) {
+    results.push(...(await Promise.all(learners.slice(i, i + 10).map(syncOne))));
   }
 
   const counts = results.reduce<Record<string, number>>((acc, r) => {

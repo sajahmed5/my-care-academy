@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextSendOn, readRecipients, readSchedule, scheduleLabel, storedRecipients, ukHour } from "../lib/bespoke/schedule";
+import { movesScheduleOn, nextSendOn, readRecipients, readSchedule, scheduleLabel, storedRecipients, ukHour } from "../lib/bespoke/schedule";
 import { scheduledReportEmail } from "../lib/bespoke/schedule-email";
 
 describe("when a scheduled report goes next", () => {
@@ -82,5 +82,17 @@ describe("the scheduled email", () => {
     expect(m.html).toContain("Hi Sam,");
     expect(m.html).toContain("/org/reports/bespoke/r1");
     expect(m.html).toContain("attached as a PDF");
+  });
+});
+
+describe("when a scheduled send moves its schedule on", () => {
+  it("moves on once an email has gone", () => {
+    expect(movesScheduleOn(2, "2026-10-30", "2026-10-30")).toBe(true);
+  });
+  it("tries again next hour when nothing went on the day it's due", () => {
+    expect(movesScheduleOn(0, "2026-10-30", "2026-10-30")).toBe(false);
+  });
+  it("gives up once it is past its due day", () => {
+    expect(movesScheduleOn(0, "2026-10-29", "2026-10-30")).toBe(true);
   });
 });

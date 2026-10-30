@@ -3,6 +3,7 @@ import { formatDateTime } from "@/lib/dates";
 import { CERTIFICATE_LOGO } from "@/lib/certificate-logo";
 import { formatValue, type SectionResult, type Value } from "./run";
 import type { ReportRun } from "./load";
+import { withPoweredBy } from "@/lib/pdf-brand";
 
 /**
  * A bespoke report as a PDF (BESPOKE-REPORTS.md): the company's logo and
@@ -156,9 +157,7 @@ function ReportDoc({ run, brand, generatedAt }: { run: ReportRun; brand: PdfBran
           <SectionBlock key={s.id} section={s} />
         ))}
         <View style={styles.footer} fixed>
-          <Text>
-            {brand.organisationName} · {run.title} · confidential
-          </Text>
+          <Text>{withPoweredBy(`${brand.organisationName} · ${run.title} · confidential`, brand.logoUrl)}</Text>
           <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>
       </Page>

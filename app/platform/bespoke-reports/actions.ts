@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
 import { siteOrigin } from "@/lib/site-url";
+import { companyOrigin } from "@/lib/company-host";
 import { logAudit } from "@/lib/audit";
 import { requestMessageEmail, requestStatusEmail } from "@/lib/bespoke/request-email";
 import type { SaveState } from "@/app/platform/actions";
@@ -22,6 +23,14 @@ import { ukToday } from "@/lib/bespoke/working-days";
  */
 
 const STATUSES = ["asked", "building", "ready"] as const;
+
+/**
+ * Where the company's manager opens the request: its own web address once
+ * that's live, ours otherwise. The email itself stays ours — it's from us.
+ */
+async function companyLinkOrigin(organisationId: string): Promise<string> {
+  return (await companyOrigin(organisationId)) ?? (await siteOrigin());
+}
 type Status = (typeof STATUSES)[number];
 
 async function requester(admin: ReturnType<typeof createAdminClient>, userId: string | null) {
@@ -65,7 +74,7 @@ export async function setRequestStatusAction(requestId: string, status: string):
   if (status === "building" || status === "ready") {
     const [who, origin, { data: built }] = await Promise.all([
       requester(admin, request.requested_by as string | null),
-      siteOrigin(),
+      companyLinkOrigin(request.organisation_id as string),
       admin.from("bespoke_reports").select("id").eq("request_id", requestId).is("archived_at", null).limit(1),
     ]);
     if (who) {
@@ -113,7 +122,7 @@ export async function postOurMessageAction(requestId: string, _prev: SaveState, 
   });
   if (error) return { ok: false, error: "The message couldn't be sent. Try again." };
 
-  const [who, origin] = await Promise.all([requester(admin, request.requested_by as string | null), siteOrigin()]);
+  const [who, origin] = await Promise.all([requester(admin, request.requested_by as string | null), companyLinkOrigin(request.organisation_id as string)]);
   if (who) {
     const mail = requestMessageEmail(
       { id: request.id as string, requestNo: Number(request.request_no), title: request.title as string },

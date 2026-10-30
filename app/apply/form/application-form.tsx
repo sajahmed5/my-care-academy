@@ -15,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SignaturePad } from "@/app/org/forms/[id]/fill/signature-pad";
+import { SignaturePad } from "@/components/signature-pad";
 import {
   applicationSections, employmentGaps, isShown, refereesRequired, validateApplication, validateSection,
   type Answers, type Entry, type FieldError, type FormSection,

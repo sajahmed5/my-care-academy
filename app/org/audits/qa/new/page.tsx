@@ -1,6 +1,7 @@
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { STAFF_ROLES } from "@/lib/roles";
 import { loadDueClients, loadQaForm, loadReviewBelow } from "@/lib/service-audits-data";
@@ -17,14 +18,18 @@ export default async function NewClientQaPage({ searchParams }: { searchParams: 
     loadDueClients(supabase, orgId),
     loadQaForm(orgId),
     loadReviewBelow(orgId),
-    supabase
-      .from("users")
-      .select("id, full_name, email")
-      .eq("organisation_id", orgId)
-      .eq("status", "active")
-      .in("role", STAFF_ROLES)
-      .order("full_name")
-      .limit(1000),
+    // Everyone, a page at a time: one read returns at most 1,000 rows.
+    fetchAll((f, t) =>
+      supabase
+        .from("users")
+        .select("id, full_name, email")
+        .eq("organisation_id", orgId)
+        .eq("status", "active")
+        .in("role", STAFF_ROLES)
+        .order("full_name")
+        .order("id")
+        .range(f, t),
+    ).then((data) => ({ data })),
   ]);
   const people = (staff ?? []).map((u) => ({ id: u.id as string, name: (u.full_name as string | null) || (u.email as string) }));
   const me = people.find((p) => p.id === context.userId) ?? { id: context.userId, name: "" };
