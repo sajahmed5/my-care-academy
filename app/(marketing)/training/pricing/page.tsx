@@ -174,7 +174,7 @@ export default function TrainingPricingPage() {
       <Section className="pt-0">
         <p className="text-center text-sm text-[#0f2f3c]/65">
           See the{" "}
-          <Link href="/training" className="font-semibold text-[#8a4d0c] underline underline-offset-2">
+          <Link href="/training/courses" className="font-semibold text-[#8a4d0c] underline underline-offset-2">
             full course library
           </Link>{" "}
           or{" "}

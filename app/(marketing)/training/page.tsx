@@ -5,7 +5,7 @@ import { CARE_COURSES as COURSES, COURSE_COUNT } from "@/lib/courses";
 import { SERVICES } from "@/lib/services";
 import { tint } from "@/lib/topic-theme";
 import { Arrow, Chip, CtaBand, H2, PillLink, Section } from "../ui";
-import { BreadcrumbLd, CourseListLd } from "@/components/structured-data";
+import { BreadcrumbLd } from "@/components/structured-data";
 
 export const metadata: Metadata = {
   title: "Care training courses — 59 CQC-aligned courses | My Care Academy",
@@ -24,7 +24,6 @@ export const metadata: Metadata = {
 export default function TrainingPage() {
   return (
     <>
-      <CourseListLd courses={COURSES} />
       <BreadcrumbLd trail={[{ name: "Care training courses", path: "/training" }]} />
       <section className="mca-day -mt-24 px-4 pb-16 pt-32 sm:pt-40">
         <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-[1.1fr_1fr]">
@@ -113,7 +112,12 @@ export default function TrainingPage() {
                 {c}
               </span>
             ))}
-            <span className="rounded-2xl bg-[#134f63] px-4 py-3 text-sm font-semibold text-white">+ many more</span>
+            <Link
+              href="/training/courses"
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-[#134f63] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#1d6f8a]"
+            >
+              See all {COURSE_COUNT} <Arrow />
+            </Link>
           </div>
         </div>
       </Section>
@@ -170,11 +174,13 @@ export default function TrainingPage() {
         );
       })}
 
-      <Section tone="deep">
+      {/* Light, not deep: two deep panels in a row (this and the CtaBand)
+          looked like one box (Saj, 30 Oct 2026). */}
+      <Section tone="soft">
         <div className="grid items-center gap-8 md:grid-cols-[1.2fr_1fr]">
           <div>
-            <H2 className="text-white">Evidence without the paperwork</H2>
-            <p className="mt-4 text-white/75">
+            <H2>Evidence without the paperwork</H2>
+            <p className="mt-4 text-[#0f2f3c]/65">
               Every pass writes its own certificate, with a number anyone can
               check. Expiry dates are tracked for you, reminders go out before
               training lapses, and your whole position exports to CSV when an
@@ -182,7 +188,7 @@ export default function TrainingPage() {
             </p>
           </div>
           <div className="flex md:justify-end">
-            <PillLink href="/verify" tone="white">
+            <PillLink href="/verify">
               Verify a certificate <Arrow />
             </PillLink>
           </div>

@@ -79,7 +79,7 @@ export default function CareCertificatePage() {
             <PillLink href="/contact?topic=care-certificate" tone="dark">
               Book a demo <Arrow />
             </PillLink>
-            <PillLink href="/training" tone="ghost">
+            <PillLink href="/training/courses" tone="ghost">
               See the full library
             </PillLink>
           </div>

@@ -93,7 +93,7 @@ export default function CareTrainingManchesterStockportPage() {
             <PillLink href="/contact?topic=demo">
               Book a demo <Arrow />
             </PillLink>
-            <PillLink href="/training" tone="ghost">
+            <PillLink href="/training/courses" tone="ghost">
               See all {COURSE_COUNT} courses
             </PillLink>
             <PillLink href="/training/cqc-compliance" tone="ghost">

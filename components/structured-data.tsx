@@ -87,7 +87,11 @@ export function LocalBusinessLd() {
 }
 
 /** The course catalogue, so the titles themselves can surface in search. */
-export function CourseListLd({ courses }: { courses: readonly string[] }) {
+export function CourseListLd({
+  courses,
+}: {
+  courses: readonly { title: string; summary: string; minutes: number }[];
+}) {
   return (
     <Ld
       data={{
@@ -95,13 +99,13 @@ export function CourseListLd({ courses }: { courses: readonly string[] }) {
         "@type": "ItemList",
         name: "Care training courses",
         numberOfItems: courses.length,
-        itemListElement: courses.map((title, i) => ({
+        itemListElement: courses.map(({ title, summary, minutes }, i) => ({
           "@type": "ListItem",
           position: i + 1,
           item: {
             "@type": "Course",
             name: title,
-            description: `${title} — online care training for UK care staff, with an assessment and a verifiable certificate.`,
+            description: summary,
             provider: { "@id": `${SITE_URL}/#organisation` },
             inLanguage: "en-GB",
             educationalCredentialAwarded: "Certificate of completion",
@@ -109,7 +113,7 @@ export function CourseListLd({ courses }: { courses: readonly string[] }) {
             hasCourseInstance: {
               "@type": "CourseInstance",
               courseMode: "online",
-              courseWorkload: "PT20M",
+              courseWorkload: `PT${minutes}M`,
             },
           },
         })),

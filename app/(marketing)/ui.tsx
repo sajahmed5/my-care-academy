@@ -197,8 +197,10 @@ export function ShotFrame({ label, src, children }: { label: string; src?: strin
 }
 
 export function CtaBand({ title, body }: { title: string; body: string }) {
+  // mt-6: a tinted panel straight above would otherwise touch this one and
+  // the two read as one box with pinched corners (Saj, 30 Oct 2026).
   return (
-    <Section tone="deep" className="pb-16">
+    <Section tone="deep" className="mt-6 pb-16">
       <div className="mx-auto max-w-2xl text-center">
         <H2 className="text-white">{title}</H2>
         <p className="mt-4 text-lg text-white/80">{body}</p>

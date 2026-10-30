@@ -140,7 +140,7 @@ export default function MandatoryTrainingPage() {
         <p className="mt-4 text-sm text-[#0f2f3c]/65">
           Specialist subjects — catheter care, PEG feeding, stoma care,
           epilepsy, end of life — depend on who you support.{" "}
-          <Link href="/training" className="font-semibold text-[#1d6f8a] underline underline-offset-2">
+          <Link href="/training/courses" className="font-semibold text-[#1d6f8a] underline underline-offset-2">
             All {COURSE_COUNT} courses
           </Link>{" "}
           are included in every plan.

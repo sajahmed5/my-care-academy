@@ -103,7 +103,7 @@ export default function CqcCompliancePage() {
             <PillLink href="/contact?topic=mock-inspection">
               Ask about a mock inspection <Arrow />
             </PillLink>
-            <PillLink href="/training" tone="ghost">
+            <PillLink href="/training/courses" tone="ghost">
               See the {COURSE_COUNT} courses
             </PillLink>
           </div>

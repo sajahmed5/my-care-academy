@@ -335,7 +335,7 @@ export default function Home() {
             </div>
           ))}
         </div>
-        <Link href="/training" className="mt-6 inline-flex items-center gap-1 border-b-2 border-current font-semibold text-[#8a4d0c]">
+        <Link href="/training/courses" className="mt-6 inline-flex items-center gap-1 border-b-2 border-current font-semibold text-[#8a4d0c]">
           See all {COURSES} courses <ArrowRight className="size-4" />
         </Link>
       </Section>

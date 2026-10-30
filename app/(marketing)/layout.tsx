@@ -75,6 +75,7 @@ export default function MarketingLayout({
               <p className="font-semibold">Training</p>
               <ul className="mt-3 space-y-2 text-[#0f2f3c]/65">
                 <li><Link href="/training" className="hover:text-[#134f63]">Overview</Link></li>
+                <li><Link href="/training/courses" className="hover:text-[#134f63]">All courses</Link></li>
                 <li><Link href="/training#elearning-training" className="hover:text-[#134f63]">eLearning &amp; mandatory training</Link></li>
                 <li><Link href="/training/cqc-compliance" className="hover:text-[#134f63]">CQC training &amp; mock inspections</Link></li>
                 <li><Link href="/training/care-certificate" className="hover:text-[#134f63]">Care Certificate training</Link></li>
