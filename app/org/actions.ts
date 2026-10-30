@@ -3,6 +3,7 @@
 import { STAFF_ROLES } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
+import { redirect } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -225,6 +226,10 @@ export async function deleteStaffAction(
   revalidatePath("/org");
   revalidatePath("/org/learners");
   revalidatePath("/org/learners/admin");
+  // From the person's own page, which no longer exists: on to the list. Done
+  // here, not in the browser, which re-renders that page first and gets a 404.
+  const next = String(formData.get("redirectTo") ?? "");
+  if (next.startsWith("/org/")) redirect(next);
   return { ok: true };
 }
 

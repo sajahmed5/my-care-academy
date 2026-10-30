@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { deleteStaffAction } from "./actions";
 import type { SaveState } from "@/app/platform/actions";
@@ -25,12 +24,10 @@ export function DeleteStaffButton({
     {} as SaveState,
   );
   const formRef = useRef<HTMLFormElement>(null);
-  const router = useRouter();
 
   useEffect(() => {
     if (state.error) window.alert(state.error);
-    else if (state.ok && redirectTo) router.replace(redirectTo);
-  }, [state, redirectTo, router]);
+  }, [state]);
 
   function onSubmit(e: React.FormEvent) {
     if (
@@ -45,6 +42,7 @@ export function DeleteStaffButton({
   return (
     <form ref={formRef} action={formAction} onSubmit={onSubmit} className="inline">
       <input type="hidden" name="userId" value={userId} />
+      {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
       <button
         type="submit"
         disabled={pending}
