@@ -12,11 +12,14 @@ export async function sendEmail({
   subject,
   html,
   replyTo,
+  attachments,
 }: {
   to: string;
   subject: string;
   html: string;
   replyTo?: string;
+  /** Files to attach, as base64 (Resend's limit is 40MB for the whole email). */
+  attachments?: { filename: string; content: string }[];
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   const from =
@@ -35,6 +38,7 @@ export async function sendEmail({
         subject,
         html,
         ...(replyTo ? { reply_to: replyTo } : {}),
+        ...(attachments?.length ? { attachments } : {}),
       }),
     });
     if (!res.ok) console.error("Resend send failed:", res.status);

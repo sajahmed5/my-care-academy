@@ -8,6 +8,7 @@ import { probationDue } from "@/lib/hr/probation-due";
 import { probationFromRow } from "@/lib/hr/probation";
 import { absenceDue, sanitiseTriggers, type Absence } from "@/lib/hr/absence";
 import { caseSettingsFromRow, deadlines, type HrCase } from "@/lib/hr/cases";
+import { CHECKLIST, checklistDone, sanitiseChecklist } from "@/lib/hr/leavers";
 
 /**
  * The HR pack in the weekly email (HR-PACK.md): one line per part with
@@ -37,7 +38,7 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
     (x): x is string => !!x,
   );
   if (entitled.length === 0) return out;
-  const [docs, emps, reviews, settings, absences, meetings, waiting, cases] = await Promise.all([
+  const [docs, emps, reviews, settings, absences, meetings, waiting, cases, leavers] = await Promise.all([
     fetchAll((f, t) =>
       admin
         .from("staff_documents")
@@ -72,6 +73,15 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
     fetchAll((f, t) => admin.from("absence_welfare_meetings").select("absence_id, organisation_id, held_on").in("organisation_id", entitled).order("absence_id").range(f, t)),
     fetchAll((f, t) => admin.from("leave_requests").select("id, organisation_id").in("organisation_id", entitled).eq("status", "requested").order("id").range(f, t)),
     fetchAll((f, t) => admin.from("hr_cases").select("*").in("organisation_id", entitled).is("closed_on", null).order("id").range(f, t)),
+    fetchAll((f, t) =>
+      admin
+        .from("hr_leavers")
+        .select("id, organisation_id, last_day, checklist")
+        .in("organisation_id", entitled)
+        .gte("last_day", new Date(now.getTime() - 90 * 86_400_000).toISOString().slice(0, 10))
+        .order("id")
+        .range(f, t),
+    ),
   ]);
   const today = now.toISOString().slice(0, 10);
   for (const orgId of entitled) {
@@ -133,6 +143,16 @@ export async function loadHrDigests(admin: Admin, people: People, orgIds: string
         deadlines(c as unknown as HrCase, caseSettings).some((d) => d.on <= weekOut),
     ).length;
     if (dueCases) lines.push({ label: "Disciplinary and grievance", text: `${dueCases} case${dueCases === 1 ? "" : "s"} with a deadline this week`, href: "/org/hr/cases" });
+    const mineLeaving = leavers.filter((l) => l.organisation_id === orgId);
+    const leavingSoon = mineLeaving.filter((l) => (l.last_day as string) >= today && (l.last_day as string) <= weekOut).length;
+    const unfinished = mineLeaving.filter((l) => (l.last_day as string) < today && checklistDone(sanitiseChecklist(l.checklist)) < CHECKLIST.length).length;
+    if (leavingSoon + unfinished) {
+      lines.push({
+        label: "Leavers",
+        text: [leavingSoon && `${leavingSoon} leaving this week`, unfinished && `${unfinished} who've left with their checklist unfinished`].filter(Boolean).join(", "),
+        href: "/org/hr/leavers",
+      });
+    }
     const asks = waiting.filter((w) => w.organisation_id === orgId).length;
     if (asks) lines.push({ label: "Holidays", text: `${asks} request${asks === 1 ? "" : "s"} waiting for a decision`, href: "/org/hr/holidays" });
     if (lines.length) out.set(orgId, lines);

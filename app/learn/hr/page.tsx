@@ -11,6 +11,8 @@ import { formatDate } from "@/lib/dates";
 import { PROBATION_STATUS_LABEL } from "@/lib/hr/probation";
 import { ReportSick } from "./report-sick";
 import { RaiseGrievance } from "./raise-grievance";
+import { ExitForm } from "@/components/hr/exit-form";
+import { submitExitInterviewAction } from "./actions";
 import { CancelMyLeave } from "./cancel-leave";
 import { LeaveForm } from "@/app/org/hr/holidays/holiday-forms";
 import { requestLeaveAction } from "./actions";
@@ -64,6 +66,8 @@ export default async function MyHrPage() {
   const unit = (allowance?.unit as string | undefined) ?? "days";
   const bal = balance(allowance ? { amount: Number(allowance.amount), unit } : null, myLeave, year, types, today);
   const offNow = (absences ?? []).find((a) => !a.returned_on);
+  // Leaving: only whether an exit interview is waiting, never the manager's record.
+  const { data: leaving } = await admin.from("hr_leavers").select("last_day, exit_status").eq("user_id", context.userId).maybeSingle();
   // Who a grievance can be about: anyone else in the company.
   const { data: colleagues } = await admin
     .from("users")
@@ -79,6 +83,20 @@ export default async function MyHrPage() {
   return (
     <DashboardShell learn title="My HR" context={context}>
       <div className="space-y-6">
+        {leaving?.exit_status === "asked" && (
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold text-muted-foreground">Before you go</h2>
+            <Card>
+              <CardContent className="space-y-3 pt-6">
+                <p className="text-sm text-muted-foreground">
+                  Your last day is {short(leaving.last_day as string)}. We&apos;d like to know about your time with us: it&apos;s up to you whether to answer, and only the office reads it.
+                </p>
+                <ExitForm submit={submitExitInterviewAction} />
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
         {emp && (
           <Card>
             <CardContent className="space-y-1 pt-6 text-sm">

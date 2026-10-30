@@ -94,7 +94,7 @@ export const SECTIONS: SectionDef[] = [
     // join it as they are built.
     key: "employment",
     label: "Employment",
-    blurb: "Their start date, probation reviews, sickness absence and return to work, holidays, disciplinary and grievance, and the HR letters sent to them.",
+    blurb: "Their start date, probation reviews, sickness absence and return to work, holidays, disciplinary and grievance, leaving, and the HR letters sent to them.",
     feature: "recruitment.tracker",
     built: true,
   },

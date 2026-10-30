@@ -1,6 +1,7 @@
 # HR pack — agreed plan (29 Oct 2026)
 
-Agreed with Saj on 29 Oct 2026. Nothing below is built yet. The HR pack is in
+Agreed with Saj on 29 Oct 2026. Built 31 Oct 2026 (each part's note says
+how). The HR pack is in
 every package since 30 Oct 2026, and is never split between packages (see
 PACKAGES.md). It was the Recruitment add-on until 29 Oct
 2026; it now covers employing someone, from application to leaving. How well
@@ -190,6 +191,15 @@ suggested from weekdays and the bank holiday rule (England and Wales,
 - **References given**: a new employer's request is recorded, and a factual
   reference letter (dates, role, reason for leaving) is produced from the file
   — AI can draft it at 1.5 times cost, and a manager checks it.
+
+*Built 31 Oct 2026: HR → Leavers, each leaving record (the reason, dates,
+re-employable, the checklist with whose key safes were changed, the exit
+interview, the training record email, references given), a Leaving tab
+on the file, the exit interview on My HR or by link (/exit), and the
+daily job that switches logins off after the last day and emails the
+training record with up to 25 certificates attached if it hasn't gone.
+The site has no visits, so the key safe item asks the office to note the
+homes. A manager sends references; the office can draft them.*
 
 ## Legal reminders
 
