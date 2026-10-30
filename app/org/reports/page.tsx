@@ -269,7 +269,7 @@ function OurReports({
         <p className="text-sm text-muted-foreground">
           {manager
             ? `Nothing built yet. Ask for a report and we'll build it within ${REPORT_WORKING_DAYS} working days.`
-            : "Nothing built yet. Your manager can ask us for one."}
+            : "None to show you yet. Your manager can ask us for one."}
         </p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
