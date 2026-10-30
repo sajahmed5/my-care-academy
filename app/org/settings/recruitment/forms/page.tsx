@@ -14,6 +14,7 @@ const WHERE: Record<string, string> = {
   application: "Shown to the candidate before the declaration, after our questions.",
   interview: "Added to the interview record, after our questions.",
   reference: "Shown to every referee, before they give their own details.",
+  dbs_risk: "Added to the DBS risk assessment, before the decision.",
 };
 
 /**

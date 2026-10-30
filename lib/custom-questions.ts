@@ -10,12 +10,13 @@ import type { FormField, FormSection } from "@/lib/recruitment-application";
  * given to it still show on the record. Pure.
  */
 
-export type CustomForm = "application" | "interview" | "reference";
-export const CUSTOM_FORMS: CustomForm[] = ["application", "interview", "reference"];
+export type CustomForm = "application" | "interview" | "reference" | "dbs_risk";
+export const CUSTOM_FORMS: CustomForm[] = ["application", "interview", "reference", "dbs_risk"];
 export const CUSTOM_FORM_LABELS: Record<CustomForm, string> = {
   application: "Application form",
   interview: "Interview record",
   reference: "Reference form",
+  dbs_risk: "DBS risk assessment",
 };
 
 export type CustomType = "text" | "longtext" | "yesno" | "select";
@@ -44,7 +45,7 @@ const line = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/\s
 
 export function sanitiseCustomQuestions(raw: unknown): CustomQuestions {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  const out = { application: [], interview: [], reference: [] } as CustomQuestions;
+  const out = { application: [], interview: [], reference: [], dbs_risk: [] } as CustomQuestions;
   for (const form of CUSTOM_FORMS) {
     const list = Array.isArray(r[form]) ? (r[form] as unknown[]) : [];
     const seen = new Set<string>();

@@ -187,5 +187,7 @@ form exists, it works the paper way: the office uploads it and confirms it.
    on them), leaves out our general interview questions, sets the test's
    time and pass mark, switches our test questions off and adds its own
    tap-one-answer questions (frozen onto each attempt when it's unlocked),
-   and chooses its rejection reasons and offer conditions. Not yet: an
-   online DBS risk assessment form (it's an upload or held on paper).*
+   and chooses its rejection reasons and offer conditions.*
+   *31 Oct 2026: the DBS risk assessment is a form online (an upload or
+   paper still works), with the company's own questions; on hire it moves
+   onto the staff file as a PDF, and so do references taken online.*

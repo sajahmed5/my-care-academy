@@ -52,7 +52,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   const a = await latestAttempt(admin, id);
   // Referees: copied from their application the first time anyone looks.
   await importReferees(admin, id, context.organisationId!);
-  const [{ data: refRows }, { data: interview }, { data: offerLetter }, { data: starter }, { data: signings }, { data: shadowing }, { data: appAnswers }] = await Promise.all([
+  const [{ data: refRows }, { data: interview }, { data: offerLetter }, { data: starter }, { data: signings }, { data: shadowing }, { data: appAnswers }, { data: dbsRisk }] = await Promise.all([
     admin
       .from("candidate_references")
       .select("id, position, referee_type, referee_name, email, phone, organisation, status, requested_at, reminder_count")
@@ -64,6 +64,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
     admin.from("candidate_signings").select("doc_key, status").eq("candidate_id", id),
     admin.from("candidate_shadowing").select("status, completed_at").eq("candidate_id", id).maybeSingle(),
     admin.from("candidate_applications").select("answers").eq("candidate_id", id).maybeSingle(),
+    admin.from("candidate_dbs_assessments").select("status, completed_at").eq("candidate_id", id).maybeSingle(),
   ]);
   const referees: RefereeView[] = (refRows ?? []).map((r) => ({
     id: r.id as string,
@@ -260,6 +261,23 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
               {s.stage === 3 && !s.locked && (
                 <li className="border-t bg-muted/30 px-5 py-3.5">
                   <DbsConviction candidateId={id} conviction={candidate.dbs_conviction === true} />
+                </li>
+              )}
+              {s.stage === 3 && !s.locked && candidate.dbs_conviction === true && (
+                <li className="border-t bg-muted/30 px-5 py-3.5">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                    <span className="font-medium">DBS risk assessment</span>
+                    <span className="text-muted-foreground">
+                      {dbsRisk?.status === "complete"
+                        ? `Finished ${formatDate(dbsRisk.completed_at as string)}.`
+                        : dbsRisk
+                          ? "Started, not finished."
+                          : "Fill it in here, or upload one done on paper at the step above."}
+                    </span>
+                    <Link href={`/org/recruitment/${id}/dbs-risk`} className={buttonVariants({ size: "sm", variant: "outline" })}>
+                      {dbsRisk ? "Open the risk assessment" : "Start the risk assessment"}
+                    </Link>
+                  </div>
                 </li>
               )}
             </ul>
