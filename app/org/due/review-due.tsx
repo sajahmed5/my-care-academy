@@ -3,6 +3,7 @@ import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { DueTabs } from "./due-tabs";
 import { buildDueRows } from "@/lib/due-view";
 import { DueList } from "./due-list";
 import { loadCurrentCarers } from "./load";
@@ -48,8 +49,9 @@ export async function ReviewDuePage({ kind }: { kind: "supervision" | "appraisal
   );
   const noun = kind === "appraisal" ? "appraisal" : "supervision";
   return (
-    <DashboardShell title={kind === "appraisal" ? "Appraisals due" : "Supervisions due"} context={context}>
+    <DashboardShell title="Who's due" context={context}>
       <div className="space-y-4">
+        <DueTabs context={context} active={`/org/due/${kind}s`} />
         <p className="text-sm text-muted-foreground">
           Every current member of staff — carers and office — and when their next {noun} falls. Open someone to book or hold one.
         </p>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   BadgeAlert,
   BookOpenCheck,
@@ -109,9 +110,15 @@ export default async function CoursesOverviewPage() {
       </div>
 
       <section id="courses" className="scroll-mt-6 space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Courses
-        </h2>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Courses
+          </h2>
+          {/* It was "Time taken" in the menu (ease-of-use review, 30 Oct 2026). */}
+          <Link href="/org/courses/statistics" className="text-sm font-medium text-primary hover:underline">
+            How long each person took →
+          </Link>
+        </div>
         <CourseStatsTable
           rows={rows}
           filename={`${organisation?.name ?? "org"}-course-statistics.csv`}

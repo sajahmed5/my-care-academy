@@ -26,7 +26,11 @@ interface MenuLink {
 
 interface MenuItem {
   label: string;
-  /** A plain link. Leave out for a drop-down. */
+  /**
+   * A plain link. Leave out for a drop-down. With children as well, it is a
+   * link to the first of them the company has, and they show in the row
+   * under the bar.
+   */
   href?: string;
   feature?: FeatureKey;
   children?: MenuLink[];
@@ -46,52 +50,53 @@ interface MenuItem {
  */
 const ORG_MENU: MenuItem[] = [
   { label: "Overview", href: "/org" },
+  // Everything falling due, from every add-on, as tabs on one page (ease-of-
+  // use review, 30 Oct 2026) — it was eight "…due" pages under four menus.
+  // Staff documents is one of its tabs, though it lives under /org/hr.
+  { label: "Who's due", href: "/org/due", also: ["/org/hr/documents"] },
   {
     label: "Staff",
     also: ["/org/staff"],
     children: [
       // A carer's file is reached from this list, so it lights up here too —
       // on the file, nothing in the row under the bar said where you were.
-      { href: "/org/learners", label: "Overview", exact: true, also: ["/org/staff"] },
-      { href: "/org/learners/statistics", label: "Every assignment" },
-      { href: "/org/learners/admin", label: "Add & invite staff" },
+      { href: "/org/learners", label: "All staff", exact: true, also: ["/org/staff"] },
+      { href: "/org/learners/admin", label: "Add staff" },
+      { href: "/org/learners/statistics", label: "All training assigned" },
     ],
   },
   {
     label: "Training",
     children: [
-      { href: "/org/courses", label: "Courses overview", exact: true },
+      // How long each course takes is a click from the courses list.
+      { href: "/org/courses", label: "Courses", exact: true, also: ["/org/courses/statistics"] },
       { href: "/org/courses/admin", label: "Assign training" },
-      { href: "/org/courses/statistics", label: "Time taken" },
+      { href: "/org/certificates", label: "Certificates" },
       { href: "/org/face-to-face", label: "Face-to-face training", feature: "training.face_to_face" },
       { href: "/org/classroom", label: "Classroom sessions", feature: "training.classroom" },
       { href: "/org/observations", label: "Care Certificate", feature: "training.observations" },
     ],
   },
-  { label: "Certificates", href: "/org/certificates" },
   { label: "Clients", href: "/org/clients", feature: "clients.list" },
   // Staff Audits (STAFF-AUDITS.md): who's due each one, and performance
   // plans. Audits of the service sit under Quality. The company's own forms,
   // questions and wording are under Settings, for managers (30 Oct 2026).
   {
     label: "Staff audits",
-    also: ["/org/due/supervisions", "/org/due/appraisals", "/org/due/spot-checks", "/org/due/competency", "/org/pips"],
+    also: ["/org/pips"],
     children: [
-      { href: "/org/due/supervisions", label: "Supervisions due", feature: "people.supervisions" },
-      { href: "/org/due/appraisals", label: "Appraisals due", feature: "people.supervisions" },
-      { href: "/org/due/spot-checks", label: "Spot checks due", feature: "people.competency" },
-      { href: "/org/due/competency", label: "Competency due", feature: "people.competency" },
+      { href: "/org/due/supervisions", label: "Supervisions & appraisals", feature: "people.supervisions", also: ["/org/due/appraisals"] },
+      { href: "/org/due/spot-checks", label: "Spot checks & competency", feature: "people.competency", also: ["/org/due/competency"] },
       { href: "/org/pips", label: "Performance plans", feature: "people.performance_plans" },
     ],
   },
   {
     label: "Quality",
     children: [
-      { href: "/org/audits", label: "Audits", feature: "quality.audits" },
-      { href: "/org/due/audits", label: "Audits due", feature: "quality.audits" },
+      { href: "/org/audits", label: "Service audits", feature: "quality.audits" },
       { href: "/org/audits/governance", label: "Governance report", feature: "quality.audits" },
-      { href: "/org/feedback", label: "Feedback", feature: "quality.feedback" },
       { href: "/org/complaints", label: "Complaints & safeguarding", feature: "complaints.register" },
+      { href: "/org/feedback", label: "Feedback", feature: "quality.feedback" },
     ],
   },
   // The HR pack (HR-PACK.md): employing someone, from application to leaving.
@@ -100,11 +105,10 @@ const ORG_MENU: MenuItem[] = [
     also: ["/org/recruitment", "/org/hr"],
     children: [
       { href: "/org/recruitment", label: "Recruitment", feature: "recruitment.tracker" },
-      { href: "/org/hr/documents", label: "Documents due", feature: "recruitment.tracker" },
-      { href: "/org/hr/probation", label: "Probation reviews", feature: "recruitment.tracker" },
       { href: "/org/hr/absence", label: "Absence", feature: "recruitment.tracker" },
       { href: "/org/hr/holidays", label: "Holidays", feature: "recruitment.tracker" },
-      { href: "/org/hr/cases", label: "Disciplinary and grievance", feature: "recruitment.tracker" },
+      { href: "/org/hr/probation", label: "Probation reviews", feature: "recruitment.tracker" },
+      { href: "/org/hr/cases", label: "Disciplinary & grievance", feature: "recruitment.tracker" },
       { href: "/org/hr/leavers", label: "Leavers", feature: "recruitment.tracker" },
     ],
   },
@@ -112,10 +116,8 @@ const ORG_MENU: MenuItem[] = [
     label: "Documents",
     children: [
       { href: "/org/policies", label: "Policies", feature: "documents.library" },
-      { href: "/org/due/policies", label: "Policies due", feature: "documents.library" },
       { href: "/org/forms", label: "Forms", feature: "forms.builder" },
-      { href: "/org/due/forms", label: "Form reviews due", feature: "forms.builder" },
-      { href: "/org/reports", label: "Evidence & exports" },
+      { href: "/org/reports", label: "Reports & exports" },
     ],
   },
 ];
@@ -146,10 +148,19 @@ const MENUS: Record<string, MenuItem[]> = {
     { label: "Dashboard", href: "/learn" },
     { label: "Training", href: "/learn/modules", also: ["/learn/courses", "/learn/programmes"] },
     { label: "Certificates", href: "/learn/certificates" },
-    { label: "My actions", href: "/learn/actions" },
-    // Their booked supervisions and appraisal self-assessment (STAFF-AUDITS.md).
-    { label: "Supervisions", href: "/learn/reviews", feature: "people.supervisions" },
-    { label: "My HR", href: "/learn/hr", feature: "recruitment.tracker" },
+    // One item for everything between them and their employer (ease-of-use
+    // review, 30 Oct 2026): it was three — My actions, Supervisions, My HR.
+    // A link, not a drop-down; its pages are in the row under the bar.
+    {
+      label: "My HR",
+      href: "/learn/hr",
+      children: [
+        { href: "/learn/hr", label: "Leave & letters", feature: "recruitment.tracker" },
+        // Their booked supervisions and appraisal self-assessment (STAFF-AUDITS.md).
+        { href: "/learn/reviews", label: "Supervisions", feature: "people.supervisions" },
+        { href: "/learn/actions", label: "My actions" },
+      ],
+    },
     { label: "Policies", href: "/learn/policies", feature: "documents.library" },
     { label: "Forms", href: "/learn/forms", feature: "forms.builder" },
     { label: "Notifications", href: "/learn/notifications" },
@@ -309,7 +320,9 @@ export function TopNav({
     : role
       ? (MENUS[role] ?? [])
       : [];
-  const items = hasConsole(role) && !learnView ? withLocks(menu, enabled) : withoutGated(menu, enabled);
+  const items = (hasConsole(role) && !learnView ? withLocks(menu, enabled) : withoutGated(menu, enabled)).map((item) =>
+    item.href && item.children?.length ? { ...item, href: (item.children.find((c) => !c.locked) ?? item.children[0]).href } : item,
+  );
   const person = personLinks(role, learnView);
   const showLearnerBits = role === "learner" || learnView;
   const current = items.find((item) => itemActive(pathname, item));

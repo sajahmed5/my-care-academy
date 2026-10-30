@@ -5,6 +5,7 @@ import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { DueTabs } from "@/app/org/due/due-tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { staffDocSummary, type StaffDoc } from "@/lib/staff-documents";
 import { loadCurrentCarers } from "@/app/org/due/load";
@@ -48,8 +49,9 @@ export default async function DocumentsDuePage() {
   ];
 
   return (
-    <DashboardShell title="Documents due" context={context}>
+    <DashboardShell title="Who's due" context={context}>
       <div className="space-y-6">
+        <DueTabs context={context} active="/org/hr/documents" />
         <p className="text-sm text-muted-foreground">
           Every current member of staff with a document expired, expiring soon or missing. Open someone to upload the new one, or mark it not needed.
         </p>

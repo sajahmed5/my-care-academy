@@ -3,6 +3,7 @@ import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { DueTabs } from "../due-tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { DUE_GROUP_LABEL } from "@/lib/due-view";
 import { formatDate } from "@/lib/dates";
@@ -58,8 +59,9 @@ export default async function PoliciesDuePage() {
     .filter((g) => g.items.length > 0);
 
   return (
-    <DashboardShell title="Policies due" context={context}>
+    <DashboardShell title="Who's due" context={context}>
       <div className="space-y-6">
+        <DueTabs context={context} active="/org/due/policies" />
         <section className="space-y-2">
           <h3 className={`text-sm font-semibold ${lateByCopy.length ? "text-rose-700" : "text-muted-foreground"}`}>
             Late accepting ({lateByCopy.reduce((n, g) => n + g.late.length, 0)})

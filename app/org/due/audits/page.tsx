@@ -3,6 +3,7 @@ import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { DueTabs } from "../due-tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { DUE_GROUP_LABEL } from "@/lib/due-view";
 import { dueCounts } from "@/lib/service-audits";
@@ -29,8 +30,9 @@ export default async function AuditsDuePage({ searchParams }: { searchParams: Pr
   const open = byClient.find((d) => d.form.key === key) ?? byClient[0];
 
   return (
-    <DashboardShell title="Audits due" context={context}>
+    <DashboardShell title="Who's due" context={context}>
       <div className="space-y-6">
+        <DueTabs context={context} active="/org/due/audits" />
         <section className="space-y-2">
           <h3 className="text-sm font-semibold">Across the service</h3>
           <Card>

@@ -4,6 +4,7 @@ import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { DueTabs } from "../due-tabs";
 import { buildDueRows } from "@/lib/due-view";
 import { loadAuditForms } from "@/lib/audit-forms-data";
 import { DueList } from "../due-list";
@@ -44,8 +45,9 @@ export default async function CompetencyDuePage({ searchParams }: { searchParams
   const chip = (on: boolean) =>
     `rounded-full border px-3 py-1 text-sm ${on ? "border-primary bg-primary/10 font-medium text-primary" : "bg-background hover:bg-muted"}`;
   return (
-    <DashboardShell title="Competency due" context={context}>
+    <DashboardShell title="Who's due" context={context}>
       <div className="space-y-4">
+        <DueTabs context={context} active="/org/due/competency" />
         <p className="text-sm text-muted-foreground">
           Every current carer and when their next competency assessment falls. Pick a skill to see just that one.
         </p>

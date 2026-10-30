@@ -3,6 +3,7 @@ import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { DueTabs } from "../due-tabs";
 import { buildDueRows } from "@/lib/due-view";
 import { DueList } from "../due-list";
 import { loadCurrentCarers } from "../load";
@@ -33,8 +34,9 @@ export default async function SpotChecksDuePage() {
     new Date(),
   );
   return (
-    <DashboardShell title="Spot checks due" context={context}>
+    <DashboardShell title="Who's due" context={context}>
       <div className="space-y-4">
+        <DueTabs context={context} active="/org/due/spot-checks" />
         <p className="text-sm text-muted-foreground">
           Every current carer and when their next spot check falls. They are unannounced, so nobody is told the date.
         </p>
