@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getUserContext, isConsoleRole } from "@/lib/auth";
+import { requireConsole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { HR_BUCKET, hrPerson } from "@/lib/hr/server";
 import { canSeeLetter } from "@/lib/hr/letter-access";
@@ -8,8 +8,9 @@ export const dynamic = "force-dynamic";
 
 /** A sent HR letter's PDF, for the console. Same 404 for missing and not yours. */
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const context = await getUserContext();
-  if (!context || !isConsoleRole(context.role) || !context.organisationId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // MFA and the deactivated-account check, as every console page has.
+  const context = await requireConsole();
+  if (!context.organisationId) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await params;
   const admin = createAdminClient();
   const { data: letter } = await admin.from("hr_letters").select("*").eq("id", id).maybeSingle();

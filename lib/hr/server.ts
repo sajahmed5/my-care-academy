@@ -2,6 +2,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeatureForOrg } from "@/lib/entitlements";
 import { sendEmail } from "@/lib/email";
+import { orgBranding } from "@/lib/branding";
 import { STAFF_ROLES } from "@/lib/roles";
 import { addMonths } from "@/lib/records";
 import { renderHrPdf, ukDate } from "@/lib/hr-pdf";
@@ -185,7 +186,11 @@ export async function sendLetter(admin: Admin, letterId: string, orgId: string, 
   const person = await hrPerson(admin, orgId, letter.user_id as string);
   if (!person) return { ok: false, error: "That person is not one of your staff." };
   if (!person.email) return { ok: false, error: "They have no email address on their login." };
-  const [{ data: org }, signer] = await Promise.all([admin.from("organisations").select("name").eq("id", orgId).maybeSingle(), letterSigner(admin, orgId, by)]);
+  const [{ data: org }, signer, brand] = await Promise.all([
+    admin.from("organisations").select("name").eq("id", orgId).maybeSingle(),
+    letterSigner(admin, orgId, by),
+    orgBranding(orgId),
+  ]);
   const company = (org?.name as string | undefined) ?? "";
   const today = new Date().toISOString().slice(0, 10);
   const fixed = Array.isArray(letter.fixed) ? (letter.fixed as string[]) : [];
@@ -203,13 +208,14 @@ export async function sendLetter(admin: Admin, letterId: string, orgId: string, 
         { type: "signature", name: signer.name || company, title: [signer.title, company].filter(Boolean).join(", ") },
       ],
     },
-  ]);
+  ], brand?.logoUrl);
   const path = `${orgId}/${person.id}/letters/${letterId}.pdf`;
   const { error: upErr } = await admin.storage.from(HR_BUCKET).upload(path, pdf, { contentType: "application/pdf", upsert: true });
   if (upErr) return { ok: false, error: "The letter couldn't be saved as a PDF. Try again." };
 
   const sent = await sendEmail({
     to: person.email,
+    organisationId: orgId,
     subject: String(letter.subject),
     html: hrLetterHtml({ company, date: ukDate(today), greeting, body, fixed, signer }),
   });

@@ -13,6 +13,8 @@
  * Pure: the editor, the preview and what is sent all use these.
  */
 
+import { emailLayout } from "@/lib/email-layout";
+
 export interface LetterTemplate {
   kind: string;
   /** What the office picks or sees. */
@@ -286,7 +288,12 @@ export interface Signer {
   title: string;
 }
 
-/** The letter as the person reads it, in an email. Company name at the top; My Care Academy in the footer. */
+/**
+ * The letter as the person reads it, in an email: in the frame every email
+ * is sent in (emailLayout), so with white label it carries the company's
+ * logo. The company's name heads the letter itself; My Care Academy is in
+ * the footer.
+ */
 export function hrLetterHtml(args: { company: string; date: string; greeting: string; body: string; fixed: string[]; signer: Signer }): string {
   const esc = (v: string) => v.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
   const p = (t: string) => `<p style="color:#1e293b;font-size:15px;line-height:1.6;margin:0 0 14px;white-space:pre-line">${esc(t)}</p>`;
@@ -294,15 +301,13 @@ export function hrLetterHtml(args: { company: string; date: string; greeting: st
   const sign = args.signer.name
     ? `<p style="color:#1e293b;font-size:15px;line-height:1.5;margin:18px 0 0"><strong>${esc(args.signer.name)}</strong>${args.signer.title ? `<br>${esc(args.signer.title)}` : ""}${args.company ? `<br>${esc(args.company)}` : ""}</p>`
     : "";
-  return `<div style="background:#f8fafc;padding:24px 12px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
-  <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:28px">
-    <div style="border-bottom:2px solid #1e293b;padding-bottom:12px;margin-bottom:20px"><h1 style="color:#1e293b;margin:0;font-size:22px">${esc(args.company || "Your employer")}</h1></div>
+  return emailLayout({
+    body: `<div style="border-bottom:2px solid #1e293b;padding-bottom:12px;margin-bottom:20px"><h1 style="color:#1e293b;margin:0;font-size:22px">${esc(args.company || "Your employer")}</h1></div>
     <p style="color:#475569;font-size:14px;margin:0 0 16px">${esc(args.date)}</p>
     ${p(args.greeting)}${paras}
-    ${p("Yours sincerely,")}${sign}
-  </div>
-  <p style="max-width:600px;margin:12px auto 0;color:#64748b;font-size:12px;text-align:center">Sent for ${esc(args.company || "your employer")} by My Care Academy. A copy is kept on your file, and you can read it when you sign in.</p>
-</div>`;
+    ${p("Yours sincerely,")}${sign}`,
+    footer: `Sent for ${esc(args.company || "your employer")} by My Care Academy. A copy is kept on your file, and you can read it when you sign in.`,
+  });
 }
 
 /** What the AI is asked for when drafting a letter. */

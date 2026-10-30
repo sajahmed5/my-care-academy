@@ -65,6 +65,36 @@ export const checklistDone = (c: Checklist) => CHECKLIST.filter((i) => c[i.key]?
 /** Their login goes off the day after their last working day. */
 export const loginDueOff = (lastDay: string, todayIso: string) => lastDay < todayIso;
 
+/**
+ * Why this person may not record a manager or office worker as leaving, or
+ * switch their login off, or null. A leaver's login is switched off, so this
+ * is the same rule as changing who has console access (consoleTargetBlock in
+ * app/org/actions.ts): only a manager acts on a console user. A carer's
+ * leaving is for anyone in the office.
+ */
+export function leaverConsoleBlock(actorRole: string | null | undefined, leaverRole: string | null | undefined): string | null {
+  if (leaverRole !== "org_admin" && leaverRole !== "org_office") return null;
+  return actorRole === "org_admin" ? null : "Only a manager can record a manager or office worker as leaving.";
+}
+
+/**
+ * The daily job switches a console user's login off only if a manager made
+ * the leaving record — checked against who they are now, so a record made by
+ * someone since demoted, gone, or in another company waits for a manager to
+ * switch it off by hand.
+ */
+export function jobMaySwitchOff(
+  leaverRole: string | null | undefined,
+  recordedBy: { role: string | null; organisation_id: string | null } | null | undefined,
+  orgId: string,
+): boolean {
+  if (leaverRole !== "org_admin" && leaverRole !== "org_office") return true;
+  return !!recordedBy && recordedBy.organisation_id === orgId && leaverConsoleBlock(recordedBy.role, leaverRole) === null;
+}
+
+/** How long after their last day the job keeps trying to email a training record that didn't go. */
+export const TRAINING_RETRY_DAYS = 14;
+
 /** The DBS barring referral question (HR-PACK.md, Legal reminders). */
 export const asksAboutDbs = (reason: string) => reason === "dismissed" || reason === "resigned" || reason === "end_of_probation";
 

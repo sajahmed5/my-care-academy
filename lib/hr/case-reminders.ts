@@ -4,7 +4,9 @@ import { sendEmailBatch } from "@/lib/email";
 import { emailButton, emailLayout, esc } from "@/lib/email-layout";
 import { siteOrigin } from "@/lib/site-url";
 import { formatDate } from "@/lib/dates";
-import { hasFeatureForOrg } from "@/lib/entitlements";
+import { chunk } from "@/lib/engine-digest";
+import { ukToday } from "@/lib/policy-library";
+import { IDS_PER_REQUEST, orgsWithFeature } from "@/lib/hr/features";
 import { addDays } from "@/lib/hr/probation";
 import { caseSettingsFromRow, deadlines, legalReminders, type HrCase } from "@/lib/hr/cases";
 import type { Admin } from "@/lib/hr/server";
@@ -17,20 +19,28 @@ import type { Admin } from "@/lib/hr/server";
  * office workers, never the employee or the person a grievance is about.
  */
 export async function processCaseReminders(admin: Admin, now: Date, dryRun: boolean): Promise<{ caseReminders: number }> {
-  const today = now.toISOString().slice(0, 10);
+  const today = ukToday(now);
   const soon = addDays(today, 2);
   const open = await fetchAll((f, t) => admin.from("hr_cases").select("*").is("closed_on", null).order("id").range(f, t));
   if (!open.length) return { caseReminders: 0 };
-  const orgIds = [...new Set(open.map((c) => c.organisation_id as string))];
-  const [settings, staff, origin] = await Promise.all([
-    fetchAll((f, t) => admin.from("hr_settings").select("*").in("organisation_id", orgIds).order("organisation_id").range(f, t)),
-    fetchAll((f, t) => admin.from("users").select("id, email, role, organisation_id").in("organisation_id", orgIds).in("role", ["org_admin", "org_office"]).eq("status", "active").order("id").range(f, t)),
+  const entitled = await orgsWithFeature(admin, open.map((c) => c.organisation_id as string), "recruitment.tracker");
+  if (!entitled.size) return { caseReminders: 0 };
+  // A hundred companies a request: a long .in() list overflows the URL.
+  const parts = chunk([...entitled], IDS_PER_REQUEST);
+  const [settingsParts, staffParts, origin] = await Promise.all([
+    Promise.all(parts.map((ids) => fetchAll((f, t) => admin.from("hr_settings").select("*").in("organisation_id", ids).order("organisation_id").range(f, t)))),
+    Promise.all(
+      parts.map((ids) =>
+        fetchAll((f, t) => admin.from("users").select("id, email, role, organisation_id").in("organisation_id", ids).in("role", ["org_admin", "org_office"]).eq("status", "active").order("id").range(f, t)),
+      ),
+    ),
     siteOrigin(),
   ]);
-  const entitled = new Set<string>();
-  for (const id of orgIds) if (await hasFeatureForOrg(admin, id, "recruitment.tracker")) entitled.add(id);
+  const settings = settingsParts.flat();
+  const staff = staffParts.flat();
 
-  const lines = new Map<string, string[]>();
+  // One email per recipient, sent as their company.
+  const lines = new Map<string, { to: string; orgId: string; items: string[] }>();
   const touched: string[] = [];
   for (const row of open) {
     const orgId = row.organisation_id as string;
@@ -53,15 +63,17 @@ export async function processCaseReminders(admin: Admin, now: Date, dryRun: bool
         (u.role === "org_admin" || s.officeAccess.includes(u.id as string)),
     );
     for (const u of who) {
-      const list = lines.get(u.email as string) ?? [];
-      list.push(`<li><a href="${esc(`${origin}/org/hr/cases/${c.id}`)}">${esc(c.ref)}</a>: ${text.map(esc).join("; ")}</li>`);
-      lines.set(u.email as string, list);
+      if (!u.email) continue;
+      const entry = lines.get(u.id as string) ?? { to: u.email as string, orgId, items: [] };
+      entry.items.push(`<li><a href="${esc(`${origin}/org/hr/cases/${c.id}`)}">${esc(c.ref)}</a>: ${text.map(esc).join("; ")}</li>`);
+      lines.set(u.id as string, entry);
     }
   }
   if (dryRun) return { caseReminders: lines.size };
   await sendEmailBatch(
-    [...lines.entries()].map(([to, items]) => ({
+    [...lines.values()].map(({ to, orgId, items }) => ({
       to,
+      organisationId: orgId,
       subject: "HR cases: deadlines coming up",
       html: emailLayout({
         heading: "Deadlines on your HR cases",
@@ -69,6 +81,6 @@ export async function processCaseReminders(admin: Admin, now: Date, dryRun: bool
       }),
     })),
   );
-  if (touched.length) await admin.from("hr_cases").update({ reminded_on: today }).in("id", touched);
+  for (const ids of chunk(touched, IDS_PER_REQUEST)) await admin.from("hr_cases").update({ reminded_on: today }).in("id", ids);
   return { caseReminders: lines.size };
 }

@@ -284,6 +284,7 @@ export async function sendStatementLinkAction(id: string, input: { name: string;
   const orgName = (org?.name as string | undefined) ?? "An employer";
   const sent = await sendEmail({
     to: email,
+    organisationId: context.organisationId,
     subject: `${orgName}: a witness statement`,
     html: emailLayout({
       body: `<p>Hello ${esc(name)},</p>
