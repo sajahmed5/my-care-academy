@@ -139,6 +139,16 @@ export function TemplateEditor({ template }: { template: FormTemplateRecord }) {
                 <Input id="te-review" name="reviewMonths" type="number" min={1} max={60} placeholder="Never" defaultValue={template.review_months ?? ""} />
               </div>
             </div>
+            <div className="grid gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="isLog" value="1" defaultChecked={template.is_log} />
+                A log — a line added each time
+              </label>
+              <div className="space-y-1">
+                <Label htmlFor="te-person">On a log, the &ldquo;who&rdquo; column is called</Label>
+                <Input id="te-person" name="personLabel" placeholder="Done by" defaultValue={template.log_person_label ?? ""} maxLength={40} />
+              </div>
+            </div>
             <div className="space-y-1">
               <Label htmlFor="te-desc">What it is for (optional)</Label>
               <Input id="te-desc" name="description" defaultValue={template.description ?? ""} maxLength={300} />

@@ -47,9 +47,15 @@ export default async function OrgFormsPage() {
     openCount.set(a.template_id as string, (openCount.get(a.template_id as string) ?? 0) + 1);
   }
 
-  const kinds = FORM_AUDIENCES.map((a) => ({ ...a, items: templates.filter((t) => t.audience === a.value) })).filter(
-    (k) => k.items.length > 0,
-  );
+  const kinds = [
+    ...FORM_AUDIENCES.map((a) => ({ ...a, items: templates.filter((t) => !t.is_log && t.audience === a.value) })),
+    {
+      value: "logs",
+      label: "Logs",
+      hint: "A line added each time — the date, who did it, the result — read back as one table.",
+      items: templates.filter((t) => t.is_log),
+    },
+  ].filter((k) => k.items.length > 0);
 
   return (
     <DashboardShell title="Forms" context={context}>
@@ -68,7 +74,7 @@ export default async function OrgFormsPage() {
           </Card>
         ) : (
           kinds.map((k) => (
-            <section key={k.value} className="space-y-2">
+            <section key={k.value} id={k.value} className="scroll-mt-24 space-y-2">
               <div>
                 <h3 className="text-base font-semibold">{k.label}</h3>
                 <p className="text-sm text-muted-foreground">{k.hint}</p>
@@ -80,7 +86,10 @@ export default async function OrgFormsPage() {
                       <div className="flex min-w-0 items-start gap-3">
                         <ClipboardList className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
                         <div className="min-w-0">
-                          <Link href={`/org/forms/library/${t.code}`} className="font-medium hover:underline">
+                          <Link
+                            href={t.is_log ? `/org/forms/logs/${encodeURIComponent(t.code)}` : `/org/forms/library/${encodeURIComponent(t.code)}`}
+                            className="font-medium hover:underline"
+                          >
                             {t.title}
                           </Link>
                           <p className="text-xs text-muted-foreground">

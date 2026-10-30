@@ -23,6 +23,9 @@ export interface FormField {
   required: boolean;
   conditional: Conditional | null;
   sort_order: number;
+  /** A number's safe range, where it has one (a fridge at 1–5°C); outside it is flagged. */
+  min?: number;
+  max?: number;
 }
 
 export const FIELD_TYPES: {
@@ -58,6 +61,23 @@ export function isFieldVisible(
   const actual = values[c.whenFieldId];
   if (Array.isArray(actual)) return actual.map(String).includes(c.equals);
   return String(actual ?? "") === c.equals;
+}
+
+/** Whether a number answer falls outside the field's safe range. */
+export function isOutOfRange(field: Pick<FormField, "type" | "min" | "max">, value: unknown): boolean {
+  if (field.type !== "number" || value === undefined || value === null || value === "") return false;
+  const n = Number(value);
+  if (Number.isNaN(n)) return false;
+  return (typeof field.min === "number" && n < field.min) || (typeof field.max === "number" && n > field.max);
+}
+
+/** "1–5", "up to 43", "-18 or below" — the range as a reader would say it. */
+export function rangeLabel(field: Pick<FormField, "min" | "max">): string | null {
+  const { min, max } = field;
+  if (typeof min === "number" && typeof max === "number") return `${min} to ${max}`;
+  if (typeof max === "number") return `${max} or below`;
+  if (typeof min === "number") return `${min} or above`;
+  return null;
 }
 
 // ---------------------------------------------------------------------------

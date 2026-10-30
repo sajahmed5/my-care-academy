@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ClipboardPen } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,8 @@ import type { UserContext } from "@/lib/auth";
 import { enabledMap } from "@/lib/entitlements";
 import { loadFormLibrary } from "@/lib/form-library";
 import { loadRecordsForClient } from "@/lib/form-records";
+import { loadLogEntriesForClient, logCell, logColumns } from "@/lib/form-logs";
+import { formatDate } from "@/lib/dates";
 import { RecordList } from "@/app/org/forms/record-list";
 
 /**
@@ -21,13 +24,14 @@ export async function ClientForms({
   context: UserContext;
   clientId: string;
 }) {
-  const [enabled, { data: org }, records] = await Promise.all([
+  const [enabled, { data: org }, records, logLines] = await Promise.all([
     enabledMap(context),
     supabase.from("organisations").select("service_type").eq("id", context.organisationId!).single(),
     loadRecordsForClient(supabase, clientId),
+    loadLogEntriesForClient(supabase, clientId),
   ]);
   const library = await loadFormLibrary(supabase, { enabled, serviceType: (org?.service_type as string | null) ?? null });
-  const clientForms = library.filter((t) => t.audience === "client");
+  const clientForms = library.filter((t) => t.audience === "client" && !t.is_log);
 
   return (
     <section id="forms" className="scroll-mt-24 space-y-3">
@@ -56,6 +60,29 @@ export async function ClientForms({
         )}
       </div>
       <RecordList records={records} show="form" empty="No forms filled in about this client yet." />
+      {logLines.length > 0 && (
+        <div className="space-y-1">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">In the logs</h3>
+          <ul className="divide-y rounded-xl border bg-card text-sm">
+            {logLines.slice(0, 20).map((l) => (
+              <li key={l.id} className="flex flex-wrap justify-between gap-x-4 px-4 py-2">
+                <span>
+                  <Link href={`/org/forms/logs/${encodeURIComponent(l.template_code)}`} className="font-medium hover:underline">
+                    {l.template_title}
+                  </Link>
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · {logColumns(l.fields).map((c) => logCell(c, l.answers).text).filter(Boolean).slice(0, 3).join(" · ")}
+                  </span>
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(`${l.entry_date}T12:00:00Z`, { day: "numeric", month: "short", year: "numeric" })} · {l.person}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }

@@ -52,6 +52,8 @@ export async function saveFormTemplateAction(
   const audience = String(formData.get("audience") ?? "carer");
   const reviewRaw = String(formData.get("reviewMonths") ?? "").trim();
   const reviewMonths = reviewRaw ? Number(reviewRaw) : null;
+  const isLog = String(formData.get("isLog") ?? "") === "1";
+  const personLabel = String(formData.get("personLabel") ?? "").trim().slice(0, 40) || null;
   if (!code) return { ok: false, error: "No form given." };
   if (!FORM_AUDIENCES.some((a) => a.value === audience)) return { ok: false, error: "Say who the form is about." };
   if (reviewMonths !== null && !(Number.isInteger(reviewMonths) && reviewMonths >= 1 && reviewMonths <= 60)) {
@@ -78,6 +80,9 @@ export async function saveFormTemplateAction(
             ? { whenFieldId: f.conditional.whenFieldId, equals: String(f.conditional.equals ?? "") }
             : null,
         sort_order: i,
+        // A number's safe range, as the log flags it; kept only when it is a number.
+        ...(f.type === "number" && typeof f.min === "number" ? { min: f.min } : {}),
+        ...(f.type === "number" && typeof f.max === "number" ? { max: f.max } : {}),
       }));
   } catch {
     return { ok: false, error: "The fields could not be read." };
@@ -97,6 +102,8 @@ export async function saveFormTemplateAction(
       pack,
       audience,
       review_months: reviewMonths,
+      is_log: isLog,
+      log_person_label: isLog ? personLabel : null,
       fields,
       version: changed ? (current.version as number) + 1 : (current.version as number),
     })

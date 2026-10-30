@@ -66,6 +66,10 @@ export interface FormTemplateSummary {
   status: string;
   /** Months until a completed one is due for review; null if never reviewed. */
   review_months: number | null;
+  /** A log: a line added each time, read as one table (FORMS.md). */
+  is_log: boolean;
+  /** What a log's "who" column is called: "Checked by", "Champion". */
+  log_person_label: string | null;
   /** Null when the template was read for a list, without its fields. */
   fieldCount: number | null;
 }
@@ -114,6 +118,8 @@ function toSummary(r: Record<string, unknown>): FormTemplateSummary {
     version: (r.version as number) ?? 1,
     status: (r.status as string) ?? "draft",
     review_months: (r.review_months as number | null) ?? null,
+    is_log: r.is_log === true,
+    log_person_label: (r.log_person_label as string | null) ?? null,
     fieldCount: Array.isArray(r.fields) ? (r.fields as unknown[]).length : null,
   };
 }
@@ -131,7 +137,7 @@ export async function loadFormLibrary(
   if (packs.length === 0) return [];
   const { data } = await supabase
     .from("form_templates")
-    .select("id, code, title, description, category, pack, audience, collection, service_types, version, status, review_months")
+    .select("id, code, title, description, category, pack, audience, collection, service_types, version, status, review_months, is_log, log_person_label")
     .in("pack", packs)
     .order("category")
     .order("sort_order")
@@ -148,7 +154,7 @@ export async function loadFormTemplate(
 ): Promise<FormTemplateRecord | null> {
   const { data } = await supabase
     .from("form_templates")
-    .select("id, code, title, description, category, pack, audience, collection, service_types, version, status, review_months, fields")
+    .select("id, code, title, description, category, pack, audience, collection, service_types, version, status, review_months, is_log, log_person_label, fields")
     .eq("code", code)
     .maybeSingle();
   if (!data) return null;
