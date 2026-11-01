@@ -37,6 +37,7 @@ export default async function LearnerPoliciesPage() {
     loadLibrary(supabase, {
       serviceType: (org?.service_type as string | null) ?? null,
       userId: context.userId,
+      organisationId: context.organisationId!,
     }),
     loadCopies(supabase, context.organisationId!),
     loadReading(supabase, context.organisationId!, { userId: context.userId }),

@@ -40,6 +40,7 @@ export default async function PoliciesPage() {
   const policies = await loadLibrary(supabase, {
     serviceType: (org?.service_type as string | null) ?? null,
     userId: context.userId,
+    organisationId: context.organisationId!,
   });
   // A company running both kinds of service sees both versions of a title,
   // so each says which it is.
@@ -161,6 +162,9 @@ function Row({
             </Link>
             {showService && serviceLabel(item.service_types) && (
               <p className="text-xs text-muted-foreground">{serviceLabel(item.service_types)}</p>
+            )}
+            {item.status !== "published" && (
+              <p className="text-xs text-muted-foreground">Our template is retired — your copy stays yours</p>
             )}
           </div>
         </div>

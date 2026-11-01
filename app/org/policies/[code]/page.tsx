@@ -52,8 +52,9 @@ export default async function PolicyPage({
       .single(),
     loadPolicy(supabase, decodeURIComponent(code), context.userId),
   ]);
-  // RLS shows published policies only; the list's own rule decides which
-  // service's version this company has.
+  // RLS shows published policies, and a retired one only to a company holding
+  // a copy of it; the list's own rule decides which service's version this
+  // company has.
   if (!doc || doc.kind !== "policy") notFound();
   if (!appliesTo(doc.service_types, (org?.service_type as string | null) ?? null)) notFound();
 
@@ -62,6 +63,9 @@ export default async function PolicyPage({
   // A policy is adopted, completed and published as the organisation's own
   // copy (ROADMAP §1); staff read and accept that, never the template.
   const copy = await loadCopy(supabase, context.organisationId!, doc.id);
+  // A retired template is never offered for adoption — only a copy of one kept.
+  const retired = doc.status !== "published";
+  if (retired && !copy) notFound();
   const publishedCopy = copy && copy.status === "published" && copy.version > 0 ? copy : null;
   // Who has accepted the published version — the manager's half of the evidence.
   // Who it is for, by when, and who is late — the same answer as every other view.
@@ -79,7 +83,7 @@ export default async function PolicyPage({
       acceptedAt: e.acceptedAt,
     }));
   const toComplete = blocks.filter((b) => b.type === "guidance").length;
-  const templateRevised = !!copy && (doc.version ?? 1) > (copy.template_version ?? 1);
+  const templateRevised = !retired && !!copy && (doc.version ?? 1) > (copy.template_version ?? 1);
   const myAck = publishedCopy
     ? (
         await supabase
@@ -172,6 +176,29 @@ export default async function PolicyPage({
                 ? `Published to staff — version ${publishedCopy.version}${publishedCopy.published_at ? `, ${formatDate(publishedCopy.published_at, { day: "numeric", month: "long", year: "numeric" })}` : ""}.${copy.draft_blocks ? " You have changes that are not published yet." : ""}`
                 : "Your copy — not published to staff yet."}
             </p>
+            {retired && (
+              <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+                <p>
+                  We have retired the template this policy came from
+                  {doc.replacedBy ? (
+                    <>
+                      {" "}and replaced it with{" "}
+                      <Link href={`/org/policies/${doc.replacedBy.code}`} className="font-medium underline">
+                        {doc.replacedBy.title}
+                      </Link>
+                    </>
+                  ) : null}
+                  . Your copy is still yours: {publishedCopy ? "your staff keep reading and accepting it, " : ""}and you can
+                  edit and publish it as before.
+                </p>
+                {doc.replacedBy && (
+                  <p className="mt-1">
+                    When you are ready, adopt the new template and publish it in place of this one, then tell your staff
+                    which to follow.
+                  </p>
+                )}
+              </div>
+            )}
             {templateRevised && (
               <p className="rounded-lg bg-sky-50 p-3 text-sm text-sky-900">
                 Our template has been revised since you adopted it (now version {doc.version}). Compare it with your copy

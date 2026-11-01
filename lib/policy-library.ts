@@ -17,6 +17,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { DEFAULT_ACCEPT_DAYS, isAudience, type Audience } from "./policy-reading";
 
 export type PolicyKind = "policy" | "form" | "log";
+export type TemplateStatus = "draft" | "published" | "retired";
 
 export interface PolicyBlock {
   type: "heading" | "paragraph" | "bullet" | "guidance";
@@ -32,12 +33,19 @@ export interface PolicySummary {
   kind: PolicyKind;
   service_types: string[] | null;
   version: number | null;
+  /**
+   * The template's status. Anything but published is here only because this
+   * organisation holds a copy of it: the copy outlives the template.
+   */
+  status: TemplateStatus;
   /** The version this reader has accepted, if any. */
   acknowledgedVersion?: number | null;
 }
 
 export interface PolicyDocument extends PolicySummary {
   blocks: PolicyBlock[];
+  /** What replaced a retired template, when it is in this reader's library. */
+  replacedBy: { code: string; title: string } | null;
 }
 
 /**
@@ -74,25 +82,41 @@ export function serviceLabel(serviceTypes: string[] | null): string | null {
   return serviceTypes[0] === "care_home" ? "Residential" : "Domiciliary";
 }
 
+const SUMMARY_COLUMNS = "id, code, title, category, kind, service_types, version, status";
+
+/**
+ * The published library, and after it any template this organisation holds a
+ * copy of that has since been retired: the copy is still theirs, so it stays
+ * on their list (with its template's status, so nobody is offered to adopt it).
+ */
 export async function loadLibrary(
   supabase: SupabaseClient,
   {
     serviceType,
     userId,
+    organisationId,
   }: {
     serviceType: string | null;
     userId: string;
+    organisationId: string;
   },
 ): Promise<PolicySummary[]> {
-  const [{ data: rows }, { data: acks }] = await Promise.all([
+  const [{ data: rows }, { data: adopted }, { data: acks }] = await Promise.all([
     supabase
       .from("policy_documents")
-      .select("id, code, title, category, kind, service_types, version")
+      .select(SUMMARY_COLUMNS)
       .eq("status", "published")
       .eq("kind", "policy")
       .order("category")
       .order("sort_order")
       .order("title")
+      .limit(500),
+    supabase
+      .from("organisation_policies")
+      .select(`policy_documents!inner(${SUMMARY_COLUMNS})`)
+      .eq("organisation_id", organisationId)
+      .neq("policy_documents.status", "published")
+      .eq("policy_documents.kind", "policy")
       .limit(500),
     supabase
       .from("policy_acknowledgements")
@@ -101,8 +125,12 @@ export async function loadLibrary(
   ]);
 
   const ackOf = new Map((acks ?? []).map((a) => [a.policy_id as string, a.version as number]));
+  const retired = (adopted ?? [])
+    .map((c) => (Array.isArray(c.policy_documents) ? c.policy_documents[0] : c.policy_documents) as Record<string, unknown> | null)
+    .filter((r): r is Record<string, unknown> => !!r)
+    .sort((a, b) => String(a.title).localeCompare(String(b.title)));
 
-  return (rows ?? [])
+  return [...(rows ?? []), ...retired]
     .filter((r) => appliesTo(r.service_types as string[] | null, serviceType))
     .map((r) => ({
       id: r.id as string,
@@ -112,10 +140,16 @@ export async function loadLibrary(
       kind: r.kind as PolicyKind,
       service_types: (r.service_types as string[] | null) ?? null,
       version: (r.version as number | null) ?? null,
+      status: r.status as TemplateStatus,
       acknowledgedVersion: ackOf.get(r.id as string) ?? null,
     }));
 }
 
+/**
+ * One template by its code. RLS shows a published one to anyone with the
+ * library, and a retired one only to an organisation holding a copy of it —
+ * so a caller offering to adopt must check the status itself.
+ */
 export async function loadPolicy(
   supabase: SupabaseClient,
   code: string,
@@ -124,12 +158,23 @@ export async function loadPolicy(
   const [{ data: row }, { data: acks }] = await Promise.all([
     supabase
       .from("policy_documents")
-      .select("id, code, title, category, kind, service_types, version, blocks")
+      .select(`${SUMMARY_COLUMNS}, blocks, replaced_by`)
       .eq("code", code)
       .maybeSingle(),
     supabase.from("policy_acknowledgements").select("policy_id, version").eq("user_id", userId),
   ]);
   if (!row) return null;
+
+  // Named only when the reader can open it, which means it is published.
+  const { data: replacement } =
+    row.status !== "published" && row.replaced_by
+      ? await supabase
+          .from("policy_documents")
+          .select("code, title")
+          .eq("id", row.replaced_by as string)
+          .eq("status", "published")
+          .maybeSingle()
+      : { data: null };
 
   const ack = (acks ?? []).find((a) => a.policy_id === row.id);
   return {
@@ -140,7 +185,9 @@ export async function loadPolicy(
     kind: row.kind as PolicyKind,
     service_types: (row.service_types as string[] | null) ?? null,
     version: (row.version as number | null) ?? null,
+    status: row.status as TemplateStatus,
     blocks: (row.blocks as PolicyBlock[]) ?? [],
+    replacedBy: replacement ? { code: replacement.code as string, title: replacement.title as string } : null,
     acknowledgedVersion: (ack?.version as number | undefined) ?? null,
   };
 }

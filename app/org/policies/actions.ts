@@ -95,7 +95,13 @@ export async function adoptPolicyAction(_prev: SaveState, formData: FormData): P
     supabase.from("organisations").select("name, service_type").eq("id", context.organisationId!).single(),
     loadPolicySettings(supabase, context.organisationId!),
   ]);
-  if (!doc || doc.kind !== "policy" || !appliesTo(doc.service_types, (org?.service_type as string | null) ?? null)) {
+  // RLS still shows a retired template to a company holding a copy; it is not adoptable.
+  if (
+    !doc ||
+    doc.kind !== "policy" ||
+    doc.status !== "published" ||
+    !appliesTo(doc.service_types, (org?.service_type as string | null) ?? null)
+  ) {
     return { ok: false, error: "That policy is not in your library." };
   }
   const { error } = await supabase.from("organisation_policies").insert({
