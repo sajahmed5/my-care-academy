@@ -39,7 +39,7 @@ export async function sameTeamInterestAction(product: SameTeamProduct): Promise<
       body: `<p><strong>${esc(who)}</strong>${email ? ` (${esc(email)})` : ""} at <strong>${esc(company)}</strong>
         pressed "I'm interested" on the ${esc(item.name)} advert in My Care Academy.</p>
         <p>Reply to this email to get in touch with them.</p>`,
-      footer: "My Care Academy — the "You may also be interested in" card.",
+      footer: "My Care Academy — the “You may also be interested in” card.",
     }),
   });
   if (!sent) return { ok: false, error: "That didn't go through. Try again, or visit the website." };
