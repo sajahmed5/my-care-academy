@@ -16,7 +16,7 @@ It applies to everyone who works for us: care staff, office staff, managers and 
 ## 3. The law and guidance
 
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 18: Staffing — staff receive the training, learning and development they need to carry out their role, and are supported to gain further qualifications.
-- Health and Care Act 2022 — registered providers must make sure their staff receive training on learning disability and autism, appropriate to their role. The Oliver McGowan Mandatory Training on Learning Disability and Autism is the government's preferred and recommended training for this.
+- Health and Care Act 2022 — registered providers must make sure their staff receive training on learning disability and autism, appropriate to their role. The Oliver McGowan Code of Practice, in force since September 2025, sets the standards that training must meet, and CQC uses it when checking. The Oliver McGowan Mandatory Training on Learning Disability and Autism is the government's preferred and recommended training for this.
 - Skills for Care guidance on core and mandatory training in adult social care — the subjects care staff need and how often to refresh them.
 - Skills for Care, the Care Certificate — the standards for those new to care (see Induction, Probation and the Care Certificate).
 - Health and Safety at Work etc. Act 1974, Manual Handling Operations Regulations 1992 and Health and Safety (First-Aid) Regulations 1981 — information, instruction and training to work safely.

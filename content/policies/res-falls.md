@@ -18,7 +18,7 @@ It applies to every resident and everyone who works in the home, including night
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 12: Safe care and treatment — risks are assessed and reduced, and we respond properly when someone is hurt; and Regulation 15: Premises and equipment — the home and its equipment are safe, suitable and well maintained.
 - Health and Safety at Work etc. Act 1974 and the Manual Handling Operations Regulations 1992 — staff must not lift a fallen resident by hand.
 - Lifting Operations and Lifting Equipment Regulations 1998 — hoists and lifting cushions are suitable, inspected and used only by trained staff.
-- NICE guidance on assessing and preventing falls in older people, and NICE guideline NG232, Head injury: assessment and early management.
+- NICE guideline NG249, Falls: assessment and prevention in older people and in people 50 and over at higher risk (2025), which replaced CG161; and NICE guideline NG232, Head injury: assessment and early management.
 - Medicines and Healthcare products Regulatory Agency guidance on the safe use of bed rails.
 - Care Quality Commission (Registration) Regulations 2009, Regulation 18 — notification of serious injuries.
 - Reporting of Injuries, Diseases and Dangerous Occurrences Regulations 2013 (RIDDOR) — injuries to residents arising from our work activity or the condition of the premises, where the resident is taken directly from the scene to hospital for treatment, must be reported to the Health and Safety Executive.

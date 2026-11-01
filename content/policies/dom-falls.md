@@ -18,7 +18,7 @@ It applies to every client and every care worker, office and on-call worker. It 
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 12: Safe care and treatment — risks are assessed and reduced, and we respond properly when someone is hurt.
 - Health and Safety at Work etc. Act 1974 and the Manual Handling Operations Regulations 1992 — care workers must not be put at risk by lifting a person who has fallen.
 - Lifting Operations and Lifting Equipment Regulations 1998 — lifting equipment is suitable, maintained and used only by trained staff.
-- NICE guidance on assessing and preventing falls in older people, and NICE guideline NG232, Head injury: assessment and early management.
+- NICE guideline NG249, Falls: assessment and prevention in older people and in people 50 and over at higher risk (2025), which replaced CG161; and NICE guideline NG232, Head injury: assessment and early management.
 - Care Quality Commission (Registration) Regulations 2009, Regulation 18 — notification of serious injuries to people while we are providing their care.
 - Reporting of Injuries, Diseases and Dangerous Occurrences Regulations 2013 (RIDDOR) — some injuries arising from our work activity must be reported to the Health and Safety Executive.
 

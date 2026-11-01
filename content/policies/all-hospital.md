@@ -16,7 +16,7 @@ It applies to everyone who works for us and to every planned or emergency hospit
 ## 3. The law and guidance
 
 - NICE guideline NG27: Transition between inpatient hospital settings and community or care home settings for adults with social care needs — how information is shared, discharge is planned, and care is restarted safely; and the related NICE quality standard QS136.
-- Care Act 2014 and the Department of Health and Social Care's hospital discharge and community support guidance — how hospitals, local authorities and providers work together on discharge.
+- Care Act 2014 and the Department of Health and Social Care's statutory guidance, Hospital discharge and community support — how hospitals, local authorities and providers work together on discharge.
 - Mental Capacity Act 2005 — decisions about treatment and about where a person lives after hospital are made with them, or in their best interests if they lack capacity.
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 9: Person-centred care, Regulation 12: Safe care and treatment (including working with other providers and the safe management of medicines), and Regulation 17: Good governance.
 - Data Protection Act 2018 and UK GDPR — sharing the information the hospital needs to care for the person.

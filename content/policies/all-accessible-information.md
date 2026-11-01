@@ -15,7 +15,7 @@ It applies to everyone we support, and to their family carers and representative
 
 ## 3. The law and guidance
 
-- Accessible Information Standard, issued by NHS England under section 250 of the Health and Social Care Act 2012 — providers of publicly funded adult social care must identify, record, flag, share and meet the information and communication needs of people with a disability, impairment or sensory loss.
+- Accessible Information Standard (DAPB1605, revised in 2025), issued by NHS England under section 250 of the Health and Social Care Act 2012 — providers of publicly funded adult social care must identify, record, flag, share and meet the information and communication needs of people with a disability, impairment or sensory loss.
 - Equality Act 2010 — the duty to make reasonable adjustments, including providing information in an accessible format and auxiliary aids such as interpreters.
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 9: Person-centred care, and Regulation 11: Need for consent — people are involved in their care and give consent based on information they can understand.
 - Mental Capacity Act 2005 — all practicable steps, including communication support, must be taken to help a person make a decision before concluding they cannot.

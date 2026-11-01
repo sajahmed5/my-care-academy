@@ -16,6 +16,7 @@ It applies to all employees. Some kinds of leave and pay depend on how long you 
 ## 3. The law and guidance
 
 - Employment Rights Act 1996 and the regulations made under it — the rights to maternity, paternity, adoption, shared parental, parental bereavement, neonatal care and unpaid parental leave, to time off for dependants and for antenatal care, and not to be treated unfairly for using them.
+- Employment Rights Act 2025 and Paternity Leave (Bereavement) Act 2024 — from 6 April 2026, paternity leave and unpaid parental leave are rights from the first day of work, and a bereaved partner may take up to 52 weeks' paternity leave.
 - Neonatal Care (Leave and Pay) Act 2023 — leave for parents whose baby needs neonatal care.
 - Carer's Leave Act 2023 and Carer's Leave Regulations 2024 — leave to care for a dependant with a long-term care need.
 - Protection from Redundancy (Pregnancy and Family Leave) Act 2023 — extra protection in a redundancy situation during and after pregnancy and family leave.
@@ -48,7 +49,9 @@ Adoption leave works in a similar way to maternity leave, for the main adopter, 
 
 ### 5.3 Paternity leave
 
-The father, or the partner of the mother or main adopter, may take paternity leave of one or two weeks, together or as two separate weeks, within the first year after the birth or placement.
+The father, or the partner of the mother or main adopter, may take paternity leave of one or two weeks, together or as two separate weeks, within the first year after the birth or placement. Paternity leave is a right from your first day with us; statutory paternity pay depends on your length of service and earnings.
+
+If the mother or main adopter dies within the first year, their partner may take bereaved partner's paternity leave: unpaid leave of up to 52 weeks, from your first day with us, to be taken within the child's first year. Tell us as soon as you can.
 
 ### 5.4 Shared parental leave
 
@@ -64,7 +67,7 @@ If your child dies, or you have a stillbirth after 24 weeks of pregnancy, you ma
 
 ### 5.7 Unpaid parental leave
 
-Parents may take unpaid parental leave to care for a child — for example to spend more time with them, or to settle them into a new school. It is normally taken in blocks of a week, up to the limits the law sets. We may postpone it for a short time if your absence would seriously disrupt the care of the people we support, and we will tell you why in writing.
+From your first day with us, parents may take unpaid parental leave to care for a child — for example to spend more time with them, or to settle them into a new school. It is normally taken in blocks of a week, up to the limits the law sets. We may postpone it for a short time if your absence would seriously disrupt the care of the people we support, and we will tell you why in writing.
 
 ### 5.8 Carer's leave
 

@@ -18,7 +18,7 @@ It applies to every new employee: care staff, office staff and managers, whether
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 18: Staffing — staff receive the induction, training and supervision they need to do their job.
 - Regulation 19: Fit and proper persons employed — staff are competent for the work they do.
 - Skills for Care, the Care Certificate — the agreed standards a care worker new to care must meet. CQC expects those new to care to complete it, normally within 12 weeks of starting.
-- Health and Care Act 2022 — registered providers must make sure staff receive training in learning disability and autism appropriate to their role (see Training and Development).
+- Health and Care Act 2022 — registered providers must make sure staff receive training in learning disability and autism appropriate to their role, to the standards in the Oliver McGowan Code of Practice (see Training and Development).
 - Employment Rights Act 1996 — written terms of employment from the first day.
 
 ## 4. Our policy

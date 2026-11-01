@@ -92,7 +92,7 @@ Data protection law does not stop us sharing information to protect someone or t
 
 ## 11. Training
 
-All staff complete Prevent awareness training during induction, and refresh it as part of their safeguarding training. The registered manager and anyone who deputises for them complete the government's Prevent referral training.
+All staff complete Prevent awareness training during induction, and refresh it as part of their safeguarding training. The registered manager and anyone who deputises for them complete the government's Prevent duty training: referrals course, on GOV.UK.
 
 ## 12. Records
 

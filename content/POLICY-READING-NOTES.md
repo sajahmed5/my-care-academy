@@ -24,21 +24,29 @@ Points the writers were unsure of, or our own choices rather than law.
 - Gifts: the value limit is left as a fill-in for each company.
 - Supervision and Appraisal: the default periods from the Staff Audits plan (supervision every 3 months, appraisal yearly).
 
-**Law and guidance to confirm**
-- Modern Slavery: the helpline's current name and number (written as the Modern Slavery and Exploitation Helpline, 08000 121 700).
-- Health and Safety (homecare): gas emergency line 0800 111 999.
-- Prevent: the government's Prevent referral training exists under that name.
-- Hospital Admissions and Discharges: the current title of the government's hospital discharge guidance.
-- Falls: NICE falls guidance is cited without a number (NG249 may have replaced CG161).
-- Accessible Information Standard: cited without its reference number, which changed when NHS England revised it.
-- Learning disability and autism training: the Health and Care Act 2022 duty is cited; the code of practice is not described.
-- Fit and Proper Persons: Regulation 6 (nominated individual) and Schedule 4 Part 1 references.
-- Working Time: travel to the first visit and home from the last counts towards the 48-hour limit for staff with no fixed workplace (the Tyco ruling).
-- Family Leave: figures given are maternity 52 weeks (2 compulsory), paternity 1 or 2 weeks, neonatal care up to 12 weeks, parental bereavement 2 weeks; carer's leave notice is twice the leave or 3 days. Qualifying service is left out deliberately, as it is changing.
-- Data Security: breaches can be reported to the ICO through the Data Security and Protection Toolkit or directly.
-- Legionella: the temperatures quoted (60°C stored, 50°C within a minute, cold below 20°C, 44°C at outlets for vulnerable people) and five-year record keeping.
-- Fire Safety: the Building Safety Act 2022 change requiring the whole fire risk assessment to be recorded.
-- CQC notifications: homecare notifies deaths that happened while care was provided or may have resulted from it; care homes notify every resident death. Neither policy says a category 3 or 4 pressure ulcer is automatically notifiable — the registered manager decides using CQC's guidance.
-- Sexuality and Relationships: follows the Supreme Court's 2021 JB judgment on capacity to consent to sex; says nothing about single-sex spaces after the April 2025 For Women Scotland judgment.
+**Law and guidance — checked 1 Nov 2026**
+
+Changed in the files and re-seeded:
+- Falls (both): cites NICE NG249 (April 2025), which replaced CG161.
+- Accessible Information Standard: cites DAPB1605, revised in 2025.
+- Training, and Induction and Probation: the Oliver McGowan Code of Practice, in force since September 2025, which CQC uses when checking.
+- Prevent: names the GOV.UK course, "Prevent duty training: referrals".
+- Hospital Admissions and Discharges: the guidance's exact title, Hospital discharge and community support (DHSC, statutory, last updated January 2024).
+- Family Leave: since 6 April 2026, paternity leave and unpaid parental leave are day-one rights, and bereaved partner's paternity leave (unpaid, up to 52 weeks) exists. All three are now in the policy.
+
+Confirmed as written:
+- Modern Slavery: the Modern Slavery & Exploitation Helpline, 08000 121 700.
+- Health and Safety (homecare): gas emergency, 0800 111 999.
+- Fit and Proper Persons: Regulations 5, 6, 7 and 19, and Schedules 3 and 4 Part 1, are cited correctly.
+- Family Leave figures: maternity 52 weeks (2 compulsory), paternity 1 or 2 weeks, neonatal up to 12 weeks, parental bereavement 2 weeks, carer's leave notice twice the leave or 3 days.
+- Sickness Absence: says "the rules in force", so it already covers Statutory Sick Pay being paid from day one since April 2026.
+- Fire Safety: since October 2023 the Building Safety Act requires every fire risk assessment to be recorded in full.
+- Legionella: 60°C stored, 50°C within a minute, cold below 20°C, 44°C at outlets used by vulnerable people, records kept 5 years.
+- Data Security: breaches can go to the ICO through the DSPT.
+- Working Time: Tyco still stands as assimilated case law.
+
+Still your call:
+- Sexuality and Relationships says nothing about single-sex spaces after the April 2025 For Women Scotland judgment.
+- CQC notifications: CQC's guidance doesn't say a category 3 or 4 pressure ulcer is automatically notifiable, though CQC has treated one as a serious injury. The policies leave the decision to the registered manager, who follows CQC's guidance.
 
 **Fill-ins a company completes** — kept to local facts: local authority safeguarding and DoLS contacts, interpreting service, on-call and sickness reporting notice, leave year and bank holidays, sick pay, the "late visit" window, insurance cover, and a few similar.
