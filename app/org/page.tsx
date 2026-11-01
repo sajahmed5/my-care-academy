@@ -1,232 +1,303 @@
-import Link from "next/link";
-import {
-  AlertTriangle,
-  BadgeAlert,
-  BookOpenCheck,
-  CalendarClock,
-  CheckCircle2,
-  CircleDashed,
-  Clock,
-  MoonStar,
-  UserRoundX,
-  Users,
-} from "lucide-react";
-import { requireConsole } from "@/lib/auth";
+import { memberStatus, requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { tierLabel } from "@/lib/organisations";
-import { StatTile } from "@/components/learner-ui";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { SameTeam } from "@/components/same-team";
-import { bucketOf, isActiveLearner, isInactive30d, isNeverActive, loadOrgLearners } from "@/lib/org-learners";
-import { ChooseWhoLink } from "./choose-who-link";
-import { WhosOff } from "./hr/holidays/whos-off";
+import { isActiveLearner, isNeverActive, loadOrgLearners, type OrgLearnerRow } from "@/lib/org-learners";
 import { enabledMap } from "@/lib/entitlements";
 import { loadOrgTodo, type TodoLine } from "@/lib/org-todo";
+import { isLate, loadStaffChecks, type StaffChecks } from "@/lib/staff-checks";
+import { loadServiceDue } from "@/lib/service-audits-due";
+import { dueCounts } from "@/lib/service-audits";
+import { runHref } from "@/lib/client-qa";
+import { formatDate, UK_TIME_ZONE } from "@/lib/dates";
+import { codeOf, complianceChecks, readiness, rowFromLine, sortRows, type AttentionRow } from "@/lib/today";
+import { AttentionList, FigureCard, ReadinessCard, SetupChecklist, TeamTraining, type SetupStep } from "./today/cards";
+import { WhosOffWeek } from "./today/whos-off-week";
+
+const NAME_CAP = 4;
+const nameList = (rows: OrgLearnerRow[]) => {
+  const names = rows.map((r) => r.name);
+  if (names.length <= NAME_CAP) return names.join(", ");
+  return `${names.slice(0, NAME_CAP).join(", ")} and ${names.length - NAME_CAP} more`;
+};
+const plural = (n: number, one: string, many = one + "s") => `${n} ${n === 1 ? one : many}`;
+const day = (d: string) => formatDate(d, { day: "numeric", month: "short" });
+
+/** "Good morning" by the clock in the UK, whatever the server's zone. */
+function greeting(now: Date): string {
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, hour: "numeric", hourCycle: "h23" }).format(now));
+  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+}
+
+/**
+ * A person's supervisions and appraisals as lines: one per person while
+ * three or fewer are late (the mockup's "Saj Ahmed has never had a
+ * supervision", with Book going straight to the form), one line for the
+ * lot beyond that.
+ */
+function checkRows(kind: "supervision" | "appraisal", checks: StaffChecks): AttentionRow[] {
+  const plural_ = kind === "supervision" ? "Supervisions" : "Appraisals";
+  const check = kind === "supervision" ? "supervisions" : "appraisals";
+  const code = codeOf(check);
+  const all = [...checks.entries()].map(([id, c]) => ({ id, row: c[kind] }));
+  const late = all.filter((x) => isLate(x.row));
+  const soon = all.filter((x) => x.row.status === "due_soon" && !x.row.booked);
+  const rows: AttentionRow[] = [];
+  if (late.length > 0 && late.length <= 3) {
+    for (const { id, row } of late) {
+      const never = row.status === "never";
+      rows.push({
+        key: `${kind}:${id}`,
+        code,
+        title: never ? `${row.person.name} has never had ${kind === "appraisal" ? "an" : "a"} ${kind}` : `${row.person.name}'s ${kind} is overdue`,
+        meta: never ? plural_ : `Last ${kind} ${day(row.last!)} · was due ${day(row.next!)}`,
+        pill: { label: never ? "Never had one" : "Overdue", tone: "danger" },
+        href: `/org/staff/${id}/supervisions/new?kind=${kind}`,
+        action: "Book",
+        check,
+        tone: "alert",
+      });
+    }
+  } else if (late.length > 3) {
+    const overdue = late.filter((x) => x.row.status === "overdue").length;
+    const never = late.length - overdue;
+    rows.push({
+      key: `${kind}:late`,
+      code,
+      title: plural_,
+      meta: [overdue && `${overdue} overdue`, never && `${plural(never, "person has", "people have")} never had one`].filter(Boolean).join(" · "),
+      pill: { label: "Overdue", tone: "danger" },
+      href: `/org/due/${kind}s`,
+      action: "See who",
+      check,
+      tone: "alert",
+    });
+  }
+  if (soon.length > 0) {
+    rows.push({
+      key: `${kind}:soon`,
+      code,
+      title: plural_,
+      meta: `${soon.length} due in the next 30 days`,
+      pill: { label: "Due soon", tone: "warn" },
+      href: `/org/due/${kind}s`,
+      action: "See who",
+      check,
+      tone: "warn",
+    });
+  }
+  return rows;
+}
 
 export default async function OrgDashboard() {
   const context = await requireConsole();
-
-  // All reads go through RLS — an org_admin only ever sees their own org + staff.
-  // The explicit organisation filter is for the planner, not for security: it
-  // lets Postgres use the organisation_id index instead of testing the policy
-  // on every row in the table.
-  const orgId = context.organisationId;
+  const orgId = context.organisationId!;
   const supabase = await createClient();
-  const [{ data: organisation }, allLearners, enabled] = await Promise.all([
-    supabase
-      .from("organisations")
-      .select("name, package_tier")
-      .eq("id", orgId!)
-      .single(),
+  const now = new Date();
+
+  // All reads go through RLS — a console user only ever sees their own org.
+  // The explicit organisation filter is for the planner, not for security.
+  const [{ data: organisation }, allLearners, enabled, member] = await Promise.all([
+    supabase.from("organisations").select("name, package_tier").eq("id", orgId).single(),
     loadOrgLearners(supabase, orgId),
     enabledMap(context),
+    memberStatus(context.userId, orgId),
   ]);
-
   // Headline numbers count active staff only; deactivated stay in the matrix.
   const learners = allLearners.filter(isActiveLearner);
-  const nowMs = new Date().getTime();
+  const people = learners.map((r) => ({ id: r.id, name: r.name }));
 
-  const inactive = learners.filter((r) => isInactive30d(r, nowMs)).length;
-  const neverActive = learners.filter(isNeverActive).length;
-  // See the Learners overview: "Active" means they have signed in at least
-  // once, so this and Never signed in add up to the roll (issue #24).
-  const activeLearners = learners.length - neverActive;
-  const inProgress = learners.filter((r) => bucketOf(r) === "in_progress").length;
-  const withOverdue = learners.filter((r) => r.stats.overdue > 0).length;
+  const [checks, serviceDue, todoLines, clients] = await Promise.all([
+    enabled["people.supervisions"] ? loadStaffChecks(supabase, orgId, people, now) : null,
+    enabled["quality.audits"] ? loadServiceDue(supabase, orgId, now) : null,
+    loadOrgTodo(supabase, context, enabled),
+    enabled["clients.list"]
+      ? supabase.from("clients").select("id", { count: "exact", head: true }).eq("organisation_id", orgId).then((r) => r.count ?? 0)
+      : Promise.resolve<number | null>(null),
+  ]);
 
   const totals = learners.reduce(
     (t, r) => ({
       assigned: t.assigned + r.stats.assigned,
       completed: t.completed + r.stats.completed,
-      inProgress: t.inProgress + r.stats.inProgress,
-      notStarted: t.notStarted + r.stats.notStarted,
+      expired: t.expired + r.stats.expired,
       overdue: t.overdue + r.stats.overdue,
-      late: t.late + r.lateCompletions,
       expiring: t.expiring + r.stats.expiring,
+      certificates: t.certificates + r.stats.certificates,
     }),
-    {
-      assigned: 0,
-      completed: 0,
-      inProgress: 0,
-      notStarted: 0,
-      overdue: 0,
-      late: 0,
-      expiring: 0,
-    },
+    { assigned: 0, completed: 0, expired: 0, overdue: 0, expiring: 0, certificates: 0 },
   );
-  // Every rate on this row is a share of assigned COURSES, not of people — the
-  // hint under each spells out the fraction so it can't be read as a headcount
-  // (issue #21). They needn't total 100: an expired enrolment is none of the
-  // three.
-  const pct = (n: number) =>
-    totals.assigned > 0 ? Math.round((n / totals.assigned) * 100) : 0;
-  const overallPct = pct(totals.completed);
+  const overallPct = totals.assigned > 0 ? Math.round((totals.completed / totals.assigned) * 100) : 0;
 
-  // Training's lines in the to-do list. These link through to the filtered list rather than offering a one-tap
-  // "remind everyone": some people should not be chased, for reasons the
-  // system cannot know (issue #27). Bulk chasing still lives on
-  // Learners → Admin, where the group and its headcount are explicit.
-  // Names, not headcounts (issue #29): "2 staff members have overdue training"
-  // tells a manager nothing they can act on. Capped, because an org that has
-  // just imported its roll can have hundreds in a group and the panel would
-  // become the page.
-  const NAME_CAP = 5;
-  const nameList = (rows: typeof learners) => {
-    const names = rows.map((r) => r.name);
-    if (names.length <= NAME_CAP) return names.join(", ");
-    return `${names.slice(0, NAME_CAP).join(", ")} and ${names.length - NAME_CAP} more`;
-  };
-
+  // --- Needs your attention -------------------------------------------------
+  // Training's lines link to the filtered list rather than a one-tap "remind
+  // everyone": some people should not be chased, for reasons the system
+  // cannot know (issue #27). Names, not headcounts (issue #29).
   const overdueRows = learners.filter((r) => r.stats.overdue > 0);
   const neverRows = learners.filter(isNeverActive);
-  // Training falling due, not yet late — the window where a reminder still
-  // prevents a breach rather than recording one (issue #29).
   const dueSoonRows = learners.filter((r) => r.stats.dueSoon > 0);
-
   const training: TodoLine[] = [
-    overdueRows.length > 0 && {
-      key: "overdue",
-      tone: "alert" as const,
-      text: `Overdue training: ${nameList(overdueRows)}`,
-      href: "/org/learners?filter=overdue#learners",
-      action: "",
-    },
-    neverRows.length > 0 && {
-      key: "never",
-      tone: "alert" as const,
-      text: `Never signed in, so can't start training: ${nameList(neverRows)}`,
-      href: "/org/learners?filter=never#learners",
-      action: "",
-    },
-    dueSoonRows.length > 0 && {
-      key: "due_soon",
-      tone: "warn" as const,
-      text: `Training due in the next 60 days: ${nameList(dueSoonRows)}`,
-      // Both links go to the same people the sentence names. They used to
-      // point at an unfiltered table and a different filter respectively.
-      href: "/org/learners?filter=due_soon#learners",
-      action: "",
-    },
-    totals.expiring > 0 && {
-      key: "expiring",
-      tone: "warn" as const,
-      text: `${totals.expiring} certificate${totals.expiring === 1 ? " is" : "s are"} expiring soon or already expired`,
-      href: "/org/certificates",
-      action: "See which",
-    },
+    overdueRows.length > 0 && { key: "overdue", tone: "alert" as const, text: `Overdue training: ${nameList(overdueRows)}`, href: "/org/learners?filter=overdue", action: "Choose who" },
+    neverRows.length > 0 && { key: "never", tone: "alert" as const, text: `Never signed in: ${nameList(neverRows)}`, href: "/org/learners?filter=never", action: "Choose who" },
+    dueSoonRows.length > 0 && { key: "due_soon", tone: "warn" as const, text: `Training due in the next 60 days: ${nameList(dueSoonRows)}`, href: "/org/learners?filter=due_soon", action: "Choose who" },
+    totals.expiring > 0 && { key: "expiring", tone: "warn" as const, text: `Certificates expiring: ${plural(totals.expiring, "certificate")} soon or already expired`, href: "/org/certificates", action: "See which" },
   ].filter((r): r is TodoLine => !!r);
 
-  // One list for everything waiting, from every add-on the company has
-  // (ease-of-use review, 30 Oct 2026): it used to show training only, so a
-  // new concern or an overdue supervision never reached this page. Late
-  // things first; within each, training leads.
-  const todo = [...training, ...(await loadOrgTodo(supabase, context, enabled))].sort(
-    (a, b) => (a.tone === b.tone ? 0 : a.tone === "alert" ? -1 : 1),
-  );
+  // Supervisions, appraisals and service audits are drawn here from the rows
+  // the cards read anyway, person by person and audit by audit; the to-do
+  // list's own lines for them step aside.
+  const own = new Set(["/org/due/supervisions", "/org/due/appraisals", "service-audits"]);
+  const rows: AttentionRow[] = [
+    ...training.map((l) => rowFromLine(l)),
+    ...(checks ? [...checkRows("supervision", checks), ...checkRows("appraisal", checks)] : []),
+    ...(serviceDue ?? []).flatMap((d): AttentionRow[] => {
+      const code = codeOf("audits", d.form.label);
+      if (d.form.scope === "service") {
+        if (d.status === "overdue" || d.status === "never") {
+          return [{
+            key: `audit:${d.form.key}`,
+            code,
+            title: d.form.label,
+            meta: d.status === "never" ? "Service audit · never carried out" : `Service audit · last done ${day(d.last!)}, due ${day(d.next!)}`,
+            pill: { label: "Due now", tone: "warn" },
+            href: runHref(d.form.key),
+            action: "Start",
+            check: "audits",
+            tone: "alert",
+          }];
+        }
+        if (d.status === "due_soon") {
+          return [{ key: `audit:${d.form.key}`, code, title: d.form.label, meta: `Service audit · due ${day(d.next!)}`, pill: { label: "Due soon", tone: "warn" }, href: runHref(d.form.key), action: "Start", check: "audits", tone: "warn" }];
+        }
+        return [];
+      }
+      const c = dueCounts(d.clients);
+      const out: AttentionRow[] = [];
+      if (c.late > 0) out.push({ key: `audit:${d.form.key}:late`, code, title: d.form.label, meta: `${plural(c.late, "client")} due now`, pill: { label: "Due now", tone: "warn" }, href: "/org/due/audits", action: "See which", check: "audits", tone: "alert" });
+      if (c.soon > 0) out.push({ key: `audit:${d.form.key}:soon`, code, title: d.form.label, meta: `${plural(c.soon, "client")} due in the next 30 days`, pill: { label: "Due soon", tone: "warn" }, href: "/org/due/audits", action: "See which", check: "audits", tone: "warn" });
+      return out;
+    }),
+    ...todoLines.filter((l) => !own.has(l.key)).map((l) => rowFromLine(l)),
+  ];
+  const sorted = sortRows(rows);
+  const ready = readiness(complianceChecks(enabled), rows);
+  const SHOWN = 8;
+
+  // --- The four cards -------------------------------------------------------
+  const supervisionsUpToDate = checks ? [...checks.values()].filter((c) => !isLate(c.supervision)).length : 0;
+  const supervisionsSoon = checks ? [...checks.values()].filter((c) => c.supervision.status === "due_soon").length : 0;
+  const serviceForms = (serviceDue ?? []).filter((d) => d.form.scope === "service");
+  const auditsLate = (serviceDue ?? []).reduce((n, d) => n + (d.form.scope === "service" ? (d.status === "overdue" || d.status === "never" ? 1 : 0) : dueCounts(d.clients).late), 0);
+  const auditsSoon = (serviceDue ?? []).reduce((n, d) => n + (d.form.scope === "service" ? (d.status === "due_soon" ? 1 : 0) : dueCounts(d.clients).soon), 0);
+  const auditsNever = serviceForms.length > 0 && serviceForms.every((d) => d.status === "never");
+
+  // --- Finish setting up ----------------------------------------------------
+  const steps: SetupStep[] = [
+    { key: "org", label: "Create your organisation", done: true, href: "/org/settings" },
+    { key: "manager", label: "Add yourself as manager", done: true, href: "/org/settings" },
+    { key: "staff", label: "Invite your staff", done: allLearners.length > 1, href: "/org/learners/admin?section=invite" },
+    { key: "training", label: "Assign mandatory training", done: totals.assigned > 0, href: "/org/courses/admin" },
+    ...(clients !== null ? [{ key: "clients", label: "Add your clients", done: clients > 0, href: "/org/clients/new" }] : []),
+  ];
+
+  // --- Training across the team --------------------------------------------
+  const open = Math.max(0, totals.assigned - totals.completed - totals.expired);
+  const onTime = Math.max(0, open - totals.overdue);
+  const segments = [
+    { key: "completed", label: "completed", count: totals.completed, className: "bg-primary", dot: "bg-primary" },
+    { key: "open", label: "in progress or not started", count: onTime, className: "bg-chart-2", dot: "bg-chart-2" },
+    { key: "overdue", label: "overdue", count: Math.min(totals.overdue, open), className: "bg-amber-500", dot: "bg-amber-500" },
+    ...(totals.expired > 0 ? [{ key: "expired", label: "to retake", count: totals.expired, className: "bg-danger-foreground", dot: "bg-danger-foreground" }] : []),
+  ];
+
+  const firstName = (member?.fullName ?? "").trim().split(/\s+/)[0] || null;
+  const today = formatDate(now.toISOString(), { weekday: "long", day: "numeric", month: "long" });
 
   return (
     <DashboardShell
-      title={organisation?.name ?? "Organisation console"}
+      title="Today"
       context={context}
-    >
-      {/* What needs doing comes first (design review, 28 Oct 2026): it was a
-          single line under eleven equal tiles, so "2 overdue" weighed the same
-          as "0 completed late" and the one thing to act on sat at the bottom.
-          Tiles that read zero now step back (StatTile dims them). */}
-      {/* "You may also be interested in" sits beside the page on a wide screen, and
-          under it on anything narrower (TRIAL.md). */}
-      <div className="flex flex-col gap-8 xl:flex-row xl:items-start">
-        <div className="min-w-0 flex-1 space-y-8">
-          <section className="space-y-3">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-lg font-semibold tracking-tight">To do today</h2>
-              <p className="text-sm text-muted-foreground">
-                {tierLabel(organisation?.package_tier ?? "core")} plan
-              </p>
-            </div>
-            {todo.length === 0 ? (
-              <p className="rounded-2xl border bg-card px-5 py-6 text-sm text-muted-foreground">
-                You&apos;re all up to date ✓
-              </p>
-            ) : (
-              <ul className="space-y-2">
-                {todo.map((r) => (
-                  <li
-                    key={r.key}
-                    className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-l-4 bg-card px-5 py-4 shadow-sm ${
-                      r.tone === "alert" ? "border-l-rose-500" : "border-l-amber-500"
-                    }`}
-                  >
-                    <Link href={r.href} className="min-w-0 flex-1 text-sm font-medium hover:underline">
-                      {r.text}
-                    </Link>
-                    {/* Training is chased person by person (issue #27); everything
-                        else has one button to where it is done. */}
-                    {r.action ? (
-                      <Link
-                        href={r.href}
-                        className="inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-sm font-medium transition-colors hover:bg-accent"
-                      >
-                        {r.action}
-                      </Link>
-                    ) : (
-                      <ChooseWhoLink href={r.href} />
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <WhosOff context={context} />
-
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Training
-            </h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              <StatTile label="Assigned training complete" value={`${overallPct}%`} icon={CheckCircle2} color="#10b981" hint={`${totals.completed} of ${totals.assigned} courses`} href="/org/courses" />
-              <StatTile label="Overdue courses" value={totals.overdue} icon={BadgeAlert} color="#ef4444" href="/org/learners/statistics?status=overdue" />
-              <StatTile label="In progress" value={`${pct(totals.inProgress)}%`} icon={Clock} color="#f59e0b" hint={`${totals.inProgress} of ${totals.assigned} courses`} href="/org/learners/statistics?status=in_progress" />
-              <StatTile label="Not started" value={`${pct(totals.notStarted)}%`} icon={CircleDashed} color="#64748b" hint={`${totals.notStarted} of ${totals.assigned} courses`} href="/org/learners/statistics?status=not_started" />
-              <StatTile label="Completed late" value={totals.late} icon={CalendarClock} color="#f97316" href="/org/learners/statistics?status=late" />
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Staff
-            </h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-              <StatTile label="Active learners" value={activeLearners} icon={Users} color="#0284c7" href="/org/learners?filter=signed_in#learners" />
-              <StatTile label="With overdue training" value={withOverdue} icon={AlertTriangle} color="#e11d48" href="/org/learners?filter=overdue#learners" />
-              <StatTile label="Learning now" value={inProgress} icon={BookOpenCheck} color="#f59e0b" href="/org/learners?filter=in_progress#learners" />
-              <StatTile label="Not signed in for a month" value={inactive} icon={MoonStar} color="#8b5cf6" href="/org/learners?filter=inactive#learners" />
-              <StatTile label="Never signed in" value={neverActive} icon={UserRoundX} color="#e11d48" href="/org/learners?filter=never#learners" />
-            </div>
-          </section>
+      header={
+        <div className="mb-6">
+          <p className="text-[15px] text-muted-foreground">
+            {today}
+            {organisation?.name ? ` · ${organisation.name}` : ""}
+          </p>
+          <h1 className="mt-0.5 text-[26px] font-extrabold leading-tight tracking-tight sm:text-[30px]">
+            {greeting(now)}
+            {firstName ? `, ${firstName}` : ""}
+          </h1>
         </div>
-        <SameTeam context={context} className="xl:w-80 xl:shrink-0" />
+      }
+    >
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+          <div className="col-span-2 xl:col-span-1">
+            <ReadinessCard r={ready} />
+          </div>
+          <FigureCard
+            label="Training complete"
+            value={`${overallPct}%`}
+            pct={overallPct}
+            href="/org/learners/statistics"
+            note={totals.assigned === 0 ? "Nothing assigned yet" : totals.overdue > 0 ? `${plural(totals.overdue, "course")} overdue` : "All assigned training on time"}
+            noteTone={totals.overdue > 0 ? "danger" : "muted"}
+          />
+          {checks ? (
+            <FigureCard
+              label="Supervisions up to date"
+              value={supervisionsUpToDate}
+              of={`/ ${people.length}`}
+              pct={people.length ? (supervisionsUpToDate / people.length) * 100 : 0}
+              href="/org/due/supervisions"
+              note={supervisionsSoon > 0 ? `${supervisionsSoon} due this month` : supervisionsUpToDate === people.length ? "Everyone is up to date" : `${people.length - supervisionsUpToDate} overdue or never held`}
+              noteTone={supervisionsSoon > 0 ? "warn" : supervisionsUpToDate === people.length ? "muted" : "danger"}
+            />
+          ) : (
+            <FigureCard
+              label="Certificates"
+              value={totals.certificates}
+              pct={totals.certificates ? 100 : 0}
+              href="/org/certificates"
+              note={totals.expiring > 0 ? `${plural(totals.expiring, "certificate")} expiring soon` : "None expiring soon"}
+              noteTone={totals.expiring > 0 ? "warn" : "muted"}
+            />
+          )}
+          {serviceDue ? (
+            <FigureCard
+              label="Service audits"
+              value={auditsLate}
+              of="due"
+              pct={serviceForms.length ? ((serviceForms.length - serviceForms.filter((d) => d.status === "overdue" || d.status === "never").length) / serviceForms.length) * 100 : 0}
+              barTone={auditsLate > 0 ? "warn" : "primary"}
+              href="/org/due/audits"
+              note={auditsNever ? "Never carried out" : auditsLate > 0 ? `${auditsSoon > 0 ? `${auditsSoon} more due in the next 30 days` : "Due now"}` : auditsSoon > 0 ? `${auditsSoon} due in the next 30 days` : "All up to date"}
+              noteTone={auditsNever ? "danger" : auditsLate + auditsSoon > 0 ? "warn" : "muted"}
+            />
+          ) : (
+            <FigureCard
+              label="Signed in"
+              value={learners.length - neverRows.length}
+              of={`/ ${learners.length}`}
+              pct={learners.length ? ((learners.length - neverRows.length) / learners.length) * 100 : 0}
+              href="/org/learners?filter=never"
+              note={neverRows.length > 0 ? `${plural(neverRows.length, "person has", "people have")} never signed in` : "Everyone has signed in"}
+              noteTone={neverRows.length > 0 ? "danger" : "muted"}
+            />
+          )}
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start">
+          <AttentionList rows={sorted.slice(0, SHOWN)} allCount={sorted.length} allHref={enabled["people.supervisions"] ? "/org/due" : "/org/learners?filter=overdue"} />
+          <div className="space-y-6">
+            <SetupChecklist steps={steps} />
+            {enabled["recruitment.tracker"] && <WhosOffWeek context={context} />}
+            {/* "You may also be interested in" (TRIAL.md). */}
+            <SameTeam context={context} />
+          </div>
+        </div>
+
+        <TeamTraining segments={segments} href="/org/learners/statistics" />
       </div>
     </DashboardShell>
   );
