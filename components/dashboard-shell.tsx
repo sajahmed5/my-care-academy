@@ -11,15 +11,22 @@ import { deriveNotifications, unreadCount } from "@/lib/notifications";
 import { VERSION_LABEL } from "@/lib/version";
 import { StarBank } from "@/components/star-bank";
 import { ReportWidget } from "@/components/report-widget";
-import { TrialBanner } from "@/components/trial-banner";
-import { isStaffRole, memberStatus, roleLabel, type UserContext } from "@/lib/auth";
+import { consoleFont } from "@/components/console-font";
+import { isConsoleRole, isStaffRole, memberStatus, roleLabel, type UserContext } from "@/lib/auth";
 import { enabledMap } from "@/lib/entitlements";
+import type { FeatureKey } from "@/lib/features";
+import { loadDueBadge } from "@/lib/due-badge";
+import { daysLeftLabel, trialState } from "@/lib/trial";
 
+/**
+ * Unread notifications about their own training: the badge on a carer's
+ * Notifications item, and on the bell a manager or office worker has.
+ */
 async function learnerBadges(
   context: UserContext,
-  learn: boolean,
+  wanted: boolean,
 ): Promise<Record<string, number>> {
-  if (!learn) return {};
+  if (!wanted) return {};
   try {
     const data = await loadBadgeData(context.userId);
     const notifs = deriveNotifications(data.enrolments, data.certificates, new Date(), data.bookings);
@@ -41,8 +48,8 @@ async function learnerStarTotal(context: UserContext, learn: boolean): Promise<n
  */
 async function orgAddOns(
   context: UserContext,
-): Promise<Record<string, boolean>> {
-  if (!context.organisationId) return {};
+): Promise<Record<FeatureKey, boolean>> {
+  if (!context.organisationId) return {} as Record<FeatureKey, boolean>;
   return enabledMap(context);
 }
 
@@ -71,10 +78,15 @@ async function touchLastSeen(context: UserContext): Promise<void> {
   }
 }
 
+/**
+ * Every signed-in page: the menu across the top, the page's title, and the
+ * page, held to 1,320px in the middle (redesign, 1 Nov 2026, docs/redesign).
+ */
 export async function DashboardShell({
   title,
   context,
   back,
+  header,
   learn = false,
   children,
 }: {
@@ -83,8 +95,13 @@ export async function DashboardShell({
   /** A page of someone's own training (/learn). Every member of staff has
    *  one since 29 Oct 2026, managers and office workers included. */
   learn?: boolean;
-  /** A way back above the title, e.g. a carer's file to All learners. */
+  /** A way back above the title, as a breadcrumb: Staff / Saj Ahmed. */
   back?: { href: string; label: string };
+  /**
+   * The page's own heading block, in place of the plain title — the Today
+   * page's greeting, the staff list's count and buttons. `false` for none.
+   */
+  header?: React.ReactNode | false;
   children?: React.ReactNode;
 }) {
   // A company's own web address is for its own staff: anyone else signed in
@@ -92,25 +109,38 @@ export async function DashboardShell({
   const host = await hostCompany();
   if (host && context.role !== "platform_admin" && context.organisationId !== host.id) redirect(`${ourSite()}/login`);
 
-  const [badges, starTotal, addOns, , branding, member] = await Promise.all([
-    learnerBadges(context, learn || context.role === "learner"),
-    learnerStarTotal(context, learn || context.role === "learner"),
-    orgAddOns(context),
+  const learnerView = learn || context.role === "learner";
+  const console_ = isConsoleRole(context.role);
+  const addOns = await orgAddOns(context);
+  const [badges, starTotal, , branding, member, due] = await Promise.all([
+    learnerBadges(context, learnerView || console_),
+    learnerStarTotal(context, learnerView),
     touchLastSeen(context),
     // The organisation's own logo in place of ours, with white-label.
     context.role === "platform_admin" ? null : orgBranding(context.organisationId),
     // Already read by the active-member gate this request (cached).
     context.role === "platform_admin" ? null : memberStatus(context.userId, context.organisationId),
+    // The number on Due: cached per company, see lib/due-badge.ts.
+    console_ && !learn ? loadDueBadge(context.organisationId, addOns) : null,
   ]);
   // A manager or office worker has training too; the search and stars show
   // while they're on it.
   const learner = (learn && isStaffRole(context.role)) || context.role === "learner";
+
+  // The trial pill (TRIAL.md): managers get the way to choose a package;
+  // office workers can't change it. Carers never see it.
+  const trial = console_ ? trialState(member?.trialEndsAt ?? null) : { kind: "none" as const };
+  const trialPill =
+    trial.kind === "active"
+      ? { label: `Trial · ${daysLeftLabel(trial.daysLeft)}`, href: context.role === "org_admin" ? "/org/billing" : null }
+      : null;
+
   return (
-    <div className="flex min-h-svh w-full flex-col">
+    <div className={`${consoleFont.variable} flex min-h-svh w-full flex-col text-[15px] [--font-body:var(--font-jakarta)]`}>
       {/* The company's colour on its buttons and menu, with white label. */}
       <BrandStyle colour={branding?.colour} />
       {/* The menu across the top — every role, every signed-in page. It was a
-          left-hand panel until 27 Oct 2026. */}
+          left-hand panel until 27 Oct 2026, and a dark bar until 1 Nov. */}
       <TopNav
         role={context.role}
         name={member?.fullName ?? null}
@@ -121,6 +151,9 @@ export async function DashboardShell({
         version={VERSION_LABEL}
         brandLogo={branding?.logoUrl}
         brandName={branding?.name}
+        due={due ?? undefined}
+        trial={trialPill}
+        notifications={badges["/learn/notifications"] ?? 0}
         search={
           learner ? (
             <form action="/learn/modules/all" method="get" className="relative w-56">
@@ -128,7 +161,8 @@ export async function DashboardShell({
               <input
                 name="q"
                 placeholder="Search courses…"
-                className="w-full rounded-full border bg-background py-1.5 pl-9 pr-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                aria-label="Search courses"
+                className="h-11 w-full rounded-xl border bg-background pl-9 pr-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
               />
             </form>
           ) : undefined
@@ -136,27 +170,28 @@ export async function DashboardShell({
         stars={learner ? <StarBank initialTotal={starTotal} /> : undefined}
       />
 
-      <TrialBanner role={context.role} trialEndsAt={member?.trialEndsAt ?? null} />
-
-      {/* The title and the page run the full width, on the same left edge as
-          the logo and the tabs above. Until 29 Oct 2026 every page was held
-          to max-w-6xl in the middle, which on a wide screen left a band of
-          empty space either side and the page out of line with the menu. */}
-      <div className="border-b bg-card/85 px-4 py-3 sm:px-6">
-        <div>
-          {back && (
-            <Link href={back.href} className="text-xs text-muted-foreground hover:underline">
-              ← {back.label}
-            </Link>
-          )}
-          <h1 className="truncate text-lg font-semibold tracking-tight">{title}</h1>
-        </div>
-      </div>
-
       {/* From a tablet up, bottom padding keeps the floating Report button
           clear of the last thing on the page — e.g. a course's Next button.
           On a phone the button follows the page instead of floating. */}
-      <main className="min-w-0 flex-1 px-4 pt-6 pb-8 sm:px-6 sm:pt-8 sm:pb-24">{children}</main>
+      <main className="mx-auto w-full min-w-0 max-w-[1384px] flex-1 px-4 pt-6 pb-8 sm:px-8 sm:pt-8 sm:pb-24">
+        {header === false
+          ? null
+          : (header ?? (
+              <div className="mb-6">
+                {back && (
+                  <nav aria-label="Breadcrumb" className="mb-1.5 text-sm">
+                    <Link href={back.href} className="font-semibold text-primary hover:underline">
+                      {back.label}
+                    </Link>
+                    <span className="mx-1.5 text-muted-foreground">/</span>
+                    <span className="text-muted-foreground">{title}</span>
+                  </nav>
+                )}
+                <h1 className="text-[26px] font-extrabold leading-tight tracking-tight sm:text-[30px]">{title}</h1>
+              </div>
+            ))}
+        {children}
+      </main>
 
       {/* With white label our name stays, small, at the foot (INTEGRATION-
           WHITE-LABEL.md). */}

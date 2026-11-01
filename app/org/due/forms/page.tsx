@@ -4,7 +4,6 @@ import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
-import { DueTabs } from "../due-tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { reviewHref, reviewRows, type ReviewRow } from "@/lib/form-reviews";
 import { loadReviewRecords } from "@/lib/form-reviews-data";
@@ -35,7 +34,6 @@ export default async function FormReviewsDuePage() {
   return (
     <DashboardShell title="Who's due" context={context}>
       <div className="space-y-6">
-        <DueTabs context={context} active="/org/due/forms" />
         <p className="text-sm text-muted-foreground">
           The latest of each form that is reviewed — risk assessments, care plans, the business continuity plan — and when its review falls.
           Reviewing opens the form again with its last answers, to change what has changed and sign again.
