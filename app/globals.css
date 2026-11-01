@@ -7,11 +7,25 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* --font-body is set on the signed-in app's shell (Plus Jakarta Sans,
+     redesign 1 Nov 2026); everywhere else the body stays Inter. */
+  --font-sans: var(--font-body, var(--font-inter)), ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: var(--font-mono-src), ui-monospace, SFMono-Regular, Menlo,
     monospace;
-  --font-heading: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-body, var(--font-inter)), ui-sans-serif, system-ui, sans-serif;
+  /* Status colours (redesign 1 Nov 2026): amber for "due", red for
+     "overdue" and "never". Each pair meets 4.5:1. */
+  --color-warn: var(--warn);
+  --color-warn-foreground: var(--warn-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-ok: var(--ok);
+  --color-ok-foreground: var(--ok-foreground);
+  /* Cards are 18px; buttons and inputs take --radius (11px). */
+  --radius-card: 18px;
+  /* The top menu collapses into a hamburger under 900px. */
+  --breakpoint-nav: 900px;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -37,6 +51,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -51,43 +66,53 @@
 }
 
 :root {
-  /* My Care Academy — fresh teal (chosen 27 Oct 2026 from three on trial):
-     the logo's family, brighter and cleaner than the slate-teal before it.
-     A very pale green-white page so white cards stand out. */
-  --background: #f5faf9;
-  --foreground: #0f2a2e;
+  /* My Care Academy — the console redesign of 1 Nov 2026 (docs/redesign):
+     a soft grey-green page, white cards with a 1px #E1E9E7 edge, deep
+     green-black text and the teal of the logo on buttons and the item you
+     are on. Every text colour here meets 4.5:1 on what it sits on. */
+  --background: #f4f7f6;
+  --foreground: #13302e;
   --card: #ffffff;
-  --card-foreground: #0f2a2e;
+  --card-foreground: #13302e;
   --popover: #ffffff;
-  --popover-foreground: #0f2a2e;
-  --primary: #0f8178;
+  --popover-foreground: #13302e;
+  --primary: #0f766e;
   --primary-foreground: #ffffff;
-  --secondary: #e6f3f1;
-  --secondary-foreground: #134e4a;
-  --muted: #eef5f4;
-  --muted-foreground: #587070;
-  --accent: #e0f2ef;
-  --accent-foreground: #115e59;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #dcebe8;
-  --input: #d3e5e1;
-  --ring: #0f8178;
-  --chart-1: #0f8178;
-  --chart-2: oklch(0.68 0.09 200);
+  --primary-hover: #0b5a54;
+  --secondary: #e6f4f1;
+  --secondary-foreground: #0b5a54;
+  --muted: #eef3f2;
+  --muted-foreground: #5b6b69;
+  --accent: #e6f4f1;
+  --accent-foreground: #0b5a54;
+  --destructive: #b42318;
+  --border: #e1e9e7;
+  --input: #d5e0dd;
+  --ring: #0f766e;
+  --chart-1: #0f766e;
+  --chart-2: #5eead4;
   --chart-3: oklch(0.63 0.11 150);
-  --chart-4: oklch(0.72 0.12 80);
-  --chart-5: oklch(0.62 0.14 25);
+  --chart-4: #d97706;
+  --chart-5: #b42318;
   --radius: 0.7rem;
-  --sidebar: #0d3b44;
-  --sidebar-foreground: #dff4f1;
-  --sidebar-primary: #2dd4bf;
-  --sidebar-primary-foreground: #0d3b44;
-  --sidebar-accent: #155461;
+  --warn: #fef3c7;
+  --warn-foreground: #92400e;
+  --danger: #fdecea;
+  --danger-foreground: #b42318;
+  --ok: #e6f4f1;
+  --ok-foreground: #0b5a54;
+  /* The menu is white now; a white-label company's colour still lands on
+     these (lib/brand-colour.ts) and they colour the person button. */
+  --sidebar: #13302e;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #5eead4;
+  --sidebar-primary-foreground: #13302e;
+  --sidebar-accent: #1f4542;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #1f5965;
-  --sidebar-ring: #2dd4bf;
+  --sidebar-border: #2a5450;
+  --sidebar-ring: #5eead4;
   /* Underlines the top-bar item you are in. */
-  --highlight: #2dd4bf;
+  --highlight: #0f766e;
 }
 
 .dark {
@@ -133,6 +158,11 @@
   }
   html {
     @apply font-sans;
+  }
+  /* Every focusable thing shows where it is (redesign quality bar). */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   /* Every file picker's button in the app's own style, not the browser's
      grey "Choose file" box (design review, 28 Oct 2026). Inputs built on
