@@ -22,6 +22,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { loadOrgEngagement } from "@/lib/platform-orgs";
 import { completionsByWeek } from "@/lib/org-learners";
 import { CompletionsChart } from "@/app/org/completions-chart";
+import { formatDate } from "@/lib/dates";
 import { InviteOrgForm } from "./invite-org-form";
 import { InviteAdminForm } from "./invite-admin-form";
 import { OrgNudgeButton } from "./org-nudge-button";
@@ -30,9 +31,15 @@ export default async function PlatformDashboard() {
   const context = await requireRole("platform_admin");
 
   const supabase = await createClient();
-  const [{ orgs, totals }, weekly] = await Promise.all([
+  const [{ orgs, totals }, weekly, { data: platformAdmins }] = await Promise.all([
     loadOrgEngagement(supabase),
     completionsByWeek(supabase, 12),
+    supabase
+      .from("users")
+      .select("id, full_name, email, last_seen_at")
+      .eq("role", "platform_admin")
+      .is("deactivated_at", null)
+      .order("full_name"),
   ]);
 
   const needsAttention = orgs
@@ -155,12 +162,31 @@ export default async function PlatformDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Add a platform admin</CardTitle>
+              <CardTitle>Platform admins</CardTitle>
               <CardDescription>
-                Grants another member of your team global access.
+                Your team, with global access. Add someone to invite them.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
+              <ul className="divide-y rounded-lg border">
+                {(platformAdmins ?? []).map((a) => (
+                  <li key={a.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">
+                        {a.full_name || a.email}
+                        {a.id === context.userId && (
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">(you)</span>
+                        )}
+                      </p>
+                      <p className="truncate text-muted-foreground">{a.email}</p>
+                    </div>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {/* Invited but never signed in has no last_seen_at, as with learners. */}
+                      {a.last_seen_at ? `Last active ${formatDate(a.last_seen_at)}` : "Invited, not signed in yet"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
               <InviteAdminForm />
             </CardContent>
           </Card>
