@@ -84,14 +84,15 @@ const ORG_MENU: MenuItem[] = [
     also: ["/org/staff"],
     children: [
       // A carer's file is reached from this list, so it lights up here too.
-      { href: "/org/learners", label: "Staff", code: "ST", description: "Everyone, their training and checks", also: ["/org/staff", "/org/learners/admin", "/org/learners/statistics"] },
-      { href: "/org/clients", label: "Clients", code: "CL", description: "The people you support", feature: "clients.list" },
-      { href: "/org/recruitment", label: "Recruitment", code: "RC", description: "Candidates, from application to first day", feature: "recruitment.tracker" },
+      { href: "/org/learners", label: "Staff", code: "ST", description: "Everyone, their training and checks", group: "Your people", also: ["/org/staff", "/org/learners/admin", "/org/learners/statistics"] },
+      { href: "/org/clients", label: "Clients", code: "CL", description: "The people you support", group: "Your people", feature: "clients.list" },
+      { href: "/org/recruitment", label: "Recruitment", code: "RC", description: "Candidates, from application to first day", group: "Hiring", feature: "recruitment.tracker" },
       {
         href: "/org/hr/absence",
         label: "Absence & holidays",
         code: "AH",
         description: "Sickness, leave and who's off",
+        group: "HR",
         feature: "recruitment.tracker",
         also: ["/org/hr/holidays"],
         row: [
@@ -99,23 +100,24 @@ const ORG_MENU: MenuItem[] = [
           { href: "/org/hr/holidays", label: "Holidays" },
         ],
       },
-      { href: "/org/hr/probation", label: "Probation reviews", code: "PB", description: "New starters' reviews and sign-off", feature: "recruitment.tracker" },
-      { href: "/org/hr/cases", label: "Disciplinary & grievance", code: "DG", description: "Cases, hearings and outcomes", feature: "recruitment.tracker" },
-      { href: "/org/hr/leavers", label: "Leavers", code: "LV", description: "Notice, exit and final records", feature: "recruitment.tracker" },
+      { href: "/org/hr/probation", label: "Probation reviews", code: "PB", description: "New starters' reviews and sign-off", group: "HR", feature: "recruitment.tracker" },
+      { href: "/org/hr/cases", label: "Disciplinary & grievance", code: "DG", description: "Cases, hearings and outcomes", group: "HR", feature: "recruitment.tracker" },
+      { href: "/org/hr/leavers", label: "Leavers", code: "LV", description: "Notice, exit and final records", group: "HR", feature: "recruitment.tracker" },
     ],
   },
   {
     label: "Training",
     children: [
-      { href: "/org/courses", label: "Courses", code: "CO", description: "The library and how long each takes", exact: true, also: ["/org/courses/statistics"] },
-      { href: "/org/courses/admin", label: "Assign training", code: "AT", description: "Give courses to people, with a due date" },
-      { href: "/org/certificates", label: "Certificates", code: "CE", description: "Every certificate, with expiry dates" },
-      { href: "/org/observations", label: "Care Certificate", code: "CC", description: "The 15 standards, observed and signed off", feature: "training.observations" },
+      { href: "/org/courses", label: "Courses", code: "CO", description: "The library and how long each takes", group: "Online", exact: true, also: ["/org/courses/statistics"] },
+      { href: "/org/courses/admin", label: "Assign training", code: "AT", description: "Give courses to people, with a due date", group: "Online" },
+      { href: "/org/certificates", label: "Certificates", code: "CE", description: "Every certificate, with expiry dates", group: "Online" },
+      { href: "/org/observations", label: "Care Certificate", code: "CC", description: "The 15 standards, observed and signed off", group: "In person", feature: "training.observations" },
       {
         href: "/org/face-to-face",
         label: "Face-to-face & classroom",
         code: "FC",
         description: "Sessions at our office, and your own",
+        group: "In person",
         feature: "training.face_to_face",
         also: ["/org/classroom"],
         row: [
@@ -170,31 +172,43 @@ const ORG_MENU: MenuItem[] = [
   {
     label: "Documents",
     children: [
-      { href: "/org/policies", label: "Policies", code: "PO", description: "Your policies, and who has read them", feature: "documents.library" },
-      { href: "/org/forms", label: "Forms", code: "FO", description: "Forms to fill in, and the answers", feature: "forms.builder" },
-      { href: "/org/reports", label: "Reports & exports", code: "RE", description: "The training matrix, evidence and spreadsheets" },
+      { href: "/org/policies", label: "Policies", code: "PO", description: "Your policies, and who has read them", group: "Library", feature: "documents.library" },
+      { href: "/org/forms", label: "Forms", code: "FO", description: "Forms to fill in, and the answers", group: "Library", feature: "forms.builder" },
+      { href: "/org/reports", label: "Reports & exports", code: "RE", description: "The training matrix, evidence and spreadsheets", group: "Evidence" },
     ],
   },
 ];
 
 const MENUS: Record<string, MenuItem[]> = {
+  // Ten plain links overran the bar on anything under 1,300px (Saj, 1 Nov
+  // 2026); grouped as the console's are, with the pages in the row under.
   platform_admin: [
     { label: "Overview", href: "/platform" },
-    { label: "Organisations", href: "/platform/organisations" },
-    { label: "Packages", href: "/platform/tiers" },
-    { label: "Analytics", href: "/platform/analytics" },
-    { label: "Face to face", href: "/platform/face-to-face" },
-    { label: "Bespoke reports", href: "/platform/bespoke-reports" },
+    {
+      label: "Companies",
+      children: [
+        { href: "/platform/organisations", label: "Organisations" },
+        { href: "/platform/tiers", label: "Packages" },
+        { href: "/platform/billing", label: "Billing" },
+      ],
+    },
     {
       label: "Content",
       children: [
         { href: "/platform/courses", label: "Courses" },
         { href: "/platform/documents", label: "Policies" },
         { href: "/platform/forms", label: "Forms" },
+        { href: "/platform/face-to-face", label: "Face to face" },
       ],
     },
-    { label: "Issues", href: "/platform/reports" },
-    { label: "Billing", href: "/platform/billing" },
+    {
+      label: "Insight",
+      children: [
+        { href: "/platform/analytics", label: "Analytics" },
+        { href: "/platform/bespoke-reports", label: "Bespoke reports" },
+        { href: "/platform/reports", label: "Issues" },
+      ],
+    },
     { label: "Automation", href: "/platform/settings" },
   ],
   org_admin: ORG_MENU,
