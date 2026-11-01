@@ -107,6 +107,7 @@ export function CommandSearch({
     <button
       type="button"
       onClick={show}
+      aria-label="Search pages and people (⌘K)"
       className={cn(
         "inline-flex h-11 items-center gap-2 rounded-xl border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground",
         className,
