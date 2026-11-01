@@ -85,7 +85,7 @@ export function HelpPanel({
     <div
       className={cn(
         "z-50 overflow-hidden bg-popover text-popover-foreground shadow-2xl",
-        phone ? "fixed inset-x-0 bottom-0 max-h-[88svh] overflow-y-auto rounded-t-[22px] border-t" : "absolute right-0 top-full mt-2 w-[400px] rounded-card border",
+        phone ? "fixed inset-x-0 bottom-0 max-h-[88svh] overflow-y-auto rounded-t-[22px] border-t" : "absolute right-0 top-full mt-2 max-h-[calc(100svh-92px)] w-[400px] overflow-y-auto rounded-card border",
       )}
       role="dialog"
       aria-label="Help"
