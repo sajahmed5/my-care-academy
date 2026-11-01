@@ -48,7 +48,8 @@ export function ctaFor(status: string, progress: number): string {
   return "Start";
 }
 
-export function CourseCard({ c }: { c: CourseCardData }) {
+/** `coach` marks the Start button for the walkthrough's "Do a course yourself" (data-coach). */
+export function CourseCard({ c, coach }: { c: CourseCardData; coach?: string }) {
   const theme = topicTheme(c.topic);
   const status = c.status ?? "not_started";
   const progress = c.progress ?? 0;
@@ -92,6 +93,7 @@ export function CourseCard({ c }: { c: CourseCardData }) {
               ? `/learn/courses/${c.courseId}/quiz`
               : `/learn/courses/${c.courseId}`
           }
+          data-coach={coach}
           className={buttonVariants({ size: "sm", className: "flex-1" })}
         >
           {cta}

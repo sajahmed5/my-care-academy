@@ -55,7 +55,7 @@ export default async function GovernancePage({ searchParams }: { searchParams: P
               </Link>
             ))}
           </div>
-          <a href={`/org/audits/governance/pdf?month=${range.month}`} className={buttonVariants({ size: "sm" })}>
+          <a href={`/org/audits/governance/pdf?month=${range.month}`} data-coach="governance" className={buttonVariants({ size: "sm" })}>
             <FileDown className="size-4" /> Download the PDF
           </a>
         </div>

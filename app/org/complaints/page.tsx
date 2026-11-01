@@ -70,7 +70,7 @@ export default async function ComplaintsPage({
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           {stages.length > 0 && (
-            <Link href="/org/complaints/new" className={buttonVariants({ size: "sm" })}>
+            <Link href="/org/complaints/new" data-coach="concern" className={buttonVariants({ size: "sm" })}>
               <Plus className="size-4" />
               Raise a concern
             </Link>

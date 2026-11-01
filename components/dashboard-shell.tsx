@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Search } from "lucide-react";
 import Link from "next/link";
 import { orgBranding } from "@/lib/branding";
@@ -17,6 +18,7 @@ import { enabledMap } from "@/lib/entitlements";
 import type { FeatureKey } from "@/lib/features";
 import { loadDueBadge } from "@/lib/due-badge";
 import { daysLeftLabel, trialState } from "@/lib/trial";
+import { CoachMark } from "@/components/walkthrough/coach-mark";
 
 /**
  * Unread notifications about their own training: the badge on a carer's
@@ -203,6 +205,15 @@ export async function DashboardShell({
 
       {/* Always-visible "Report an issue" widget — every role, every page. */}
       <ReportWidget />
+
+      {/* "Show me" and "How do I…" land on a page with ?show=<key>, and this
+          points at the button (lib/walkthrough.ts). Console roles only, on
+          their own training too; a carer never has it. */}
+      {console_ && (
+        <Suspense>
+          <CoachMark />
+        </Suspense>
+      )}
     </div>
   );
 }

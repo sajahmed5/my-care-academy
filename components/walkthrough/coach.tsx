@@ -80,7 +80,7 @@ function useTargetBox(attr: string, targets: string[]): Box | null {
         scrolled.current = key;
         const vh = window.innerHeight;
         if (next.top < 0 || next.top + next.height > vh - 24) {
-          window.scrollTo({ top: Math.max(0, window.scrollY + next.top - 96), behavior: "smooth" });
+          window.scrollTo({ top: Math.max(0, window.scrollY + next.top - 140), behavior: "smooth" });
         }
       }
       setBox((prev) =>

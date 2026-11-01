@@ -59,7 +59,7 @@ export default async function ClientsPage({
           <Link href="/org/clients/import" className={buttonVariants({ variant: "outline", size: "lg" })}>
             <Upload className="size-4" aria-hidden="true" /> Upload a spreadsheet
           </Link>
-          <Link href="/org/clients/new" className={buttonVariants({ size: "lg" })}>
+          <Link href="/org/clients/new" data-coach="client" className={buttonVariants({ size: "lg" })}>
             <UserPlus className="size-4" aria-hidden="true" /> Add a client
           </Link>
         </div>

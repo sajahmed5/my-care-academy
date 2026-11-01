@@ -186,7 +186,8 @@ export function AssignForm({
       </div>
 
       <div className="flex items-center gap-4">
-        <Button type="submit" disabled={pending}>
+        {/* data-coach: the walkthrough's "Show me" points here (lib/walkthrough.ts). */}
+        <Button type="submit" disabled={pending} data-coach="assign">
           {pending ? "Assigning…" : "Assign training"}
         </Button>
         {state.error && (

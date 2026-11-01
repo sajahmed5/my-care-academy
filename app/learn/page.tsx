@@ -161,9 +161,10 @@ export default async function LearnerDashboard() {
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {myWork.map((e) => (
+              {myWork.map((e, i) => (
                 <CourseCard
                   key={e.id}
+                  coach={i === 0 ? "course" : undefined}
                   c={{
                     courseId: e.course_id,
                     title: e.title,

@@ -21,7 +21,7 @@ export function EvidencePackButton({ userId }: { userId: string }) {
 
   if (!open) {
     return (
-      <Button variant="outline" onClick={() => setOpen(true)}>
+      <Button variant="outline" data-coach="evidence" onClick={() => setOpen(true)}>
         <FileDown className="size-4" />
         Evidence pack
       </Button>

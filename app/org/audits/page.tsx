@@ -96,7 +96,7 @@ export default async function AuditsPage() {
             <Link href="/org/audits/governance" className={buttonVariants({ variant: "outline", size: "sm" })}>
               Governance report
             </Link>
-            <Link href="/org/audits/new" className={buttonVariants({ size: "sm" })}>
+            <Link href="/org/audits/new" data-coach="audit" className={buttonVariants({ size: "sm" })}>
               <Plus className="size-4" /> Carry out an audit
             </Link>
           </span>

@@ -11,7 +11,9 @@ import { dueCounts } from "@/lib/service-audits";
 import { runHref } from "@/lib/client-qa";
 import { formatDate, UK_TIME_ZONE } from "@/lib/dates";
 import { trialState } from "@/lib/trial";
-import { shouldOfferTour } from "@/lib/walkthrough";
+import { gettingStarted, shouldOfferTour, todayChecklist, type TaskFacts } from "@/lib/walkthrough";
+import { loadEnrolments } from "@/lib/learner-data";
+import { GettingStarted } from "@/components/walkthrough/getting-started";
 import { Walkthrough } from "@/components/walkthrough/walkthrough";
 import { codeOf, complianceChecks, readiness, rowFromLine, sortRows, type AttentionRow } from "@/lib/today";
 import { AttentionList, FigureCard, ReadinessCard, SetupChecklist, TeamTraining, type SetupStep } from "./today/cards";
@@ -92,6 +94,41 @@ function checkRows(kind: "supervision" | "appraisal", checks: StaffChecks): Atte
   return rows;
 }
 
+/**
+ * The counts behind the Getting started list that the page does not read
+ * anyway: the signed-in person's own courses, supervisions held or booked,
+ * audits carried out, and evidence packs exported (from the audit trail,
+ * where every export is written). Head counts only.
+ */
+async function loadTaskFacts(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  orgId: string,
+  enabled: Partial<Record<string, boolean>>,
+): Promise<TaskFacts> {
+  const head = { count: "exact" as const, head: true };
+  const n = (p: PromiseLike<{ count: number | null }>) => Promise.resolve(p).then((r) => r.count ?? 0, () => 0);
+  const [own, supervisions, bookings, audits, qas, packs] = await Promise.all([
+    loadEnrolments(userId),
+    enabled["people.supervisions"] ? n(supabase.from("supervisions").select("id", head).eq("organisation_id", orgId)) : 0,
+    enabled["people.supervisions"] ? n(supabase.from("staff_audit_bookings").select("id", head).eq("organisation_id", orgId)) : 0,
+    enabled["quality.audits"] ? n(supabase.from("audits").select("id", head).eq("organisation_id", orgId)) : 0,
+    enabled["quality.audits"] ? n(supabase.from("client_qas").select("id", head).eq("organisation_id", orgId)) : 0,
+    n(supabase.from("audit_logs").select("id", head).eq("organisation_id", orgId).eq("action", "evidence_pack.exported")),
+  ]);
+  return {
+    staff: 0,
+    staffSignedIn: 0,
+    assigned: 0,
+    clients: 0,
+    ownAssigned: own.length,
+    ownCompleted: own.filter((e) => e.status === "completed" || e.completion_count > 0).length,
+    supervisions: supervisions + bookings,
+    audits: audits + qas,
+    evidencePacks: packs,
+  };
+}
+
 export default async function OrgDashboard() {
   const context = await requireConsole();
   const orgId = context.organisationId!;
@@ -110,13 +147,20 @@ export default async function OrgDashboard() {
   const learners = allLearners.filter(isActiveLearner);
   const people = learners.map((r) => ({ id: r.id, name: r.name }));
 
-  const [checks, serviceDue, todoLines, clients] = await Promise.all([
+  const trial = trialState(member.trialEndsAt, now);
+
+  const [checks, serviceDue, todoLines, clients, facts] = await Promise.all([
     enabled["people.supervisions"] ? loadStaffChecks(supabase, orgId, people, now) : null,
     enabled["quality.audits"] ? loadServiceDue(supabase, orgId, now) : null,
     loadOrgTodo(supabase, context, enabled),
     enabled["clients.list"]
       ? supabase.from("clients").select("id", { count: "exact", head: true }).eq("organisation_id", orgId).then((r) => r.count ?? 0)
       : Promise.resolve<number | null>(null),
+    // What the Getting started list ticks off (lib/walkthrough.ts): small
+    // counts, read only while the company is on a trial, since that is the
+    // only time the list shows. Each table's RLS scopes it to this company;
+    // the filter is for the planner.
+    trial.kind === "active" ? loadTaskFacts(supabase, context.userId, orgId, enabled) : Promise.resolve<TaskFacts | null>(null),
   ]);
 
   const totals = learners.reduce(
@@ -194,7 +238,11 @@ export default async function OrgDashboard() {
   const auditsSoon = (serviceDue ?? []).reduce((n, d) => n + (d.form.scope === "service" ? (d.status === "due_soon" ? 1 : 0) : dueCounts(d.clients).soon), 0);
   const auditsNever = serviceForms.length > 0 && serviceForms.every((d) => d.status === "never");
 
-  // --- Finish setting up ----------------------------------------------------
+  // --- Finish setting up, or Getting started on a trial ---------------------
+  const tasks = facts
+    ? gettingStarted({ ...facts, staff: allLearners.length, staffSignedIn: allLearners.filter((r) => !!r.lastSeenAt).length, assigned: totals.assigned, clients: clients ?? 0 }, enabled, context.userId)
+    : [];
+  const checklist = todayChecklist(trial, member.walkthrough, tasks);
   const steps: SetupStep[] = [
     { key: "org", label: "Create your organisation", done: true, href: "/org/settings" },
     { key: "manager", label: "Add yourself as manager", done: true, href: "/org/settings" },
@@ -219,7 +267,6 @@ export default async function OrgDashboard() {
   // --- The trial walkthrough (lib/walkthrough.ts) --------------------------
   // The welcome and tour open by themselves once, on a console user's first
   // sign-in while the company is on a trial; Help replays them.
-  const trial = trialState(member.trialEndsAt, now);
   const walkthrough = trial.kind === "active" && (
     <Walkthrough
       autoStart={shouldOfferTour(context.role, trial, member.walkthrough)}
@@ -305,10 +352,12 @@ export default async function OrgDashboard() {
           )}
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start">
+        {/* The right column is 440px (board 4 of the walkthrough mock-ups), so
+            the Getting started list's routes read on one or two lines. */}
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_440px] xl:items-start">
           <AttentionList rows={sorted.slice(0, SHOWN)} allCount={sorted.length} allHref={enabled["people.supervisions"] ? "/org/due" : "/org/learners?filter=overdue"} />
           <div className="space-y-6">
-            <SetupChecklist steps={steps} />
+            {checklist === "getting-started" ? <GettingStarted tasks={tasks} /> : checklist === "setup" ? <SetupChecklist steps={steps} /> : null}
             {enabled["recruitment.tracker"] && <WhosOffWeek context={context} />}
             {/* "You may also be interested in" (TRIAL.md). */}
             <SameTeam context={context} />

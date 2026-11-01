@@ -26,6 +26,8 @@ export function DueList({ rows, section, noun }: { rows: DueRow[]; section: stri
       </Card>
     );
   }
+  // "Show me" for booking a supervision points at the first person listed.
+  const first = DUE_ORDER.flatMap((s) => rows.filter((r) => r.status === s))[0]?.person.id;
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
@@ -53,6 +55,7 @@ export function DueList({ rows, section, noun }: { rows: DueRow[]; section: stri
                   <Link
                     key={r.person.id}
                     href={`/org/staff/${r.person.id}?section=${section}`}
+                    data-coach={section === "supervisions" && r.person.id === first ? "supervision" : undefined}
                     className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm hover:bg-muted/50"
                   >
                     <span className="font-medium text-primary">{r.person.name}</span>
