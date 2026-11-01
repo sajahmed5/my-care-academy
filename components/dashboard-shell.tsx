@@ -19,6 +19,9 @@ import type { FeatureKey } from "@/lib/features";
 import { loadDueBadge } from "@/lib/due-badge";
 import { daysLeftLabel, trialState } from "@/lib/trial";
 import { CoachMark } from "@/components/walkthrough/coach-mark";
+import { HelpPanel } from "@/components/walkthrough/help-panel";
+import { howTos } from "@/lib/walkthrough";
+import { formatDate } from "@/lib/dates";
 
 /**
  * Unread notifications about their own training: the badge on a carer's
@@ -137,6 +140,17 @@ export async function DashboardShell({
       ? { label: `Trial · ${daysLeftLabel(trial.daysLeft)}`, href: context.role === "org_admin" ? "/org/billing" : null }
       : null;
 
+  // Help in the bar (components/walkthrough): the How do I… routes the
+  // company's package allows, the trial's end date, and the Getting started
+  // list's way back once hidden. Console view only, like the bell.
+  const help = console_ && !learn && (
+    <HelpPanel
+      howTos={howTos(addOns)}
+      trialEndsOn={trial.kind === "active" ? formatDate(trial.endsAt.toISOString(), { weekday: "long", day: "numeric", month: "long" }) : null}
+      listHidden={trial.kind === "active" && !!member?.walkthrough.listHiddenAt}
+    />
+  );
+
   return (
     <div className={`${consoleFont.variable} flex min-h-svh w-full flex-col text-[15px] [--font-body:var(--font-jakarta)]`}>
       {/* The company's colour on its buttons and menu, with white label. */}
@@ -156,6 +170,7 @@ export async function DashboardShell({
         due={due ?? undefined}
         trial={trialPill}
         notifications={badges["/learn/notifications"] ?? 0}
+        help={help || undefined}
         search={
           learner ? (
             <form action="/learn/modules/all" method="get" className="relative w-56">

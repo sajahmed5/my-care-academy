@@ -14,6 +14,7 @@ import type { UserRole } from "@/lib/auth";
 import { withoutGated, type FeatureKey } from "@/lib/features";
 import { OPEN_REPORT_EVENT } from "@/components/report-widget";
 import { TOUR_EVENT, type TourEventDetail } from "@/components/walkthrough/tour";
+import { OPEN_HELP_EVENT } from "@/components/walkthrough/help-panel";
 
 interface MenuLink {
   href: string;
@@ -85,7 +86,22 @@ const ORG_MENU: MenuItem[] = [
     also: ["/org/staff"],
     children: [
       // A carer's file is reached from this list, so it lights up here too.
-      { href: "/org/learners", label: "Staff", code: "ST", description: "Everyone, their training and checks", group: "Your people", also: ["/org/staff", "/org/learners/admin", "/org/learners/statistics"] },
+      {
+        href: "/org/learners",
+        label: "Staff",
+        code: "ST",
+        description: "Everyone, their training and checks",
+        group: "Your people",
+        also: ["/org/staff", "/org/learners/admin", "/org/learners/statistics", "/org/learners/stars"],
+        // The pages of the staff list in the row under the bar (Stars in the
+        // console, 2 Nov 2026). Staff is exact so the matrix and Stars don't
+        // light it up too; a carer's file and the import still do.
+        row: [
+          { href: "/org/learners", label: "Staff", exact: true, also: ["/org/staff", "/org/learners/admin"] },
+          { href: "/org/learners/statistics", label: "Training matrix" },
+          { href: "/org/learners/stars", label: "Stars" },
+        ],
+      },
       { href: "/org/clients", label: "Clients", code: "CL", description: "The people you support", group: "Your people", feature: "clients.list" },
       { href: "/org/recruitment", label: "Recruitment", code: "RC", description: "Candidates, from application to first day", group: "Hiring", feature: "recruitment.tracker" },
       {
@@ -456,6 +472,7 @@ export function TopNav({
   due,
   trial,
   notifications = 0,
+  help,
 }: {
   role: UserRole | null;
   name: string | null;
@@ -477,6 +494,8 @@ export function TopNav({
   trial?: { label: string; href: string | null } | null;
   /** Unread notifications about their own training. */
   notifications?: number;
+  /** Help and the tour (components/walkthrough/help-panel.tsx), beside the bell for console roles. */
+  help?: React.ReactNode;
 }) {
   const { open, setOpen, ref, pathname } = useOpenMenu();
   // A manager or office worker on their own training gets the carer's menu,
@@ -674,6 +693,8 @@ export function TopNav({
             </IntentLink>
           )}
 
+          {console_ && help}
+
           {/* Person menu, wide screens */}
           <div className="relative hidden nav:block">
             <button
@@ -802,6 +823,18 @@ export function TopNav({
               <MobileLink key={l.href} href={l.href} label={l.label} active={isActive(pathname, l.href)} />
             ))}
             {console_ && <MobileLink href="/learn/notifications" label="Notifications" active={false} badge={notifications} />}
+            {console_ && help && (
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(null);
+                  window.dispatchEvent(new Event(OPEN_HELP_EVENT));
+                }}
+                className="flex min-h-11 w-full items-center rounded-xl px-3 text-[15px] font-medium text-foreground hover:bg-muted"
+              >
+                Help and tour
+              </button>
+            )}
             <button
               type="button"
               onClick={() => {
