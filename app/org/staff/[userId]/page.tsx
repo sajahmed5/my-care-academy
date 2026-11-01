@@ -1,14 +1,14 @@
 import { isStaff } from "@/lib/roles";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BookOpen, Clock, CheckCircle2, AlertTriangle, Download, FileArchive } from "lucide-react";
+import { BookOpen, Clock, CheckCircle2, AlertTriangle, CalendarPlus, Download, FileArchive, Plus } from "lucide-react";
 import { requireConsole, roleLabel } from "@/lib/auth";
 import { enabledMap } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
 import {
-  ProgressRing,
   StatTile,
   StatusPill,
   TopicBadge,
@@ -31,10 +31,15 @@ import { loadAuditForms } from "@/lib/audit-forms-data";
 import { suggestionsFor, type Suggestion } from "@/lib/complaints/categories";
 import { loadConcernTraining, loadConcernsForPerson } from "@/lib/complaints/person";
 import { loadComplimentsForPerson } from "@/lib/complaints/compliments";
-import { loadBookings, loadSupervisions } from "@/lib/supervisions";
+import { kindLabel, loadBookings, loadSupervisions, nextDueOf } from "@/lib/supervisions";
 import { SectionPanel } from "./section-panel";
 import { PersonPolicies } from "./policy-list";
-import { SectionRail, SectionTabs, SectionTabsAfter, type SectionCount } from "./section-tabs";
+import { ProfileTabs, type SectionCount } from "./section-tabs";
+import { PersonOverview, type ActivityLine, type OverviewCheck } from "./overview";
+import { Pill } from "@/components/pill";
+import { initials } from "@/lib/initials";
+import { dueStatus } from "@/lib/records";
+import { loadReading } from "@/lib/policy-reading-data";
 import { sectionByKey, sectionState } from "./sections";
 import { CompetencyList } from "./competency-list";
 import { EvidencePackButton } from "./evidence-pack-button";
@@ -45,7 +50,7 @@ import { SupervisionList } from "./supervision-list";
 import { StaffDocuments } from "./staff-documents";
 import { RecruitmentRecord } from "./recruitment-record";
 import { AbsencePanel, CasesPanel, HolidaysPanel, LeavingPanel, LettersPanel, ProbationPanel } from "./employment";
-import { staffDocTasks, type StaffDoc } from "@/lib/staff-documents";
+import { STAFF_DOCS, staffDocState, staffDocTasks, type StaffDoc } from "@/lib/staff-documents";
 import { TaskList } from "./task-list";
 import { SubTabs } from "./sub-tabs";
 import { endOfMonthISO } from "@/lib/assign";
@@ -80,6 +85,7 @@ function statusVariant(e: OrgEnrolment, now: Date): StatusVariant {
 
 /** Sections this page renders itself; the rest get a panel. */
 const INLINE_SECTIONS = new Set([
+  "overview",
   "training",
   "documents",
   "employment",
@@ -135,17 +141,21 @@ export default async function StaffDetailPage({
     // still have rows from before a downgrade, and fetching them to grey them
     // out would be a way to read what they stopped paying for.
     const wantsTasks = section.key === "actions" || section.key === "forms";
+    // The Overview (redesign, 1 Nov 2026) reads a little of several
+    // sections — supervisions, documents, policies — for its checklist.
+    const overviewOpen = section.key === "overview";
     const documentsOpen = section.key === "documents" && state === "open" && sub !== "recruitment";
     // Their compliance documents feed the task list as well as their own
     // section, so the Actions tab reads them too (ROADMAP §3).
-    const wantsStaffDocs = documentsOpen || (wantsTasks && enabled["recruitment.tracker"]);
-    const supervisionsOpen = section.key === "supervisions" && state === "open";
+    const wantsStaffDocs = documentsOpen || ((wantsTasks || overviewOpen) && enabled["recruitment.tracker"]);
+    const supervisionsTab = section.key === "supervisions" && state === "open";
+    const supervisionsOpen = supervisionsTab || (overviewOpen && enabled["people.supervisions"]);
     const competencyOpen = section.key === "competency" && state === "open";
-    const [supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs] = await Promise.all([
+    const [supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs, reading, employment] = await Promise.all([
       supervisionsOpen ? loadSupervisions(supabase, userId) : Promise.resolve([]),
       supervisionsOpen ? loadBookings(supabase, userId) : Promise.resolve([]),
       // Who can hold one: anyone with console access (STAFF-AUDITS.md).
-      supervisionsOpen
+      supervisionsTab
         ? supabase
             .from("users")
             .select("id, full_name, email")
@@ -175,12 +185,25 @@ export default async function StaffDetailPage({
             .eq("user_id", userId)
             .then((r) => (r.data ?? []) as StaffDoc[])
         : Promise.resolve([] as StaffDoc[]),
+      // Which policies they have read, for the Overview's checklist.
+      overviewOpen && enabled["documents.library"]
+        ? loadReading(supabase, context.organisationId!, { userId }).catch(() => null)
+        : Promise.resolve(null),
+      // Their job title and start date, for the header (HR pack).
+      enabled["recruitment.tracker"]
+        ? supabase
+            .from("staff_employment")
+            .select("job_title, start_date")
+            .eq("user_id", userId)
+            .maybeSingle()
+            .then((r) => (r.data as { job_title: string | null; start_date: string | null } | null) ?? null)
+        : Promise.resolve(null),
     ]);
-    return { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs };
+    return { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs, reading, employment };
   });
   const [
     { profile, enrolments, certificates, assessments },
-    { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs },
+    { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs, reading, employment },
     { data: libraryRows },
     { data: classroomRows },
   ] = await Promise.all([
@@ -336,63 +359,184 @@ export default async function StaffDetailPage({
   if (stats.overdue > 0) counts.training = { text: `${stats.overdue} overdue`, tone: "danger" };
   if (certificates.length > 0) counts.certificates = { text: String(certificates.length), tone: "muted" };
 
+  const base = `/org/staff/${userId}`;
+  const jobTitle = employment?.job_title || null;
+  const startDate = employment?.start_date || null;
+  const isCarer = profile.role === "learner";
+
+  // --- The Overview's checklist (docs/redesign image 4) ----------------------
+  const overviewChecks: OverviewCheck[] = [];
+  if (section.key === "overview") {
+    if (enabled["people.supervisions"]) {
+      for (const kind of ["supervision", "appraisal"] as const) {
+        const held = supervisions.filter((x) => x.kind === kind);
+        const next = nextDueOf(supervisions, kind);
+        const booked = bookings.find((b) => b.kind === kind);
+        const due = dueStatus(next, now);
+        const status =
+          held.length === 0 && !booked
+            ? { label: "Never had one", tone: "danger" as const }
+            : due === "overdue"
+              ? { label: "Overdue", tone: "danger" as const }
+              : booked
+                ? { label: `Booked ${fmtDate(booked.booked_on)}`, tone: "ok" as const }
+                : due === "due_soon"
+                  ? { label: `Due ${fmtDate(next!)}`, tone: "warn" as const }
+                  : due === "scheduled"
+                    ? { label: `Due ${formatDate(next!, { month: "short", year: "numeric" })}`, tone: "ok" as const }
+                    : { label: "No date set", tone: "warn" as const };
+        overviewChecks.push({
+          key: kind,
+          title: kind === "supervision" ? "Supervision" : "Appraisal",
+          blurb: kind === "supervision" ? "Regular 1:1s, held question by question and signed by both." : "Yearly review of performance and goals.",
+          status,
+          done: held.length > 0 && due !== "overdue",
+          action: { label: kind === "supervision" ? "Book supervision" : "Book appraisal", href: `${base}/supervisions/new?kind=${kind}` },
+        });
+      }
+    }
+    overviewChecks.push({
+      key: "training",
+      title: "Mandatory training",
+      blurb: stats.assigned === 0 ? "Assign the core set so certificates start building." : `${stats.completed} of ${stats.assigned} courses complete.`,
+      status:
+        stats.assigned === 0
+          ? { label: "Nothing assigned", tone: "warn" }
+          : stats.overdue > 0
+            ? { label: `${stats.overdue} overdue`, tone: "danger" }
+            : stats.completed === stats.assigned
+              ? { label: "Done", tone: "ok" }
+              : { label: `${stats.assigned - stats.completed} to finish`, tone: "warn" },
+      done: stats.assigned > 0 && stats.overdue === 0,
+      action: { label: stats.assigned === 0 ? "Assign training" : stats.overdue > 0 ? "See what's overdue" : "See their training", href: stats.overdue > 0 ? `${base}?section=training&show=overdue` : `${base}?section=training` },
+    });
+    if (enabled["recruitment.tracker"]) {
+      const byType = new Map(staffDocs.map((d) => [d.doc_type, d]));
+      const states = ["right_to_work", "dbs"].map((k) => staffDocState(byType.get(k), now, STAFF_DOCS.find((d) => d.key === k)));
+      const status = states.includes("expired")
+        ? { label: "Expired", tone: "danger" as const }
+        : states.includes("missing")
+          ? { label: "Missing", tone: "warn" as const }
+          : states.includes("expiring")
+            ? { label: "Expiring soon", tone: "warn" as const }
+            : { label: "Done", tone: "ok" as const };
+      overviewChecks.push({
+        key: "documents",
+        title: "Right to work & DBS",
+        blurb: status.tone === "ok" ? "Both on file and in date." : "Upload documents to the staff file.",
+        status,
+        done: status.tone === "ok",
+        action: { label: status.tone === "ok" ? "View documents" : "Upload", href: `${base}?section=documents` },
+      });
+    }
+    if (enabled["documents.library"] && reading) {
+      const mine = reading.entries.filter((e) => e.userId === userId);
+      const late = mine.filter((e) => e.status === "late").length;
+      const outstanding = mine.filter((e) => e.status === "outstanding").length;
+      overviewChecks.push({
+        key: "policies",
+        title: "Policies read",
+        blurb: mine.length === 0 ? "No policies are published for them yet." : late + outstanding === 0 ? "All current policies signed." : `${mine.length - late - outstanding} of ${mine.length} policies read and accepted.`,
+        status: late > 0 ? { label: `${late} late`, tone: "danger" } : outstanding > 0 ? { label: `${outstanding} to read`, tone: "warn" } : { label: "Done", tone: "ok" },
+        done: late === 0 && outstanding === 0,
+        action: { label: "View", href: `${base}?section=policies` },
+      });
+    }
+    const detailsDone = !!profile.full_name && !!profile.email && (!enabled["recruitment.tracker"] || (!!startDate && !!jobTitle));
+    overviewChecks.push({
+      key: "profile",
+      title: "Profile details",
+      blurb: detailsDone ? "Contact and employment details complete." : enabled["recruitment.tracker"] ? "Add their job title and start date." : "Add their name and email.",
+      status: detailsDone ? { label: "Done", tone: "ok" } : { label: "Incomplete", tone: "warn" },
+      done: detailsDone,
+      action: { label: "Edit", href: enabled["recruitment.tracker"] ? `${base}?section=employment` : "/org/learners/admin" },
+    });
+  }
+  const activity: ActivityLine[] = [
+    ...(profile.last_seen_at ? [{ key: "seen", text: "Signed in", at: profile.last_seen_at, withTime: true }] : []),
+    ...certificates.slice(0, 2).map((c) => ({ key: `cert:${c.id}`, text: `Certificate: ${c.title}`, at: c.issued_at })),
+    ...supervisions.slice(0, 2).map((x) => ({ key: `sup:${x.id}`, text: `${kindLabel(x.kind)} held${x.supervisor_name ? ` by ${x.supervisor_name}` : ""}`, at: x.held_on })),
+    ...(startDate ? [{ key: "started", text: `Started${jobTitle ? ` as ${jobTitle}` : ""}`, at: startDate }] : []),
+  ]
+    .sort((a, b) => b.at.localeCompare(a.at))
+    .slice(0, 5);
+
   return (
-    <DashboardShell title={name} context={context} back={{ href: "/org/learners#learners", label: "All learners" }}>
-      <div className="md:grid md:grid-cols-[15rem_minmax(0,1fr)] md:items-start md:gap-8">
-        {/* The person, and every section of their file, down the left. Across
-            the top as tabs, most sections were off the edge and it was not
-            apparent there was more than Training (Saj, 27 Oct 2026). */}
-        <aside className="space-y-4 md:sticky md:top-28">
-          <Card>
-            <CardContent className="space-y-4 pt-6">
-              <div className="flex items-center gap-4 md:flex-col md:items-start">
-                <ProgressRing value={stats.overallPct} size={72} stroke={8}>
-                  <span className="text-lg font-semibold">{stats.overallPct}%</span>
-                </ProgressRing>
-                <div className="min-w-0 space-y-1">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs capitalize text-muted-foreground">
-                      {roleLabel(profile.role)}
-                    </span>
-                    {profile.status === "deactivated" && (
-                      <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-700">
-                        Deactivated
-                      </span>
-                    )}
-                  </div>
-                  <p className="truncate text-sm text-muted-foreground">{profile.email}</p>
+    <DashboardShell
+      title={name}
+      context={context}
+      header={
+        <nav aria-label="Breadcrumb" className="mb-4 text-sm">
+          <Link href="/org/learners" className="font-semibold text-primary hover:underline">
+            Staff
+          </Link>
+          <span className="mx-1.5 text-muted-foreground">/</span>
+          <span className="text-muted-foreground">{name}</span>
+        </nav>
+      }
+    >
+      {/* The person, then every section of their file as tabs (docs/redesign
+          image 4). It was a rail down the left until 1 Nov 2026. */}
+      <div className="rounded-card border bg-card">
+        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-5 sm:p-6">
+          <span aria-hidden className="inline-flex size-16 shrink-0 items-center justify-center rounded-full bg-sidebar text-xl font-extrabold text-sidebar-foreground sm:size-20 sm:text-2xl">
+            {initials(profile.full_name, profile.email)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-[26px] font-extrabold leading-tight tracking-tight sm:text-[30px]">{name}</h1>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[15px] text-muted-foreground">
+              <Pill tone="ok">{jobTitle ?? (isCarer ? "Care worker" : roleLabel(profile.role))}</Pill>
+              {profile.status === "deactivated" && <Pill tone="danger">Deactivated</Pill>}
+              {profile.email && <span className="truncate">{profile.email}</span>}
+              {startDate && <span>· Started {fmtDate(startDate)}</span>}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {canRemind && <NudgeButton userId={userId} lastRemindedAt={lastRemindedAt} />}
+            <EvidencePackButton userId={userId} />
+            {isStaff(profile.role as string) && profile.status !== "deactivated" && (
+              <Link href={`${base}?section=training#assign`} className={buttonVariants({ variant: "outline" })}>
+                <Plus className="size-4" aria-hidden />
+                Assign course
+              </Link>
+            )}
+            {enabled["people.supervisions"] && profile.status !== "deactivated" && (
+              <Link href={`${base}/supervisions/new?kind=supervision`} className={buttonVariants({ variant: "default" })}>
+                <CalendarPlus className="size-4" aria-hidden />
+                Book supervision
+              </Link>
+            )}
+          </div>
+        </div>
+        <ProfileTabs userId={userId} active={section.key} enabled={enabled} counts={counts} />
+      </div>
+
+      <div className="mt-6 min-w-0 space-y-6">
+        {section.key === "overview" && (
+          <PersonOverview checks={overviewChecks} activity={activity}>
+            {/* Removing someone from their own page, where a manager looks
+                for it (#78) — the same buttons and rule as the staff list:
+                never yourself, and only a manager removes console staff. */}
+            {userId !== context.userId && (isCarer || context.role === "org_admin") && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border bg-card p-5">
+                <div>
+                  <p className="font-bold">Account</p>
+                  <p className="text-sm text-muted-foreground">
+                    {profile.status === "deactivated" ? "They can't sign in. Their records are kept." : "Deactivate when they leave; their records are kept."}
+                  </p>
                 </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {canRemind && (
-                  <NudgeButton
-                    userId={userId}
-                    lastRemindedAt={lastRemindedAt}
-                  />
-                )}
-                <EvidencePackButton userId={userId} />
-              </div>
-              {/* Removing someone from their own page, where a manager looks
-                  for it (#78) — the same buttons and rule as the staff list:
-                  never yourself, and only a manager removes console staff. */}
-              {userId !== context.userId && (profile.role === "learner" || context.role === "org_admin") && (
-                <div className="flex flex-wrap items-center gap-1 border-t pt-3">
+                <div className="flex flex-wrap items-center gap-1">
                   <StatusToggle userId={userId} status={profile.status ?? "active"} name={name} />
-                  <DeleteStaffButton userId={userId} name={name} redirectTo="/org/learners#learners" />
+                  <DeleteStaffButton userId={userId} name={name} redirectTo="/org/learners" />
                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <SectionRail userId={userId} active={section.key} enabled={enabled} counts={counts} />
-        </aside>
-
-        <div className="mt-6 min-w-0 space-y-6 md:mt-0">
-        <SectionTabs userId={userId} active={section.key} enabled={enabled} />
+              </div>
+            )}
+          </PersonOverview>
+        )}
 
         {/* A section shown as a panel carries its own title. */}
-        {INLINE_SECTIONS.has(section.key) && state === "open" && (
-          <h2 className="hidden text-lg font-semibold md:block">{section.label}</h2>
+        {INLINE_SECTIONS.has(section.key) && section.key !== "overview" && state === "open" && (
+          <h2 className="text-lg font-extrabold tracking-tight">{section.label}</h2>
         )}
 
         {section.key === "training" && (
@@ -444,12 +588,14 @@ export default async function StaffDetailPage({
             )}
 
             {isStaff(profile.role as string) && profile.status !== "deactivated" && (
-              <AssignToPerson
-                userId={userId}
-                name={name}
-                courses={library}
-                defaultDueDate={endOfMonthISO()}
-              />
+              <div id="assign" className="scroll-mt-28">
+                <AssignToPerson
+                  userId={userId}
+                  name={name}
+                  courses={library}
+                  defaultDueDate={endOfMonthISO()}
+                />
+              </div>
             )}
 
             {/* Per-course breakdown */}
@@ -875,8 +1021,6 @@ export default async function StaffDetailPage({
           />
         )}
 
-        <SectionTabsAfter userId={userId} active={section.key} enabled={enabled} />
-        </div>
       </div>
     </DashboardShell>
   );

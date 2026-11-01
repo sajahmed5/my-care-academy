@@ -43,9 +43,22 @@ export interface SectionDef {
   /** Where the area lives today, for sections built outside this page. */
   href?: string;
   hrefLabel?: string;
+  /** Behind "More" in the row of tabs (redesign, 1 Nov 2026). */
+  more?: boolean;
 }
 
+/**
+ * In the order of the tabs across the top of the file (docs/redesign image
+ * 4): Overview first, then the record areas, with the four under More last.
+ */
 export const SECTIONS: SectionDef[] = [
+  {
+    key: "overview",
+    label: "Overview",
+    blurb: "Where this person stands on every check, and what to do next.",
+    feature: null,
+    built: true,
+  },
   {
     key: "training",
     label: "Training",
@@ -69,10 +82,19 @@ export const SECTIONS: SectionDef[] = [
     hrefLabel: "Open the Care Certificate record",
   },
   {
-    key: "forms",
-    label: "Forms",
-    blurb: "Forms this person has been asked to complete, and has.",
-    feature: "forms.builder",
+    key: "supervisions",
+    label: "Supervisions",
+    blurb:
+      "Supervisions and appraisals — booked ahead, held question by question, signed by both, and when the next one is due.",
+    feature: "people.supervisions",
+    built: true,
+  },
+  {
+    key: "competency",
+    label: "Spot checks",
+    blurb:
+      "Unannounced spot checks in clients' homes, and each skill signed off against its own criteria — repeated on a schedule.",
+    feature: "people.competency",
     built: true,
   },
   {
@@ -99,23 +121,16 @@ export const SECTIONS: SectionDef[] = [
     built: true,
   },
   {
-    key: "supervisions",
-    label: "Supervisions & appraisals",
-    blurb:
-      "Supervisions and appraisals — booked ahead, held question by question, signed by both, and when the next one is due.",
-    feature: "people.supervisions",
-    built: true,
-  },
-  {
-    key: "competency",
-    label: "Spot checks & competency",
-    blurb:
-      "Unannounced spot checks in clients' homes, and each skill signed off against its own criteria — repeated on a schedule.",
-    feature: "people.competency",
+    key: "forms",
+    more: true,
+    label: "Forms",
+    blurb: "Forms this person has been asked to complete, and has.",
+    feature: "forms.builder",
     built: true,
   },
   {
     key: "complaints",
+    more: true,
     label: "Concerns & compliments",
     blurb:
       "Complaints, safeguarding concerns, issues, accidents and near misses this person was named in, what came of them, and the training they suggest; and the compliments about them.",
@@ -124,6 +139,7 @@ export const SECTIONS: SectionDef[] = [
   },
   {
     key: "policies",
+    more: true,
     label: "Policies",
     blurb: "The policies this person must read, the version they accepted and when, and any that are late.",
     feature: "documents.library",
@@ -134,6 +150,7 @@ export const SECTIONS: SectionDef[] = [
     // training, which every package includes. What is paid for is what feeds
     // it — supervision actions exist only where supervisions do.
     key: "actions",
+    more: true,
     label: "Actions & tasks",
     blurb:
       "Everything outstanding for this person in one list — training due, certificates expiring, actions agreed with a manager.",
@@ -142,7 +159,7 @@ export const SECTIONS: SectionDef[] = [
   },
 ];
 
-export const DEFAULT_SECTION = "training";
+export const DEFAULT_SECTION = "overview";
 
 /** Keys a section used to have, still in links people were sent. */
 const RENAMED: Record<string, string> = { recruitment: "documents" };

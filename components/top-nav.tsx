@@ -7,6 +7,8 @@ import { IntentLink } from "@/components/intent-link";
 import { BrandMark } from "@/components/brand-mark";
 import { Logo } from "@/components/logo";
 import { CommandSearch, type SearchPage } from "@/components/command-search";
+import { CodeTile } from "@/components/code-tile";
+import { initials } from "@/lib/initials";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
 import { withoutGated, type FeatureKey } from "@/lib/features";
@@ -274,13 +276,6 @@ function itemActive(pathname: string, item: MenuItem): boolean {
   return (item.also ?? []).some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
-/** Initials for the person button: "QA Office Worker" → "QO", an email → "QA". */
-export function initials(name: string | null, email: string | null): string {
-  const words = (name ?? "").trim().split(/\s+/).filter(Boolean);
-  if (words.length >= 2) return (words[0][0] + words[words.length - 1][0]).toUpperCase();
-  return (words[0] ?? email ?? "?").slice(0, 2).toUpperCase();
-}
-
 /** The late count behind a drop-down entry: its own page and the pages it stands for. */
 function lateBehind(link: MenuLink, byPath: Record<string, number>): number {
   const paths = [link.href, ...(link.also ?? []), ...(link.row ?? []).map((r) => r.href)].map((p) => p.split("?")[0]);
@@ -333,21 +328,6 @@ function PanelLink({ link, pathname }: { link: MenuLink; pathname: string }) {
     >
       {link.label}
     </IntentLink>
-  );
-}
-
-/** A two-letter tile, the mark of a page in a drop-down and a list. */
-export function CodeTile({ code, tone = "teal", className }: { code: string; tone?: "teal" | "warn" | "danger" | "muted"; className?: string }) {
-  const tones = {
-    teal: "bg-accent text-accent-foreground",
-    warn: "bg-warn text-warn-foreground",
-    danger: "bg-danger text-danger-foreground",
-    muted: "bg-muted text-muted-foreground",
-  };
-  return (
-    <span aria-hidden className={cn("inline-flex size-11 shrink-0 items-center justify-center rounded-xl text-sm font-bold tracking-wide", tones[tone], className)}>
-      {code}
-    </span>
   );
 }
 

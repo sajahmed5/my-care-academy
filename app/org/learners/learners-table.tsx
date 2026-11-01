@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, Search, SlidersHorizontal, X } from "lucide-react";
 import { SortHeader, useTableSort } from "@/components/sort-header";
 import { Pill } from "@/components/pill";
-import { initials } from "@/components/top-nav";
+import { initials } from "@/lib/initials";
 import { dateColumn, numberColumn, textColumn, type SortColumn } from "@/lib/table-sort";
 import { formatDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";

@@ -4,7 +4,7 @@ import { lastActiveLabel, matches, needsAttention, roleLine, type StaffRow } fro
 const DAY = 86_400_000;
 const now = Date.UTC(2026, 10, 1, 12);
 
-function row(over: Partial<StaffRow> & { stats?: Partial<StaffRow["stats"]> } = {}): StaffRow {
+function row(over: Omit<Partial<StaffRow>, "stats"> & { stats?: Partial<StaffRow["stats"]> } = {}): StaffRow {
   const { stats, ...rest } = over;
   return {
     id: "u1",

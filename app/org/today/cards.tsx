@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { ProgressRing } from "@/components/learner-ui";
 import { Pill } from "@/components/pill";
-import { CodeTile } from "@/components/top-nav";
+import { CodeTile } from "@/components/code-tile";
 import { cn } from "@/lib/utils";
 import type { AttentionRow, Readiness } from "@/lib/today";
 

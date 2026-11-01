@@ -5,7 +5,7 @@ import { formatDate } from "@/lib/dates";
 import { addDays } from "@/lib/hr/probation";
 import { leaveTypeLabel, overlaps } from "@/lib/hr/holidays";
 import { cn } from "@/lib/utils";
-import { initials } from "@/components/top-nav";
+import { initials } from "@/lib/initials";
 
 const DAY_LABEL = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 

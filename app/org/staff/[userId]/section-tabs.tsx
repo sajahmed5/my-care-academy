@@ -1,35 +1,37 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight, Lock } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { ChevronDown, Lock } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { SECTIONS, sectionState, type SectionDef } from "./sections";
 import type { FeatureKey } from "@/lib/features";
 
-/** What is outstanding in a section, shown beside it on the list. */
+/** What is outstanding in a section, shown beside it on the tab. */
 export interface SectionCount {
   text: string;
   tone: "danger" | "warn" | "muted";
 }
 
 const TONE: Record<SectionCount["tone"], string> = {
-  danger: "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300",
-  warn: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300",
-  muted: "text-muted-foreground",
+  danger: "bg-danger text-danger-foreground",
+  warn: "bg-warn text-warn-foreground",
+  muted: "bg-muted text-muted-foreground",
 };
 
 /**
- * Every section of a carer's file, down the left beside it (md and up).
- *
- * Links rather than client-side tabs, so a section is addressable: the
- * evidence pack, a reminder email and "3 actions outstanding" elsewhere in the
- * app all need to land on one. It also means a section's data is only fetched
- * when it is open, which matters on a file with four years of history.
- *
- * It was a row of tabs across the top, which ran off the edge after the fifth
- * section, so it was not apparent the file had more than Training in it
- * (Saj, 27 Oct 2026). Sections the package leaves out are not listed (Saj,
- * 30 Oct 2026), unless it is the one open — a link straight to it still
- * says it isn't in the package.
+ * The sections of a person's file as a row of tabs under the header card
+ * (docs/redesign image 4): Overview, Training, Certificates, Care
+ * Certificate, Supervisions, Spot checks, Documents, Employment, and More
+ * for the four used less often. Links rather than client-side tabs, so a
+ * section is addressable: the evidence pack, a reminder email and "3
+ * actions outstanding" elsewhere in the app all land on one. Sections the
+ * package leaves out are not listed, unless it is the one open — a link
+ * straight to it still says it isn't in the package. On a phone the row
+ * scrolls sideways, the open tab brought into view.
  */
-export function SectionRail({
+export function ProfileTabs({
   userId,
   active,
   enabled,
@@ -40,135 +42,112 @@ export function SectionRail({
   enabled: Record<FeatureKey, boolean>;
   counts?: Record<string, SectionCount>;
 }) {
-  const shown = shownSections(enabled, active);
-  const open = shown.filter((s) => sectionState(s, enabled) === "open");
-  const shut = shown.filter((s) => sectionState(s, enabled) !== "open");
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const search = useSearchParams();
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMoreOpen(false), [pathname, search]);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    function onDown(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMoreOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [moreOpen]);
+
+  useEffect(() => {
+    const row = rowRef.current;
+    const link = row?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (row && link) row.scrollLeft = link.offsetLeft - (row.clientWidth - link.offsetWidth) / 2;
+  }, [active]);
+
+  const shown = SECTIONS.filter((s) => s.key === active || sectionState(s, enabled) !== "locked");
+  const main = shown.filter((s) => !s.more);
+  const more = shown.filter((s) => s.more);
+  const activeInMore = more.find((s) => s.key === active);
+  const href = (s: SectionDef) => `/org/staff/${userId}?section=${s.key}`;
+
+  const tab = (s: SectionDef, isActive: boolean) => {
+    const state = sectionState(s, enabled);
+    const count = counts[s.key];
+    return (
+      <>
+        {state !== "open" && <Lock className="size-3.5 shrink-0" aria-hidden />}
+        {s.label}
+        {state === "planned" && <span className="sr-only"> (coming soon)</span>}
+        {state === "locked" && <span className="sr-only"> (not in your plan)</span>}
+        {count && state === "open" && (
+          <span className={cn("rounded-full px-1.5 py-0.5 text-[11px] font-bold leading-none", isActive ? TONE[count.tone] : TONE[count.tone])}>{count.text}</span>
+        )}
+      </>
+    );
+  };
+
+  const tabClass = (isActive: boolean) =>
+    cn(
+      "inline-flex h-12 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 text-[15px] transition-colors",
+      isActive ? "border-primary font-bold text-primary" : "border-transparent font-semibold text-muted-foreground hover:text-foreground",
+    );
+
   return (
-    <nav aria-label="Sections of this file" className="hidden rounded-xl border bg-card p-1.5 md:block">
-      {[...open, ...shut].map((section) => {
-        const state = sectionState(section, enabled);
-        const isActive = section.key === active;
-        const count = counts[section.key];
-        return (
-          <Link
-            key={section.key}
-            href={`/org/staff/${userId}?section=${section.key}`}
-            aria-current={isActive ? "page" : undefined}
-            className={`flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm transition-colors ${
-              isActive
-                ? "bg-primary/10 font-medium text-primary"
-                : state === "open"
-                  ? "text-foreground/80 hover:bg-muted"
-                  : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <StateMarks section={section} enabled={enabled} />
-            <span className="flex-1">{section.label}</span>
-            {state === "planned" && <span className="sr-only"> (coming soon)</span>}
-            {state === "locked" && <span className="sr-only"> (not in your plan)</span>}
-            {count && state === "open" && (
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${TONE[count.tone]}`}>{count.text}</span>
+    <nav aria-label="Sections of this file" className="relative border-t">
+      <div ref={rowRef} className="flex min-w-0 gap-1 overflow-x-auto px-2 [scrollbar-width:none] sm:px-3 [&::-webkit-scrollbar]:hidden">
+        {main.map((s) => {
+          const isActive = s.key === active;
+          return (
+            <Link key={s.key} href={href(s)} aria-current={isActive ? "page" : undefined} className={tabClass(isActive)}>
+              {tab(s, isActive)}
+            </Link>
+          );
+        })}
+        {more.length > 0 && (
+          <div ref={moreRef} className="relative shrink-0">
+            <button
+              type="button"
+              aria-expanded={moreOpen}
+              aria-haspopup="true"
+              onClick={() => setMoreOpen((o) => !o)}
+              className={tabClass(!!activeInMore)}
+            >
+              {activeInMore ? activeInMore.label : "More"}
+              <ChevronDown className={cn("size-4 transition-transform", moreOpen && "rotate-180")} aria-hidden />
+            </button>
+            {moreOpen && (
+              <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-60 rounded-2xl border bg-popover p-1.5 text-popover-foreground shadow-xl">
+                {more.map((s) => {
+                  const isActive = s.key === active;
+                  return (
+                    <Link
+                      key={s.key}
+                      role="menuitem"
+                      href={href(s)}
+                      aria-current={isActive ? "page" : undefined}
+                      className={cn(
+                        "flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm",
+                        isActive ? "bg-accent font-bold text-accent-foreground" : "font-medium hover:bg-muted",
+                      )}
+                    >
+                      {tab(s, isActive)}
+                    </Link>
+                  );
+                })}
+              </div>
             )}
-          </Link>
-        );
-      })}
+          </div>
+        )}
+      </div>
     </nav>
   );
-}
-
-/**
- * On a phone the sections stack instead, as an accordion (CARER-FILE.md §2):
- * the sections down to the open one here, its content under it, and the rest
- * after the content, from SectionTabsAfter.
- */
-export function SectionTabs({
-  userId,
-  active,
-  enabled,
-}: {
-  userId: string;
-  active: string;
-  enabled: Record<FeatureKey, boolean>;
-}) {
-  const shown = shownSections(enabled, active);
-  const at = shown.findIndex((s) => s.key === active);
-  return (
-    <StackedRows
-      userId={userId}
-      active={active}
-      enabled={enabled}
-      sections={shown.slice(0, at < 0 ? shown.length : at + 1)}
-    />
-  );
-}
-
-/** On a phone: the sections after the open one, under its content. */
-export function SectionTabsAfter({
-  userId,
-  active,
-  enabled,
-}: {
-  userId: string;
-  active: string;
-  enabled: Record<FeatureKey, boolean>;
-}) {
-  const shown = shownSections(enabled, active);
-  const at = shown.findIndex((s) => s.key === active);
-  if (at < 0) return null;
-  return (
-    <StackedRows
-      userId={userId}
-      active={active}
-      enabled={enabled}
-      sections={shown.slice(at + 1)}
-      label="More sections of this file"
-    />
-  );
-}
-
-function StackedRows({
-  userId,
-  active,
-  enabled,
-  sections,
-  label = "Sections of this file",
-}: {
-  userId: string;
-  active: string;
-  enabled: Record<FeatureKey, boolean>;
-  sections: readonly SectionDef[];
-  label?: string;
-}) {
-  if (sections.length === 0) return null;
-  return (
-    <nav aria-label={label} className="divide-y overflow-hidden rounded-lg border md:hidden">
-      {sections.map((section) => {
-        const isActive = section.key === active;
-        const Chevron = isActive ? ChevronDown : ChevronRight;
-        return (
-          <Link
-            key={section.key}
-            href={`/org/staff/${userId}?section=${section.key}`}
-            aria-current={isActive ? "page" : undefined}
-            className={`flex min-h-12 items-center gap-2 px-3 text-sm font-medium ${
-              isActive ? "bg-muted text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            <StateMarks section={section} enabled={enabled} />
-            <span className="flex-1">{section.label}</span>
-            <Chevron className="size-4 shrink-0" aria-hidden />
-          </Link>
-        );
-      })}
-    </nav>
-  );
-}
-
-/** The sections to list: all but those the package leaves out, bar the open one. */
-function shownSections(enabled: Record<FeatureKey, boolean>, active: string): SectionDef[] {
-  return SECTIONS.filter((s) => s.key === active || sectionState(s, enabled) !== "locked");
-}
-
-function StateMarks({ section, enabled }: { section: SectionDef; enabled: Record<FeatureKey, boolean> }) {
-  return sectionState(section, enabled) !== "open" ? <Lock className="size-3.5 shrink-0" aria-hidden /> : null;
 }
