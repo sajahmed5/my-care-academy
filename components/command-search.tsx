@@ -181,7 +181,7 @@ export function CommandSearch({
                 <li className="px-3 py-6 text-center text-sm text-muted-foreground">Nothing matches “{query}”.</li>
               )}
               {results.map((r, i) => (
-                <li key={r.href} id={`command-search-${i}`} role="option" aria-selected={i === cursor}>
+                <li key={`${r.section ?? ""}:${r.href}`} id={`command-search-${i}`} role="option" aria-selected={i === cursor}>
                   <button
                     type="button"
                     onMouseEnter={() => setCursor(i)}
