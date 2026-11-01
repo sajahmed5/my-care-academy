@@ -22,14 +22,11 @@ export interface SearchPage {
 export function CommandSearch({
   pages,
   peopleHref = "/org/learners",
-  compact = false,
   className,
 }: {
   pages: SearchPage[];
   /** Where a name is looked for; null when there is no staff list to search. */
   peopleHref?: string | null;
-  /** An icon button (phones) instead of the pill. */
-  compact?: boolean;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -94,29 +91,32 @@ export function CommandSearch({
     router.push(href);
   }
 
-  const button = compact ? (
-    <button
-      type="button"
-      onClick={show}
-      aria-label="Search"
-      className={cn("inline-flex size-11 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-muted", className)}
-    >
-      <Search className="size-5" />
-    </button>
-  ) : (
-    <button
-      type="button"
-      onClick={show}
-      aria-label="Search pages and people (⌘K)"
-      className={cn(
-        "inline-flex h-11 items-center gap-2 rounded-xl border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground",
-        className,
-      )}
-    >
-      <Search className="size-4" />
-      <span>Search</span>
-      <kbd className="ml-1 rounded-md border bg-muted px-1.5 py-0.5 font-sans text-[11px] text-muted-foreground">⌘K</kbd>
-    </button>
+  // One dialog, two buttons: the pill from lg up, an icon below it. Two
+  // instances would each answer ⌘K and open two dialogs on top of each other.
+  const button = (
+    <>
+      <button
+        type="button"
+        onClick={show}
+        aria-label="Search pages and people (⌘K)"
+        className={cn(
+          "hidden h-11 items-center gap-2 rounded-xl border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground lg:inline-flex",
+          className,
+        )}
+      >
+        <Search className="size-4" />
+        <span>Search</span>
+        <kbd className="ml-1 rounded-md border bg-muted px-1.5 py-0.5 font-sans text-[11px] text-muted-foreground">⌘K</kbd>
+      </button>
+      <button
+        type="button"
+        onClick={show}
+        aria-label="Search"
+        className={cn("inline-flex size-11 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-muted lg:hidden", className)}
+      >
+        <Search className="size-5" />
+      </button>
+    </>
   );
 
   return (

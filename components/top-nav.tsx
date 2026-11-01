@@ -583,12 +583,7 @@ export function TopNav({
           {showLearnerBits && search && <div className="hidden xl:block">{search}</div>}
           {showLearnerBits && stars}
 
-          {console_ && (
-            <>
-              <CommandSearch pages={pages} className="hidden lg:inline-flex" />
-              <CommandSearch pages={pages} compact className="lg:hidden" />
-            </>
-          )}
+          {console_ && <CommandSearch pages={pages} />}
 
           {trial &&
             (trial.href ? (
