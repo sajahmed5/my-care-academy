@@ -12,7 +12,7 @@ the file in `content/policies/` (or ask Claude) and re-run
 
 Points the writers were unsure of, or our own choices rather than law.
 
-**Our own choices — keep, change or remove**
+**Our own choices — kept as recommended practice (Saj, 1 Nov 2026)**
 - Residents' Money and Property: weekly balance checks and a monthly manager audit.
 - Nutrition: residents weighed and screened (MUST) at least monthly; homecare carers report "little or nothing eaten for two visits in a row"; reheat food only once.
 - Covert Medication: plans reviewed at least every six months.
@@ -45,8 +45,9 @@ Confirmed as written:
 - Data Security: breaches can go to the ICO through the DSPT.
 - Working Time: Tyco still stands as assimilated case law.
 
-Still your call:
-- Sexuality and Relationships says nothing about single-sex spaces after the April 2025 For Women Scotland judgment.
-- CQC notifications: CQC's guidance doesn't say a category 3 or 4 pressure ulcer is automatically notifiable, though CQC has treated one as a serious injury. The policies leave the decision to the registered manager, who follows CQC's guidance.
+Decided by Saj, 1 Nov 2026:
+- Sexuality and Relationships: left as it is, with nothing on single-sex spaces.
+- Pressure Ulcers: we advise notifying CQC of any category 3, 4 or unstageable pressure ulcer; the registered manager makes the final decision. The policy now says so.
+- The "our own choices" above stay as written: recommended practice, which a company can change in its own copy.
 
 **Fill-ins a company completes** — kept to local facts: local authority safeguarding and DoLS contacts, interpreting service, on-call and sickness reporting notice, leave year and bank holidays, sick pay, the "late visit" window, insurance cover, and a few similar.

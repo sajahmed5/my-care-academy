@@ -21,7 +21,7 @@ export function LetterheadForm({ company, initial, hasLogo }: { company: string;
         <h3 className="font-semibold">Your letterhead</h3>
         <p className="text-sm text-muted-foreground">
           Printed under {company || "your company's name"} at the top of every HR letter, and on the PDF and Word downloads.
-          {hasLogo ? " Your logo goes above it." : " With white label, your logo goes above it too."}
+          {hasLogo ? " Your logo goes above it." : " On Enterprise, your logo goes above it too, once a manager uploads it under Settings → White label."}
         </p>
       </div>
       <label className="block text-sm">

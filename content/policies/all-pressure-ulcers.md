@@ -89,7 +89,7 @@ Every pressure ulcer is recorded through the site's concerns process, whether it
 
 - reviews how it happened and whether it could have been prevented, with the district nurse;
 - uses the Department of Health and Social Care's safeguarding protocol to decide whether a safeguarding referral is needed, for example where care was not given as planned;
-- decides whether it must be notified to CQC under Regulation 18, following CQC's current guidance;
+- decides whether to notify CQC under Regulation 18 as a serious injury. We advise notifying any category 3 or 4 pressure ulcer, or an unstageable one; the registered manager makes the final decision, following CQC's current guidance;
 - considers whether the duty of candour applies (see Duty of Candour);
 - looks for patterns across everyone we support and makes changes.
 
