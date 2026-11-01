@@ -1,4 +1,4 @@
-# Free trials and the "From the same team" card — agreed (30 Oct 2026)
+# Free trials and the "You may also be interested in" card — agreed (30 Oct 2026)
 
 Agreed with Saj on 30 Oct 2026, mock-ups approved the same day
 (https://claude.ai/artifact/UV6tmKp6tTQswczounMtAS), built in v3.5.0–v3.5.5.
@@ -40,7 +40,7 @@ end of Monday 9 November.
   Account page) they see that AI is built in, but unavailable during the
   trial.
 
-## From the same team
+## You may also be interested in
 
 A card advertising our other products. Shown to **managers and office staff
 in every company**, never to carers, with a Hide button.
@@ -69,7 +69,7 @@ One change per release commit, as always. All built 30 Oct 2026:
    send nothing to a paused company's people, and trials aren't in MRR.
 3. Trial limits: face-to-face, bespoke reports, AI (v3.5.2).
 4. The day-5 and end-day emails, from the daily job (v3.5.3).
-5. The From the same team card (v3.5.4). Hide is per browser (a cookie).
+5. The "You may also be interested in" card (v3.5.4; called "From the same team" until v3.7.0). Hide is per browser (a cookie).
 6. Removing a lapsed trial's data after 30 days (v3.5.5): its own cron,
    `/api/cron/trials` at 07:30, with a warning email to us a week before.
    Never removes a company with a Stripe subscription; one per run.

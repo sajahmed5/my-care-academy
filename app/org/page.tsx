@@ -153,7 +153,7 @@ export default async function OrgDashboard() {
           single line under eleven equal tiles, so "2 overdue" weighed the same
           as "0 completed late" and the one thing to act on sat at the bottom.
           Tiles that read zero now step back (StatTile dims them). */}
-      {/* From the same team sits beside the page on a wide screen, and
+      {/* "You may also be interested in" sits beside the page on a wide screen, and
           under it on anything narrower (TRIAL.md). */}
       <div className="flex flex-col gap-8 xl:flex-row xl:items-start">
         <div className="min-w-0 flex-1 space-y-8">

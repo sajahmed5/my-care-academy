@@ -1,6 +1,6 @@
 /**
- * Our other products, advertised to managers and office staff on the From
- * the same team card (TRIAL.md, 30 Oct 2026). Never to carers. Each advert
+ * Our other products, advertised to managers and office staff on the "You
+ * may also be interested in" card (TRIAL.md, 30 Oct 2026). Never to carers. Each advert
  * is in its own brand, taken from its website.
  */
 

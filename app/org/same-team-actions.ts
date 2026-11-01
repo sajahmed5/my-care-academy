@@ -12,7 +12,7 @@ import { SAME_TEAM_COOKIE, SAME_TEAM_PRODUCTS, type SameTeamProduct } from "@/li
 const INBOX = process.env.CONTACT_INBOX ?? "hello@mycareacademy.co.uk";
 
 /**
- * "I'm interested" on the From the same team card (TRIAL.md): tells us who,
+ * "I'm interested" on the "You may also be interested in" card (TRIAL.md): tells us who,
  * from which company, about which product — like the upgrade request. Also
  * from the trial-ended page, once the company is paused.
  */
@@ -39,7 +39,7 @@ export async function sameTeamInterestAction(product: SameTeamProduct): Promise<
       body: `<p><strong>${esc(who)}</strong>${email ? ` (${esc(email)})` : ""} at <strong>${esc(company)}</strong>
         pressed "I'm interested" on the ${esc(item.name)} advert in My Care Academy.</p>
         <p>Reply to this email to get in touch with them.</p>`,
-      footer: "My Care Academy — the From the same team card.",
+      footer: "My Care Academy — the "You may also be interested in" card.",
     }),
   });
   if (!sent) return { ok: false, error: "That didn't go through. Try again, or visit the website." };

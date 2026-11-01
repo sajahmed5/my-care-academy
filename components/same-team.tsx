@@ -9,7 +9,7 @@ import { HideSameTeam, InterestedButton } from "@/components/same-team-buttons";
 const bricolage = Bricolage_Grotesque({ subsets: ["latin"], weight: "700", display: "swap" });
 
 /**
- * From the same team (TRIAL.md, 30 Oct 2026): MyRoster and Yellowloaf, each
+ * You may also be interested in (TRIAL.md, 30 Oct 2026): MyRoster and Yellowloaf, each
  * in its own brand. Managers and office staff in every company; never
  * carers. Hidden per browser with Hide, except on the trial-ended page;
  * MyRoster is left out for a company already connected to it.
@@ -39,7 +39,7 @@ export async function SameTeam({
     <aside aria-labelledby="same-team-heading" className={`space-y-3 rounded-2xl border bg-card p-4 shadow-sm ${className}`}>
       <div className="flex items-center">
         <h2 id="same-team-heading" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          From the same team
+          You may also be interested in
         </h2>
         {hideable && <HideSameTeam />}
       </div>
