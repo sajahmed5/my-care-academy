@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -88,6 +89,7 @@ export async function selfEnrolAction(
   });
   if (error) return { ok: false, error: error.message };
 
+  await refreshDueBadge();
   revalidatePath("/learn/modules/all");
   revalidatePath("/learn/modules");
   revalidatePath("/learn");
@@ -102,6 +104,7 @@ export async function markNotificationsReadAction(): Promise<{ ok: boolean }> {
     .from("users")
     .update({ notifications_read_at: new Date().toISOString() })
     .eq("id", context.userId);
+  await refreshDueBadge();
   revalidatePath("/learn/notifications");
   revalidatePath("/learn");
   return { ok: true };

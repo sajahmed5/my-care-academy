@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { redirect } from "next/navigation";
 import { requireConsole, requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -154,6 +155,7 @@ export async function saveClientQaAction(_prev: SaveState, formData: FormData): 
     entityId: qaId,
     detail: { completed, score: (row.score as number | undefined) ?? null, actions: agreed.length },
   });
+  await refreshDueBadge();
   revalidatePath("/org/audits");
   revalidatePath("/org/due/audits");
   revalidatePath(`/org/clients/${clientId}`);
@@ -178,6 +180,7 @@ export async function reviewQaAction(_prev: SaveState, formData: FormData): Prom
   if (error) return { ok: false, error: error.message };
   if (!data) return { ok: false, error: "That QA isn't waiting for review." };
   await logAudit({ context, action: "client_qa.reviewed", entity: "client_qa", entityId: id });
+  await refreshDueBadge();
   revalidatePath(`/org/audits/qa/${id}`);
   revalidatePath("/org/audits");
   return { ok: true };
@@ -229,6 +232,7 @@ export async function qaComplimentAction(_prev: SaveState, formData: FormData): 
   }
   await supabase.from("client_qas").update({ compliment_id: compliment.id }).eq("id", id);
   await logAudit({ context, action: "client_qa.compliment", entity: "client_qa", entityId: id, detail: { complimentId: compliment.id, people: people.length } });
+  await refreshDueBadge();
   revalidatePath(`/org/audits/qa/${id}`);
   revalidatePath("/org/complaints/compliments");
   for (const p of people) revalidatePath(`/org/staff/${p}`);
@@ -309,6 +313,7 @@ export async function qaConcernAction(_prev: SaveState, formData: FormData): Pro
   }
   await supabase.from("client_qas").update({ complaint_id: row.id }).eq("id", id);
   await logAudit({ context, action: "client_qa.concern", entity: "client_qa", entityId: id, detail: { complaintId: row.id, reference } });
+  await refreshDueBadge();
   revalidatePath("/org/complaints");
   revalidatePath(`/org/audits/qa/${id}`);
   if (qa.client_id) revalidatePath(`/org/clients/${qa.client_id}`);

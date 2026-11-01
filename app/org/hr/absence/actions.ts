@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { requireConsole, type UserContext } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
@@ -58,6 +59,7 @@ async function loadAbsence(admin: Admin, context: UserContext, id: string) {
 }
 
 const done = (userId: string, id?: string) => {
+  void refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   revalidatePath("/org/hr/absence");
   if (id) revalidatePath(`/org/hr/absence/${id}`);

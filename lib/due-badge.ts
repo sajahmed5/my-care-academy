@@ -1,6 +1,6 @@
 import "server-only";
-import { unstable_cache } from "next/cache";
-import type { UserContext } from "@/lib/auth";
+import { unstable_cache, updateTag } from "next/cache";
+import { getUserContext, type UserContext } from "@/lib/auth";
 import type { FeatureKey } from "@/lib/features";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isActiveLearner, isNeverActive, loadOrgLearners } from "@/lib/org-learners";
@@ -14,10 +14,12 @@ import { loadOrgTodo } from "@/lib/org-todo";
  * It is the Today page's "things to fix", counted the same way — the alert
  * lines of the to-do list, plus training's two — but the bar is on every
  * page, and the to-do list is a dozen reads to Frankfurt. So the count is
- * cached per company for ten minutes, read with the service role (every
- * read under it filters by the organisation already). A manager who books
- * the supervision sees the bar catch up within ten minutes; the Today page
- * itself is always live.
+ * cached per company for two minutes, read with the service role (every
+ * read under it filters by the organisation already). Every console action
+ * that can change the number clears it (refreshDueBadge), so a manager who
+ * books the supervision sees the bar right on the next page; a change made
+ * from a carer's phone catches up within two minutes. The Today page itself
+ * is always live.
  */
 export interface DueBadge {
   total: number;
@@ -48,13 +50,32 @@ async function countDue(orgId: string, enabled: Record<FeatureKey, boolean>): Pr
   return { total: Object.values(byPath).reduce((a, b) => a + b, 0), byPath };
 }
 
-const cached = unstable_cache(countDue, ["due-badge"], { revalidate: 600 });
+const TTL_SECONDS = 120;
+const tagFor = (orgId: string) => `due-badge:${orgId}`;
 
 export async function loadDueBadge(orgId: string | null, enabled: Record<FeatureKey, boolean>): Promise<DueBadge> {
   if (!orgId) return EMPTY;
   try {
+    // Tagged per company, so one company's action never recounts another's.
+    const cached = unstable_cache(countDue, ["due-badge"], { revalidate: TTL_SECONDS, tags: [tagFor(orgId)] });
     return await cached(orgId, enabled);
   } catch {
     return EMPTY;
+  }
+}
+
+/**
+ * Forget this company's count, so the next page shows the new one. Called
+ * from the server actions that change what is due — booking or holding a
+ * supervision, a spot check, an audit, a concern, a document, training,
+ * someone leaving — beside their revalidatePath calls. Server actions only
+ * (updateTag's rule); anywhere else it does nothing.
+ */
+export async function refreshDueBadge(): Promise<void> {
+  try {
+    const context = await getUserContext();
+    if (context?.organisationId) updateTag(tagFor(context.organisationId));
+  } catch {
+    // Not in a server action, or no session: the two-minute window covers it.
   }
 }

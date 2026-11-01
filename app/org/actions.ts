@@ -2,6 +2,7 @@
 
 import { STAFF_ROLES } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
@@ -69,6 +70,7 @@ export async function inviteStaffAction(
       entity: "user",
       detail: { email, role },
     });
+    await refreshDueBadge();
     revalidatePath("/org");
     revalidatePath("/org/learners");
     revalidatePath("/org/learners/admin");
@@ -161,6 +163,7 @@ export async function setStaffStatusAction(
     entityId: userId,
   });
 
+  await refreshDueBadge();
   revalidatePath("/org");
   revalidatePath("/org/learners");
   revalidatePath("/org/learners/admin");
@@ -223,6 +226,7 @@ export async function deleteStaffAction(
     },
   });
 
+  await refreshDueBadge();
   revalidatePath("/org");
   revalidatePath("/org/learners");
   revalidatePath("/org/learners/admin");
@@ -333,6 +337,7 @@ export async function bulkInviteStaffAction(
     detail: { created, failed: failures.length },
   });
 
+  await refreshDueBadge();
   revalidatePath("/org");
   revalidatePath("/org/learners");
   revalidatePath("/org/learners/admin");
@@ -451,6 +456,7 @@ export async function assignTrainingAction(
     .upsert(rows, { onConflict: "user_id,course_id" });
   if (error) return { ok: false, error: error.message };
 
+  await refreshDueBadge();
   revalidatePath("/org");
   revalidatePath("/org/learners");
   revalidatePath("/org/learners/admin");
@@ -481,9 +487,11 @@ export async function assignTrainingAction(
     );
   });
 
+  await refreshDueBadge();
   revalidatePath("/learn");
   // Assigning from a carer's own page: refresh that page too. One pattern
   // call — "all carers" used to make one per person in the organisation.
+  await refreshDueBadge();
   revalidatePath("/org/staff/[userId]", "page");
   return {
     ok: true,
@@ -612,6 +620,7 @@ export async function bulkAssignTrainingAction(
     detail: { assigned: upserts.length, failed: failures.length },
   });
 
+  await refreshDueBadge();
   revalidatePath("/org");
   revalidatePath("/org/learners");
   revalidatePath("/org/learners/admin");
@@ -688,6 +697,7 @@ export async function unassignTrainingAction(
     },
   });
 
+  await refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   revalidatePath("/org");
   revalidatePath("/org/learners");
@@ -815,11 +825,13 @@ export async function bulkUnassignAction(
     detail: { bulk: true, removed: changed, refused },
   });
 
+  await refreshDueBadge();
   revalidatePath("/org");
   revalidatePath("/org/learners");
   revalidatePath("/org/learners/statistics");
   revalidatePath("/learn");
   // Every carer page at once, rather than one call per ticked row.
+  await refreshDueBadge();
   revalidatePath("/org/staff/[userId]", "page");
   return { ok: true, changed, refused };
 }
@@ -873,11 +885,13 @@ export async function bulkDueDateAction(
     detail: { changed, refused, dueDate },
   });
 
+  await refreshDueBadge();
   revalidatePath("/org");
   revalidatePath("/org/learners");
   revalidatePath("/org/learners/statistics");
   revalidatePath("/learn");
   // Every carer page at once, rather than one call per ticked row.
+  await refreshDueBadge();
   revalidatePath("/org/staff/[userId]", "page");
   return { ok: true, changed, refused };
 }

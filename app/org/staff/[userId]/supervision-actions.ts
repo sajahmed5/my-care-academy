@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { after } from "next/server";
 import { requireConsole } from "@/lib/auth";
 import { STAFF_ROLES } from "@/lib/roles";
@@ -139,6 +140,7 @@ export async function bookAuditAction(_prev: BookState, formData: FormData): Pro
     detail: { bookedOn, bookedTime: bookedTime || null, withUserId },
   });
 
+  await refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   return { ok: true, emailed: true };
 }
@@ -159,6 +161,7 @@ export async function cancelBookingAction(_prev: SaveState, formData: FormData):
   if (error) return { ok: false, error: error.message };
   if (!data) return { ok: false, error: "That booking is no longer there." };
   await logAudit({ context, action: `${data.kind}.booking_cancelled`, entity: "user", entityId: data.user_id as string, detail: { bookingId } });
+  await refreshDueBadge();
   revalidatePath(`/org/staff/${data.user_id}`);
   return { ok: true };
 }
@@ -298,6 +301,7 @@ export async function recordSupervisionAction(_prev: RecordState, formData: Form
     detail: { kind, heldOn, actions: agreed.length, reviewed: review.length, signedByCarer: !!carer.fields.carer_signature },
   });
 
+  await refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   return { ok: true, id: row.id, count: agreed.length };
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -244,6 +245,7 @@ export async function submitQuizAction(
     });
   }
 
+  await refreshDueBadge();
   revalidatePath("/learn");
   return { ok: true, score, correct, total, passed, certificateId, starsAwarded, review };
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { assertActiveMember, requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -105,6 +106,7 @@ export async function submitFormResponseAction(
     detail: { template: assignment.template_code, version: assignment.template.version },
   });
 
+  await refreshDueBadge();
   revalidatePath("/learn/forms");
   revalidatePath("/org/forms");
   revalidatePath(`/org/forms/library/${encodeURIComponent(assignment.template_code)}`);

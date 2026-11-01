@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { requireConsole, requireRole } from "@/lib/auth";
@@ -149,6 +150,7 @@ export async function seedStagesAction(): Promise<SaveState> {
   );
   if (error) return { ok: false, error: error.message };
   await logAudit({ context, action: "complaint.stages_seeded", entity: "complaint_stages" });
+  await refreshDueBadge();
   revalidatePath("/org/complaints");
   revalidatePath("/org/settings/complaints/process");
   return { ok: true };
@@ -173,6 +175,7 @@ export async function saveStageAction(_prev: SaveState, formData: FormData): Pro
     ? await supabase.from("complaint_stages").update(row).eq("id", id)
     : await supabase.from("complaint_stages").insert({ ...row, organisation_id: context.organisationId });
   if (error) return { ok: false, error: error.message };
+  await refreshDueBadge();
   revalidatePath("/org/settings/complaints/process");
   revalidatePath("/org/complaints");
   return { ok: true };
@@ -191,11 +194,13 @@ export async function deleteStageAction(_prev: SaveState, formData: FormData): P
   if (count && count > 0) {
     const { error } = await supabase.from("complaint_stages").update({ enabled: false }).eq("id", id);
     if (error) return { ok: false, error: error.message };
+    await refreshDueBadge();
     revalidatePath("/org/settings/complaints/process");
     return { ok: true, error: undefined };
   }
   const { error } = await supabase.from("complaint_stages").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
+  await refreshDueBadge();
   revalidatePath("/org/settings/complaints/process");
   return { ok: true };
 }
@@ -362,6 +367,7 @@ export async function createComplaintAction(_prev: SaveState, formData: FormData
     detail: { kind, reference },
   });
 
+  await refreshDueBadge();
   revalidatePath("/org/complaints");
   if (personId) revalidatePath(`/org/staff/${personId}`);
   redirect(`/org/complaints/${complaintId}`);
@@ -433,6 +439,7 @@ export async function triageConcernAction(_prev: SaveState, formData: FormData):
     entityId: id,
     detail: { from: result.record.was, to: kind },
   });
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${id}`);
   revalidatePath("/org/complaints");
   return { ok: true };
@@ -456,6 +463,7 @@ export async function setClientAction(_prev: SaveState, formData: FormData): Pro
     .update({ client_id: clientId || null, ...(name ? { about_name: name } : {}) })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${id}`);
   if (clientId) revalidatePath(`/org/clients/${clientId}`);
   return { ok: true };
@@ -471,6 +479,7 @@ export async function setCategoryAction(_prev: SaveState, formData: FormData): P
   const supabase = await createClient();
   const { error } = await supabase.from("complaints").update({ category: category || null }).eq("id", id);
   if (error) return { ok: false, error: error.message };
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${id}`);
   return { ok: true };
 }
@@ -489,6 +498,7 @@ export async function setComplaintStatusAction(_prev: SaveState, formData: FormD
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
   await logAudit({ context, action: "complaint.status", entity: "complaint", entityId: id, detail: { status } });
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${id}`);
   revalidatePath("/org/complaints");
   return { ok: true };
@@ -537,6 +547,7 @@ export async function closeComplaintAction(_prev: SaveState, formData: FormData)
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
   await logAudit({ context, action: "complaint.closed", entity: "complaint", entityId: id });
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${id}`);
   revalidatePath("/org/complaints");
   return { ok: true };
@@ -557,6 +568,7 @@ export async function setPeopleAction(_prev: SaveState, formData: FormData): Pro
         .from("complaint_people")
         .upsert({ complaint_id: id, user_id: userId, involvement }, { onConflict: "complaint_id,user_id" });
   if (error) return { ok: false, error: error.message };
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${id}`);
   return { ok: true };
 }
@@ -588,6 +600,7 @@ export async function setStageStatusAction(_prev: SaveState, formData: FormData)
     { onConflict: "complaint_id,stage_id" },
   );
   if (error) return { ok: false, error: error.message };
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${complaintId}`);
   revalidatePath("/org/complaints");
   return { ok: true };
@@ -643,6 +656,7 @@ export async function saveStageFormAction(_prev: SaveState, formData: FormData):
       await logAudit({ context, action: "complaint.triaged", entity: "complaint", entityId: complaintId, detail: { from: cur.kind, to: triType } });
     }
   }
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${complaintId}`);
   revalidatePath("/org/complaints");
   return { ok: true };
@@ -682,6 +696,7 @@ export async function saveLetterAction(_prev: SaveState, formData: FormData): Pr
     entityId: complaintId,
     detail: { stage: stage.name, sentOn: sentOn || null },
   });
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${complaintId}`);
   revalidatePath("/org/complaints");
   return { ok: true };
@@ -768,6 +783,7 @@ export async function addActionAction(_prev: SaveState, formData: FormData): Pro
     const existing = await entryAnswers(supabase, complaintId, stageId);
     await recompute(supabase, complaintId, stage, existing, context.userId);
   }
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${complaintId}`);
   revalidatePath(`/org/staff/${ownerId}`);
   return { ok: true };
@@ -785,6 +801,7 @@ export async function setActionDoneAction(_prev: SaveState, formData: FormData):
     .update({ completed_at: done ? new Date().toISOString() : null, completed_by: done ? context.userId : null })
     .eq("id", actionId);
   if (error) return { ok: false, error: error.message };
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${complaintId}`);
   return { ok: true };
 }
@@ -802,6 +819,7 @@ export async function deleteActionAction(_prev: SaveState, formData: FormData): 
   if (stage && isTriageStage(stage)) {
     await recompute(supabase, complaintId, stage, await entryAnswers(supabase, complaintId, stageId), context.userId);
   }
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${complaintId}`);
   return { ok: true };
 }
@@ -848,6 +866,7 @@ export async function markNotNeededAction(_prev: SaveState, formData: FormData):
   else na[check] = why;
   const err = await recompute(supabase, complaintId, stage, { ...existing, [key]: na }, context.userId);
   if (err) return { ok: false, error: err };
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${complaintId}`);
   return { ok: true };
 }
@@ -891,6 +910,7 @@ export async function uploadDocumentAction(_prev: SaveState, formData: FormData)
     await admin.storage.from(BUCKET).remove([path]);
     return { ok: false, error: error.message };
   }
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${complaintId}`);
   return { ok: true };
 }
@@ -911,6 +931,7 @@ export async function deleteDocumentAction(_prev: SaveState, formData: FormData)
   const { error } = await supabase.from("complaint_documents").delete().eq("id", documentId);
   if (error) return { ok: false, error: error.message };
   await createAdminClient().storage.from(BUCKET).remove([doc.file_path as string]);
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${complaintId}`);
   return { ok: true };
 }
@@ -992,6 +1013,7 @@ export async function assignConcernTrainingAction(_prev: SaveState, formData: Fo
     detail: { userId, courseId, reason: reason || null, dueDate: dueDate || null },
   });
 
+  await refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   revalidatePath(`/org/complaints/${complaintId}`);
   return { ok: true };
@@ -1026,6 +1048,7 @@ export async function confirmReminderAction(_prev: SaveState, formData: FormData
   const { error } = await supabase.from("complaints").update({ reminders }).eq("id", id);
   if (error) return { ok: false, error: error.message };
   await logAudit({ context, action: undo ? "complaint.reminder_undone" : "complaint.reminder_confirmed", entity: "complaint", entityId: id, detail: { key } });
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${id}`);
   return { ok: true };
 }
@@ -1040,6 +1063,7 @@ export async function saveInterimFindingsAction(_prev: SaveState, formData: Form
   const supabase = await createClient();
   const { error } = await supabase.from("complaints").update({ interim_findings: text || null }).eq("id", id);
   if (error) return { ok: false, error: error.message };
+  await refreshDueBadge();
   revalidatePath(`/org/complaints/${id}`);
   return { ok: true };
 }

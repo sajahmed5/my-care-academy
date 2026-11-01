@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { assertActiveMember, requireConsole, requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
@@ -75,6 +76,7 @@ export async function acceptPolicyAction(
     detail: { code, version, copy: copy.id },
   });
 
+  await refreshDueBadge();
   revalidatePath("/org/policies");
   if (code) revalidatePath(`/org/policies/${code}`);
   return { ok: true };
@@ -114,6 +116,7 @@ export async function adoptPolicyAction(_prev: SaveState, formData: FormData): P
   });
   if (error && !error.message.toLowerCase().includes("duplicate")) return { ok: false, error: error.message };
   await logAudit({ context, action: "policy.adopted", entity: "policy_document", entityId: doc.id, detail: { code } });
+  await refreshDueBadge();
   revalidatePath("/org/policies");
   revalidatePath(`/org/policies/${code}`);
   return { ok: true };
@@ -138,6 +141,7 @@ export async function savePolicyDraftAction(_prev: SaveState, formData: FormData
     .update({ draft_blocks: blocks, updated_by: context.userId })
     .eq("id", copyId);
   if (error) return { ok: false, error: error.message };
+  await refreshDueBadge();
   revalidatePath(`/org/policies/${code}`);
   return { ok: true };
 }
@@ -211,6 +215,7 @@ export async function publishPolicyAction(_prev: SaveState, formData: FormData):
     });
   }
   await logAudit({ context, action: "policy.published", entity: "policy_document", entityId: row.policy_id as string, detail: { code, version } });
+  await refreshDueBadge();
   revalidatePath("/org/policies");
   revalidatePath(`/org/policies/${code}`);
   revalidatePath("/org/due/policies");
@@ -260,6 +265,7 @@ export async function reviewNoChangeAction(_prev: SaveState, formData: FormData)
     entityId: row.policy_id as string,
     detail: { code, version: row.version, next: reviewDue },
   });
+  await refreshDueBadge();
   revalidatePath("/org/policies");
   revalidatePath(`/org/policies/${code}`);
   revalidatePath("/org/due/policies");
@@ -292,6 +298,7 @@ export async function fillDetailsAction(_prev: SaveState, formData: FormData): P
     .update({ draft_blocks: merged, updated_by: context.userId })
     .eq("id", copyId);
   if (error) return { ok: false, error: error.message };
+  await refreshDueBadge();
   revalidatePath(`/org/policies/${code}`);
   return { ok: true };
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { requireConsole, type UserContext } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeatureForOrg } from "@/lib/entitlements";
@@ -80,6 +81,7 @@ export async function uploadStaffDocAction(
   }
 
   await logAudit({ context, action: "staff_document.uploaded", entity: "user", entityId: userId, detail: { docType, expiresAt } });
+  await refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   return { ok: true };
 }
@@ -116,6 +118,7 @@ export async function markStaffDocNotNeededAction(
   );
   if (error) return { ok: false, error: error.message };
   await logAudit({ context, action: "staff_document.not_required", entity: "user", entityId: userId, detail: { docType, reason: reason.trim() || null } });
+  await refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   return { ok: true };
 }
@@ -135,6 +138,7 @@ export async function removeStaffDocAction(userId: string, docType: string): Pro
   const { error } = await admin.from("staff_documents").delete().eq("user_id", userId).eq("doc_type", docType);
   if (error) return { ok: false, error: error.message };
   await logAudit({ context, action: "staff_document.removed", entity: "user", entityId: userId, detail: { docType } });
+  await refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   return { ok: true };
 }

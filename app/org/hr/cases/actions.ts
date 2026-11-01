@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { requireConsole, type UserContext } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
@@ -32,6 +33,7 @@ const line = (v: string, max: number) => v.replace(/\s+/g, " ").trim().slice(0, 
 const today = () => new Date().toISOString().slice(0, 10);
 
 const done = (c: Record<string, unknown>) => {
+  void refreshDueBadge();
   revalidatePath(`/org/hr/cases/${c.id as string}`);
   revalidatePath("/org/hr/cases");
   revalidatePath(`/org/staff/${c.user_id as string}`);
@@ -105,6 +107,7 @@ export async function openCaseAction(input: OpenCaseInput): Promise<Result> {
   });
   if (!r.id) return { ok: false, error: "The case couldn't be opened. Try again." };
   await logAudit({ context, action: "hr.case_opened", entity: "hr_case", entityId: r.id, detail: { kind, ref: r.ref, person: person.id } });
+  await refreshDueBadge();
   revalidatePath("/org/hr/cases");
   return { ok: true, id: r.id };
 }

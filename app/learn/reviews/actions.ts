@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { requireStaff } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { SaveState } from "@/app/platform/actions";
@@ -38,6 +39,7 @@ export async function saveSelfAssessmentAction(_prev: SaveState, formData: FormD
     .maybeSingle();
   if (error) return { ok: false, error: error.message };
   if (!data) return { ok: false, error: "This appraisal has already been held, so the self-assessment is closed." };
+  await refreshDueBadge();
   revalidatePath("/learn/reviews");
   return { ok: true };
 }

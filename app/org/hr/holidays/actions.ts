@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { after } from "next/server";
 import { requireConsole, type UserContext } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -20,6 +21,7 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 type Result = { ok: boolean; error?: string };
 
 const done = (userId: string) => {
+  void refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   revalidatePath("/org/hr/holidays");
   revalidatePath("/org");

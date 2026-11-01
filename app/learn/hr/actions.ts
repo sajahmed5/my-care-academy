@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { after } from "next/server";
 import { requireStaff } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -74,6 +75,7 @@ ${emailButton(`${origin}/org/hr/absence`, "Open Absence")}`,
     });
   }
   await logAudit({ context, action: "hr.absence_self_reported", entity: "user", entityId: context.userId, detail: { start: input.startDate, reason: input.reason } });
+  await refreshDueBadge();
   revalidatePath("/learn/hr");
   return { ok: true };
 }
@@ -97,6 +99,7 @@ export async function requestLeaveAction(input: LeaveInput): Promise<{ ok: boole
   });
   if (insErr) return { ok: false, error: "That didn't send. Try again." };
   await logAudit({ context, action: "hr.leave_requested", entity: "user", entityId: context.userId, detail: { ...row } });
+  await refreshDueBadge();
   revalidatePath("/learn/hr");
   return { ok: true };
 }
@@ -109,6 +112,7 @@ export async function cancelMyLeaveAction(id: string): Promise<{ ok: boolean; er
   if (!r || r.user_id !== context.userId) return { ok: false, error: "Not found." };
   if (r.status !== "requested") return { ok: false, error: "It has been decided: speak to the office to change it." };
   await admin.from("leave_requests").update({ status: "cancelled" }).eq("id", id).eq("status", "requested");
+  await refreshDueBadge();
   revalidatePath("/learn/hr");
   return { ok: true };
 }
@@ -147,6 +151,7 @@ export async function raiseGrievanceAction(input: { summary: string; aboutUserId
   if (!r.id) return { ok: false, error: "It didn't send. Please try again, or put it in writing to your manager." };
   await emailNewGrievance(admin, orgId, r.id, context.userId, about);
   await logAudit({ context, action: "hr.grievance_raised", entity: "hr_case", entityId: r.id });
+  await refreshDueBadge();
   revalidatePath("/learn/hr");
   return { ok: true };
 }
@@ -158,6 +163,7 @@ export async function submitExitInterviewAction(raw: unknown): Promise<{ ok: boo
   const { data: l } = await admin.from("hr_leavers").select("id, exit_status").eq("user_id", context.userId).maybeSingle();
   if (!l || l.exit_status !== "asked") return { ok: false, error: "There's no exit interview waiting for you." };
   const r = await saveExitAnswers(admin, l.id as string, raw);
+  await refreshDueBadge();
   if (r.ok) revalidatePath("/learn/hr");
   return r;
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { redirect } from "next/navigation";
 import { requireConsole, requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -169,6 +170,7 @@ export async function saveServiceAuditAction(_prev: SaveState, formData: FormDat
     entityId: auditId,
     detail: { kind: form.key, score, findings: itemFindings(items).length + people.length, actions: actions.length, waiting },
   });
+  await refreshDueBadge();
   revalidatePath("/org/audits");
   revalidatePath("/org/due/audits");
   if (clientId) revalidatePath(`/org/clients/${clientId}`);
@@ -194,6 +196,7 @@ export async function reviewAuditAction(_prev: SaveState, formData: FormData): P
   if (error) return { ok: false, error: error.message };
   if (!data) return { ok: false, error: "That audit isn't waiting for review." };
   await logAudit({ context, action: "audit.reviewed", entity: "audit", entityId: id });
+  await refreshDueBadge();
   revalidatePath(`/org/audits/${id}`);
   revalidatePath("/org/audits");
   return { ok: true };

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { requireConsole, type UserContext } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
@@ -25,6 +26,7 @@ const text = (v: string, max: number) => v.replace(/\r/g, "").trim().slice(0, ma
 const line = (v: string, max: number) => v.replace(/\s+/g, " ").trim().slice(0, max);
 
 const done = (userId: string, id?: string) => {
+  void refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   revalidatePath("/org/hr/leavers");
   if (id) revalidatePath(`/org/hr/leavers/${id}`);

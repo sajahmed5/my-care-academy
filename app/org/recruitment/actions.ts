@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { type UserContext, requireConsole, requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -79,6 +80,7 @@ function openStep(stages: ReturnType<typeof progress>, key: string): ResolvedSte
 }
 
 function done(candidateId: string) {
+  void refreshDueBadge();
   revalidatePath(`/org/recruitment/${candidateId}`);
   revalidatePath("/org/recruitment");
 }
@@ -546,6 +548,7 @@ export async function deleteCandidateAction(id: string): Promise<void> {
     entityId: id,
     detail: { name: candidate.full_name, status: candidate.status, files_removed: files?.length ?? 0 },
   });
+  await refreshDueBadge();
   revalidatePath("/org/recruitment");
   redirect("/org/recruitment");
 }
@@ -631,6 +634,7 @@ export async function hireCandidateAction(
     detail: { login: !!userId, staff_file: moved, induction_courses: courses, welcome },
   });
   done(candidateId);
+  await refreshDueBadge();
   revalidatePath("/org/learners");
   return { ok: true, message: said.join(" ") };
 }
@@ -685,6 +689,7 @@ export async function saveRecruitmentSettingsAction(
   });
   if (error) return { error: "The settings couldn't be saved. Try again." };
   await logAudit({ context, action: "recruitment.settings_saved", entity: "organisation", entityId: context.organisationId!, detail: { ...settings } });
+  await refreshDueBadge();
   revalidatePath("/org/recruitment", "layout");
   return { ok: true };
 }

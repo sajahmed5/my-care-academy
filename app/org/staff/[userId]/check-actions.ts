@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { after } from "next/server";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -155,6 +156,7 @@ export async function recordSpotCheckAction(_prev: CheckState, formData: FormDat
     entityId: userId,
     detail: { checkedOn, outcome, clientId: clientId || null, actions: agreed.length },
   });
+  await refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   return { ok: true, id: row.id };
 }
@@ -217,6 +219,7 @@ export async function recordCompetencyAction(_prev: CheckState, formData: FormDa
     entityId: userId,
     detail: { area, outcome, checkedOn, actions: agreed.length },
   });
+  await refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   return { ok: true, id: row.id };
 }
@@ -291,6 +294,7 @@ export async function assignAuditTrainingAction(_prev: SaveState, formData: Form
     entityId: userId,
     detail: { sourceId, courseId, reason: reason || null },
   });
+  await refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   return { ok: true };
 }

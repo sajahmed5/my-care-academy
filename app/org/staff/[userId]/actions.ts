@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
@@ -71,6 +72,7 @@ export async function addPersonActionAction(
     detail: { title, dueDate: dueDate || null },
   });
 
+  await refreshDueBadge();
   revalidatePath(`/org/staff/${userId}`);
   return { ok: true };
 }
@@ -115,6 +117,7 @@ export async function setPersonActionDoneAction(
     entityId: actionId,
   });
 
+  await refreshDueBadge();
   if (userId) revalidatePath(`/org/staff/${userId}`);
   return { ok: true };
 }

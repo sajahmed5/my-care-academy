@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { requireConsole } from "@/lib/auth";
 import { hasFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
@@ -115,6 +116,7 @@ export async function submitFormRecordAction(_prev: SubmitState, formData: FormD
     detail: { template: template.code, version: template.version, subject: template.audience, clientId, signed: signatures.length, reviewOf },
   });
 
+  await refreshDueBadge();
   revalidatePath("/org/forms");
   revalidatePath("/org/due/forms");
   revalidatePath(`/org/forms/library/${encodeURIComponent(template.code)}`);

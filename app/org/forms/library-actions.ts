@@ -2,6 +2,7 @@
 
 import { STAFF_ROLES } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
+import { refreshDueBadge } from "@/lib/due-badge";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { requireConsole } from "@/lib/auth";
@@ -153,6 +154,7 @@ export async function assignFormAction(
     detail: { people: assigned.size, dueDate: dueDate || null, everyone },
   });
 
+  await refreshDueBadge();
   revalidatePath("/org/forms");
   for (const id of assigned) revalidatePath(`/org/staff/${id}`);
   if (assigned.size < fresh.length) {
@@ -209,6 +211,7 @@ export async function startOwnFormAction(formData: FormData): Promise<void> {
     detail: { templateId },
   });
 
+  await refreshDueBadge();
   revalidatePath("/org/forms");
   redirect(`/org/forms/complete/${created.id as string}`);
 }
@@ -232,6 +235,7 @@ export async function unassignFormAction(
   if (count === 0) return { ok: false, error: "That ask has already been completed, or is not yours." };
 
   await logAudit({ context, action: "form.unassigned", entity: "form_assignment", entityId: id });
+  await refreshDueBadge();
   revalidatePath("/org/forms");
   return { ok: true };
 }
