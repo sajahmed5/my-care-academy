@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireConsole, roleLabel } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { DashboardShell } from "@/components/dashboard-shell";
 import { fetchAll } from "@/lib/fetch-all";
 import {
   bucketOf,
@@ -159,6 +160,7 @@ export default async function LearnersAdminPage({
   }));
 
   return (
+    <DashboardShell title="Manage staff" context={context} back={{ href: "/org/learners", label: "Staff" }}>
     <div className="space-y-6">
       <nav aria-label="Sections" className="flex items-center gap-1 border-b">
         {SECTIONS.map((x) => (
@@ -390,5 +392,6 @@ export default async function LearnersAdminPage({
       </div>
       )}
     </div>
+    </DashboardShell>
   );
 }

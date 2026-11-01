@@ -1,5 +1,6 @@
 import { StatusKey } from "../../status-key";
 import { requireConsole } from "@/lib/auth";
+import { DashboardShell } from "@/components/dashboard-shell";
 import {
   AssignedTrainingTable,
   TRAINING_TABS,
@@ -25,10 +26,9 @@ export default async function LearnersStatisticsPage({
     : "all";
 
   return (
+    <DashboardShell title="Training matrix" context={context} back={{ href: "/org/learners", label: "Staff" }}>
     <section className="space-y-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-        Assigned training
-      </h2>
+      <p className="text-[15px] text-muted-foreground">Every course assigned to every person, with where each one stands.</p>
       <AssignedTrainingTable
         status={trainingStatus}
         baseHref="/org/learners/statistics"
@@ -36,5 +36,6 @@ export default async function LearnersStatisticsPage({
       />
       <StatusKey kind="training" />
     </section>
+    </DashboardShell>
   );
 }
