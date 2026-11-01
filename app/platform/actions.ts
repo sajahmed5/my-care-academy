@@ -13,6 +13,7 @@ import {
   SIZE_BANDS,
 } from "@/lib/organisations";
 import { FEATURES } from "@/lib/features";
+import { trialEndFrom, ukDateKey } from "@/lib/trial";
 import {
   overrideChanges,
   type OverrideChoice,
@@ -43,13 +44,22 @@ export async function inviteOrganisationAction(
   const packageTier = String(formData.get("packageTier") ?? "");
   const serviceType = String(formData.get("serviceType") ?? "");
   const sizeBand = String(formData.get("sizeBand") ?? "");
+  // A free trial is Enterprise for 7 days from the day given, as the org
+  // page's Start 7-day trial does (TRIAL.md); the package is chosen at convert.
+  const trial = formData.get("trial") === "on";
+  const trialStart = String(formData.get("trialStart") ?? "") || ukDateKey(new Date());
 
   if (!orgName || !adminEmail) {
     return { ok: false, error: "Organisation name and admin email are required." };
   }
-  if (!PACKAGE_TIERS.some((t) => t.value === packageTier)) {
+  if (trial) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(trialStart)) return { ok: false, error: "Choose the day the trial starts." };
+    if (trialStart < ukDateKey(new Date())) return { ok: false, error: "A trial can't start in the past." };
+  } else if (!PACKAGE_TIERS.some((t) => t.value === packageTier)) {
     return { ok: false, error: "Choose a package." };
   }
+  const tier = trial ? "full" : packageTier;
+  const trialEndsAt = trial ? trialEndFrom(trialStart).toISOString() : null;
   if (serviceType && !SERVICE_TYPES.some((t) => t.value === serviceType)) {
     return { ok: false, error: "Invalid service type." };
   }
@@ -62,7 +72,8 @@ export async function inviteOrganisationAction(
     .from("organisations")
     .insert({
       name: orgName,
-      package_tier: packageTier,
+      package_tier: tier,
+      trial_ends_at: trialEndsAt,
       service_type: serviceType || null,
       size_band: sizeBand || null,
     })
@@ -86,9 +97,10 @@ export async function inviteOrganisationAction(
       entity: "organisation",
       entityId: org.id,
       detail: {
-        package_tier: packageTier,
+        package_tier: tier,
         service_type: serviceType || null,
         size_band: sizeBand || null,
+        ...(trial && { trial_starts: trialStart, trial_ends_at: trialEndsAt }),
       },
     });
     revalidatePath("/platform");
