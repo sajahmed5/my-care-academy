@@ -112,8 +112,10 @@ export function ProfileTabs({
             </Link>
           );
         })}
+        {/* The panel hangs off the nav, not this wrapper: the row scrolls
+            sideways, and a scroll box clips anything positioned inside it. */}
         {more.length > 0 && (
-          <div ref={moreRef} className="relative shrink-0">
+          <div ref={moreRef} className="static shrink-0">
             <button
               type="button"
               aria-expanded={moreOpen}
@@ -125,7 +127,7 @@ export function ProfileTabs({
               <ChevronDown className={cn("size-4 transition-transform", moreOpen && "rotate-180")} aria-hidden />
             </button>
             {moreOpen && (
-              <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-60 rounded-2xl border bg-popover p-1.5 text-popover-foreground shadow-xl">
+              <div role="menu" className="absolute right-3 top-full z-20 mt-1 w-60 rounded-2xl border bg-popover p-1.5 text-popover-foreground shadow-xl">
                 {more.map((s) => {
                   const isActive = s.key === active;
                   return (
