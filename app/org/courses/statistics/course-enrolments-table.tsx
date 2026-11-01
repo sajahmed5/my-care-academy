@@ -77,11 +77,14 @@ export function CourseEnrolmentsTable({
   rows,
   filename = "course-enrolments.csv",
   showCourse = true,
+  currentUserId,
 }: {
   rows: CourseEnrolmentRow[];
   filename?: string;
   /** Hidden when the page is already filtered to one course (issue #23). */
   showCourse?: boolean;
+  /** The signed-in person: their own unfinished rows get a Do this course link. */
+  currentUserId?: string;
 }) {
   const actual = actualSeconds;
   const { sorted, sort, toggle } = useTableSort(rows, SORT_COLUMNS);
@@ -178,6 +181,14 @@ export function CourseEnrolmentsTable({
                       >
                         {r.learner}
                       </Link>
+                      {r.userId === currentUserId && r.status !== "completed" && (
+                        <Link
+                          href={isAssessmentDue(r.status, r.progress) ? `/learn/courses/${r.courseId}/quiz` : `/learn/courses/${r.courseId}`}
+                          className="block whitespace-nowrap text-xs font-semibold text-primary hover:underline"
+                        >
+                          {isAssessmentDue(r.status, r.progress) ? "Take the assessment →" : "Do this course →"}
+                        </Link>
+                      )}
                     </td>
                     <td className="px-3 py-2">
                       <span

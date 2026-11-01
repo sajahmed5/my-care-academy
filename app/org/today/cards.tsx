@@ -128,6 +128,31 @@ export function AttentionList({ rows, allHref, allCount }: { rows: AttentionRow[
   );
 }
 
+/**
+ * The signed-in manager's or office worker's own courses (Saj, 1 Nov 2026):
+ * nothing in the console told them they had training, or where it was.
+ */
+export function OwnTraining({ open, overdue }: { open: number; overdue: number }) {
+  if (open === 0) return null;
+  return (
+    <section aria-labelledby="own-training-heading" className="flex items-center gap-4 rounded-card border bg-card p-5 sm:p-6">
+      <CodeTile code="MY" tone={overdue > 0 ? "danger" : "teal"} />
+      <div className="min-w-0 flex-1">
+        <h2 id="own-training-heading" className="text-lg font-extrabold tracking-tight">
+          Your own training
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {open} course{open === 1 ? "" : "s"} to do{overdue > 0 ? ` · ${overdue} overdue` : ""}. The same courses your carers do, under My training.
+        </p>
+      </div>
+      <Link href="/learn" className="inline-flex h-11 shrink-0 items-center gap-1 rounded-xl bg-primary px-4 text-[15px] font-bold text-primary-foreground transition-colors hover:bg-primary-hover">
+        Start
+        <ArrowRight className="size-4" />
+      </Link>
+    </section>
+  );
+}
+
 export interface SetupStep {
   key: string;
   label: string;

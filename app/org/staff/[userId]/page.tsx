@@ -34,6 +34,7 @@ import { loadComplimentsForPerson } from "@/lib/complaints/compliments";
 import { kindLabel, loadBookings, loadSupervisions, nextDueOf } from "@/lib/supervisions";
 import { SectionPanel } from "./section-panel";
 import { PersonPolicies } from "./policy-list";
+import { PersonStars } from "./stars";
 import { ProfileTabs, type SectionCount } from "./section-tabs";
 import { PersonOverview, type ActivityLine, type OverviewCheck } from "./overview";
 import { Pill } from "@/components/pill";
@@ -87,6 +88,7 @@ function statusVariant(e: OrgEnrolment, now: Date): StatusVariant {
 const INLINE_SECTIONS = new Set([
   "overview",
   "training",
+  "stars",
   "documents",
   "employment",
   "certificates",
@@ -641,6 +643,17 @@ export default async function StaffDetailPage({
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
                               <StatusPill variant={statusVariant(e, now)} />
+                              {/* On their own file, a manager or office worker can
+                                  go straight into the course (Saj, 1 Nov 2026). */}
+                              {userId === context.userId && e.status !== "completed" && (
+                                <Link
+                                  href={isAssessmentDue(e.status, e.progress) ? `/learn/courses/${e.course_id}/quiz` : `/learn/courses/${e.course_id}`}
+                                  className={buttonVariants({ size: "sm" })}
+                                >
+                                  <BookOpen className="size-3.5" />
+                                  {isAssessmentDue(e.status, e.progress) ? "Take the assessment" : e.status === "in_progress" ? "Continue this course" : "Do this course"}
+                                </Link>
+                              )}
                               {/* Completed and expired training is a record, not
                                   an assignment — no way to delete it from here. */}
                               {(e.status === "not_started" ||
@@ -873,6 +886,10 @@ export default async function StaffDetailPage({
 
         {section.key === "policies" && state === "open" && (
           <PersonPolicies organisationId={context.organisationId!} userId={userId} />
+        )}
+
+        {section.key === "stars" && (
+          <PersonStars organisationId={context.organisationId!} userId={userId} name={name} sub={sub} />
         )}
 
         {section.key === "documents" && state === "open" && (

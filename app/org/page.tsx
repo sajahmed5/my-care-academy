@@ -16,7 +16,8 @@ import { loadEnrolments } from "@/lib/learner-data";
 import { GettingStarted } from "@/components/walkthrough/getting-started";
 import { Walkthrough } from "@/components/walkthrough/walkthrough";
 import { codeOf, complianceChecks, readiness, rowFromLine, sortRows, type AttentionRow } from "@/lib/today";
-import { AttentionList, FigureCard, ReadinessCard, SetupChecklist, TeamTraining, type SetupStep } from "./today/cards";
+import { AttentionList, FigureCard, OwnTraining, ReadinessCard, SetupChecklist, TeamTraining, type SetupStep } from "./today/cards";
+import { isOverdue } from "@/lib/engine-logic";
 import { WhosOffWeek } from "./today/whos-off-week";
 
 const NAME_CAP = 4;
@@ -137,12 +138,17 @@ export default async function OrgDashboard() {
 
   // All reads go through RLS — a console user only ever sees their own org.
   // The explicit organisation filter is for the planner, not for security.
-  const [{ data: organisation }, allLearners, enabled, member] = await Promise.all([
+  const [{ data: organisation }, allLearners, enabled, member, ownCourses] = await Promise.all([
     supabase.from("organisations").select("name, package_tier").eq("id", orgId).single(),
     loadOrgLearners(supabase, orgId),
     enabledMap(context),
     memberStatus(context.userId, orgId),
+    // Their own training, for the card on the right: a manager or office
+    // worker has courses too, and nothing else in the console says so.
+    loadEnrolments(context.userId),
   ]);
+  const ownOpen = ownCourses.filter((e) => e.status !== "completed");
+  const ownOverdue = ownOpen.filter((e) => isOverdue(e.due_date, e.status, now)).length;
   // Headline numbers count active staff only; deactivated stay in the matrix.
   const learners = allLearners.filter(isActiveLearner);
   const people = learners.map((r) => ({ id: r.id, name: r.name }));
@@ -357,6 +363,7 @@ export default async function OrgDashboard() {
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_440px] xl:items-start">
           <AttentionList rows={sorted.slice(0, SHOWN)} allCount={sorted.length} allHref={enabled["people.supervisions"] ? "/org/due" : "/org/learners?filter=overdue"} />
           <div className="space-y-6">
+            <OwnTraining open={ownOpen.length} overdue={ownOverdue} />
             {checklist === "getting-started" ? <GettingStarted tasks={tasks} /> : checklist === "setup" ? <SetupChecklist steps={steps} /> : null}
             {enabled["recruitment.tracker"] && <WhosOffWeek context={context} />}
             {/* "You may also be interested in" (TRIAL.md). */}

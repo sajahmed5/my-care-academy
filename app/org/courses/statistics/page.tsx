@@ -69,6 +69,7 @@ export default async function CourseStatisticsPage({
       <CourseEnrolmentsTable
         rows={rows}
         showCourse={!course}
+        currentUserId={context.userId}
         filename={
           courseName
             ? `${org}-${courseName}.csv`
