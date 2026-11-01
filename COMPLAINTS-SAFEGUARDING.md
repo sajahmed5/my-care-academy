@@ -1,5 +1,10 @@
 # Complaints & safeguarding — agreed plan (29 Oct 2026)
 
+- **Named "Incidents, complaints & safeguarding"** in the menu, the page title and
+  Settings (Saj, 1 Nov 2026): with the incidents register merged in, nobody
+  looked under "Complaints & safeguarding" for an accident or a near miss.
+  The package line item keeps its name.
+
 Agreed with Saj on 29 Oct 2026. Nothing below is built yet beyond what's
 marked as today's. Complaints & safeguarding is in Pro and up (see
 PACKAGES.md).

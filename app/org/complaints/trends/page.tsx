@@ -54,7 +54,7 @@ export default async function TrendsPage({ searchParams }: { searchParams: Promi
   const t = concernTrends(rows, window);
 
   return (
-    <DashboardShell title="Trends" context={context} back={{ href: "/org/complaints", label: "Complaints & safeguarding" }}>
+    <DashboardShell title="Trends" context={context} back={{ href: "/org/complaints", label: "Incidents, complaints & safeguarding" }}>
       <div className="space-y-6">
         <div className="flex flex-wrap items-center gap-2 text-sm">
           {[12, 24].map((m) => (

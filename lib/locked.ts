@@ -77,7 +77,7 @@ export const LOCKED_COPY: Partial<Record<FeatureKey, LockedCopy>> = {
     ],
   },
   "complaints.register": {
-    area: "Complaints & safeguarding",
+    area: "Incidents, complaints & safeguarding",
     home: "/org/complaints",
     heading: "Every concern through one front door",
     bullets: [

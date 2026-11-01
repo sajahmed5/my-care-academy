@@ -66,7 +66,7 @@ export default async function ComplaintsPage({
   );
 
   return (
-    <DashboardShell title="Complaints & safeguarding" context={context}>
+    <DashboardShell title="Incidents, complaints & safeguarding" context={context}>
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           {stages.length > 0 && (

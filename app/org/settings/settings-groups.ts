@@ -116,7 +116,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     ],
   },
   {
-    title: "Complaints & safeguarding",
+    title: "Incidents, complaints & safeguarding",
     features: ["complaints.register"],
     pages: [
       {

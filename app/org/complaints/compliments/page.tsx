@@ -32,7 +32,7 @@ export default async function ComplimentsPage() {
     }),
   ]);
   return (
-    <DashboardShell title="Compliments" context={context} back={{ href: "/org/complaints", label: "Complaints & safeguarding" }}>
+    <DashboardShell title="Compliments" context={context} back={{ href: "/org/complaints", label: "Incidents, complaints & safeguarding" }}>
       <div className="space-y-4">
         <ComplimentForm
           clients={clients}

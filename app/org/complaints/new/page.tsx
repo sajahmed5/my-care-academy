@@ -31,7 +31,7 @@ export default async function NewConcernPage({
       : Promise.resolve({ data: null }),
   ]);
   return (
-    <DashboardShell title="Raise a concern" context={context} back={{ href: "/org/complaints", label: "Complaints & safeguarding" }}>
+    <DashboardShell title="Raise a concern" context={context} back={{ href: "/org/complaints", label: "Incidents, complaints & safeguarding" }}>
       <ConcernForm
         clients={(clients ?? []).map((c) => ({ id: c.id as string, name: c.full_name as string }))}
         person={who ? { id: who.id as string, name: (who.full_name as string | null) || (who.email as string) } : null}

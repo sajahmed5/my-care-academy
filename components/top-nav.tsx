@@ -162,7 +162,9 @@ const ORG_MENU: MenuItem[] = [
       { href: "/org/audits", label: "Service audits", code: "SA", description: "Infection control, files, meds", group: "Service quality", feature: "quality.audits", exact: true, also: ["/org/audits/new", "/org/audits/qa"] },
       { href: "/org/audits/governance", label: "Governance report", code: "GR", description: "Monthly overview for CQC", group: "Service quality", feature: "quality.audits" },
       { href: "/org/feedback", label: "Feedback", code: "FB", description: "Surveys from clients and families", group: "Service quality", feature: "quality.feedback" },
-      { href: "/org/complaints", label: "Complaints & safeguarding", code: "SG", description: "Log, investigate and close", group: "Safety", feature: "complaints.register" },
+      // Named so nobody looks for accidents elsewhere (Saj, 1 Nov 2026): the
+      // register holds complaints, safeguarding, issues, accidents and near misses.
+      { href: "/org/complaints", label: "Incidents, complaints & safeguarding", code: "IC", description: "Accidents, near misses, complaints: log, investigate and close", group: "Safety", feature: "complaints.register" },
     ],
   },
   {
