@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isStaff } from "@/lib/roles";
 import { trialState } from "@/lib/trial";
+import { parseWalkthrough, type WalkthroughFlags } from "@/lib/walkthrough";
 
 /** "candidate": someone applying, with a login to follow it and no organisation (RECRUITMENT.md). */
 export type UserRole = "platform_admin" | "org_admin" | "org_office" | "learner" | "candidate";
@@ -159,6 +160,8 @@ export interface MemberStatus {
   lastSeenAt: string | null;
   /** For the person menu at the top of the page. */
   fullName: string | null;
+  /** What they have seen of the trial walkthrough (lib/walkthrough.ts). */
+  walkthrough: WalkthroughFlags;
 }
 
 /**
@@ -172,7 +175,7 @@ export const memberStatus = cache(
     const [{ data: me }, { data: org }] = await Promise.all([
       supabase
         .from("users")
-        .select("status, last_seen_at, full_name")
+        .select("status, last_seen_at, full_name, walkthrough")
         .eq("id", userId)
         .maybeSingle(),
       organisationId
@@ -189,6 +192,7 @@ export const memberStatus = cache(
       trialEndsAt: org?.trial_ends_at ?? null,
       lastSeenAt: me?.last_seen_at ?? null,
       fullName: me?.full_name ?? null,
+      walkthrough: parseWalkthrough(me?.walkthrough),
     };
   },
 );

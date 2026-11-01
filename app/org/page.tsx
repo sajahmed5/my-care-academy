@@ -10,6 +10,9 @@ import { loadServiceDue } from "@/lib/service-audits-due";
 import { dueCounts } from "@/lib/service-audits";
 import { runHref } from "@/lib/client-qa";
 import { formatDate, UK_TIME_ZONE } from "@/lib/dates";
+import { trialState } from "@/lib/trial";
+import { shouldOfferTour } from "@/lib/walkthrough";
+import { Walkthrough } from "@/components/walkthrough/walkthrough";
 import { codeOf, complianceChecks, readiness, rowFromLine, sortRows, type AttentionRow } from "@/lib/today";
 import { AttentionList, FigureCard, ReadinessCard, SetupChecklist, TeamTraining, type SetupStep } from "./today/cards";
 import { WhosOffWeek } from "./today/whos-off-week";
@@ -213,6 +216,21 @@ export default async function OrgDashboard() {
   const firstName = (member?.fullName ?? "").trim().split(/\s+/)[0] || null;
   const today = formatDate(now.toISOString(), { weekday: "long", day: "numeric", month: "long" });
 
+  // --- The trial walkthrough (lib/walkthrough.ts) --------------------------
+  // The welcome and tour open by themselves once, on a console user's first
+  // sign-in while the company is on a trial; Help replays them.
+  const trial = trialState(member.trialEndsAt, now);
+  const walkthrough = trial.kind === "active" && (
+    <Walkthrough
+      autoStart={shouldOfferTour(context.role, trial, member.walkthrough)}
+      enabled={enabled}
+      firstName={firstName}
+      orgName={organisation?.name ?? null}
+      daysLeft={trial.daysLeft}
+      endsOn={formatDate(trial.endsAt.toISOString(), { weekday: "long", day: "numeric", month: "long" })}
+    />
+  );
+
   return (
     <DashboardShell
       title="Today"
@@ -299,6 +317,7 @@ export default async function OrgDashboard() {
 
         <TeamTraining segments={segments} href="/org/learners/statistics" />
       </div>
+      {walkthrough}
     </DashboardShell>
   );
 }

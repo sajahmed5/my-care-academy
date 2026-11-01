@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
 import { withoutGated, type FeatureKey } from "@/lib/features";
 import { OPEN_REPORT_EVENT } from "@/components/report-widget";
+import { TOUR_EVENT, type TourEventDetail } from "@/components/walkthrough/tour";
 
 interface MenuLink {
   href: string;
@@ -306,13 +307,28 @@ function useOpenMenu() {
   const [open, setOpen] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  // The trial tour (components/walkthrough) holds a drop-down open while it
+  // talks about it; clicks on its card are outside the bar, so they must not
+  // close it.
+  const touring = useRef(false);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setOpen(null), [pathname]);
 
   useEffect(() => {
+    function onTour(e: Event) {
+      const { active, menu } = (e as CustomEvent<TourEventDetail>).detail;
+      touring.current = active;
+      setOpen(menu);
+    }
+    window.addEventListener(TOUR_EVENT, onTour);
+    return () => window.removeEventListener(TOUR_EVENT, onTour);
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     function onDown(e: MouseEvent) {
+      if (touring.current) return;
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(null);
     }
     function onKey(e: KeyboardEvent) {
@@ -364,6 +380,7 @@ function MegaPanel({ item, pathname, byPath }: { item: MenuItem; pathname: strin
   const columns = groups.length > 1 ? groups.length : Math.min(2, Math.ceil(links.length / 4));
   return (
     <div
+      data-tour={`panel-${item.label}`}
       className={cn(
         "absolute left-1/2 top-full z-40 mt-2 -translate-x-1/2 overflow-hidden rounded-card border bg-popover text-popover-foreground shadow-2xl",
         columns >= 3 ? "w-[min(1180px,calc(100vw-2rem))]" : columns === 2 ? "w-[min(780px,calc(100vw-2rem))]" : "w-[min(400px,calc(100vw-2rem))]",
@@ -560,7 +577,7 @@ export function TopNav({
             if (item.href) {
               // A link whose pages show in the row (Due, My HR).
               return (
-                <IntentLink key={item.label} href={item.href} aria-current={active ? "page" : undefined} className={itemClass(active)}>
+                <IntentLink key={item.label} href={item.href} aria-current={active ? "page" : undefined} data-tour={item.due ? "nav-due" : undefined} className={itemClass(active)}>
                   {item.label}
                   {badge}
                 </IntentLink>
@@ -574,6 +591,7 @@ export function TopNav({
                   type="button"
                   aria-expanded={isOpen}
                   aria-haspopup="true"
+                  data-tour={`nav-${item.label}`}
                   onClick={() => toggle(item.label)}
                   className={itemClass(active || isOpen)}
                 >
@@ -621,6 +639,7 @@ export function TopNav({
                 type="button"
                 aria-expanded={open === "__new"}
                 aria-haspopup="true"
+                data-tour="nav-new"
                 onClick={() => toggle("__new")}
                 className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-primary px-4 text-[15px] font-bold text-primary-foreground transition-colors hover:bg-primary-hover"
               >
@@ -628,7 +647,7 @@ export function TopNav({
                 New
               </button>
               {open === "__new" && (
-                <div className={cn(panelClass, "right-0 w-72")}>
+                <div data-tour="panel-new" className={cn(panelClass, "right-0 w-72")}>
                   {quick.map((q) => (
                     <IntentLink key={q.href} href={q.href} className="block rounded-xl px-3 py-2 transition-colors hover:bg-muted">
                       <span className="block text-sm font-semibold">{q.label}</span>
@@ -662,13 +681,14 @@ export function TopNav({
               aria-expanded={open === "__person"}
               aria-haspopup="true"
               aria-label="Your account"
+              data-tour="nav-person"
               onClick={() => toggle("__person")}
               className="inline-flex size-11 items-center justify-center rounded-full bg-sidebar text-sm font-bold text-sidebar-foreground ring-offset-2 transition-shadow hover:ring-2 hover:ring-border"
             >
               {initials(name, email)}
             </button>
             {open === "__person" && (
-              <div className={cn(panelClass, "right-0 w-64")}>
+              <div data-tour="panel-person" className={cn(panelClass, "right-0 w-64")}>
                 <div className="border-b px-3 pb-2.5 pt-2">
                   {name && <p className="truncate text-sm font-semibold">{name}</p>}
                   <p className="truncate text-xs text-muted-foreground">{email}</p>
@@ -690,6 +710,7 @@ export function TopNav({
             type="button"
             aria-expanded={open === "__all"}
             aria-label={open === "__all" ? "Close menu" : "Open menu"}
+            data-tour="nav-menu"
             onClick={() => toggle("__all")}
             className="inline-flex size-11 items-center justify-center rounded-xl text-foreground transition-colors hover:bg-muted nav:hidden"
           >

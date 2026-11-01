@@ -98,6 +98,7 @@ export function CommandSearch({
       <button
         type="button"
         onClick={show}
+        data-tour="nav-search"
         aria-label="Search pages and people (⌘K)"
         className={cn(
           "hidden h-11 items-center gap-2 rounded-xl border bg-background px-3 text-sm text-muted-foreground transition-colors hover:border-foreground/20 hover:text-foreground 2xl:inline-flex",
@@ -111,6 +112,7 @@ export function CommandSearch({
       <button
         type="button"
         onClick={show}
+        data-tour="nav-search"
         aria-label="Search"
         className={cn("inline-flex size-11 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-muted 2xl:hidden", className)}
       >
