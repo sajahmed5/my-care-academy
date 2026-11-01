@@ -43,8 +43,12 @@ export function Walkthrough({
       url.searchParams.delete("tour");
       window.history.replaceState(window.history.state, "", url.pathname + url.search);
     }
+    // Only ever step up from idle here: React runs this effect twice in
+    // development, and the second run (with ?tour=1 already gone) must not
+    // undo the first.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setStage(asked ? "tour" : autoStart ? "welcome" : "idle");
+    if (asked) setStage("tour");
+    else if (autoStart) setStage((s) => (s === "idle" ? "welcome" : s));
     const replay = () => setStage("tour");
     window.addEventListener(REPLAY_TOUR_EVENT, replay);
     return () => window.removeEventListener(REPLAY_TOUR_EVENT, replay);
