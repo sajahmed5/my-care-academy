@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Passports and AAC",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Communication passports”. Key points: How I communicate; How to support me; What my responses mean.",
           "decorative": false,
           "file": {
             "path": "images/passports-and-aac.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

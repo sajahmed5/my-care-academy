@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Recovery & choking",
+          "alt": "A care worker looking concerned, beside the heading “Recovery position and choking”. Key points: Encourage coughing; 5 back blows; 5 abdominal thrusts.",
           "decorative": false,
           "file": {
             "path": "images/recovery-choking.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

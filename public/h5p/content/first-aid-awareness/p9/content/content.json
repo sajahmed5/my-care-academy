@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Awareness and readiness",
+          "alt": "A care worker, beside the heading “Awareness is not the same as being qualified”. Key points: Know your kit; Protect against infection; Guard against blood.",
           "decorative": false,
           "file": {
             "path": "images/awareness-and-readiness.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

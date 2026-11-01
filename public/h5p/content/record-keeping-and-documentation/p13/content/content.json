@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Breaches and a scenario",
+          "alt": "A care worker, beside the heading “What a data breach looks like”. Key points: Act quickly; Be honest; Record the facts.",
           "decorative": false,
           "file": {
             "path": "images/breaches-and-a-scenario.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

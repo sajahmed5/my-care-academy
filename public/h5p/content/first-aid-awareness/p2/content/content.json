@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The primary survey (DR ABC)",
+          "alt": "A care worker, beside the heading “The primary survey: DR ABC”. Key points: D – Danger; R – Response; A – Airway.",
           "decorative": false,
           "file": {
             "path": "images/the-primary-survey-dr-abc.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

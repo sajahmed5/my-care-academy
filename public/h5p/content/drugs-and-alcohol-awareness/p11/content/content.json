@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Overdose and emergencies",
+          "alt": "A care worker, beside the heading “Recognising overdose and alcohol poisoning”. Key points: Opioid overdose; Alcohol poisoning; Unresponsive.",
           "decorative": false,
           "file": {
             "path": "images/overdose-and-emergencies.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

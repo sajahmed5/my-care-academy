@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Welcome",
+          "alt": "A care worker, beside the heading “Welcome to Standard 2”. Key points: This course covers the knowledge; Competence is observed at work; Both complete the Care Certificate.",
           "decorative": false,
           "file": {
             "path": "images/welcome.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 330,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Cleaning showerheads",
+          "alt": "A care worker, beside the heading “Clean showerheads and taps”. Key points: Descaling; Cleaning; Routine.",
           "decorative": false,
           "file": {
             "path": "images/cleaning-showerheads.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

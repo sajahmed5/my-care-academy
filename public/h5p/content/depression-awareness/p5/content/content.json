@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Physical and behaviour",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “The physical and behavioural side of depression”. Key points: Physical signs; Sleep and appetite; Behavioural signs.",
           "decorative": false,
           "file": {
             "path": "images/physical-and-behaviour.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 322,
             "copyright": {
               "license": "U"
             }

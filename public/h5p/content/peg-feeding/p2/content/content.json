@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for What is a PEG?",
+          "alt": "A care worker sitting with an older person they support, beside the heading “What is a PEG?”. Key points: Percutaneous; Gastrostomy; Long-term route.",
           "decorative": false,
           "file": {
             "path": "images/what-is-a-peg.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

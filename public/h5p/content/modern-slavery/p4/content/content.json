@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Forced labour",
+          "alt": "A care worker, beside the heading “Forced labour”. Key points: Coerced; Unpaid; Trapped.",
           "decorative": false,
           "file": {
             "path": "images/forced-labour.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

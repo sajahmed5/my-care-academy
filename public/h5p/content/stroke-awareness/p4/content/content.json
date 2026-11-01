@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Risk factors",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “What raises the risk of a stroke”. Key points: High blood pressure; Heart rhythm problems; Other factors.",
           "decorative": false,
           "file": {
             "path": "images/risk-factors.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

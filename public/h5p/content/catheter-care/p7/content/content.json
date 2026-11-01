@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Positioning the bag",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Position the bag below the bladder”. Key points: Below the bladder; Never on the floor; Support it.",
           "decorative": false,
           "file": {
             "path": "images/positioning-the-bag.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

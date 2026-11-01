@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Hazard and risk",
+          "alt": "A care worker looking concerned, beside the heading “Hazard and risk are not the same”. Key points: Hazard; Risk; Assessment.",
           "decorative": false,
           "file": {
             "path": "images/hazard-and-risk.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

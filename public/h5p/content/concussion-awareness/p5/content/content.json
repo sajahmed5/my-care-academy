@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Delayed signs",
+          "alt": "A care worker looking concerned, beside the heading “Symptoms can appear later”. Key points: Delayed onset; Seeming fine; Keep watching.",
           "decorative": false,
           "file": {
             "path": "images/delayed-signs.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

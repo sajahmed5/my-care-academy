@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Responding well",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Responding to discriminatory comments”. Key points: Challenge the comment, not the person; Support anyone affected; Report it.",
           "decorative": false,
           "file": {
             "path": "images/responding-well.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

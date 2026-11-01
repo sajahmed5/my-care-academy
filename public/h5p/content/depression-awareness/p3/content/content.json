@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Illness not weakness",
+          "alt": "A care worker sitting with an older person they support, beside the heading “An illness, not a weakness”. Key points: Not a choice; Real illness; Stigma harms.",
           "decorative": false,
           "file": {
             "path": "images/illness-not-weakness.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

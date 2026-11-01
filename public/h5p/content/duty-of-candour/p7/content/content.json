@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Telling the person",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Telling the person or family”. Key points: Be direct and kind; Choose the setting; Listen.",
           "decorative": false,
           "file": {
             "path": "images/telling-the-person.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

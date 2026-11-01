@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for What not to do",
+          "alt": "A care worker sitting with an older person they support, beside the heading “What not to do”. Key points: Do not restrain; Nothing in the mouth.",
           "decorative": false,
           "file": {
             "path": "images/what-not-to-do.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

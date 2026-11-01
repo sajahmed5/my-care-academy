@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Ways of learning",
+          "alt": "Two care workers talking together, beside the heading “Ways people learn”. Key points: Formal training; Learning on the job; Reflection and reading.",
           "decorative": false,
           "file": {
             "path": "images/ways-of-learning.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

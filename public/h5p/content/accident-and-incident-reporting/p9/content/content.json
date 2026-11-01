@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Types of incident",
+          "alt": "A care worker sitting with an older person they support, beside the heading “More than accidents”. Key points: Medication errors; Safeguarding incidents; Missed or late visits.",
           "decorative": false,
           "file": {
             "path": "images/types-of-incident.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

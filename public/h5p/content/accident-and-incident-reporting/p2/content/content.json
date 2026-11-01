@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Accident, incident, near miss",
+          "alt": "A care worker, beside the heading “Three words that mean different things”. Key points: Accident; Incident; Near miss.",
           "decorative": false,
           "file": {
             "path": "images/accident-incident-near-miss.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

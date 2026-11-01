@@ -1,6 +1,8 @@
 // Generate + inject character illustrations for every image-less page of the
 // given courses. Derives each scene from the page's own heading and bullet
-// points, coloured by the course's topic. Reusable across expansion batches.
+// points, coloured by the course's topic, in the style of make-illustration.mjs
+// (with the corrections in illustration-overrides.json). Reusable across
+// expansion batches.
 //
 //   node scripts/gen-illustrations.mjs <slug> [<slug> ...]
 import { config } from "dotenv";
@@ -9,6 +11,7 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { execSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
+import { renderIllustration } from "./make-illustration.mjs";
 
 // Optional `--topic "<Name>"` forces the accent colour for every slug in this
 // run — needed for a brand-new course whose topic isn't in the DB yet (it would
@@ -35,7 +38,8 @@ const TOPIC_COLOUR = {
   "Person & Service Quality": "#16a34a",
 };
 const DEFAULT_COLOUR = "#0d9488";
-const HAIRS = ["bun", "curly", "headscarf", "short"];
+// Hand corrections and per-course defaults, shared with regen-illustrations.mjs.
+const overrides = JSON.parse(readFileSync("scripts/illustration-overrides.json", "utf8"));
 
 const sb = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -51,15 +55,6 @@ function unescapeHtml(s) {
 }
 const strip = (h) => unescapeHtml(h.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "scene";
-
-function propFor(text) {
-  const t = text.toLowerCase();
-  if (/emergency|escalat|distress|restrict|999|urgent|alert|hazard|risk|danger/.test(t)) return "alert";
-  if (/wellbeing|support|person|compassion|dignity|feel|connect|kind|comfort|relationship/.test(t)) return "heart";
-  if (/medic|dose|tablet|stomp/.test(t)) return "pills";
-  if (/report|communicat|record|note|plan|review|supervision|feedback|passport|reflect|document|inform/.test(t)) return "clipboard";
-  return "clipboard";
-}
 
 const scenes = [];
 const insertions = [];
@@ -80,7 +75,7 @@ for (const slug of slugs) {
     : course?.topic?.title);
   const accent = TOPIC_COLOUR[topicTitle] ?? DEFAULT_COLOUR;
 
-  blocks.forEach((b, idx) => {
+  blocks.forEach((b) => {
     const dir = join("public/h5p/content", b.path);
     const contentPath = join(dir, "content", "content.json");
     if (!existsSync(contentPath)) return;
@@ -90,6 +85,7 @@ for (const slug of slugs) {
 
     // Derive title + up to 3 points from the page's text.
     let h2 = "";
+    let body = "";
     const points = [];
     for (const it of items) {
       const html = it?.content?.params?.text;
@@ -102,21 +98,29 @@ for (const slug of slugs) {
         const strong = li[1].match(/<strong>(.*?)<\/strong>/);
         if (strong) points.push(strip(strong[1]).replace(/:$/, ""));
       }
+      body += " " + strip(html);
     }
-    const title = (h2 || b.label || "").slice(0, 46);
+    const title = h2 || b.label || "";
     const page = b.path.split("/")[1];
     const file = `${slugify(b.label || page)}.svg`;
     const outDir = join(dir, "content", "images");
-    scenes.push({
+    const key = `${slug}/${page}`;
+    const scene = {
       outDir,
       file,
       title,
       accent,
-      alt: `Illustration for ${b.label ?? title}`,
-      cast: [{ skin: idx % 6, hair: HAIRS[idx % 4], tunic: accent, prop: propFor(`${title} ${points.join(" ")}`) }],
       points: points.slice(0, 3),
-    });
-    insertions.push({ course: slug, page: Number(page.slice(1)), file, alt: `Illustration for ${b.label ?? title}`, srcDir: outDir });
+      body,
+      seed: key,
+      noClients: slug === "safeguarding-children",
+      courseIcon: overrides._courses?.[slug],
+      courseScene: overrides._personCourses?.includes(slug) ? "person" : undefined,
+      ...overrides[key],
+    };
+    scenes.push(scene);
+    const { alt } = renderIllustration(scene);
+    insertions.push({ course: slug, page: Number(page.slice(1)), file, alt, srcDir: outDir });
   });
 }
 

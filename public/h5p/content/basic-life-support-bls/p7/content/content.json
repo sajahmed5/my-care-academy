@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Breaths & AED",
+          "alt": "A care worker, beside the heading “Rescue breaths (30:2)”. Key points: Attach the pads; Stand clear to analyse; Shock safely.",
           "decorative": false,
           "file": {
             "path": "images/breaths-aed.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

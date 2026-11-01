@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Naloxone and withdrawal",
+          "alt": "A care worker, beside the heading “Naloxone and withdrawal”. Key points: Naloxone; Still call 999; Awareness only.",
           "decorative": false,
           "file": {
             "path": "images/naloxone-and-withdrawal.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

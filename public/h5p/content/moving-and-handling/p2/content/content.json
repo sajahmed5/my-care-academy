@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The law",
+          "alt": "Two care workers talking together, beside the heading “The law behind moving and handling”. Key points: Health and Safety at Work etc. Act 1974 (HASAWA); Manual Handling Operations Regulations 1992 (MHOR); Lifting Operations and Lifting Equipment Regulations 1998 (LOLER).",
           "decorative": false,
           "file": {
             "path": "images/the-law.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 330,
             "copyright": {
               "license": "U"
             }

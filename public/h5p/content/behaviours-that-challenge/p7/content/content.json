@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Staying calm",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Staying calm yourself”. Key points: Steady yourself first; Model calm; Don’t take it personally.",
           "decorative": false,
           "file": {
             "path": "images/staying-calm.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

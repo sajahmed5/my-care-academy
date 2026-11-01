@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Individual rights",
+          "alt": "A care worker, beside the heading “People's rights over their information”. Key points: Right to be informed; Right of access; Right to rectification.",
           "decorative": false,
           "file": {
             "path": "images/individual-rights.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

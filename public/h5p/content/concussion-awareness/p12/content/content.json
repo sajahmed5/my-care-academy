@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Recording and reporting",
+          "alt": "A care worker, beside the heading “Recording and reporting”. Key points: Record the facts; Note observations; Report promptly.",
           "decorative": false,
           "file": {
             "path": "images/recording-and-reporting.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

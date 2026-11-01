@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Burns, choking & falls",
+          "alt": "A care worker looking concerned, beside the heading “Burns and scalds”. Key points: Cool under running water; At least 20 minutes; Cover loosely with cling film.",
           "decorative": false,
           "file": {
             "path": "images/burns-choking-falls.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Following the plan",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Following the care and behaviour support plan”. Key points: Know the plan; Follow agreed approaches; Feed back.",
           "decorative": false,
           "file": {
             "path": "images/following-the-plan.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 322,
             "copyright": {
               "license": "U"
             }

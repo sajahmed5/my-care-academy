@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Complaint or something else?",
+          "alt": "Two care workers talking together, beside the heading “Four routes that are easy to confuse”. Key points: Concern; Complaint; Safeguarding issue.",
           "decorative": false,
           "file": {
             "path": "images/complaint-or-something-else.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

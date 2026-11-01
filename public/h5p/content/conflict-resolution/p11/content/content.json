@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Colleagues and families",
+          "alt": "Two care workers talking together, beside the heading “Conflict is not only with the people you support”. Key points: Listen first; Focus on the issue; Find common ground.",
           "decorative": false,
           "file": {
             "path": "images/colleagues-and-families.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 322,
             "copyright": {
               "license": "U"
             }

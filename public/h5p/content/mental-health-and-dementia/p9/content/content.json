@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Distress reactions",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Understanding distress reactions”. Key points: Physical; Emotional; Environmental.",
           "decorative": false,
           "file": {
             "path": "images/distress-reactions.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

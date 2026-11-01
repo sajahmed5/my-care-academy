@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Primary prevention",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Proactive support: primary prevention”. Key points: A good environment; Meaningful activity; Real choice and independence.",
           "decorative": false,
           "file": {
             "path": "images/primary-prevention.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

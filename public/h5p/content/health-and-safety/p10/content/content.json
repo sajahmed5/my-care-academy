@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for COSHH and substances",
+          "alt": "A care worker looking concerned, beside the heading “Hazardous substances and COSHH”. Key points: Read before you use; Never decant or mix; Store safely.",
           "decorative": false,
           "file": {
             "path": "images/coshh-and-substances.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

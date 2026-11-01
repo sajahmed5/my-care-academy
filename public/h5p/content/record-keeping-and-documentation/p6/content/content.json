@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Do's & don'ts",
+          "alt": "A care worker, beside the heading “Do's and don'ts”. Key points: Write it while it is fresh; Sign, date and time every entry; No gaps, nothing in advance.",
           "decorative": false,
           "file": {
             "path": "images/do-s-don-ts.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

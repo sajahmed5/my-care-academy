@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Overflow and functional",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Two more common types”. Key points: Overflow incontinence; Functional incontinence; Mixed.",
           "decorative": false,
           "file": {
             "path": "images/overflow-and-functional.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

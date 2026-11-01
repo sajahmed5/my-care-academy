@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Raising concerns safely",
+          "alt": "A care worker, beside the heading “Helping people be heard”.",
           "decorative": false,
           "file": {
             "path": "images/raising-concerns-safely.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

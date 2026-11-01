@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Basic first aid",
+          "alt": "A care worker, beside the heading “Basic first aid”. Key points: Keep still; Stay calm; Monitor.",
           "decorative": false,
           "file": {
             "path": "images/basic-first-aid.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

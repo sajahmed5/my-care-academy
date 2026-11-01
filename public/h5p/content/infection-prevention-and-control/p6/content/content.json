@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Sharps, waste & spills",
+          "alt": "A care worker, beside the heading “Safe sharps, waste segregation and spillages”. Key points: Never re-sheath a needle; Straight into the sharps bin; Right bag for the right waste.",
           "decorative": false,
           "file": {
             "path": "images/sharps-waste-spills.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Sharing information",
+          "alt": "A care worker, beside the heading “Information sharing done right”. Key points: The law allows sharing to protect; Necessary and proportionate; Never delay if in danger.",
           "decorative": false,
           "file": {
             "path": "images/sharing-information.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

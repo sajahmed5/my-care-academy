@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Health effects",
+          "alt": "A care worker, beside the heading “Acute and chronic effects”. Key points: Dermatitis; Occupational asthma.",
           "decorative": false,
           "file": {
             "path": "images/health-effects.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Getting help and recording",
+          "alt": "Two care workers talking together, beside the heading “Recording and escalating concerns”. Key points: Record the facts; Report promptly; Escalate urgently when needed.",
           "decorative": false,
           "file": {
             "path": "images/getting-help-and-recording.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

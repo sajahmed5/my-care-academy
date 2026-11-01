@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Investigation and learning",
+          "alt": "A care worker, beside the heading “Look for causes, not culprits”. Key points: Learn, don’t blame; Find the root cause; Report honestly, even mistakes.",
           "decorative": false,
           "file": {
             "path": "images/investigation-and-learning.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

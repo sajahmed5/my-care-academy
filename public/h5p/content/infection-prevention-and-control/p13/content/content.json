@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Laundry, food and scenario",
+          "alt": "A care worker, beside the heading “Laundry, food and the wider environment”. Key points: Laundry; Food; Environment.",
           "decorative": false,
           "file": {
             "path": "images/laundry-food-and-scenario.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

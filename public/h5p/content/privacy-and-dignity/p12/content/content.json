@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Settings & technology",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Privacy where space is shared”. Key points: Knock and wait; Use screens and curtains; Respect belongings and post.",
           "decorative": false,
           "file": {
             "path": "images/settings-technology.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

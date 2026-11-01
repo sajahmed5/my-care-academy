@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Active participation",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Active participation”.",
           "decorative": false,
           "file": {
             "path": "images/active-participation.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

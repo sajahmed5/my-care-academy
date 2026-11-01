@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The 4 Cs",
+          "alt": "A care worker, beside the heading “The 4 Cs of food safety”. Key points: 5C or below; 75C; 63C or above.",
           "decorative": false,
           "file": {
             "path": "images/the-4-cs.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

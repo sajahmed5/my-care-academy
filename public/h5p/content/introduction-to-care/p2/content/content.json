@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Your role & responsibilities",
+          "alt": "A care worker sitting with an older person they support, beside the heading “The role of a care worker”. Key points: Care in line with the care plan; Promote independence and choice; Observe, record and report.",
           "decorative": false,
           "file": {
             "path": "images/your-role-responsibilities.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 308,
             "copyright": {
               "license": "U"
             }

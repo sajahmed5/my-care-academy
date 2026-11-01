@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "A care worker alert to a medicine that must be given on time",
+          "alt": "Two care workers talking together, beside the heading “Why the clock matters”. Key points: Parkinson's disease medicines; Insulin; Epilepsy medicines.",
           "decorative": false,
           "file": {
             "path": "images/time-critical.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

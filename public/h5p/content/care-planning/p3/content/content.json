@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Person-centred care",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Putting the person first”. Key points: The whole person; Their voice; Their strengths.",
           "decorative": false,
           "file": {
             "path": "images/person-centred-care.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

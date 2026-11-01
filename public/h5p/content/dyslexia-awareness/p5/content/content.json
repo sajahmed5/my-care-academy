@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Visual stress and impact",
+          "alt": "A care worker, beside the heading “Visual stress”. Key points: Distorted text; Glare sensitivity; A separate condition.",
           "decorative": false,
           "file": {
             "path": "images/visual-stress-and-impact.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Caring for the stoma",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Keeping the site clean and dry”. Key points: Clean daily; Keep it dry; Observe as you go.",
           "decorative": false,
           "file": {
             "path": "images/caring-for-the-stoma.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Culture & individuality",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Every person is an individual”. Key points: Protected characteristics; Identity; Ask, don't assume.",
           "decorative": false,
           "file": {
             "path": "images/culture-individuality.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

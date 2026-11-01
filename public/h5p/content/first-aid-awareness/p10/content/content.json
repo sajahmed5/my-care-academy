@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Head, spine and bones",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Head and spinal injuries”. Key points: Keep it still; Do not move the person needlessly; Cool a sprain.",
           "decorative": false,
           "file": {
             "path": "images/head-spine-and-bones.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

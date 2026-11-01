@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Medicines and misuse",
+          "alt": "A care worker, beside the heading “Prescription and over-the-counter medicines”. Key points: Prescription medicines; Over-the-counter medicines; Report changes.",
           "decorative": false,
           "file": {
             "path": "images/medicines-and-misuse.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

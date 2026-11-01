@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Your job role",
+          "alt": "A care worker, beside the heading “Your job description”. Key points: Policies; Procedures; Boundaries.",
           "decorative": false,
           "file": {
             "path": "images/your-job-role.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Reporting &amp; the NRM",
+          "alt": "A care worker, beside the heading “Who to report to”. Key points: Safeguarding lead; Helpline; Police.",
           "decorative": false,
           "file": {
             "path": "images/reporting-amp-the-nrm.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

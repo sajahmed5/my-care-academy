@@ -1,0 +1,416 @@
+{
+  "_about": "Hand corrections for scripts/make-illustration.mjs, keyed by <course>/<page>; _courses gives each course its fallback icon; _personCourses are hands-on care courses whose pages show the person supported unless the page is about the team. Any of scene (solo|person|team), mood (smile|concern) and icon override what the page's words suggest.",
+  "_courses": {
+    "accident-and-incident-reporting": "clipboard",
+    "allergen-awareness": "plate",
+    "anxiety-awareness": "heart",
+    "basic-life-support-bls": "firstaid",
+    "behaviours-that-challenge": "speech",
+    "care-planning": "clipboard",
+    "catheter-care": "gloves",
+    "communication-skills": "speech",
+    "communication-support": "speech",
+    "complaints-handling": "speech",
+    "concussion-awareness": "firstaid",
+    "conflict-resolution": "speech",
+    "continence-care": "heart",
+    "coshh": "alert",
+    "depression-awareness": "heart",
+    "diabetes-awareness": "drop",
+    "drugs-and-alcohol-awareness": "pills",
+    "duty-of-candour": "speech",
+    "duty-of-care": "scales",
+    "dyslexia-awareness": "bulb",
+    "eating-disorders": "heart",
+    "end-of-life-care": "heart",
+    "epilepsy-awareness": "firstaid",
+    "equality-diversity-and-inclusion": "people",
+    "fire-safety": "flame",
+    "first-aid-awareness": "firstaid",
+    "fluids-and-nutrition": "cup",
+    "food-hygiene-and-nutrition": "plate",
+    "health-and-safety": "alert",
+    "infection-prevention-and-control": "gloves",
+    "information-governance-and-gdpr": "lock",
+    "introduction-to-care": "heart",
+    "learning-disability-and-autism": "speech",
+    "legionnaires-disease": "drop",
+    "lgbtq-awareness": "people",
+    "lone-working": "phone",
+    "medication-awareness": "pills",
+    "mental-capacity-act-and-dols": "scales",
+    "mental-health-and-dementia": "heart",
+    "modern-slavery": "shield",
+    "moving-and-handling": "people",
+    "oral-care": "tooth",
+    "peg-feeding": "plate",
+    "person-centred-care": "heart",
+    "personal-care": "drop",
+    "personal-development": "bulb",
+    "positive-behaviour-support": "heart",
+    "privacy-and-dignity": "heart",
+    "record-keeping-and-documentation": "clipboard",
+    "risk-assessment": "clipboard",
+    "safeguarding-adults-level-2": "shield",
+    "safeguarding-children": "shield",
+    "sepsis": "alert",
+    "sexual-harassment-awareness": "shield",
+    "slips-trips-and-falls": "alert",
+    "stoma-care": "gloves",
+    "stroke-awareness": "clock",
+    "tracheostomy-awareness": "firstaid",
+    "whistleblowing": "speech"
+  },
+  "_personCourses": [
+    "anxiety-awareness",
+    "behaviours-that-challenge",
+    "care-planning",
+    "catheter-care",
+    "communication-skills",
+    "communication-support",
+    "continence-care",
+    "depression-awareness",
+    "diabetes-awareness",
+    "eating-disorders",
+    "end-of-life-care",
+    "epilepsy-awareness",
+    "fluids-and-nutrition",
+    "introduction-to-care",
+    "learning-disability-and-autism",
+    "mental-capacity-act-and-dols",
+    "mental-health-and-dementia",
+    "oral-care",
+    "peg-feeding",
+    "person-centred-care",
+    "personal-care",
+    "positive-behaviour-support",
+    "privacy-and-dignity",
+    "stoma-care",
+    "stroke-awareness",
+    "tracheostomy-awareness"
+  ],
+  "information-governance-and-gdpr/p2": {
+    "scene": "solo",
+    "mood": "smile",
+    "icon": "lock"
+  },
+  "end-of-life-care/p12": {
+    "scene": "solo",
+    "mood": "smile",
+    "icon": "heart"
+  },
+  "oral-care/p12": {
+    "icon": "speech"
+  },
+  "basic-life-support-bls/p5": {
+    "scene": "solo",
+    "mood": "concern",
+    "icon": "phone"
+  },
+  "infection-prevention-and-control/p2": {
+    "scene": "solo",
+    "mood": "smile"
+  },
+  "fluids-and-nutrition/p1": {
+    "icon": "cup"
+  },
+  "catheter-care/p9": {
+    "icon": "drop",
+    "points": [
+      "Keep the entry point clean and dry",
+      "Mild soap, wash away from the body",
+      "Daily and after a bowel movement"
+    ]
+  },
+  "duty-of-care/p4": {
+    "icon": "speech"
+  },
+  "duty-of-care/p12": {
+    "icon": "speech"
+  },
+  "personal-development/p1": {
+    "icon": "bulb",
+    "points": [
+      "This course covers the knowledge",
+      "Competence is observed at work",
+      "Both complete the Care Certificate"
+    ]
+  },
+  "personal-care/p4": {
+    "icon": "speech"
+  },
+  "personal-care/p7": {
+    "icon": "heart"
+  },
+  "personal-care/p11": {
+    "icon": "eye"
+  },
+  "tracheostomy-awareness/p3": {
+    "icon": "firstaid"
+  },
+  "tracheostomy-awareness/p7": {
+    "icon": "alert"
+  },
+  "peg-feeding/p5": {
+    "icon": "drop"
+  },
+  "peg-feeding/p6": {
+    "mood": "smile",
+    "icon": "check"
+  },
+  "peg-feeding/p7": {
+    "icon": "cup"
+  },
+  "peg-feeding/p8": {
+    "icon": "drop"
+  },
+  "legionnaires-disease/p8": {
+    "scene": "solo"
+  },
+  "legionnaires-disease/p10": {
+    "scene": "solo",
+    "icon": "clipboard"
+  },
+  "legionnaires-disease/p13": {
+    "icon": "drop"
+  },
+  "lone-working/p8": {
+    "icon": "eye"
+  },
+  "slips-trips-and-falls/p12": {
+    "scene": "person",
+    "mood": "smile",
+    "icon": "heart"
+  },
+  "moving-and-handling/p12": {
+    "icon": "alert"
+  },
+  "sepsis/p1": {
+    "scene": "solo"
+  },
+  "sepsis/p12": {
+    "scene": "person",
+    "mood": "smile",
+    "icon": "heart"
+  },
+  "risk-assessment/p12": {
+    "mood": "smile",
+    "icon": "heart"
+  },
+  "safeguarding-children/p5": {
+    "icon": "speech"
+  },
+  "sexual-harassment-awareness/p6": {
+    "scene": "solo",
+    "icon": "shield"
+  },
+  "sexual-harassment-awareness/p11": {
+    "scene": "team",
+    "icon": "heart"
+  },
+  "whistleblowing/p9": {
+    "scene": "team"
+  },
+  "introduction-to-care/p12": {
+    "icon": "shield"
+  },
+  "mental-capacity-act-and-dols/p13": {
+    "icon": "clipboard"
+  },
+  "drugs-and-alcohol-awareness/p8": {
+    "mood": "smile",
+    "icon": "heart"
+  },
+  "conflict-resolution/p11": {
+    "icon": "speech"
+  },
+  "catheter-care/p5": {
+    "points": [
+      "Clean hands, then gloves and apron",
+      "Clean hands again afterwards",
+      "Gloves never replace handwashing"
+    ]
+  },
+  "stoma-care/p7": {
+    "points": [
+      "Clean hands, then gloves and apron",
+      "Clean hands again afterwards",
+      "Gloves never replace handwashing"
+    ]
+  },
+  "catheter-care/p8": {
+    "points": [
+      "Empty before it gets too full",
+      "Clean hands, gloves, outlet tap",
+      "Keep the tap off the floor"
+    ]
+  },
+  "catheter-care/p13": {
+    "points": [
+      "Urgent: sepsis, no urine, bleeding",
+      "Prompt: infection signs, bypassing",
+      "Record what you saw and told"
+    ]
+  },
+  "diabetes-awareness/p10": {
+    "points": [
+      "Unconscious, fitting or DKA: 999",
+      "Repeated highs or lows: report",
+      "Record and report promptly"
+    ]
+  },
+  "complaints-handling/p8": {
+    "points": [
+      "Finish the service’s process first",
+      "Then the Ombudsman (LGSCO)",
+      "Remedies can include an apology"
+    ]
+  },
+  "first-aid-awareness/p5": {
+    "points": [
+      "Cool under running water",
+      "At least 20 minutes",
+      "Cover loosely with cling film"
+    ]
+  },
+  "first-aid-awareness/p12": {
+    "points": [
+      "Sit up, or lie with legs raised",
+      "Use their adrenaline auto-injector",
+      "Call 999"
+    ]
+  },
+  "infection-prevention-and-control/p6": {
+    "points": [
+      "Never re-sheath a needle",
+      "Straight into the sharps bin",
+      "Right bag for the right waste"
+    ]
+  },
+  "infection-prevention-and-control/p8": {
+    "points": [
+      "New confusion or slurred speech",
+      "Mottled or bluish skin",
+      "Little or no urine"
+    ]
+  },
+  "introduction-to-care/p2": {
+    "points": [
+      "Care in line with the care plan",
+      "Promote independence and choice",
+      "Observe, record and report"
+    ]
+  },
+  "introduction-to-care/p5": {
+    "points": [
+      "Professional, not personal",
+      "Guided by policies and boundaries",
+      "Focused on the person’s needs"
+    ]
+  },
+  "introduction-to-care/p8": {
+    "points": [
+      "The CQC registers and inspects",
+      "Safe, effective, caring",
+      "Responsive and well-led"
+    ]
+  },
+  "medication-awareness/p5": {
+    "points": [
+      "Record once taken, never before",
+      "Sign, date and time each entry",
+      "Use the right code if not given"
+    ]
+  },
+  "medication-awareness/p7": {
+    "points": [
+      "Locked controlled drugs cabinet",
+      "Separate CD register",
+      "Stock counts kept and checked"
+    ]
+  },
+  "privacy-and-dignity/p6": {
+    "points": [
+      "Explain risks and benefits",
+      "Make the choice safer",
+      "Record the person’s wishes"
+    ]
+  },
+  "privacy-and-dignity/p8": {
+    "points": [
+      "Never leave someone exposed",
+      "No pet names or talking over",
+      "Challenge and report it"
+    ]
+  },
+  "privacy-and-dignity/p13": {
+    "points": [
+      "Respect the person",
+      "Protect privacy",
+      "Offer choice and speak up"
+    ]
+  },
+  "record-keeping-and-documentation/p6": {
+    "points": [
+      "Write it while it is fresh",
+      "Sign, date and time every entry",
+      "No gaps, nothing in advance"
+    ]
+  },
+  "record-keeping-and-documentation/p7": {
+    "points": [
+      "Single line through the error",
+      "Write the correction alongside",
+      "Initial, date and time it"
+    ]
+  },
+  "safeguarding-adults-level-2/p11": {
+    "points": [
+      "Reassure: it’s not their fault",
+      "Record their own words",
+      "Report straight away"
+    ]
+  },
+  "safeguarding-children/p7": {
+    "points": [
+      "The law allows sharing to protect",
+      "Necessary and proportionate",
+      "Never delay if in danger"
+    ]
+  },
+  "stoma-care/p5": {
+    "points": [
+      "Empty at a third to a half full",
+      "Drain into the toilet",
+      "A heavy pouch can leak"
+    ]
+  },
+  "accident-and-incident-reporting/p7": {
+    "points": [
+      "Deaths and serious injuries",
+      "Abuse or allegations of abuse",
+      "Your manager sends them"
+    ]
+  },
+  "accident-and-incident-reporting/p13": {
+    "points": [
+      "Learn, don’t blame",
+      "Find the root cause",
+      "Report honestly, even mistakes"
+    ]
+  },
+  "health-and-safety/p13": {
+    "points": [
+      "Keep yourself safe first",
+      "999 for anything serious",
+      "Record it; RIDDOR if required"
+    ]
+  },
+  "basic-life-support-bls/p13": {
+    "points": [
+      "Keep CPR going until they take over",
+      "Give a clear handover",
+      "Mention DNACPR or ReSPECT"
+    ]
+  }
+}

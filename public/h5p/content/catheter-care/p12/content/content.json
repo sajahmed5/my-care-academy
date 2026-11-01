@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Blockage and leakage",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Other problems to watch for”. Key points: Not draining; Bypassing; Blood or pain.",
           "decorative": false,
           "file": {
             "path": "images/blockage-and-leakage.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

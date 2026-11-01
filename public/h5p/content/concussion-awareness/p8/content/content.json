@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The red flags",
+          "alt": "A care worker looking concerned, beside the heading “The emergency red flags”. Key points: Consciousness; Neurological; Danger signs.",
           "decorative": false,
           "file": {
             "path": "images/the-red-flags.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

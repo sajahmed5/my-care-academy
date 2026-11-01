@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "A care worker with a monitored dosage system",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Packs, boxes and labels”. Key points: You cannot see the original label; Never re-fill or re-pack; Never transfer medicines.",
           "decorative": false,
           "file": {
             "path": "images/medication-aids.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

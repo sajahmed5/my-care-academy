@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Recognising emergencies",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “When breathing is in danger”. Key points: Blocked tube; Displaced tube; Either way.",
           "decorative": false,
           "file": {
             "path": "images/recognising-emergencies.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

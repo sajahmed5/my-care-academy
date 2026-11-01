@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Emergencies and you",
+          "alt": "A care worker, beside the heading “Accidents, sudden illness and RIDDOR”. Key points: Keep yourself safe first; 999 for anything serious; Record it; RIDDOR if required.",
           "decorative": false,
           "file": {
             "path": "images/emergencies-and-you.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Dementia & communication",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Dignity for people with dementia or communication needs”. Key points: Assume understanding; Give time; Use every channel.",
           "decorative": false,
           "file": {
             "path": "images/dementia-communication.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 322,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Chain of Survival",
+          "alt": "A care worker, beside the heading “The Chain of Survival”. Key points: Early recognition and call for help; Early CPR; Early defibrillation.",
           "decorative": false,
           "file": {
             "path": "images/chain-of-survival.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

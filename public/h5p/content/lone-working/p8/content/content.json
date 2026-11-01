@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for If you feel unsafe",
+          "alt": "A care worker, beside the heading “Trust your instincts and act”. Key points: Leave; Raise the alarm; Report.",
           "decorative": false,
           "file": {
             "path": "images/if-you-feel-unsafe.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

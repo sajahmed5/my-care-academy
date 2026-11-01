@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Aids and interpreters",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Hearing aids and glasses”. Key points: Check daily; Keep them clean; Encourage use.",
           "decorative": false,
           "file": {
             "path": "images/aids-and-interpreters.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

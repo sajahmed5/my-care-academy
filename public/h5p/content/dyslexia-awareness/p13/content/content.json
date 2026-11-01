@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Signposting and next steps",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Signposting to assessment and support”. Key points: Formal assessment; Trusted information; Follow the person’s lead.",
           "decorative": false,
           "file": {
             "path": "images/signposting-and-next-steps.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

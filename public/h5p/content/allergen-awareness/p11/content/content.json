@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Recognising a reaction",
+          "alt": "A care worker, beside the heading “Recognising a reaction”. Key points: Mild to moderate; Severe; Watch closely.",
           "decorative": false,
           "file": {
             "path": "images/recognising-a-reaction.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

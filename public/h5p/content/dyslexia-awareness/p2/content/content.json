@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Not about intelligence",
+          "alt": "A care worker, beside the heading “Dyslexia and intelligence”. Key points: Across all abilities; Not a measure of ability; Often a mismatch.",
           "decorative": false,
           "file": {
             "path": "images/not-about-intelligence.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

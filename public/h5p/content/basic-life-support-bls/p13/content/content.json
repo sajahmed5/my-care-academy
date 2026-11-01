@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for After the attempt",
+          "alt": "Two care workers talking together, beside the heading “Handing over to the ambulance crew”. Key points: Keep CPR going until they take over; Give a clear handover; Mention DNACPR or ReSPECT.",
           "decorative": false,
           "file": {
             "path": "images/after-the-attempt.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

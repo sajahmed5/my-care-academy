@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Cyber security",
+          "alt": "A care worker, beside the heading “Passwords, devices and phishing”.",
           "decorative": false,
           "file": {
             "path": "images/cyber-security.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

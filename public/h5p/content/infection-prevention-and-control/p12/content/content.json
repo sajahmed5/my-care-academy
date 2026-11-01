@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Antibiotics and resistance",
+          "alt": "A care worker, beside the heading “What antimicrobial resistance means”. Key points: Prevent infection first; Support the full course; Never share or save.",
           "decorative": false,
           "file": {
             "path": "images/antibiotics-and-resistance.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

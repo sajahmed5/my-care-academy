@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Bleeding & shock",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Managing severe bleeding”. Key points: Apply pressure; Dress the wound; Support and reassure.",
           "decorative": false,
           "file": {
             "path": "images/bleeding-shock.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

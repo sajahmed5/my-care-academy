@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Communication",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Communicating with care”. Key points: Be honest and kind; Listen more than you speak; Include them.",
           "decorative": false,
           "file": {
             "path": "images/communication.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

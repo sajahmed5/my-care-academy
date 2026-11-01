@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Stagnant water",
+          "alt": "A care worker, beside the heading “Stagnation and stored water”. Key points: Little-used outlets; Dead legs; Stored water.",
           "decorative": false,
           "file": {
             "path": "images/stagnant-water.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

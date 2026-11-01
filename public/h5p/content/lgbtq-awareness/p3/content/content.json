@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for History and trust",
+          "alt": "A care worker, beside the heading “Why history shapes trust”. Key points: A lifetime of caution; Hard-won trust; Real fear of going back.",
           "decorative": false,
           "file": {
             "path": "images/history-and-trust.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

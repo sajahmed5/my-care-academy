@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Rescue medication",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Rescue medication”. Key points: Prescribed individually; Specific training; Not this course.",
           "decorative": false,
           "file": {
             "path": "images/rescue-medication.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

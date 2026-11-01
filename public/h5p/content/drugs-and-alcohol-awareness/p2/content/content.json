@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Misuse and dependence",
+          "alt": "A care worker, beside the heading “Misuse, dependence and why people use”. Key points: Misuse; Dependence; Tolerance.",
           "decorative": false,
           "file": {
             "path": "images/misuse-and-dependence.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

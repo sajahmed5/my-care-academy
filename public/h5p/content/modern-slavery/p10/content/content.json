@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Who is at risk",
+          "alt": "A care worker looking concerned, beside the heading “Who is more at risk”. Key points: Vulnerability; Support needs; Past harm.",
           "decorative": false,
           "file": {
             "path": "images/who-is-at-risk.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

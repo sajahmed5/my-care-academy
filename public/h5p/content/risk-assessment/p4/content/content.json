@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Five steps: hazards",
+          "alt": "A care worker, beside the heading “The HSE five steps”. Key points: Step 1; Step 2; Step 3.",
           "decorative": false,
           "file": {
             "path": "images/five-steps-hazards.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

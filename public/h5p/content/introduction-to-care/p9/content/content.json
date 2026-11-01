@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Care settings and sector",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Where care and support happens”. Key points: Domiciliary (home) care; Residential care homes; Supported living.",
           "decorative": false,
           "file": {
             "path": "images/care-settings-and-sector.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

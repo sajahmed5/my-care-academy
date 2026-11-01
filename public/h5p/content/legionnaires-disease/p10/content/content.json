@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The water safety plan",
+          "alt": "A care worker, beside the heading “The water safety plan”. Key points: Duty holder; Responsible person; Your part.",
           "decorative": false,
           "file": {
             "path": "images/the-water-safety-plan.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

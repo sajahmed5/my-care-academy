@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Reporting and agencies",
+          "alt": "A care worker looking concerned, beside the heading “Raising and reporting a concern”. Key points: Preserve evidence; Record the facts; Report without delay.",
           "decorative": false,
           "file": {
             "path": "images/reporting-and-agencies.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

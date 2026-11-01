@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Assessment, not assumption",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Why a proper assessment matters”. Key points: Find the cause; Rule out illness; Plan support.",
           "decorative": false,
           "file": {
             "path": "images/assessment-not-assumption.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

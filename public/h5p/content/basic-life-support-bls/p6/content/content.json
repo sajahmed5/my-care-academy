@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Quality CPR as a team",
+          "alt": "A care worker, beside the heading “High-quality chest compressions”. Key points: Position; Posture; Depth.",
           "decorative": false,
           "file": {
             "path": "images/quality-cpr-as-a-team.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

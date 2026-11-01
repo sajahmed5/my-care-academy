@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Communication and rehab",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Communication and aphasia”. Key points: Aphasia; Not intelligence; Your role.",
           "decorative": false,
           "file": {
             "path": "images/communication-and-rehab.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

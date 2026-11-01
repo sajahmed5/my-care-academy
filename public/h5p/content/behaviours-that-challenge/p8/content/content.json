@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Listening and space",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Active listening”. Key points: Give full attention; Acknowledge feelings; Don’t argue.",
           "decorative": false,
           "file": {
             "path": "images/listening-and-space.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

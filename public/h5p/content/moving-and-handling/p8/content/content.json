@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Reporting & review",
+          "alt": "A care worker looking concerned, beside the heading “Reporting concerns and faulty equipment”. Key points: Faulty equipment; LOLER inspections; Concerns and near misses.",
           "decorative": false,
           "file": {
             "path": "images/reporting-review.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

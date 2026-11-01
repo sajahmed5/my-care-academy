@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Who may be affected",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Who may be affected”. Key points: People living with dementia; People with a learning disability or autism; People with mental illness.",
           "decorative": false,
           "file": {
             "path": "images/who-may-be-affected.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

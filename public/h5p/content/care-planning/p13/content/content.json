@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for When needs change",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Escalating when needs change”. Key points: Know who to tell; Act promptly; Record it too.",
           "decorative": false,
           "file": {
             "path": "images/when-needs-change.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

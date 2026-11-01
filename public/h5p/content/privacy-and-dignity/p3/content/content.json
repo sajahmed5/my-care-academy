@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Privacy in personal care",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Protecting privacy during personal care”. Key points: Knock and wait; Close doors and draw curtains; Cover the person.",
           "decorative": false,
           "file": {
             "path": "images/privacy-in-personal-care.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

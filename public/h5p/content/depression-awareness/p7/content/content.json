@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Depression in older people",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Depression in older people”. Key points: Not normal ageing; Often missed; Physical focus.",
           "decorative": false,
           "file": {
             "path": "images/depression-in-older-people.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Welcome",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Welcome to Diabetes Awareness”. Key points: Understand; Recognise; Respond.",
           "decorative": false,
           "file": {
             "path": "images/welcome.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

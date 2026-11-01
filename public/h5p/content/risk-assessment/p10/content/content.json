@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Who is responsible",
+          "alt": "Two care workers talking together, beside the heading “Who is responsible for what”. Key points: Employer; Competent person; You.",
           "decorative": false,
           "file": {
             "path": "images/who-is-responsible.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

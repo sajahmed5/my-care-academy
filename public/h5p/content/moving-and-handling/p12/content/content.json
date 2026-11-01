@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for When someone falls",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “If a person slips or falls during a move”. Key points: Check them first; Get help; Use the right equipment.",
           "decorative": false,
           "file": {
             "path": "images/when-someone-falls.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

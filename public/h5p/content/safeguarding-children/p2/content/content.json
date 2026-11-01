@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Categories of abuse",
+          "alt": "A care worker looking concerned, beside the heading “The four categories of abuse”. Key points: Physical abuse; Emotional abuse; Sexual abuse.",
           "decorative": false,
           "file": {
             "path": "images/categories-of-abuse.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Strengths",
+          "alt": "A care worker, beside the heading “Strengths often seen”. Key points: Creative thinking; Big-picture skills; People and practical skills.",
           "decorative": false,
           "file": {
             "path": "images/strengths.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

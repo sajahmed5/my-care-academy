@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Shared responsibility",
+          "alt": "Two care workers talking together, beside the heading “A shared responsibility”. Key points: Everyone; Speak up; Lead by example.",
           "decorative": false,
           "file": {
             "path": "images/shared-responsibility.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

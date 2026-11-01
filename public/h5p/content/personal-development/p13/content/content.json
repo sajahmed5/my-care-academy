@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Summary",
+          "alt": "Two care workers talking together, beside the heading “Pulling it together”. Key points: Your role; Reflective practice; Supervision and appraisal.",
           "decorative": false,
           "file": {
             "path": "images/summary.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

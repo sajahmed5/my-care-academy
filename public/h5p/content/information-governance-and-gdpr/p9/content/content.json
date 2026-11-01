@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Information governance",
+          "alt": "A care worker, beside the heading “The wider framework”. Key points: Data Protection Officer (DPO); Caldicott Guardian; Senior Information Risk Owner (SIRO).",
           "decorative": false,
           "file": {
             "path": "images/information-governance.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

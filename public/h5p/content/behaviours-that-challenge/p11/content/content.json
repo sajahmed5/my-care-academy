@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Keeping everyone safe",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Dynamic risk assessment”. Key points: Read the situation; Weigh the risk; Adjust your response.",
           "decorative": false,
           "file": {
             "path": "images/keeping-everyone-safe.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

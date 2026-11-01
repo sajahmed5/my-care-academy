@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Summary",
+          "alt": "A care worker, beside the heading “Bringing it together”. Key points: Recognise; Respond; Escalate.",
           "decorative": false,
           "file": {
             "path": "images/summary.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Dignity of risk",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Balancing choice with duty of care”. Key points: Explain risks and benefits; Make the choice safer; Record the person’s wishes.",
           "decorative": false,
           "file": {
             "path": "images/dignity-of-risk.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

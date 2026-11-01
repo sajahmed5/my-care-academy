@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Functions of behaviour",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Common functions of behaviour”. Key points: To gain something; To avoid or escape something; Sensory or distress.",
           "decorative": false,
           "file": {
             "path": "images/functions-of-behaviour.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

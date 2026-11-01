@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The right environment",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Preparing the environment”. Key points: Privacy; Warmth; Everything to hand.",
           "decorative": false,
           "file": {
             "path": "images/the-right-environment.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

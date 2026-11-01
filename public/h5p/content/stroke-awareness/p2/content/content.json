@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for What is a stroke?",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “What happens during a stroke”. Key points: The cause; The effect; The result.",
           "decorative": false,
           "file": {
             "path": "images/what-is-a-stroke.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Dignity at mealtimes",
+          "alt": "A care worker, beside the heading “The right environment and position”.",
           "decorative": false,
           "file": {
             "path": "images/dignity-at-mealtimes.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

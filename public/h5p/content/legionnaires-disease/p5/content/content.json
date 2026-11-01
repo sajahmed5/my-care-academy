@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Breathable droplets",
+          "alt": "A care worker looking concerned, beside the heading “How the risk reaches people”. Key points: Showers; Taps; Other sprays.",
           "decorative": false,
           "file": {
             "path": "images/breathable-droplets.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

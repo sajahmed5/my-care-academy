@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Facts, not opinions",
+          "alt": "A care worker, beside the heading “Write facts, not opinions”. Key points: Opinion; Fact.",
           "decorative": false,
           "file": {
             "path": "images/facts-not-opinions.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

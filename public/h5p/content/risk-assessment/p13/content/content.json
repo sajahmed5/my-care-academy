@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Review and report",
+          "alt": "A care worker, beside the heading “Reviewing, recording and reporting”. Key points: Review; Record; Report.",
           "decorative": false,
           "file": {
             "path": "images/review-and-report.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

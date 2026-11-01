@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Warning signs",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Behavioural signs”. Key points: Around food; Around others; Other habits.",
           "decorative": false,
           "file": {
             "path": "images/warning-signs.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

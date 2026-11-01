@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Keeping safe",
+          "alt": "A care worker, beside the heading “Keeping yourself and others safe”. Key points: Know your exit routes; Withdraw when needed; Call for help.",
           "decorative": false,
           "file": {
             "path": "images/keeping-safe.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

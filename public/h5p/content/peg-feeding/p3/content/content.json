@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Why enteral feeding?",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Why people are fed enterally”. Key points: Unsafe swallow; Not enough by mouth; Long-term need.",
           "decorative": false,
           "file": {
             "path": "images/why-enteral-feeding.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

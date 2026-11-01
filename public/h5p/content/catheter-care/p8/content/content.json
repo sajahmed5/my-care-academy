@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Emptying and output",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Emptying the drainage bag”. Key points: Empty before it gets too full; Clean hands, gloves, outlet tap; Keep the tap off the floor.",
           "decorative": false,
           "file": {
             "path": "images/emptying-and-output.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Brushing and fluoride",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Toothbrushing and fluoride”. Key points: Twice a day; Fluoride toothpaste; Gentle and thorough.",
           "decorative": false,
           "file": {
             "path": "images/brushing-and-fluoride.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

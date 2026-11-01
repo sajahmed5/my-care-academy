@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Risk of self-harm",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Recognising risk”. Key points: Take seriously; Warning signs; Act.",
           "decorative": false,
           "file": {
             "path": "images/risk-of-self-harm.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

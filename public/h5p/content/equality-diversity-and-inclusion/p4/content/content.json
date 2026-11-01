@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Types of discrimination",
+          "alt": "Two care workers talking together, beside the heading “What discrimination looks like”. Key points: A care home refuses to admit a resident because of their nationality; An activity is only ever held upstairs, so wheelchair users can never take part; A colleague repeatedly makes jokes about a person's religion, making them feel humiliated.",
           "decorative": false,
           "file": {
             "path": "images/types-of-discrimination.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 330,
             "copyright": {
               "license": "U"
             }

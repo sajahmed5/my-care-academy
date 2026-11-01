@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Preventing infection",
+          "alt": "A care worker looking concerned, beside the heading “Preventing infection”. Key points: Hand hygiene; Clean practice; General health.",
           "decorative": false,
           "file": {
             "path": "images/preventing-infection.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

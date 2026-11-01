@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Knowing the person",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Knowing the person and how they communicate”. Key points: Know their story; Know their communication; Know what helps.",
           "decorative": false,
           "file": {
             "path": "images/knowing-the-person.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

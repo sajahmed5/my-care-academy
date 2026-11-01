@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Recognising delirium",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Delirium: a medical emergency”. Key points: New or worsening confusion; Changes in alertness; Fluctuation.",
           "decorative": false,
           "file": {
             "path": "images/recognising-delirium.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

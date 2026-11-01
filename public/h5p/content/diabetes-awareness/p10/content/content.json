@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for When to escalate",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Knowing when to escalate”. Key points: Unconscious, fitting or DKA: 999; Repeated highs or lows: report; Record and report promptly.",
           "decorative": false,
           "file": {
             "path": "images/when-to-escalate.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 308,
             "copyright": {
               "license": "U"
             }

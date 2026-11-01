@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "A care worker noticing hazards in a person's home",
+          "alt": "A care worker, beside the heading “An uncontrolled work environment”. Key points: Pets and dogs; Smoking and oxygen; Clutter and hoarding.",
           "decorative": false,
           "file": {
             "path": "images/home-hazards.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

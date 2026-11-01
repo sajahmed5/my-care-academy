@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Clear information",
+          "alt": "A care worker, beside the heading “Easy read and clear information”. Key points: Plain words; Short and simple; Support with images.",
           "decorative": false,
           "file": {
             "path": "images/clear-information.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

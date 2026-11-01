@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Record and report",
+          "alt": "A care worker, beside the heading “After a reaction: record and report”. Key points: Record; Report; Review.",
           "decorative": false,
           "file": {
             "path": "images/record-and-report.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

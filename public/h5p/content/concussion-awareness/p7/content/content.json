@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for When it's an emergency",
+          "alt": "A care worker looking concerned, beside the heading “When a head injury is an emergency”. Key points: Serious risk; Red flags; One is enough.",
           "decorative": false,
           "file": {
             "path": "images/when-it-s-an-emergency.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

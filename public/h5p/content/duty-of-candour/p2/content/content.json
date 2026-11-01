@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Why openness matters",
+          "alt": "A care worker, beside the heading “Why openness matters”. Key points: Trust; Respect; Learning.",
           "decorative": false,
           "file": {
             "path": "images/why-openness-matters.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

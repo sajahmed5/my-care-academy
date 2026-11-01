@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Swallowing and IDDSI",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Swallowing difficulties”. Key points: What it is; Warning signs; Other clues.",
           "decorative": false,
           "file": {
             "path": "images/swallowing-and-iddsi.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

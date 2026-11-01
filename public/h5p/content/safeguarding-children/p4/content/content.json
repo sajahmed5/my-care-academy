@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for In need or at risk?",
+          "alt": "A care worker looking concerned, beside the heading “A child in need vs a child at risk of significant harm”. Key points: Child in need (section 17); Child at risk of significant harm (section 47).",
           "decorative": false,
           "file": {
             "path": "images/in-need-or-at-risk.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 322,
             "copyright": {
               "license": "U"
             }

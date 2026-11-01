@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The rules & regulator",
+          "alt": "A care worker, beside the heading “What the law and the regulator expect”. Key points: Accurate, complete and contemporaneous; Kept secure; Available to the right people.",
           "decorative": false,
           "file": {
             "path": "images/the-rules-regulator.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Record and review",
+          "alt": "A care worker, beside the heading “Step 4 — record your findings”. Key points: Clarity; Accessibility; Action.",
           "decorative": false,
           "file": {
             "path": "images/record-and-review.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

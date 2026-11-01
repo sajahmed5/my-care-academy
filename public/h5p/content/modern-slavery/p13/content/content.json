@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Recording &amp; summary",
+          "alt": "A care worker looking concerned, beside the heading “Recording your concerns”. Key points: Be factual; Be specific; Be secure.",
           "decorative": false,
           "file": {
             "path": "images/recording-amp-summary.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Recording and support",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Recording, reflecting and post-incident support”. Key points: Record; Reflect; Support.",
           "decorative": false,
           "file": {
             "path": "images/recording-and-support.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 322,
             "copyright": {
               "license": "U"
             }

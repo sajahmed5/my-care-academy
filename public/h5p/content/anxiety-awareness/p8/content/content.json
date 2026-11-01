@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Person-centred support",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Person-centred support”. Key points: Know the person; Follow their lead; Use the care plan.",
           "decorative": false,
           "file": {
             "path": "images/person-centred-support.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "A care worker checking a route on a phone before setting off",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Planning the journey, not just the visit”. Key points: Know the route before you set off; Park with your exit in mind; Keep the vehicle roadworthy.",
           "decorative": false,
           "file": {
             "path": "images/travelling.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

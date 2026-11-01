@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Who might be harmed",
+          "alt": "Two care workers talking together, beside the heading “Step 2 — who might be harmed and how”. Key points: People you support; Staff; Others.",
           "decorative": false,
           "file": {
             "path": "images/who-might-be-harmed.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

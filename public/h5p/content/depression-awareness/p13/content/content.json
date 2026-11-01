@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Your wellbeing",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Looking after your own wellbeing”. Key points: Notice yourself; Talk; Seek support.",
           "decorative": false,
           "file": {
             "path": "images/your-wellbeing.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Temperature control",
+          "alt": "A care worker, beside the heading “Hot water hot, cold water cold”. Key points: Hot water kept hot; Cold water kept cold; Never left lukewarm.",
           "decorative": false,
           "file": {
             "path": "images/temperature-control.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

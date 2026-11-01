@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Standard precautions",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Standard infection control precautions (SICPs)”. Key points: Hand hygiene; Respiratory and cough hygiene; Personal protective equipment (PPE).",
           "decorative": false,
           "file": {
             "path": "images/standard-precautions.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 322,
             "copyright": {
               "license": "U"
             }

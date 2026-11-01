@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for SMART and risk",
+          "alt": "A care worker sitting with an older person they support, beside the heading “SMART, personalised outcomes”. Key points: Specific and personal; Measurable and achievable; Relevant and time-bound.",
           "decorative": false,
           "file": {
             "path": "images/smart-and-risk.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

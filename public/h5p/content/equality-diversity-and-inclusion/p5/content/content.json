@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Unconscious bias",
+          "alt": "A care worker, beside the heading “Unconscious bias”.",
           "decorative": false,
           "file": {
             "path": "images/unconscious-bias.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

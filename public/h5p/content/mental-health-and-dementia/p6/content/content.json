@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The person behind",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Seeing the person, not the diagnosis”. Key points: Learn what matters; Respect identity; Involve families.",
           "decorative": false,
           "file": {
             "path": "images/the-person-behind.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

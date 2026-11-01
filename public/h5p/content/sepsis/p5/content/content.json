@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Key warning signs",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Common signs of sepsis”. Key points: New confusion; Fast breathing; Temperature.",
           "decorative": false,
           "file": {
             "path": "images/key-warning-signs.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

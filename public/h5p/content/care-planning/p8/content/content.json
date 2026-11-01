@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Working to the plan",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Following the plan”. Key points: Read before you act; Deliver as agreed; Do not freelance.",
           "decorative": false,
           "file": {
             "path": "images/working-to-the-plan.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

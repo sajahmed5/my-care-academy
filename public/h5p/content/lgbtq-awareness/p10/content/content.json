@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Records and information",
+          "alt": "A care worker, beside the heading “Accurate, respectful records”. Key points: Record their name and pronouns; Capture their wishes; Keep it secure and shared appropriately.",
           "decorative": false,
           "file": {
             "path": "images/records-and-information.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 308,
             "copyright": {
               "license": "U"
             }

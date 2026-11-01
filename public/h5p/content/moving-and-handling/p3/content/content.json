@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for TILE risk assessment",
+          "alt": "A care worker sitting with an older person they support, beside the heading “The hierarchy: Avoid → Assess → Reduce”. Key points: Avoid; Assess; Reduce.",
           "decorative": false,
           "file": {
             "path": "images/tile-risk-assessment.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Access &amp; retention",
+          "alt": "A care worker, beside the heading “Subject access requests and records rights”.",
           "decorative": false,
           "file": {
             "path": "images/access-amp-retention.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

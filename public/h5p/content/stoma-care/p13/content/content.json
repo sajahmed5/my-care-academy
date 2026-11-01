@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Support and summary",
+          "alt": "A care worker sitting with an older person they support, beside the heading “The emotional impact”. Key points: Body image; Worries; Adjustment.",
           "decorative": false,
           "file": {
             "path": "images/support-and-summary.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

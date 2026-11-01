@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for If a child discloses",
+          "alt": "A care worker, beside the heading “When a child tells you something”. Key points: Listen; Reassure; Do not promise to keep it secret.",
           "decorative": false,
           "file": {
             "path": "images/if-a-child-discloses.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

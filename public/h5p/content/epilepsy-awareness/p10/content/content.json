@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for When to call 999",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “When a seizure is an emergency”. Key points: Lasting too long; One after another; Other danger signs.",
           "decorative": false,
           "file": {
             "path": "images/when-to-call-999.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

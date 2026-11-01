@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Evacuation & PEEPs",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Evacuating a care home”. Key points: Progressive horizontal evacuation; Simultaneous evacuation; Stay put.",
           "decorative": false,
           "file": {
             "path": "images/evacuation-peeps.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

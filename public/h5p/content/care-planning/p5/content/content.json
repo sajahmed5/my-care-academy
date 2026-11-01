@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Involving people",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Involving the person and their family”. Key points: The person first; Family and friends; Advocacy.",
           "decorative": false,
           "file": {
             "path": "images/involving-people.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

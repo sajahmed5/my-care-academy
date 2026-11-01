@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Correcting an error",
+          "alt": "A care worker looking concerned, beside the heading “How to correct an error properly”. Key points: Single line through the error; Write the correction alongside; Initial, date and time it.",
           "decorative": false,
           "file": {
             "path": "images/correcting-an-error.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

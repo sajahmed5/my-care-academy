@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Urgent problems",
+          "alt": "A care worker sitting with an older person they support, beside the heading “When a tube comes out or moves”. Key points: Tube out; Never re-insert; Buried bumper.",
           "decorative": false,
           "file": {
             "path": "images/urgent-problems.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

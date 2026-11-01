@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for MAR charts and recording",
+          "alt": "A care worker, beside the heading “Reading and completing a MAR chart”. Key points: Record once taken, never before; Sign, date and time each entry; Use the right code if not given.",
           "decorative": false,
           "file": {
             "path": "images/mar-charts-and-recording.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 330,
             "copyright": {
               "license": "U"
             }

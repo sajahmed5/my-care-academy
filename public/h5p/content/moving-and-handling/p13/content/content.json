@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Changing needs",
+          "alt": "A care worker, beside the heading “When needs are more complex”. Key points: Bariatric needs; Unpredictable movement; Pain and fragile skin.",
           "decorative": false,
           "file": {
             "path": "images/changing-needs.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

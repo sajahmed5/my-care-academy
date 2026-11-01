@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for A reflective model",
+          "alt": "A care worker, beside the heading “A simple reflective model”. Key points: Describe; Evaluate; Plan.",
           "decorative": false,
           "file": {
             "path": "images/a-reflective-model.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

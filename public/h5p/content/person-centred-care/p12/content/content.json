@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Comfort and distress",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Reading pain, discomfort and distress”. Key points: Facial signs; Sounds; Body language.",
           "decorative": false,
           "file": {
             "path": "images/comfort-and-distress.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

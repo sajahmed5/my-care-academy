@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Skin and pressure care",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Protecting the skin”. Key points: Keep skin clean and dry; Change promptly; Check the skin.",
           "decorative": false,
           "file": {
             "path": "images/skin-and-pressure-care.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

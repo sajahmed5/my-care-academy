@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for When to escalate",
+          "alt": "A care worker sitting with an older person they support, beside the heading “When to escalate”. Key points: Urgent: sepsis, no urine, bleeding; Prompt: infection signs, bypassing; Record what you saw and told.",
           "decorative": false,
           "file": {
             "path": "images/when-to-escalate.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 308,
             "copyright": {
               "license": "U"
             }

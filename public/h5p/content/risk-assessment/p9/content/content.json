@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Safe systems of work",
+          "alt": "A care worker, beside the heading “Safe systems of work”. Key points: Procedures; Training; Equipment.",
           "decorative": false,
           "file": {
             "path": "images/safe-systems-of-work.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

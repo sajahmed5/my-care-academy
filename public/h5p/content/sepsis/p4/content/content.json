@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Recognising sepsis",
+          "alt": "A care worker looking concerned, beside the heading ““Could this be sepsis?””. Key points: Stay curious; Trust your instinct; Act on change.",
           "decorative": false,
           "file": {
             "path": "images/recognising-sepsis.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

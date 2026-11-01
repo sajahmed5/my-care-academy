@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Immediate signs",
+          "alt": "A care worker looking concerned, beside the heading “Immediate signs and symptoms”. Key points: Head symptoms; Thinking; Physical.",
           "decorative": false,
           "file": {
             "path": "images/immediate-signs.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

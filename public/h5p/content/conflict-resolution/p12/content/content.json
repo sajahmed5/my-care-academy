@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Warning signs and risk",
+          "alt": "A care worker looking concerned, beside the heading “Reading the warning signs”. Key points: Body; Face and voice; Manner.",
           "decorative": false,
           "file": {
             "path": "images/warning-signs-and-risk.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

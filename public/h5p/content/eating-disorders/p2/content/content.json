@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Not a choice",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Serious mental illnesses”. Key points: Not a choice; Not vanity; A way of coping.",
           "decorative": false,
           "file": {
             "path": "images/not-a-choice.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

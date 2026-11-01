@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Care after death",
+          "alt": "A care worker, beside the heading “Care after death”. Key points: Confirm and inform; Respect the body; Honour wishes.",
           "decorative": false,
           "file": {
             "path": "images/care-after-death.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Output and dehydration",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Blockage and changes in output”. Key points: Little or no output; Feeling sick or vomiting; Act promptly.",
           "decorative": false,
           "file": {
             "path": "images/output-and-dehydration.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

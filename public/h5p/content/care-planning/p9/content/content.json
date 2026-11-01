@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Noticing changes",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Noticing and recording changes”. Key points: Health; Ability; Mood and situation.",
           "decorative": false,
           "file": {
             "path": "images/noticing-changes.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

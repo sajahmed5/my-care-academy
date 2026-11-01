@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Infection and sepsis",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Signs of a catheter infection”. Key points: Feeling unwell; Urine changes; Confusion.",
           "decorative": false,
           "file": {
             "path": "images/infection-and-sepsis.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

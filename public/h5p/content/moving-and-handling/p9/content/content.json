@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Your back at risk",
+          "alt": "A care worker, beside the heading “Knowledge is only half the training”. Key points: Bending and twisting; Reaching and stooping; Repetition and fatigue.",
           "decorative": false,
           "file": {
             "path": "images/your-back-at-risk.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

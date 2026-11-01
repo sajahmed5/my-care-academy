@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Recovery and support",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Recovery after sepsis”. Key points: Physical effects; Emotional effects; Cognitive effects.",
           "decorative": false,
           "file": {
             "path": "images/recovery-and-support.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

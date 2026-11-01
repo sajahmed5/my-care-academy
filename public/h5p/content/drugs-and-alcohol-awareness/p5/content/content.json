@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Depressants and stimulants",
+          "alt": "A care worker looking concerned, beside the heading “Depressants, stimulants and opioids”. Key points: Depressants; Stimulants; Opioids.",
           "decorative": false,
           "file": {
             "path": "images/depressants-and-stimulants.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

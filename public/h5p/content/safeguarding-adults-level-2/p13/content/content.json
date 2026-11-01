@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The legal framework",
+          "alt": "A care worker, beside the heading “The Care Act 2014 and section 42”.",
           "decorative": false,
           "file": {
             "path": "images/the-legal-framework.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

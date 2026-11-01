@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Your role",
+          "alt": "A care worker, beside the heading “Bringing it together”. Key points: Follow the plan; Record your tasks; Report concerns.",
           "decorative": false,
           "file": {
             "path": "images/your-role.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

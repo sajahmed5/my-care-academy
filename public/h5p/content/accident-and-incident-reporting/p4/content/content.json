@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for How to record",
+          "alt": "A care worker, beside the heading “Recording and writing it up”. Key points: Factually; Accurate; Promptly.",
           "decorative": false,
           "file": {
             "path": "images/how-to-record.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

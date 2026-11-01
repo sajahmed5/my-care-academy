@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Supporting people",
+          "alt": "Two care workers talking together, beside the heading “Supporting people and colleagues”. Key points: People you support; Colleagues; Shared principles.",
           "decorative": false,
           "file": {
             "path": "images/supporting-people.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

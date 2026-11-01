@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Orientation and identity",
+          "alt": "A care worker, beside the heading “Two different things”. Key points: Sexual orientation; Gender identity; Independent of each other.",
           "decorative": false,
           "file": {
             "path": "images/orientation-and-identity.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

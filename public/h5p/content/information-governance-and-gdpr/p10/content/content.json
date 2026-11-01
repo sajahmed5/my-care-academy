@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Lawful bases &amp; consent",
+          "alt": "A care worker, beside the heading “Having a lawful basis”.",
           "decorative": false,
           "file": {
             "path": "images/lawful-bases-amp-consent.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

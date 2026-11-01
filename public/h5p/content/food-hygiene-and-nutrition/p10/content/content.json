@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The Eatwell Guide",
+          "alt": "A care worker sitting with an older person they support, beside the heading “A balanced diet and the Eatwell Guide”. Key points: Fruit and vegetables; Starchy carbohydrates; Protein.",
           "decorative": false,
           "file": {
             "path": "images/the-eatwell-guide.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

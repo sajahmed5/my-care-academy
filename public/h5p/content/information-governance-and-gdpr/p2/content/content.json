@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The principles",
+          "alt": "A care worker, beside the heading “The seven data protection principles”. Key points: Lawfulness, fairness and transparency; Purpose limitation; Data minimisation.",
           "decorative": false,
           "file": {
             "path": "images/the-principles.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Stoma and ties",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Caring for the stoma and site”. Key points: Keep it clean and dry; Keep watch; Follow the plan.",
           "decorative": false,
           "file": {
             "path": "images/stoma-and-ties.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

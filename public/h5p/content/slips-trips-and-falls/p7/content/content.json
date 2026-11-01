@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for If someone falls",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “What to do if someone falls”. Key points: Response and breathing; Injury and pain; What happened.",
           "decorative": false,
           "file": {
             "path": "images/if-someone-falls.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

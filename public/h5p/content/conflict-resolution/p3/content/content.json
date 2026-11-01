@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The escalation cycle",
+          "alt": "A line graph of tension over time: it rises from Calm through Anxious to a peak at Crisis, then falls through Recovery. Anxious is marked as the easiest point to defuse. Calm – know their normal and their triggers. Anxious – notice early signs, listen and reassure. Crisis – safety first, give space and get help. Recovery – allow time and calm, do not push too soon.",
           "decorative": false,
           "file": {
             "path": "images/the-escalation-cycle.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 336,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Unwell at any weight",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Very unwell at any weight”. Key points: Not the scales; Inside matters; Take it seriously.",
           "decorative": false,
           "file": {
             "path": "images/unwell-at-any-weight.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

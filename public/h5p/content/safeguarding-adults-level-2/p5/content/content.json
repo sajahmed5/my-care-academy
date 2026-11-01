@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Mental capacity & consent",
+          "alt": "A care worker, beside the heading “Mental capacity and safeguarding”.",
           "decorative": false,
           "file": {
             "path": "images/mental-capacity-consent.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

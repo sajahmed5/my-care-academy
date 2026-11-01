@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Spills and exposure",
+          "alt": "A care worker, beside the heading “First response to exposure”. Key points: Skin; Eyes; Breathed in.",
           "decorative": false,
           "file": {
             "path": "images/spills-and-exposure.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

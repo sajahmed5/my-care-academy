@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The law",
+          "alt": "A care worker, beside the heading “The Health and Safety at Work etc. Act 1974”. Key points: Take reasonable care; Co-operate; Use things properly.",
           "decorative": false,
           "file": {
             "path": "images/the-law.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

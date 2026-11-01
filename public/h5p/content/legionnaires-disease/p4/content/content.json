@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for How legionella grows",
+          "alt": "A care worker, beside the heading “Where legionella grows”. Key points: Warmth; Stagnation; Nutrients.",
           "decorative": false,
           "file": {
             "path": "images/how-legionella-grows.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

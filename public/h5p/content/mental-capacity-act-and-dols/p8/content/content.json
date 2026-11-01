@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Putting it into practice",
+          "alt": "A care worker sitting with an older person they support, beside the heading “What this means for your everyday work”. Key points: Assume capacity; Unwise choices; Least restrictive.",
           "decorative": false,
           "file": {
             "path": "images/putting-it-into-practice.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

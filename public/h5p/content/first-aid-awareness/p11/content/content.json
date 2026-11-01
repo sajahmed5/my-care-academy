@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Seizures and epilepsy",
+          "alt": "A care worker looking concerned, beside the heading “Recognising a seizure”. Key points: Protect them; Note the time; Do not restrain.",
           "decorative": false,
           "file": {
             "path": "images/seizures-and-epilepsy.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

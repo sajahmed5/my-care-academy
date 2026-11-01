@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Fluids and passport",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Fluids and comfort”. Key points: Encourage fluids; Why; Comfort.",
           "decorative": false,
           "file": {
             "path": "images/fluids-and-passport.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "A care worker observing and recording how someone responds to medicines",
+          "alt": "A care worker, beside the heading “Medicines you will meet most often”. Key points: Analgesics (painkillers); Antibiotics; Anticoagulants (blood thinners).",
           "decorative": false,
           "file": {
             "path": "images/medicine-groups.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

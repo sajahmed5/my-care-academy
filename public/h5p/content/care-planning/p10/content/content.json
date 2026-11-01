@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Working as a team",
+          "alt": "Two care workers talking together, beside the heading “Communicating with the team”. Key points: Handovers; Records; Ask when unsure.",
           "decorative": false,
           "file": {
             "path": "images/working-as-a-team.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

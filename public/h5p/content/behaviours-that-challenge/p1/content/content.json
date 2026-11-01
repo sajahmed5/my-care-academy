@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for What the term means",
+          "alt": "A care worker sitting with an older person they support, beside the heading “What “behaviour that challenges” means”. Key points: Describes the behaviour; A sign of distress; Common in care.",
           "decorative": false,
           "file": {
             "path": "images/what-the-term-means.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

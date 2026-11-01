@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Difficult conversations",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Staying calm under pressure”. Key points: Stay calm; Do not argue or blame; Find common ground.",
           "decorative": false,
           "file": {
             "path": "images/difficult-conversations.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

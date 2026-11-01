@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Good control matters",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Why good control matters”. Key points: Steady levels; Whole person; Everyday care.",
           "decorative": false,
           "file": {
             "path": "images/good-control-matters.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Rest and recovery",
+          "alt": "A care worker, beside the heading “Rest and gradual recovery”. Key points: Rest first; Go gradually; Be patient.",
           "decorative": false,
           "file": {
             "path": "images/rest-and-recovery.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

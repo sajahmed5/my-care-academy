@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Fire safety at work",
+          "alt": "A care worker looking concerned, beside the heading “Preventing fire”. Key points: Raise the alarm; Get out and stay out; Call 999.",
           "decorative": false,
           "file": {
             "path": "images/fire-safety-at-work.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

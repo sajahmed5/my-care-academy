@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Sharing and Caldicott",
+          "alt": "A care worker, beside the heading “Confidentiality is not the same as secrecy”. Key points: Justify the purpose; Use only what is needed; Share on a need-to-know basis.",
           "decorative": false,
           "file": {
             "path": "images/sharing-and-caldicott.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

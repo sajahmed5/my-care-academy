@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Fluids and diet",
+          "alt": "A care worker sitting with an older person they support, beside the heading “The link with fluids and food”. Key points: Enough fluid; Healthy diet; Bladder irritants.",
           "decorative": false,
           "file": {
             "path": "images/fluids-and-diet.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

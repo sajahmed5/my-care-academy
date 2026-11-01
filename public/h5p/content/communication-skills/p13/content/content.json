@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Recording and recap",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Recording and reporting well”. Key points: Accurate; Clear and legible; Timely.",
           "decorative": false,
           "file": {
             "path": "images/recording-and-recap.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

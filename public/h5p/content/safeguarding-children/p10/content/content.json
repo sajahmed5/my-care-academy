@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Signs and indicators",
+          "alt": "A care worker looking concerned, beside the heading “Signs of physical abuse and neglect”.",
           "decorative": false,
           "file": {
             "path": "images/signs-and-indicators.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

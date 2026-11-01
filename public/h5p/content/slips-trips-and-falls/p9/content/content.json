@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The cost and the law",
+          "alt": "A care worker looking concerned, beside the heading “The human cost of a fall”.",
           "decorative": false,
           "file": {
             "path": "images/the-cost-and-the-law.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

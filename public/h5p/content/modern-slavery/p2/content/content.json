@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for What it is",
+          "alt": "A care worker, beside the heading “What modern slavery is”. Key points: Exploitation; Control; Hidden.",
           "decorative": false,
           "file": {
             "path": "images/what-it-is.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

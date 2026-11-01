@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Diabetic emergencies & recovery position",
+          "alt": "A care worker, beside the heading “Recognising serious medical emergencies”. Key points: Hypoglycaemia (low blood sugar); Hyperglycaemia (high blood sugar).",
           "decorative": false,
           "file": {
             "path": "images/diabetic-emergencies-recovery-position.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Signing and symbols",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Makaton and signing”. Key points: Signs with speech; Symbols; Key words.",
           "decorative": false,
           "file": {
             "path": "images/signing-and-symbols.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

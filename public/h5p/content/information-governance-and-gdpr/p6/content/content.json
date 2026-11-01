@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Sharing safely",
+          "alt": "A care worker, beside the heading “Sharing information appropriately”. Key points: Safeguarding; Vital interests; Legal duty.",
           "decorative": false,
           "file": {
             "path": "images/sharing-safely.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

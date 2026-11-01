@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Mental capacity",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Start by assuming capacity”. Key points: Support first; Best interests; Least restrictive.",
           "decorative": false,
           "file": {
             "path": "images/mental-capacity.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

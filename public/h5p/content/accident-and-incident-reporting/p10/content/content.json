@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for In the moment",
+          "alt": "Two care workers talking together, beside the heading “People come first”. Key points: Emergency services; Your manager or on-call senior; Family or next of kin.",
           "decorative": false,
           "file": {
             "path": "images/in-the-moment.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

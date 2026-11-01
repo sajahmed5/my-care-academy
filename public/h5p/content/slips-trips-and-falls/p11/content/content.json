@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Environment and equipment",
+          "alt": "A care worker, beside the heading “Making the environment safer”. Key points: Handrails and grab rails; Flooring; Lighting.",
           "decorative": false,
           "file": {
             "path": "images/environment-and-equipment.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

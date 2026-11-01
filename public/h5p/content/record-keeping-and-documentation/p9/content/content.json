@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Data protection in depth",
+          "alt": "A care worker, beside the heading “The law behind your records”. Key points: Lawfulness, fairness and transparency; Purpose limitation; Data minimisation.",
           "decorative": false,
           "file": {
             "path": "images/data-protection-in-depth.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

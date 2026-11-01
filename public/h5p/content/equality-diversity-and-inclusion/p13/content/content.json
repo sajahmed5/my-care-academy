@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Getting information and support",
+          "alt": "Two care workers talking together, beside the heading “You are not expected to know everything”. Key points: Your line manager; Workplace policies; Care plans and colleagues.",
           "decorative": false,
           "file": {
             "path": "images/getting-information-and-support.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

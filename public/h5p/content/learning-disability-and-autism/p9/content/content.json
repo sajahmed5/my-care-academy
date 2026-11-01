@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for STOMP",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Over-medication and STOMP”. Key points: Right reason; Right review; Understand behaviour.",
           "decorative": false,
           "file": {
             "path": "images/stomp.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

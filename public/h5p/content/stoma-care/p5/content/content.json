@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Emptying and changing",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Emptying a pouch”. Key points: Empty at a third to a half full; Drain into the toilet; A heavy pouch can leak.",
           "decorative": false,
           "file": {
             "path": "images/emptying-and-changing.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

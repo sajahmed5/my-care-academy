@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for RIDDOR: what to report",
+          "alt": "A care worker, beside the heading “What RIDDOR requires”. Key points: Deaths; Specified injuries; Over-seven-day injuries.",
           "decorative": false,
           "file": {
             "path": "images/riddor-what-to-report.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

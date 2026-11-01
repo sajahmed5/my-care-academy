@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Escalate and self-care",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Escalating your concerns”. Key points: Record; Report; Urgent help.",
           "decorative": false,
           "file": {
             "path": "images/escalate-and-self-care.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

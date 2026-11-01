@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Rights, dignity and independence",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Everyone keeps their rights”.",
           "decorative": false,
           "file": {
             "path": "images/rights-dignity-and-independence.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

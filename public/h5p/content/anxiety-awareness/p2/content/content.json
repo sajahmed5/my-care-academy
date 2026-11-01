@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for How common it is",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Anxiety is common”. Key points: Anyone can be affected; Often hidden; Frequently overlooked.",
           "decorative": false,
           "file": {
             "path": "images/how-common-it-is.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The 14 allergens",
+          "alt": "A care worker, beside the heading “The 14 named allergens”. Key points: A legal list; Common triggers; Worth knowing.",
           "decorative": false,
           "file": {
             "path": "images/the-14-allergens.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

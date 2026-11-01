@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Impact not intent",
+          "alt": "A care worker, beside the heading “It is about impact, not intent”. Key points: Effect counts; Intent is not required; Perception matters.",
           "decorative": false,
           "file": {
             "path": "images/impact-not-intent.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

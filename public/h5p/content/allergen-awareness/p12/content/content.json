@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Anaphylaxis",
+          "alt": "A care worker looking concerned, beside the heading “Anaphylaxis: a medical emergency”. Key points: Rapid; Serious; Act fast.",
           "decorative": false,
           "file": {
             "path": "images/anaphylaxis.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

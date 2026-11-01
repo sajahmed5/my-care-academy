@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for CAUTI and IPC",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Catheter-associated urinary infection”. Key points: What it is; Why it happens; Key risk.",
           "decorative": false,
           "file": {
             "path": "images/cauti-and-ipc.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

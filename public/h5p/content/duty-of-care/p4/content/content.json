@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Comments and complaints",
+          "alt": "A care worker, beside the heading “Why complaints are valuable”.",
           "decorative": false,
           "file": {
             "path": "images/comments-and-complaints.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

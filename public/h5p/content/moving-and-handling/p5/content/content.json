@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Safe principles",
+          "alt": "A care worker, beside the heading “Principles of safe handling and good posture”. Key points: Stable base; Bend your knees, not your back; Keep the load close.",
           "decorative": false,
           "file": {
             "path": "images/safe-principles.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

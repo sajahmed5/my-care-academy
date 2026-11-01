@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The hierarchy",
+          "alt": "A care worker, beside the heading “The hierarchy of control”. Key points: Eliminate; Reduce and isolate; Control and PPE.",
           "decorative": false,
           "file": {
             "path": "images/the-hierarchy.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

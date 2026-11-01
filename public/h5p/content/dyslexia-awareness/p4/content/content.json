@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Common signs",
+          "alt": "A care worker looking concerned, beside the heading “Common signs in reading and writing”. Key points: Reading; Spelling; Writing.",
           "decorative": false,
           "file": {
             "path": "images/common-signs.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

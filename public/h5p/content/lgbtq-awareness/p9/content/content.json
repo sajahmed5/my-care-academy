@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Trans-inclusive care",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Personal care and dignity”. Key points: Ask, do not assume; Respect their body and choices; Protect privacy.",
           "decorative": false,
           "file": {
             "path": "images/trans-inclusive-care.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

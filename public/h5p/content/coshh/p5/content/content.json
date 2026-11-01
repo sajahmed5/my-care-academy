@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Routes of entry",
+          "alt": "A care worker sitting with an older person they support, beside the heading “How substances get into the body”. Key points: Eliminate; Substitute; Engineering controls.",
           "decorative": false,
           "file": {
             "path": "images/routes-of-entry.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

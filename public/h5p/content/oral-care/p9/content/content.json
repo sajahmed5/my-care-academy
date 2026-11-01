@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Decay, gums and pain",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Tooth decay, gum disease and pain”. Key points: Tooth decay; Gum disease; Pain and bleeding.",
           "decorative": false,
           "file": {
             "path": "images/decay-gums-and-pain.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

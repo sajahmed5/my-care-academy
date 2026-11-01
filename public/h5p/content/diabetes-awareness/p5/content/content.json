@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for What is a hypo",
+          "alt": "A care worker sitting with an older person they support, beside the heading “What is a hypo?”. Key points: Low glucose; Comes on fast; Act quickly.",
           "decorative": false,
           "file": {
             "path": "images/what-is-a-hypo.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

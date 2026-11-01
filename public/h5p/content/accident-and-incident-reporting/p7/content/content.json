@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for CQC notifications",
+          "alt": "Two care workers talking together, beside the heading “CQC notifications”. Key points: Deaths and serious injuries; Abuse or allegations of abuse; Your manager sends them.",
           "decorative": false,
           "file": {
             "path": "images/cqc-notifications.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

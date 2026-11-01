@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Third-party harassment",
+          "alt": "A care worker looking concerned, beside the heading “Harassment from clients, families and visitors”. Key points: Third parties; Not part of the job; Report it.",
           "decorative": false,
           "file": {
             "path": "images/third-party-harassment.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 322,
             "copyright": {
               "license": "U"
             }

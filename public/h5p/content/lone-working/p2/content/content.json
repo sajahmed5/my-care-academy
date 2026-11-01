@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Two colleagues sharing responsibility for safety at work",
+          "alt": "Two care workers talking together, beside the heading “What the law expects”. Key points: Assess the risk (MHSWR 1999, reg 3); Tell you what it found (reg 10); Prepare you properly (reg 13).",
           "decorative": false,
           "file": {
             "path": "images/legal-duties.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 308,
             "copyright": {
               "license": "U"
             }

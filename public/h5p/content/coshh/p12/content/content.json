@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Safe use and storage",
+          "alt": "A care worker, beside the heading “Labelling and decanting”. Key points: Use; Disposal.",
           "decorative": false,
           "file": {
             "path": "images/safe-use-and-storage.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

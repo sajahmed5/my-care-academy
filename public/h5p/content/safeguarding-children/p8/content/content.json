@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for It could happen here",
+          "alt": "Two care workers talking together, beside the heading “Professional curiosity”. Key points: “it could happen here”.",
           "decorative": false,
           "file": {
             "path": "images/it-could-happen-here.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

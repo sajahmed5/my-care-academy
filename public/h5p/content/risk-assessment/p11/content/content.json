@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Dynamic risk assessment",
+          "alt": "A care worker looking concerned, beside the heading “Risk assessment in the moment”. Key points: Observe; Judge; Act.",
           "decorative": false,
           "file": {
             "path": "images/dynamic-risk-assessment.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

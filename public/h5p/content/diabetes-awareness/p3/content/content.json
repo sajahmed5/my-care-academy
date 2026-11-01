@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Types of diabetes",
+          "alt": "A care worker sitting with an older person they support, beside the heading “The main types of diabetes”. Key points: Type 1; Type 2; Both.",
           "decorative": false,
           "file": {
             "path": "images/types-of-diabetes.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

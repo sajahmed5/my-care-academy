@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Your supportive role",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Your supportive role”. Key points: Recognise; Respond; Signpost and report.",
           "decorative": false,
           "file": {
             "path": "images/your-supportive-role.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

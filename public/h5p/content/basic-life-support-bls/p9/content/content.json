@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Theory then practice",
+          "alt": "A care worker, beside the heading “This course teaches the theory only”. Key points: Attend refreshers; Know your limits; Practise the theory.",
           "decorative": false,
           "file": {
             "path": "images/theory-then-practice.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

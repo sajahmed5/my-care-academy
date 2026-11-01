@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Phobias and social anxiety",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Phobias”. Key points: Focused fear; Out of proportion; Avoidance.",
           "decorative": false,
           "file": {
             "path": "images/phobias-and-social-anxiety.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Note the time, stay",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Note the time symptoms started”. Key points: Note the time; Last seen well; Pass it on.",
           "decorative": false,
           "file": {
             "path": "images/note-the-time-stay.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

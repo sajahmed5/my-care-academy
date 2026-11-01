@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Food poisoning risks",
+          "alt": "A care worker, beside the heading “What causes food poisoning”. Key points: Cooked meat, poultry and gravy; Dairy, eggs and cooked rice; Shellfish, pâté and prepared salads.",
           "decorative": false,
           "file": {
             "path": "images/food-poisoning-risks.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 308,
             "copyright": {
               "license": "U"
             }

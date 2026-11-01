@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Escalation & the Ombudsman",
+          "alt": "A care worker, beside the heading “When someone is still unhappy”. Key points: Finish the service’s process first; Then the Ombudsman (LGSCO); Remedies can include an apology.",
           "decorative": false,
           "file": {
             "path": "images/escalation-the-ombudsman.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 308,
             "copyright": {
               "license": "U"
             }

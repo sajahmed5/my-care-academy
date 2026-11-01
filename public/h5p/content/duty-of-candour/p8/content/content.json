@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for A truthful account",
+          "alt": "A care worker, beside the heading “Giving a truthful account”. Key points: Stick to the facts; Do not speculate; Do not minimise.",
           "decorative": false,
           "file": {
             "path": "images/a-truthful-account.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

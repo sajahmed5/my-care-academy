@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Reporting problems",
+          "alt": "A care worker, beside the heading “Spotting and reporting problems”. Key points: Lukewarm water; Unusual signs; Unused areas.",
           "decorative": false,
           "file": {
             "path": "images/reporting-problems.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

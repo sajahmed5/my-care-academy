@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Applied scenarios & recap",
+          "alt": "Two care workers talking together, beside the heading “Putting privacy and dignity together”. Key points: Respect the person; Protect privacy; Offer choice and speak up.",
           "decorative": false,
           "file": {
             "path": "images/applied-scenarios-recap.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

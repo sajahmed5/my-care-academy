@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Self-help and wellbeing",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Self-help and everyday wellbeing”. Key points: Keep active; Stay connected; Rest and routine.",
           "decorative": false,
           "file": {
             "path": "images/self-help-and-wellbeing.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

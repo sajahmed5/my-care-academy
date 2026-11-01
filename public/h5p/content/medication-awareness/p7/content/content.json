@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Controlled drugs and PRN",
+          "alt": "A care worker, beside the heading “Controlled drugs and PRN medicines”. Key points: Locked controlled drugs cabinet; Separate CD register; Stock counts kept and checked.",
           "decorative": false,
           "file": {
             "path": "images/controlled-drugs-and-prn.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

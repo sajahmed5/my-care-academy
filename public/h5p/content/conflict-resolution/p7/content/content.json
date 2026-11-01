@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Assertive not aggressive",
+          "alt": "A care worker looking concerned, beside the heading “The difference between assertiveness and aggression”. Key points: Assertive; Aggressive; Passive.",
           "decorative": false,
           "file": {
             "path": "images/assertive-not-aggressive.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 322,
             "copyright": {
               "license": "U"
             }

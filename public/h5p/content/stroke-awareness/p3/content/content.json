@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Types of stroke",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Two main types of stroke”. Key points: Ischaemic stroke; Haemorrhagic stroke; Both are emergencies.",
           "decorative": false,
           "file": {
             "path": "images/types-of-stroke.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

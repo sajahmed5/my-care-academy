@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Communicating well",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Communication that connects”. Key points: Give time; Keep it simple; Get down to eye level.",
           "decorative": false,
           "file": {
             "path": "images/communicating-well.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

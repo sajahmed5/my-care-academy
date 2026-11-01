@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The legal duty",
+          "alt": "A care worker, beside the heading “Complaints are a legal duty, not a favour”. Key points: It is inspected; It is everyone’s business; It protects people.",
           "decorative": false,
           "file": {
             "path": "images/the-legal-duty.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

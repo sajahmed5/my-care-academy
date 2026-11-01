@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Sepsis & reporting",
+          "alt": "A care worker looking concerned, beside the heading “Sepsis awareness and reporting”. Key points: New confusion or slurred speech; Mottled or bluish skin; Little or no urine.",
           "decorative": false,
           "file": {
             "path": "images/sepsis-reporting.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

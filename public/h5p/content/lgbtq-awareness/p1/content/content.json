@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Why inclusion matters",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Why inclusion matters”. Key points: Dignity for all; Care shaped around the person; A basic right, not a favour.",
           "decorative": false,
           "file": {
             "path": "images/why-inclusion-matters.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

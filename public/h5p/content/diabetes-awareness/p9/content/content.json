@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for DKA emergency",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Diabetic ketoacidosis (DKA)”. Key points: What it is; Who is most at risk; How serious.",
           "decorative": false,
           "file": {
             "path": "images/dka-emergency.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

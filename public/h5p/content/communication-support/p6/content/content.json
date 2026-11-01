@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Time and objects",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Objects of reference”. Key points: Consistent; Meaningful; Multi-sensory.",
           "decorative": false,
           "file": {
             "path": "images/time-and-objects.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

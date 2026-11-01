@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Focal seizures",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Focal seizures”. Key points: Focal aware; Focal impaired awareness; Varied.",
           "decorative": false,
           "file": {
             "path": "images/focal-seizures.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

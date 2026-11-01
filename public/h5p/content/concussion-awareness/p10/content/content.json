@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Blood thinners caution",
+          "alt": "A care worker, beside the heading “Extra caution with blood thinners”. Key points: Slower clotting; Higher risk; Lower threshold.",
           "decorative": false,
           "file": {
             "path": "images/blood-thinners-caution.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

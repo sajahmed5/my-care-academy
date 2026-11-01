@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Equipment and security",
+          "alt": "A care worker, beside the heading “Work equipment: PUWER and LOLER”. Key points: Faulty electrics; Gas smells; Carbon monoxide.",
           "decorative": false,
           "file": {
             "path": "images/equipment-and-security.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

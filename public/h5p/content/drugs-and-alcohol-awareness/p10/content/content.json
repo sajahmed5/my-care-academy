@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Families and children",
+          "alt": "A care worker, beside the heading “The effect on families and children”. Key points: Families; Children; Carers.",
           "decorative": false,
           "file": {
             "path": "images/families-and-children.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Allergies and asthma",
+          "alt": "A care worker, beside the heading “Severe allergic reaction: anaphylaxis”. Key points: Sit up, or lie with legs raised; Use their adrenaline auto-injector; Call 999.",
           "decorative": false,
           "file": {
             "path": "images/allergies-and-asthma.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 308,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Assessment and plans",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Mouth care assessment and plans”. Key points: Assessed early; Recorded; Followed.",
           "decorative": false,
           "file": {
             "path": "images/assessment-and-plans.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

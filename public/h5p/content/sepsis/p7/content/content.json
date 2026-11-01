@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Any infection counts",
+          "alt": "A care worker looking concerned, beside the heading “Sepsis can follow any infection”. Key points: Chest; Urine; Skin and wounds.",
           "decorative": false,
           "file": {
             "path": "images/any-infection-counts.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

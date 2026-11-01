@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Learning and recovering",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Trauma-informed and person-centred approaches”.",
           "decorative": false,
           "file": {
             "path": "images/learning-and-recovering.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 322,
             "copyright": {
               "license": "U"
             }

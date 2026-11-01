@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Your role in candour",
+          "alt": "A care worker, beside the heading “Your part in candour”. Key points: Be honest; Report; Support.",
           "decorative": false,
           "file": {
             "path": "images/your-role-in-candour.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

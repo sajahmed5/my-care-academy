@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Anyone affected",
+          "alt": "A care worker sitting with an older person they support, beside the heading “It can affect anyone”. Key points: Any age; Any gender; Any body.",
           "decorative": false,
           "file": {
             "path": "images/anyone-affected.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

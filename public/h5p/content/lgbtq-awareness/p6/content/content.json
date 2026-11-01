@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Never assume",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Making no assumptions”. Key points: No default; Start with the person; Let people share at their pace.",
           "decorative": false,
           "file": {
             "path": "images/never-assume.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

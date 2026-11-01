@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Getting the most",
+          "alt": "Two care workers talking together, beside the heading “Preparing for supervision”. Key points: Look back; Note questions; Review actions.",
           "decorative": false,
           "file": {
             "path": "images/getting-the-most.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

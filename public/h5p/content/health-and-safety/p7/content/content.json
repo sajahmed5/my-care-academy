@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Reporting incidents",
+          "alt": "A care worker looking concerned, beside the heading “Near misses, incidents and RIDDOR”. Key points: Deaths; More than 7 days; Occupational diseases.",
           "decorative": false,
           "file": {
             "path": "images/reporting-incidents.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Monitoring symptoms",
+          "alt": "A care worker looking concerned, beside the heading “Monitoring after a head injury”. Key points: Stay observant; Look for change; Act on decline.",
           "decorative": false,
           "file": {
             "path": "images/monitoring-symptoms.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

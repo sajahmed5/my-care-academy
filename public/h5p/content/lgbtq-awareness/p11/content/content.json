@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Recognising discrimination",
+          "alt": "A care worker looking concerned, beside the heading “Forms of discrimination”. Key points: Direct discrimination; Indirect discrimination; Harassment.",
           "decorative": false,
           "file": {
             "path": "images/recognising-discrimination.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

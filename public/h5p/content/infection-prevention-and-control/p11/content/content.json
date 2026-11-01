@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Infections and outbreaks",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Infections you may meet in care”. Key points: Norovirus; Flu and COVID-19; C. difficile.",
           "decorative": false,
           "file": {
             "path": "images/infections-and-outbreaks.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

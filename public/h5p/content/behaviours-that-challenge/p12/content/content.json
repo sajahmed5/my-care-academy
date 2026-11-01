@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Least restrictive practice",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Physical intervention is a last resort”. Key points: Only in emergencies; Requires specific training; Always the last option.",
           "decorative": false,
           "file": {
             "path": "images/least-restrictive-practice.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

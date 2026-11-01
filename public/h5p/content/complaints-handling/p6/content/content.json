@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Your role as a care worker",
+          "alt": "A care worker, beside the heading “What is expected of you”. Key points: Report every complaint; Don’t promise outcomes; Record and pass on the facts.",
           "decorative": false,
           "file": {
             "path": "images/your-role-as-a-care-worker.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

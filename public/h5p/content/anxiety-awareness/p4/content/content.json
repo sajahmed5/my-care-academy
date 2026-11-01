@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Generalised anxiety",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Generalised anxiety disorder”. Key points: Widespread worry; Persistent; Wearing.",
           "decorative": false,
           "file": {
             "path": "images/generalised-anxiety.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

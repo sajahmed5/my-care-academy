@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "A care worker phoning their manager after an incident",
+          "alt": "Two care workers talking together, beside the heading “After an incident: report and record”. Key points: Make yourself safe first; Get medical attention if you need it; Ring your manager or the on-call line straight away.",
           "decorative": false,
           "file": {
             "path": "images/after-incident.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 308,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Care plans first",
+          "alt": "A care worker, beside the heading “Start with the care plan”. Key points: Know; Follow; Update.",
           "decorative": false,
           "file": {
             "path": "images/care-plans-first.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

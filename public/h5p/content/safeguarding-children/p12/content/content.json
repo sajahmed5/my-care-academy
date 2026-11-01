@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Responding and thresholds",
+          "alt": "A care worker, beside the heading “Early help and thresholds”.",
           "decorative": false,
           "file": {
             "path": "images/responding-and-thresholds.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

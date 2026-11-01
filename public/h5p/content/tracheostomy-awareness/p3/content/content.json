@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Tube types",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Different kinds of tube”. Key points: Cuffed tube; Uncuffed tube; Chosen clinically.",
           "decorative": false,
           "file": {
             "path": "images/tube-types.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

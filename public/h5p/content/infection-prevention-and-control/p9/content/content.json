@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Micro-organisms explained",
+          "alt": "A care worker looking concerned, beside the heading “The tiny organisms that cause infection”. Key points: Bacteria; Viruses; Fungi.",
           "decorative": false,
           "file": {
             "path": "images/micro-organisms-explained.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

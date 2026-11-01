@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Following up",
+          "alt": "A care worker, beside the heading “Following up in writing”. Key points: Written record; Enquiries; Consistency.",
           "decorative": false,
           "file": {
             "path": "images/following-up.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

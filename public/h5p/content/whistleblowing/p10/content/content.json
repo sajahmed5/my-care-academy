@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for What to raise",
+          "alt": "A care worker, beside the heading “What you might need to raise”. Key points: Poor care; Abuse; Unsafe practice.",
           "decorative": false,
           "file": {
             "path": "images/what-to-raise.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

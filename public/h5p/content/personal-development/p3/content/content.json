@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The Care Certificate",
+          "alt": "A care worker, beside the heading “The Care Certificate and your induction”. Key points: Knowledge; Competence.",
           "decorative": false,
           "file": {
             "path": "images/the-care-certificate.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Working through dilemmas",
+          "alt": "A care worker, beside the heading “Working through a dilemma step by step”. Key points: Pause; Gather facts; Consider options.",
           "decorative": false,
           "file": {
             "path": "images/working-through-dilemmas.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

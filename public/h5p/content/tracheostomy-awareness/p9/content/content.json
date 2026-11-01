@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Signs of a clogged airway",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Signs someone needs their airway cleared”. Key points: Listen; Look; Ask.",
           "decorative": false,
           "file": {
             "path": "images/signs-of-a-clogged-airway.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Evaluate and control",
+          "alt": "A care worker looking concerned, beside the heading “Step 3 — evaluate the risks”. Key points: Likelihood; Severity; Existing controls.",
           "decorative": false,
           "file": {
             "path": "images/evaluate-and-control.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

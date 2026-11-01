@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Your role and limits",
+          "alt": "A care worker sitting with an older person they support, beside the heading “The care worker's role”. Key points: Support the plan; Promote independence; Observe and report.",
           "decorative": false,
           "file": {
             "path": "images/your-role-and-limits.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

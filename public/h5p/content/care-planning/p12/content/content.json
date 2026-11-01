@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Accurate records",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Keeping records accurate and timely”. Key points: Accurate and factual; Timely; Clear and legible.",
           "decorative": false,
           "file": {
             "path": "images/accurate-records.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

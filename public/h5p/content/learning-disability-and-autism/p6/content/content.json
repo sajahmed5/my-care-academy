@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Meltdown and shutdown",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Meltdown and shutdown”. Key points: Meltdown; Shutdown; Reduce input.",
           "decorative": false,
           "file": {
             "path": "images/meltdown-and-shutdown.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

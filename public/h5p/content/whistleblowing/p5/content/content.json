@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Prescribed persons & CQC",
+          "alt": "A care worker, beside the heading “The role of the CQC”.",
           "decorative": false,
           "file": {
             "path": "images/prescribed-persons-cqc.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

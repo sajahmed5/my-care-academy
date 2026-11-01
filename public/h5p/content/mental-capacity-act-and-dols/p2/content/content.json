@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The five principles",
+          "alt": "A care worker sitting with an older person they support, beside the heading “The five statutory principles”. Key points: Presumption of capacity; Support to make decisions; Unwise decisions.",
           "decorative": false,
           "file": {
             "path": "images/the-five-principles.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

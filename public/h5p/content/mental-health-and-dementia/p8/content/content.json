@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Environment and activity",
+          "alt": "A care worker sitting with an older person they support, beside the heading “The environment matters”. Key points: Reduce noise and clutter; Good lighting; Familiar cues.",
           "decorative": false,
           "file": {
             "path": "images/environment-and-activity.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Breaking tasks down",
+          "alt": "A care worker, beside the heading “Breaking tasks down”. Key points: Small steps; One at a time; Check in.",
           "decorative": false,
           "file": {
             "path": "images/breaking-tasks-down.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Confidentiality and assumptions",
+          "alt": "A care worker, beside the heading “Confidentiality and respect”. Key points: Keep it confidential; Respect privacy; Record appropriately.",
           "decorative": false,
           "file": {
             "path": "images/confidentiality-and-assumptions.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

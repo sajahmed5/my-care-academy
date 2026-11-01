@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Staying active",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Why staying active protects against falls”. Key points: Physiotherapists; Falls services or clinics; Occupational therapists.",
           "decorative": false,
           "file": {
             "path": "images/staying-active.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

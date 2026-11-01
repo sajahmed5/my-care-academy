@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Legionnaires' disease",
+          "alt": "A care worker, beside the heading “What is Legionnaires' disease?”. Key points: A lung infection; Caught from water; Preventable.",
           "decorative": false,
           "file": {
             "path": "images/legionnaires-disease.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

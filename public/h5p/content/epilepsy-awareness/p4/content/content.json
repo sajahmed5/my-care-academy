@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Tonic-clonic and absence",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Different types of seizure”. Key points: Tonic-clonic; Absence; Recognition.",
           "decorative": false,
           "file": {
             "path": "images/tonic-clonic-and-absence.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

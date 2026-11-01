@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Communication and rights",
+          "alt": "A care worker sitting with an older person they support, beside the heading “Communication is a human right”. Key points: Dignity; Choice; Safety.",
           "decorative": false,
           "file": {
             "path": "images/communication-and-rights.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

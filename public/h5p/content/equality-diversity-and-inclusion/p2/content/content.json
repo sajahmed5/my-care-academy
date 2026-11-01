@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for The Equality Act 2010",
+          "alt": "A care worker, beside the heading “The law behind EDI”.",
           "decorative": false,
           "file": {
             "path": "images/the-equality-act-2010.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 210,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

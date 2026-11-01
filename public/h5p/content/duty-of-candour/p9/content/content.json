@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Saying sorry",
+          "alt": "A care worker, beside the heading “Saying sorry”. Key points: Be sincere; Be specific; Be human.",
           "decorative": false,
           "file": {
             "path": "images/saying-sorry.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for How dementia changes",
+          "alt": "A care worker sitting with an older person they support, beside the heading “How dementia progresses”. Key points: Memory; Communication; Orientation.",
           "decorative": false,
           "file": {
             "path": "images/how-dementia-changes.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

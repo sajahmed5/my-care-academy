@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Deprivation of Liberty",
+          "alt": "Two care workers talking together, beside the heading “From restriction to deprivation of liberty”. Key points: Continuous (or complete) supervision and control; Not free to leave; Managing authority.",
           "decorative": false,
           "file": {
             "path": "images/deprivation-of-liberty.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

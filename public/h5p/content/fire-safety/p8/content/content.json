@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for If a fire starts",
+          "alt": "A care worker, beside the heading “Raising the alarm and calling 999”. Key points: Raise the alarm; Call 999; Follow your evacuation plan.",
           "decorative": false,
           "file": {
             "path": "images/if-a-fire-starts.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }

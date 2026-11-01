@@ -19,13 +19,13 @@
       "content": {
         "params": {
           "contentName": "Image",
-          "alt": "Illustration for Infection control and PPE",
+          "alt": "A care worker sitting with an older person they support, who looks worried, beside the heading “Preventing the spread of infection”. Key points: Hand hygiene; PPE; Clean as you go.",
           "decorative": false,
           "file": {
             "path": "images/infection-control-and-ppe.svg",
             "mime": "image/svg+xml",
             "width": 640,
-            "height": 232,
+            "height": 293,
             "copyright": {
               "license": "U"
             }
