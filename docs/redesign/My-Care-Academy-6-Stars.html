@@ -1,0 +1,533 @@
+<title>Stars in the console</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+  /* Layout: the console shell (white bar, 1320px content, 32px padding) with two
+     screens behind a switcher; amber is reserved for stars, teal stays the action colour. */
+  :root {
+    --bg: #f4f7f6;
+    --card: #ffffff;
+    --border: #e1e9e7;
+    --fg: #13302e;
+    --muted: #5b6b69;
+    --muted-bg: #eef3f2;
+    --primary: #0f766e;
+    --primary-hover: #0b5a54;
+    --accent: #e6f4f1;
+    --accent-fg: #0b5a54;
+    --warn: #fef3c7;
+    --warn-fg: #92400e;
+    --danger: #fdecea;
+    --danger-fg: #b42318;
+    --star: #f59e0b;
+    --star-bg: #fef3c7;
+    --star-fg: #92400e;
+    --ring: #d9e3e0;
+    --font: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1b1a; --card: #172726; --border: #27403c; --fg: #e7efed; --muted: #9db2ad;
+      --muted-bg: #1f3331; --primary: #3cbfb0; --primary-hover: #5fd3c6; --accent: #163833;
+      --accent-fg: #8fe0d4; --warn: #3b2a08; --warn-fg: #fcd34d; --danger: #46201c; --danger-fg: #f7a69c;
+      --star: #fbbf24; --star-bg: #3b2a08; --star-fg: #fcd34d; --ring: #2c4541; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1b1a; --card: #172726; --border: #27403c; --fg: #e7efed; --muted: #9db2ad;
+    --muted-bg: #1f3331; --primary: #3cbfb0; --primary-hover: #5fd3c6; --accent: #163833;
+    --accent-fg: #8fe0d4; --warn: #3b2a08; --warn-fg: #fcd34d; --danger: #46201c; --danger-fg: #f7a69c;
+    --star: #fbbf24; --star-bg: #3b2a08; --star-fg: #fcd34d; --ring: #2c4541; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+  a { color: var(--primary); text-decoration: none; font-weight: 700; }
+  a:hover { color: var(--primary-hover); }
+  button { font: inherit; }
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+  h1 { font-size: 30px; font-weight: 800; line-height: 1.2; }
+  h2 { font-size: 20px; font-weight: 800; }
+  h3 { font-size: 16px; font-weight: 700; }
+  p { margin: 0; }
+  .muted { color: var(--muted); }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* Switcher between the two screens (mock-up chrome, not part of the product) */
+  .switch { background: var(--fg); color: var(--bg); padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .switch-inner { max-width: 1320px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font-size: 13.5px; }
+  .switch-inner .label { font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; font-size: 11.5px; opacity: .75; }
+  .switch button { background: transparent; color: inherit; border: 1px solid rgba(255,255,255,.3); border-radius: 999px; padding: 6px 14px; font-weight: 600; cursor: pointer; }
+  :root[data-theme="dark"] .switch button, :root:not([data-theme="light"]) .switch button { border-color: rgba(0,0,0,.25); }
+  .switch button[aria-pressed="true"] { background: var(--bg); color: var(--fg); border-color: transparent; }
+  .switch .right { margin-left: auto; opacity: .8; }
+
+  /* Console top bar */
+  .bar { background: var(--card); border-bottom: 1px solid var(--border); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .bar-inner { max-width: 1320px; margin: 0 auto; height: 68px; display: flex; align-items: center; gap: 8px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; margin-right: 24px; white-space: nowrap; }
+  .logo .mark { width: 36px; height: 36px; border-radius: 10px; background: var(--primary); display: grid; place-items: center; color: #fff; }
+  .nav { display: flex; gap: 4px; }
+  .nav span { padding: 8px 14px; border-radius: 10px; font-weight: 700; color: var(--fg); white-space: nowrap; }
+  .nav span.active { background: var(--accent); color: var(--accent-fg); }
+  .nav .due { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--star); color: #13302e; font-size: 12.5px; margin-left: 6px; }
+  .bar .spacer { flex: 1; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 16px; border-radius: 11px; border: 1px solid var(--border); background: var(--card); color: var(--fg); font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .btn.small { height: 36px; padding: 0 12px; font-size: 14px; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--fg); color: var(--bg); display: grid; place-items: center; font-weight: 800; font-size: 14px; flex: none; }
+  @media (max-width: 1100px) { .nav, .bar .trial { display: none; } }
+
+  /* Section tab row under the bar */
+  .tabs { background: var(--card); border-bottom: 1px solid var(--border); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .tabs-inner { max-width: 1320px; margin: 0 auto; display: flex; gap: 4px; overflow-x: auto; }
+  .tabs-inner span { padding: 14px 16px; font-weight: 700; color: var(--muted); border-bottom: 3px solid transparent; white-space: nowrap; }
+  .tabs-inner span.active { color: var(--primary); border-color: var(--primary); }
+
+  /* Page */
+  .page { max-width: 1320px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 24px; }
+  @media (min-width: 900px) { .page { padding-left: max(32px, env(safe-area-inset-left, 0px)); padding-right: max(32px, env(safe-area-inset-right, 0px)); } }
+  .screen[hidden] { display: none; }
+  .crumb { font-size: 15px; }
+  .crumb .here { color: var(--muted); font-weight: 500; }
+
+  .head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; }
+  .head .sub { margin-top: 6px; color: var(--muted); }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+  .seg { display: inline-flex; background: var(--muted-bg); border-radius: 11px; padding: 3px; gap: 2px; }
+  .seg span { padding: 7px 14px; border-radius: 9px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .seg span.on { background: var(--card); color: var(--fg); box-shadow: 0 1px 2px rgba(19,48,46,.08); }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 22px 24px; min-width: 0; }
+  .card.tight { padding: 0; overflow: hidden; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .stat .label { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  .stat .value { font-size: 34px; font-weight: 800; line-height: 1.1; margin-top: 8px; display: flex; align-items: center; gap: 8px; }
+  .stat .note { margin-top: 8px; color: var(--muted); font-size: 14px; }
+
+  .pill { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .pill.ok { background: var(--accent); color: var(--accent-fg); }
+  .pill.warn { background: var(--warn); color: var(--warn-fg); }
+  .pill.danger { background: var(--danger); color: var(--danger-fg); }
+  .pill.muted { background: var(--muted-bg); color: var(--muted); }
+  .pill.star { background: var(--star-bg); color: var(--star-fg); }
+  .star-glyph { width: 1em; height: 1em; fill: var(--star); flex: none; }
+
+  /* Leaderboard table */
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 760px; }
+  th { text-align: left; font-size: 12.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); font-weight: 700; padding: 14px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 14px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  th.r, td.r { text-align: right; }
+  tbody tr:hover { background: var(--bg); }
+  tbody tr.me { background: var(--accent); }
+  .rank { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-weight: 800; background: var(--muted-bg); color: var(--muted); }
+  .rank.top { background: var(--star-bg); color: var(--star-fg); }
+  .who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .who .avatar { width: 36px; height: 36px; font-size: 13px; }
+  .who .name { font-weight: 700; }
+  .who .role { font-size: 13px; color: var(--muted); }
+  .total { font-weight: 800; font-size: 17px; display: inline-flex; align-items: center; gap: 6px; }
+  .gain { display: flex; align-items: center; gap: 10px; min-width: 160px; }
+  .gain .track { flex: 1; height: 8px; background: var(--muted-bg); border-radius: 999px; overflow: hidden; }
+  .gain .fill { height: 100%; background: var(--star); border-radius: 999px; }
+  .gain b { min-width: 36px; text-align: right; }
+  .chev { color: var(--muted); }
+  .foot { padding: 14px 16px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--border); }
+
+  /* Person header card */
+  .person { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; }
+  .person .avatar { width: 92px; height: 92px; font-size: 30px; }
+  .person .id { flex: 1; min-width: 220px; }
+  .person .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; color: var(--muted); }
+  .person-tabs { display: flex; gap: 4px; overflow-x: auto; border-top: 1px solid var(--border); margin: 20px -24px -22px; padding: 0 12px; }
+  .person-tabs span { padding: 14px 14px; font-weight: 700; color: var(--muted); border-bottom: 3px solid transparent; white-space: nowrap; }
+  .person-tabs span.active { color: var(--primary); border-color: var(--primary); }
+
+  .two { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; }
+  @media (min-width: 960px) { .two { grid-template-columns: minmax(0, 1fr) 380px; } }
+  .stack { display: grid; gap: 24px; min-width: 0; }
+
+  .big { display: flex; align-items: center; gap: 18px; }
+  .big .n { font-size: 48px; font-weight: 800; line-height: 1; display: flex; align-items: center; gap: 10px; }
+  .big .n .star-glyph { width: .8em; height: .8em; }
+  .kv { display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; font-weight: 700; text-align: right; }
+
+  /* Bar chart */
+  .chart { width: 100%; height: auto; display: block; margin-top: 12px; }
+  .chart .bar-rect { fill: var(--star); }
+  .chart .bar-rect.now { fill: var(--primary); }
+  .chart .grid { stroke: var(--border); stroke-width: 1; }
+  .chart text { fill: var(--muted); font-family: var(--font); font-size: 11px; }
+  .chart text.v { fill: var(--fg); font-weight: 700; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+  /* History */
+  .hist { display: grid; gap: 0; margin-top: 8px; }
+  .row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; padding: 14px 0; border-top: 1px solid var(--border); align-items: center; }
+  .row:first-child { border-top: 0; }
+  .tile { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+  .tile.a { background: var(--star-bg); color: var(--star-fg); }
+  .tile.q { background: var(--accent); color: var(--accent-fg); }
+  .tile.z { background: var(--muted-bg); color: var(--muted); }
+  .row .t { font-weight: 700; }
+  .row .d { color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .delta { font-weight: 800; font-size: 17px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  .delta.zero { color: var(--muted); font-weight: 600; font-size: 15px; }
+  .when { font-size: 13px; color: var(--muted); text-align: right; margin-top: 2px; white-space: nowrap; }
+
+  /* By course */
+  .courses th, .courses td { padding: 11px 14px; }
+  .courses table { min-width: 560px; }
+  .cycle { font-size: 13px; color: var(--muted); }
+
+  /* Decisions panel */
+  .notes { border: 1px dashed var(--border); border-radius: 18px; padding: 22px 24px; }
+  .notes ol { margin: 12px 0 0; padding-left: 22px; display: grid; gap: 10px; max-width: 72ch; }
+  .notes li b { font-weight: 700; }
+  @media (prefers-reduced-motion: no-preference) { .screen { animation: in .18s ease-out; } }
+  @keyframes in { from { opacity: .6; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="star" viewBox="0 0 24 24"><path d="M12 2.6l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.5l-5.9 3.1 1.2-6.5L2.5 9.5l6.6-.9z"/></symbol>
+</svg>
+
+<div class="switch">
+  <div class="switch-inner" role="tablist" aria-label="Mock-up screens">
+    <span class="label">Mock-up</span>
+    <button type="button" id="btn-leaderboard" role="tab" aria-pressed="true" data-screen="leaderboard">1 · Stars leaderboard</button>
+    <button type="button" id="btn-person" role="tab" aria-pressed="false" data-screen="person">2 · A carer's Stars tab</button>
+    <span class="right">Names and numbers are sample data · scale taken from the demo org (top carer 355, typical 40)</span>
+  </div>
+</div>
+
+<div class="bar">
+  <div class="bar-inner">
+    <div class="logo"><span class="mark"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.6-9.3-9A5.3 5.3 0 0 1 12 6.4a5.3 5.3 0 0 1 9.3 5.6C19 16.4 12 21 12 21z"/></svg></span>mycareacademy</div>
+    <div class="nav"><span>Today</span><span>Due<span class="due">5</span></span><span class="active">People ▾</span><span>Training ▾</span><span>Compliance ▾</span><span>Documents ▾</span></div>
+    <div class="spacer"></div>
+    <span class="pill warn trial">Trial · 7 days left</span>
+    <span class="btn primary">+ New</span>
+    <span class="avatar">SA</span>
+  </div>
+</div>
+
+<!-- ===================== Screen 1: leaderboard ===================== -->
+<section class="screen" id="leaderboard" aria-labelledby="h-leaderboard">
+  <div class="tabs"><div class="tabs-inner"><span>Staff</span><span>Training matrix</span><span class="active">Stars</span><span>Import</span></div></div>
+  <div class="page">
+    <div class="head">
+      <div>
+        <h1 id="h-leaderboard">Stars</h1>
+        <p class="sub">Who is learning most · <b class="num">24</b> people have earned <b class="num">1,842</b> stars between them</p>
+      </div>
+      <div class="actions">
+        <div class="seg" aria-label="Period"><span>This month</span><span class="on">This quarter</span><span>This year</span><span>All time</span></div>
+        <span class="btn">Export</span>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="card stat">
+        <div class="label">Earned this quarter</div>
+        <div class="value num"><svg class="star-glyph"><use href="#star"/></svg>286</div>
+        <div class="note">Up from 203 in the same weeks last quarter.</div>
+      </div>
+      <div class="card stat">
+        <div class="label">Top earner this quarter</div>
+        <div class="value">Grace Okafor</div>
+        <div class="note"><span class="num">+58</span> stars · passed Safeguarding adults and Medication.</div>
+      </div>
+      <div class="card stat">
+        <div class="label">No stars yet</div>
+        <div class="value num">6 people</div>
+        <div class="note">Four have training assigned but not started. <a href="#leaderboard">See who →</a></div>
+      </div>
+    </div>
+
+    <div class="card tight">
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th class="r">Stars</th>
+              <th>This quarter</th>
+              <th class="r">Courses passed</th>
+              <th>Last star</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="rank top">1</span></td>
+              <td><div class="who"><span class="avatar">GO</span><div><div class="name">Grace Okafor</div><div class="role">Senior carer</div></div></div></td>
+              <td class="r"><span class="total num"><svg class="star-glyph"><use href="#star"/></svg>362</span></td>
+              <td><div class="gain"><div class="track"><div class="fill" style="width:100%"></div></div><b class="num">+58</b></div></td>
+              <td class="r num">19</td>
+              <td>Today</td>
+              <td class="chev">›</td>
+            </tr>
+            <tr>
+              <td><span class="rank top">2</span></td>
+              <td><div class="who"><span class="avatar">TN</span><div><div class="name">Tomasz Nowak</div><div class="role">Carer</div></div></div></td>
+              <td class="r"><span class="total num"><svg class="star-glyph"><use href="#star"/></svg>291</span></td>
+              <td><div class="gain"><div class="track"><div class="fill" style="width:76%"></div></div><b class="num">+44</b></div></td>
+              <td class="r num">15</td>
+              <td>Yesterday</td>
+              <td class="chev">›</td>
+            </tr>
+            <tr>
+              <td><span class="rank top">3</span></td>
+              <td><div class="who"><span class="avatar">AH</span><div><div class="name">Amina Hassan</div><div class="role">Carer</div></div></div></td>
+              <td class="r"><span class="total num"><svg class="star-glyph"><use href="#star"/></svg>240</span></td>
+              <td><div class="gain"><div class="track"><div class="fill" style="width:64%"></div></div><b class="num">+37</b></div></td>
+              <td class="r num">13</td>
+              <td>29 Oct</td>
+              <td class="chev">›</td>
+            </tr>
+            <tr class="me">
+              <td><span class="rank">4</span></td>
+              <td><div class="who"><span class="avatar">PN</span><div><div class="name">Priya Nair <a href="#person" class="pill ok" style="margin-left:6px">Open file →</a></div><div class="role">Carer</div></div></div></td>
+              <td class="r"><span class="total num"><svg class="star-glyph"><use href="#star"/></svg>148</span></td>
+              <td><div class="gain"><div class="track"><div class="fill" style="width:60%"></div></div><b class="num">+35</b></div></td>
+              <td class="r num">7</td>
+              <td>Today</td>
+              <td class="chev">›</td>
+            </tr>
+            <tr>
+              <td><span class="rank">5</span></td>
+              <td><div class="who"><span class="avatar">DP</span><div><div class="name">Daniel Price</div><div class="role">Carer</div></div></div></td>
+              <td class="r"><span class="total num"><svg class="star-glyph"><use href="#star"/></svg>139</span></td>
+              <td><div class="gain"><div class="track"><div class="fill" style="width:21%"></div></div><b class="num">+12</b></div></td>
+              <td class="r num">8</td>
+              <td>24 Oct</td>
+              <td class="chev">›</td>
+            </tr>
+            <tr>
+              <td><span class="rank">6</span></td>
+              <td><div class="who"><span class="avatar">CB</span><div><div class="name">Chloe Bennett</div><div class="role">Carer</div></div></div></td>
+              <td class="r"><span class="total num"><svg class="star-glyph"><use href="#star"/></svg>121</span></td>
+              <td><div class="gain"><div class="track"><div class="fill" style="width:50%"></div></div><b class="num">+29</b></div></td>
+              <td class="r num">6</td>
+              <td>30 Oct</td>
+              <td class="chev">›</td>
+            </tr>
+            <tr>
+              <td><span class="rank">7</span></td>
+              <td><div class="who"><span class="avatar">MR</span><div><div class="name">Marcus Reid</div><div class="role">Team leader</div></div></div></td>
+              <td class="r"><span class="total num"><svg class="star-glyph"><use href="#star"/></svg>118</span></td>
+              <td><div class="gain"><div class="track"><div class="fill" style="width:0"></div></div><b class="num muted">+0</b></div></td>
+              <td class="r num">7</td>
+              <td>2 Aug</td>
+              <td class="chev">›</td>
+            </tr>
+            <tr>
+              <td><span class="rank">8</span></td>
+              <td><div class="who"><span class="avatar">FB</span><div><div class="name">Fatima Begum</div><div class="role">Carer</div></div></div></td>
+              <td class="r"><span class="total num"><svg class="star-glyph"><use href="#star"/></svg>97</span></td>
+              <td><div class="gain"><div class="track"><div class="fill" style="width:36%"></div></div><b class="num">+21</b></div></td>
+              <td class="r num">5</td>
+              <td>27 Oct</td>
+              <td class="chev">›</td>
+            </tr>
+            <tr>
+              <td><span class="rank">9</span></td>
+              <td><div class="who"><span class="avatar">LO</span><div><div class="name">Liam O'Connor</div><div class="role">Carer</div></div></div></td>
+              <td class="r"><span class="total num"><svg class="star-glyph"><use href="#star"/></svg>64</span></td>
+              <td><div class="gain"><div class="track"><div class="fill" style="width:16%"></div></div><b class="num">+9</b></div></td>
+              <td class="r num">4</td>
+              <td>15 Oct</td>
+              <td class="chev">›</td>
+            </tr>
+            <tr>
+              <td><span class="rank">10</span></td>
+              <td><div class="who"><span class="avatar">ST</span><div><div class="name">Sophie Turner <span class="pill muted" style="margin-left:6px">Started 6 Oct</span></div><div class="role">Carer</div></div></div></td>
+              <td class="r"><span class="total num"><svg class="star-glyph"><use href="#star"/></svg>41</span></td>
+              <td><div class="gain"><div class="track"><div class="fill" style="width:71%"></div></div><b class="num">+41</b></div></td>
+              <td class="r num">3</td>
+              <td>31 Oct</td>
+              <td class="chev">›</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="foot">
+        <span>Showing 10 of 24 · <a href="#leaderboard">Show everyone</a></span>
+        <span>Sorted by total stars · <a href="#leaderboard">Sort by this quarter</a></span>
+      </div>
+    </div>
+
+    <p class="muted" style="max-width:72ch">A star is one right answer: up to 20 for each course's assessment, counting the best attempt in each compliance cycle, plus one for each question answered right along the way. Stars show effort and learning. They never count towards compliance, which stays on the Training matrix.</p>
+  </div>
+</section>
+
+<!-- ===================== Screen 2: a carer's Stars tab ===================== -->
+<section class="screen" id="person" aria-labelledby="h-person" hidden>
+  <div class="page">
+    <div class="crumb"><a href="#leaderboard">Staff</a> <span class="here">/ Priya Nair</span></div>
+
+    <div class="card">
+      <div class="person">
+        <span class="avatar">PN</span>
+        <div class="id">
+          <h1 id="h-person">Priya Nair</h1>
+          <div class="meta"><span class="pill ok">Carer</span><span>priya.nair@example.com</span><span>·</span><span>Started 14 Feb 2025</span><span class="pill star"><svg class="star-glyph"><use href="#star"/></svg><span class="num">148 stars</span></span></div>
+        </div>
+        <div class="actions"><span class="btn">Evidence pack</span><span class="btn">Assign course</span><span class="btn primary">Book supervision</span></div>
+      </div>
+      <div class="person-tabs"><span>Overview</span><span>Training</span><span class="active">Stars</span><span>Certificates</span><span>Care Certificate</span><span>Supervisions</span><span>Spot checks</span><span>Documents</span><span>Employment</span><span>More ▾</span></div>
+    </div>
+
+    <div class="two">
+      <div class="stack">
+        <div class="card">
+          <h2>Stars over the last 12 months</h2>
+          <p class="muted">148 in all · 31 in October, her best month · 4 so far in November</p>
+          <!-- Scale: 34 stars = 120px of bar height; every label is a value the chart reaches. -->
+          <svg class="chart" viewBox="0 0 720 190" role="img" aria-label="Bar chart of stars earned each month from December 2025 to November 2026. December 0, January 12, February 20, March 8, April 0, May 25, June 18, July 0, August 15, September 15, October 31, November 4.">
+            <line class="grid" x1="36" x2="708" y1="140" y2="140"/>
+            <line class="grid" x1="36" x2="708" y1="80" y2="80"/>
+            <line class="grid" x1="36" x2="708" y1="20" y2="20"/>
+            <text x="30" y="144" text-anchor="end">0</text>
+            <text x="30" y="84" text-anchor="end">17</text>
+            <text x="30" y="24" text-anchor="end">34</text>
+            <!-- bars: x = 48 + i*56, width 36, height = v * 120/34, y = 140 - height -->
+            <rect class="bar-rect" x="48" y="140" width="36" height="0" rx="4"/>
+            <rect class="bar-rect" x="104" y="97.6" width="36" height="42.4" rx="4"/>
+            <rect class="bar-rect" x="160" y="69.4" width="36" height="70.6" rx="4"/>
+            <rect class="bar-rect" x="216" y="111.8" width="36" height="28.2" rx="4"/>
+            <rect class="bar-rect" x="272" y="140" width="36" height="0" rx="4"/>
+            <rect class="bar-rect" x="328" y="51.8" width="36" height="88.2" rx="4"/>
+            <rect class="bar-rect" x="384" y="76.5" width="36" height="63.5" rx="4"/>
+            <rect class="bar-rect" x="440" y="140" width="36" height="0" rx="4"/>
+            <rect class="bar-rect" x="496" y="87.1" width="36" height="52.9" rx="4"/>
+            <rect class="bar-rect" x="552" y="87.1" width="36" height="52.9" rx="4"/>
+            <rect class="bar-rect" x="608" y="30.6" width="36" height="109.4" rx="4"/>
+            <rect class="bar-rect now" x="664" y="125.9" width="36" height="14.1" rx="4"/>
+            <text class="v" x="122" y="92" text-anchor="middle">12</text>
+            <text class="v" x="178" y="64" text-anchor="middle">20</text>
+            <text class="v" x="234" y="106" text-anchor="middle">8</text>
+            <text class="v" x="346" y="46" text-anchor="middle">25</text>
+            <text class="v" x="402" y="71" text-anchor="middle">18</text>
+            <text class="v" x="514" y="82" text-anchor="middle">15</text>
+            <text class="v" x="570" y="82" text-anchor="middle">15</text>
+            <text class="v" x="626" y="25" text-anchor="middle">31</text>
+            <text class="v" x="682" y="120" text-anchor="middle">4</text>
+            <text x="66" y="162" text-anchor="middle">Dec</text>
+            <text x="122" y="162" text-anchor="middle">Jan</text>
+            <text x="178" y="162" text-anchor="middle">Feb</text>
+            <text x="234" y="162" text-anchor="middle">Mar</text>
+            <text x="290" y="162" text-anchor="middle">Apr</text>
+            <text x="346" y="162" text-anchor="middle">May</text>
+            <text x="402" y="162" text-anchor="middle">Jun</text>
+            <text x="458" y="162" text-anchor="middle">Jul</text>
+            <text x="514" y="162" text-anchor="middle">Aug</text>
+            <text x="570" y="162" text-anchor="middle">Sep</text>
+            <text x="626" y="162" text-anchor="middle">Oct</text>
+            <text x="682" y="162" text-anchor="middle">Nov</text>
+            <text x="66" y="178" text-anchor="middle">2025</text>
+            <text x="122" y="178" text-anchor="middle">2026</text>
+          </svg>
+          <div class="legend"><span><i style="background:var(--star)"></i>Stars earned that month</span><span><i style="background:var(--primary)"></i>This month so far</span></div>
+        </div>
+
+        <div class="card">
+          <div class="head"><h2>History</h2><div class="seg" aria-label="Show"><span class="on">Everything</span><span>Assessments only</span></div></div>
+          <div class="hist">
+            <div class="row"><span class="tile q">+4</span><div><div class="t">Dementia awareness · questions along the way</div><div class="d">4 questions answered right on first try</div></div><div><div class="delta num"><svg class="star-glyph"><use href="#star"/></svg>+4</div><div class="when">Today, 09:12</div></div></div>
+            <div class="row"><span class="tile a">18<small>/20</small></span><div><div class="t">Moving &amp; handling · assessment passed</div><div class="d">First attempt · certificate issued, renews 28 Oct 2027</div></div><div><div class="delta num"><svg class="star-glyph"><use href="#star"/></svg>+18</div><div class="when">28 Oct 2026</div></div></div>
+            <div class="row"><span class="tile q">+3</span><div><div class="t">Moving &amp; handling · questions along the way</div><div class="d">3 questions answered right on first try</div></div><div><div class="delta num"><svg class="star-glyph"><use href="#star"/></svg>+3</div><div class="when">21 Oct 2026</div></div></div>
+            <div class="row"><span class="tile a">17<small>/20</small></span><div><div class="t">Safeguarding adults · assessment passed on retake</div><div class="d">Best this cycle was 14, so only the 3 extra count</div></div><div><div class="delta num"><svg class="star-glyph"><use href="#star"/></svg>+3</div><div class="when">14 Oct 2026</div></div></div>
+            <div class="row"><span class="tile q">+3</span><div><div class="t">Medication · questions along the way</div><div class="d">3 questions answered right on first try</div></div><div><div class="delta num"><svg class="star-glyph"><use href="#star"/></svg>+3</div><div class="when">9 Oct 2026</div></div></div>
+            <div class="row"><span class="tile q">+4</span><div><div class="t">Infection control · questions along the way</div><div class="d">4 questions answered right on first try</div></div><div><div class="delta num"><svg class="star-glyph"><use href="#star"/></svg>+4</div><div class="when">2 Oct 2026</div></div></div>
+            <div class="row"><span class="tile a">14<small>/20</small></span><div><div class="t">Safeguarding adults · assessment not passed</div><div class="d">First attempt · 14 right banks 14 stars even on a fail</div></div><div><div class="delta num"><svg class="star-glyph"><use href="#star"/></svg>+14</div><div class="when">16 Sep 2026</div></div></div>
+            <div class="row"><span class="tile z">15<small>/20</small></span><div><div class="t">Fire safety · assessment retaken while certificate still valid</div><div class="d">16 already banked this cycle · nothing new until the certificate expires</div></div><div><div class="delta zero num">+0</div><div class="when">12 Jun 2026</div></div></div>
+            <div class="row"><span class="tile a">16<small>/20</small></span><div><div class="t">Fire safety · renewed after the certificate expired</div><div class="d">New compliance cycle · the 15 from last year are kept</div></div><div><div class="delta num"><svg class="star-glyph"><use href="#star"/></svg>+16</div><div class="when">5 Jun 2026</div></div></div>
+          </div>
+          <div class="foot" style="margin:14px -24px -22px"><span>Showing 9 of 41 · <a href="#person">Show all</a></span><span><a href="#person">Export as CSV</a></span></div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <div class="big"><div class="n num"><svg class="star-glyph"><use href="#star"/></svg>148</div><div><div style="font-weight:700">4th of 24</div><div class="muted">Up two places since September</div></div></div>
+          <dl class="kv">
+            <dt>From assessments</dt><dd class="num">126</dd>
+            <dt>From questions along the way</dt><dd class="num">22</dd>
+            <dt>Courses passed</dt><dd class="num">7</dd>
+            <dt>Renewed after expiry</dt><dd class="num">1</dd>
+            <dt>This quarter</dt><dd class="num">+35</dd>
+            <dt>Last star</dt><dd>Today</dd>
+          </dl>
+        </div>
+
+        <div class="card courses tight">
+          <div style="padding:20px 24px 6px"><h3>By course</h3><p class="muted" style="font-size:14px">Best attempt in the current cycle, out of 20</p></div>
+          <div class="scroll">
+            <table>
+              <thead><tr><th>Course</th><th class="r">Best</th><th class="r">Stars</th></tr></thead>
+              <tbody>
+                <tr><td>Medication<div class="cycle">Renews 3 Mar 2027</div></td><td class="r num">20/20</td><td class="r num"><b>20</b></td></tr>
+                <tr><td>Infection control<div class="cycle">Renews 9 Jan 2027</div></td><td class="r num">19/20</td><td class="r num"><b>19</b></td></tr>
+                <tr><td>Moving &amp; handling<div class="cycle">Renews 28 Oct 2027</div></td><td class="r num">18/20</td><td class="r num"><b>18</b></td></tr>
+                <tr><td>Safeguarding adults<div class="cycle">Renews 14 Oct 2027 · 2 attempts</div></td><td class="r num">17/20</td><td class="r num"><b>17</b></td></tr>
+                <tr><td>Fire safety<div class="cycle">2nd cycle · renews 5 Jun 2027 · 15 kept from the 1st</div></td><td class="r num">16/20</td><td class="r num"><b>31</b></td></tr>
+                <tr><td>Food hygiene<div class="cycle">Renews 20 Aug 2027</div></td><td class="r num">14/20</td><td class="r num"><b>14</b></td></tr>
+                <tr><td>Health &amp; safety<div class="cycle">Not passed yet · 1 attempt</div></td><td class="r num">7/20</td><td class="r num"><b>7</b></td></tr>
+                <tr><td class="muted">Dementia awareness<div class="cycle">In progress · assessment not taken</div></td><td class="r muted">–</td><td class="r muted">–</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="page" style="padding-top:0">
+  <div class="notes">
+    <h2>Decisions to confirm before building</h2>
+    <ol>
+      <li><b>Where the leaderboard lives.</b> Drawn here as a Stars tab in the Staff section row (People → Staff), next to Training matrix. The other option is a card on Today showing the top three with a link through.</li>
+      <li><b>Where a person's history lives.</b> Drawn as its own Stars tab on the file, placed after Training. It could instead sit inside Training, or under More ▾, if the row is getting long.</li>
+      <li><b>Office access.</b> Today only managers can read the in-content star rows at the database layer. Building this means updating that policy to the shared console-user check, so office staff see the same page as managers.</li>
+      <li><b>Period.</b> "This quarter" is drawn as a calendar quarter (Oct to Dec). The gain bars in the table are relative to the top earner for that period.</li>
+      <li><b>What the history shows.</b> One line per assessment attempt and one line per course per day for questions along the way, with +0 lines kept so the rules are visible. History is derived from existing records, so it goes back to each carer's first attempt with no backfill needed.</li>
+      <li><b>Who is listed.</b> Everyone with a learner account in the company, including leavers for the period they were here? Drawn as current staff only, with "No stars yet" counted separately so new starters are not shamed at the bottom.</li>
+      <li><b>Carers themselves.</b> This mock-up is console-only. Whether carers should see the leaderboard in Learn is a separate decision and is not drawn.</li>
+      <li><b>Package.</b> Stars already exist on every package, so the leaderboard would too unless you want it from Growth.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var buttons = document.querySelectorAll('.switch button');
+    var screens = { leaderboard: document.getElementById('leaderboard'), person: document.getElementById('person') };
+    function show(name) {
+      if (!screens[name]) name = 'leaderboard';
+      Object.keys(screens).forEach(function (k) { screens[k].hidden = k !== name; });
+      buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.screen === name)); });
+      try { window.scrollTo({ top: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, 0); }
+    }
+    buttons.forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.screen); }); });
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href^="#"]');
+      if (!a) return;
+      var name = a.getAttribute('href').slice(1);
+      if (screens[name]) { e.preventDefault(); show(name); }
+      else e.preventDefault();
+    });
+    show((location.hash || '#leaderboard').slice(1));
+  })();
+</script>

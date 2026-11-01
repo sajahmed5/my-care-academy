@@ -67,6 +67,15 @@ export const SECTIONS: SectionDef[] = [
     built: true,
   },
   {
+    // Stars in the console (2 Nov 2026): the learner's star bank, seen from
+    // the office. Not feature-gated: stars exist on every package.
+    key: "stars",
+    label: "Stars",
+    blurb: "The stars they have earned answering questions in their training, month by month, and where they stand in the company.",
+    feature: null,
+    built: true,
+  },
+  {
     key: "certificates",
     label: "Certificates",
     blurb: "Every certificate earned, with expiry dates.",
