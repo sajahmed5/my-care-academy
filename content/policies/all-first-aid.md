@@ -47,7 +47,7 @@ Call 999 when someone:
 - is unconscious or cannot be woken;
 - has chest pain, or signs of a stroke — face drooping, arm weakness, slurred speech;
 - has severe difficulty breathing, or is choking and it does not clear;
-- has a seizure lasting longer than their care plan says is usual, or a first seizure;
+- has a seizure lasting more than five minutes, or longer than their care plan says is usual, or a first seizure;
 - is bleeding heavily, or has a serious injury, such as a suspected broken hip or a head injury with drowsiness or vomiting;
 - shows signs of sepsis (see 7.2).
 

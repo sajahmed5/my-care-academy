@@ -20,7 +20,7 @@ It applies to the registered manager, the nominated individual, anyone deputisin
 - Care Act 2014, section 42 — the local authority's duty to make enquiries when an adult may be at risk of abuse or neglect.
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 20: Duty of candour; Regulation 17: Good governance.
 - Safeguarding Vulnerable Groups Act 2006 — the duty to refer to the Disclosure and Barring Service.
-- UK GDPR — reporting serious personal data breaches to the Information Commissioner's Office.
+- UK GDPR — reporting personal data breaches that put people at risk to the Information Commission (until 30 September 2026, the Information Commissioner's Office).
 - Our contracts with the local authorities and NHS bodies that commission care from us.
 
 ## 4. Our policy
@@ -47,7 +47,7 @@ We notify CQC without delay of:
 - any incident reported to, or investigated by, the police that involves a client or our service;
 - any event that stops, or may stop, us running the service safely or properly — for example a serious staff shortage that means visits cannot be covered, the loss of our office or phone and IT systems, or a fire or flood at our premises.
 
-The DoLS notifications in Regulation 18 apply to care homes and hospitals, not to home care. Where a client's care involves a deprivation of liberty, see our Deprivation of Liberty policy.
+Regulation 18 also requires us to tell CQC the outcome of any application to the Court of Protection to authorise depriving a client of their liberty, whoever made it, once the outcome is known or the application is withdrawn. See our Deprivation of Liberty policy.
 
 ### 5.3 The registered manager's absence (Regulation 14)
 
@@ -57,7 +57,7 @@ If the registered manager will be, or has been, absent for 28 days or more, {{no
 
 As the employer, we report to the Health and Safety Executive the RIDDOR events that arise from our work, within the time limits the regulations set. In home care these are most likely to be:
 
-- the death of, or a specified injury to, a member of staff (for example most fractures, or an injury from physical violence) caused by an accident at work;
+- the death of, or a specified injury to, a member of staff (for example most fractures) caused by an accident at work, which includes physical violence against them at work;
 - an injury to a member of staff that keeps them off work, or unable to do their normal duties, for more than seven days;
 - an injury to a client, or another person not at work, that arises out of or in connection with our work and results in them being taken directly from the scene to hospital for treatment, or in their death — for example a client who falls because a sling we were using failed. A fall that is not linked to how we provided care is not reportable under RIDDOR, though it may still be notifiable to CQC;
 - a reportable occupational disease diagnosed in a member of staff, such as occupational dermatitis, or an infection caught through work;
@@ -83,7 +83,7 @@ For clients who pay for their own care, we tell the client or their representati
 
 - **Police** — any crime, or suspected crime, against a client or a member of staff; and immediately where anyone is in danger. A client who dies suddenly and unexpectedly is reported through 999 or as the ambulance service directs.
 - **Disclosure and Barring Service** — anyone we dismiss, or who leaves, because they harmed a child or adult or put them at risk of harm, as the law requires.
-- **Information Commissioner's Office** — a personal data breach that is likely to put people's rights at risk, within 72 hours of our becoming aware of it (see Data Security and Breaches).
+- **Information Commission** — a personal data breach, unless it is unlikely to put people's rights and freedoms at risk, within 72 hours of our becoming aware of it (see Data Security and Breaches).
 - **Medicines and Healthcare products Regulatory Agency** — a suspected side effect of a medicine, or an incident involving a medical device, through the Yellow Card scheme, usually with the prescriber or pharmacist.
 - **UK Health Security Agency health protection team** — an outbreak of infection, as set out in Outbreak Management.
 - **Our insurers** — incidents that might lead to a claim, as our policy requires.

@@ -16,7 +16,7 @@ It applies to everyone who works for us, to everyone involved in recruiting staf
 ## 3. The law and guidance
 
 - Modern Slavery Act 2015 — makes slavery, servitude, forced or compulsory labour, and human trafficking criminal offences. Section 54 requires commercial organisations with a turnover above the threshold set by regulations to publish an annual slavery and human trafficking statement; it does not apply to every company.
-- Care Act 2014 — modern slavery is one of the types of abuse and neglect covered by the local authority's adult safeguarding duties.
+- Care Act 2014 and the Care and Support Statutory Guidance — modern slavery is one of the types of abuse and neglect covered by the local authority's adult safeguarding duties.
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 13: Safeguarding service users from abuse and improper treatment.
 - National Minimum Wage Act 1998 and its regulations — workers are paid at least the minimum wage for all the time they work, including time travelling between visits.
 - Conduct of Employment Agencies and Employment Businesses Regulations 2003 — UK agencies may not charge workers a fee for finding them work.
@@ -36,7 +36,7 @@ Workers recruited from overseas can arrive owing large debts to agents in their 
 - We recruit directly or through reputable agencies that do not charge workers fees, and we ask agencies to confirm this in writing.
 - At interview and again at induction, we ask every new worker, in private, whether they paid anyone to get this job, whether anyone holds their documents, and whether they owe money to anyone connected with the job. We explain that the answer will not affect their job.
 - We pay the sponsorship costs the Home Office says a sponsor must not pass on, and never take them back through wages or a repayment clause.
-- We check right to work in person and see original documents, as our Right to Work and Sponsored Workers policy sets out, and the worker keeps their own documents.
+- We check right to work as our Right to Work and Sponsored Workers policy sets out, and the worker keeps their own documents.
 - We look out for warning signs: several workers giving the same address, phone number or bank account; someone else always answering for the worker, bringing them to work or collecting their pay; a worker who seems afraid, or who cannot say where they live.
 - Pay is checked so that travel time between visits, training and waiting time are paid, and deductions are only those the law and the contract allow.
 

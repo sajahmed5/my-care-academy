@@ -74,7 +74,7 @@ Financial abuse includes theft, fraud, scams, pressure about wills or property, 
 
 Signs include unpaid bills or lack of food when the client should have enough money, belongings going missing, a new "friend" taking an interest in the client's finances, unusual letters or phone calls, or a client who seems frightened about money.
 
-If you suspect financial abuse, tell the office or the registered manager the same day and record what you have seen. Do not confront anyone. The registered manager raises a safeguarding concern with the local authority, informs the police where a crime may have been committed, and records it through the site's concerns process. Where the abuse involves an attorney or deputy, it may also be reported to the Office of the Public Guardian. Allegations against our staff are dealt with under our Safeguarding and Disciplinary policies.
+If you suspect financial abuse, tell the office or the registered manager the same day and record what you have seen. Do not confront anyone. The registered manager raises a safeguarding concern with the local authority, informs the police where a crime may have been committed, notifies the Care Quality Commission as Regulation 18 of the Care Quality Commission (Registration) Regulations 2009 requires, and records it through the site's concerns process. Where the abuse involves an attorney or deputy, it may also be reported to the Office of the Public Guardian. Allegations against our staff are dealt with under our Safeguarding and Disciplinary policies.
 
 ## 9. Roles and responsibilities
 
@@ -88,7 +88,7 @@ All care workers learn about handling clients' money and recognising financial a
 
 ## 11. Records
 
-Shopping and money record sheets with receipts, and any written bank card arrangement, are kept on the client's care record for as long as our record retention schedule requires. Audits and concerns are kept through the concerns process.
+Shopping and money record sheets with receipts, and any written bank card arrangement, are kept on the client's care record for as long as our record retention schedule requires. Audits are kept with the client's record, and concerns through the concerns process.
 
 ## 12. Related policies
 

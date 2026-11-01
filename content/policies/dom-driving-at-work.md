@@ -11,7 +11,7 @@ Most of our care workers drive between visits, often in the dark, in bad weather
 
 ## 2. Scope
 
-It applies to everyone who drives for work in their own vehicle or in one we provide, including care workers, office staff and managers. Driving from home to the first visit and back from the last may also count as working time, depending on your contract; the safety rules in this policy apply whenever you are driving for us.
+It applies to everyone who drives for work in their own vehicle or in one we provide, including care workers, office staff and managers. Driving from home to the first visit and back from the last is not counted for the minimum wage, but is counted when we check your working hours and rest (see Working Time and Rest Breaks); the safety rules in this policy apply whenever you are driving for us.
 
 ## 3. The law and guidance
 
@@ -91,7 +91,7 @@ The client wears a seatbelt, unless they have a medical exemption. Never carry m
 ## 9. Accidents and breakdowns
 
 - If you are involved in a collision, stop, make sure everyone is safe, and call 999 if anyone is injured or the road is blocked dangerously.
-- Exchange names, addresses and vehicle and insurance details with the other people involved. If anyone is injured and you do not give your insurance details at the scene, or you cannot exchange details, report it to the police as soon as you reasonably can, and in any case within the time the law sets.
+- Exchange names, addresses and vehicle and insurance details with the other people involved. If anyone is injured and you do not give your insurance details at the scene, or you cannot exchange details, report it to the police as soon as you reasonably can, and in any case within 24 hours.
 - Tell the office straight away, so that your visits can be covered.
 - Report the collision through the site's concerns process the same day, and tell your insurer.
 

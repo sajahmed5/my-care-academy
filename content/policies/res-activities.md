@@ -17,7 +17,7 @@ It applies to every resident, including those who spend most of their time in th
 
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 9: Person-centred care — care must meet residents' needs and reflect their preferences.
 - Regulation 10: Dignity and respect — including supporting residents' autonomy, independence and involvement in the community.
-- Regulation 9A: Visiting and accompanying in care homes — residents must be able to receive visitors.
+- Regulation 9A: Visiting and accompanying in care homes, hospitals and hospices — residents must be able to receive visitors.
 - NICE quality standard QS50: Mental wellbeing of older people in care homes — including that residents are offered opportunities during their day to take part in meaningful activity that promotes their health and mental wellbeing.
 - Equality Act 2010 — activities must be open to residents whatever their disability, faith, culture, sexual orientation or other protected characteristic, with reasonable adjustments.
 

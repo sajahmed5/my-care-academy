@@ -1,5 +1,16 @@
 # Reading notes for the 80 new policies (31 Oct 2026)
 
+> **Published 1 Nov 2026.** All 80 policies were reviewed in full against the
+> law in force on 1 November 2026, corrected where needed, and published at
+> Saj's request. None duplicated a published policy. Changes made then include:
+> the 2026 Supreme Court judgment on deprivation of liberty (Cheshire West
+> overruled); the Information Commission replacing the ICO; the "all reasonable
+> steps" harassment duty from 30 October 2026; right to work checks covering
+> workers and contractors from 1 October 2026; subject access and data
+> protection complaints under the Data (Use and Access) Act 2025; and unfair
+> dismissal after six months from 1 January 2027. The 90 old form and log
+> documents were retired: the forms library replaced them.
+
 All 80 are drafts in the library: Content → Policies, filter **Draft**
 (`/platform/documents?status=draft`). Each opens as a company will see it,
 with "Sample Care Services Ltd" and the company's details shown as fill-ins
@@ -42,7 +53,7 @@ Confirmed as written:
 - Sickness Absence: says "the rules in force", so it already covers Statutory Sick Pay being paid from day one since April 2026.
 - Fire Safety: since October 2023 the Building Safety Act requires every fire risk assessment to be recorded in full.
 - Legionella: 60°C stored, 50°C within a minute, cold below 20°C, 44°C at outlets used by vulnerable people, records kept 5 years.
-- Data Security: breaches can go to the ICO through the DSPT.
+- Data Security: breaches can go to the regulator through the DSPT. The ICO became the Information Commission on 30 September 2026; the policies now use that name.
 - Working Time: Tyco still stands as assimilated case law.
 
 Decided by Saj, 1 Nov 2026:

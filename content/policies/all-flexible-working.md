@@ -88,7 +88,7 @@ If your request is refused, you may appeal in writing within the time given in t
 
 ### 7.6 Withdrawn requests
 
-If you miss two meetings to discuss your request, or an appeal meeting, without good reason, we may treat the request as withdrawn and will tell you so in writing.
+If you miss two meetings in a row to discuss your request or your appeal, without good reason, we may treat the request as withdrawn and will tell you so in writing.
 
 ## 8. Roles and responsibilities
 

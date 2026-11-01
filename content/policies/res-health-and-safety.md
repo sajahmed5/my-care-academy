@@ -23,7 +23,7 @@ It applies to everyone who works in the home, on every shift, and to everyone wh
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 12: Safe care and treatment; Regulation 15: Premises and equipment.
 - Health and Safety Executive guidance, Health and safety in care homes.
 
-CQC takes the lead on the safety of residents in the care we give them; the Health and Safety Executive takes the lead on the safety of staff, visitors and contractors. Both can inspect us.
+CQC takes the lead on the safety of residents in the care we give them. For the safety of staff, visitors and contractors, the enforcing authority for a care home without nursing is the local council's environmental health team; for a home that provides nursing, or one run by the council, it is the Health and Safety Executive. Both CQC and the enforcing authority can inspect us.
 
 ## 4. Our statement of intent
 

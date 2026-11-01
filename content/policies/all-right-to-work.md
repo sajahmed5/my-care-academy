@@ -11,11 +11,11 @@ Every employer must check that the people it employs are allowed to work in the 
 
 ## 2. Scope
 
-It applies to everyone we employ, whatever their nationality, before they start work: care staff, office staff, managers and bank staff. Agency workers are checked by their agency, and we ask the agency to confirm it in writing (see Safe Staffing, Rotas and Agency Staff). The sponsor licence section applies only if we hold one.
+It applies to everyone who works for us, whatever their nationality, before they start work: care staff, office staff, managers and bank staff, and anyone we engage directly as a worker or as a self-employed contractor. Agency workers are checked by their agency, and we ask the agency to confirm it in writing (see Safe Staffing, Rotas and Agency Staff). The sponsor licence section applies only if we hold one.
 
 ## 3. The law and guidance
 
-- Immigration, Asylum and Nationality Act 2006 — an employer who employs someone without the right to work faces a civil penalty, unless it holds a "statutory excuse": proof that it carried out the prescribed checks before employment began.
+- Immigration, Asylum and Nationality Act 2006, as amended by the Border Security, Asylum and Immigration Act 2025 — an employer who employs someone without the right to work faces a civil penalty, unless it holds a "statutory excuse": proof that it carried out the prescribed checks before employment began. Since 1 October 2026 this also covers workers and self-employed people we engage, not only employees.
 - Immigration Act 2016 — knowingly employing someone without the right to work, or having reasonable cause to believe they do not have it, is a criminal offence.
 - Home Office Code of practice on preventing illegal working: civil penalty scheme for employers, and the Employer's guide to right to work checks — how checks must be done.
 - Home Office Code of practice for employers on avoiding unlawful discrimination while preventing illegal working — we check everyone the same way.
@@ -26,7 +26,7 @@ It applies to everyone we employ, whatever their nationality, before they start 
 ## 4. Our policy
 
 - No one starts work, including shadowing or paid training, until their right to work has been checked and the check recorded.
-- We check every new employee, including British citizens. We never assume someone has the right to work from their name, accent or appearance, and we never check only some people.
+- We check everyone new, including British citizens. We never assume someone has the right to work from their name, accent or appearance, and we never check only some people.
 - We follow the Home Office guidance in force at the time. The rules change often, so the manager doing the check uses the current guidance, not memory.
 - Where someone's permission is time-limited, we repeat the check before it runs out.
 - We treat people fairly while checks are done. A delay or a problem with a check is not a reason to treat someone with suspicion.
@@ -41,11 +41,11 @@ People with an eVisa or other digital immigration status prove their right to wo
 
 ### 5.2 Manual document check
 
-For people who cannot use the online service — for example British or Irish citizens using a passport — we check original documents from the Home Office lists of acceptable documents. The check is done with the person present, in person or on a live video call with the originals in front of us. We make sure the documents are genuine and unaltered, belong to the person, and are in date where they need to be; that photographs and dates of birth match; and that any difference in name is explained by a further document, such as a marriage certificate. We take a clear copy of each document, record the date of the check, and keep it so it cannot be altered.
+For people who cannot use the online service — for example British or Irish citizens using a passport — we check original documents from the Home Office lists of acceptable documents. We must have the original documents in our hands; the person is present while we check them, in person or on a live video call. We make sure the documents are genuine and unaltered, belong to the person, and are in date where they need to be; that photographs and dates of birth match; and that any difference in name is explained by a further document, such as a marriage certificate. We take a clear copy of each document, record the date of the check, and keep it so it cannot be altered.
 
 ### 5.3 Digital identity check
 
-For British and Irish citizens with a valid passport or Irish passport card, we may use a certified identity service provider to check their identity digitally. We remain responsible for the check, and we confirm that the person in front of us is the person the provider checked.
+For British and Irish citizens with a valid passport or Irish passport card, we may use a digital verification service provider that is registered with the government for right to work checks to check their identity digitally. We remain responsible for the check, and we confirm that the person in front of us is the person the provider checked.
 
 ### 5.4 Pending applications and appeals
 
@@ -66,6 +66,7 @@ This section applies if we hold a sponsor licence. Holding a licence is a privil
 - We report changes through the Sponsor Management System within the time the guidance sets — for example, when a worker does not start, is absent without permission, changes job or pay in a way the guidance covers, or leaves.
 - We pay each sponsored worker at least the salary on their certificate of sponsorship, and give them the hours and the job it describes.
 - We do not charge a sponsored worker, directly or through deductions or a repayment agreement, for the costs the guidance says the sponsor must bear, such as the sponsorship and licence fees and the Immigration Skills Charge.
+- Since 22 July 2025, care worker and senior care worker jobs can no longer be sponsored for people recruited from overseas. We sponsor someone for these jobs only if they are already in the UK and the rules in force allow them to switch to sponsorship with us.
 - We do not use recruitment agencies that charge workers fees, and we recruit from overseas only in line with the Code of practice for international recruitment.
 - The people named on our licence — the authorising officer and the users of the Sponsor Management System — are named here and kept up to date with the Home Office.
 

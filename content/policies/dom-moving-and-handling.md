@@ -40,7 +40,7 @@ The assessment is reviewed whenever the client's needs change — after a fall, 
 
 ### 5.1 Single-handed and double-up visits
 
-Whether a visit needs one care worker or two is part of the assessment. Some clients who once needed two care workers can be moved safely by one with the right equipment and technique. That decision is made only by a community occupational therapist or a trained assessor, with the client, in writing, and after care workers have been shown the new method. We do not reduce a double-up to a single-handed visit on our own initiative.
+Whether a visit needs one care worker or two is part of the assessment. Some clients who once needed two care workers can be moved safely by one with the right equipment and technique. That decision is made only by a community occupational therapist or a trained assessor, with the client, in writing, and after care workers have been shown the new method. We never reduce a double-up to a single-handed visit to save time or staff.
 
 If the assessor thinks a client needs two care workers but the package has been commissioned for one, the registered manager raises it with the commissioner in writing straight away. Until it is resolved, we do not carry out the task single-handed.
 
@@ -59,7 +59,7 @@ Equipment in a client's home may belong to the community equipment service, to t
 ### 6.1 Before each use
 
 - Check the hoist, sling, stand aid, slide sheet, bed or other equipment for damage: frayed or torn fabric, worn loops or stitching, cracks, missing parts, a battery that is not charged.
-- Check the examination label is in date. If the label is missing or out of date, do not use the equipment.
+- For a hoist or sling, check the examination label or record is in date. If it is missing or out of date, do not use it.
 - Check the sling is the right one for the client and is clean.
 - Make sure the brakes, bed height and space are right before you start.
 

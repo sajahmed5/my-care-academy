@@ -83,7 +83,7 @@ If a spot check or competency assessment is not met, the manager discusses it wi
 ## 7. Roles and responsibilities
 
 - **Registered manager** — makes sure everyone has a supervisor, that supervisions, appraisals, spot checks and competency assessments happen on time, and arranges their own supervision with the nominated individual or another suitable person.
-- **Supervisors and seniors** — prepare, hold meetings in private, record them accurately and follow up actions. A senior care worker who supervises others is given an office login to do so.
+- **Supervisors and seniors** — prepare, hold meetings in private, record them accurately and follow up actions. A senior care worker who supervises others may be given office access on the site so they can record supervisions.
 - **Employees** — attend, prepare, speak openly, and complete agreed actions.
 
 ## 8. Training

@@ -11,7 +11,7 @@ This policy sets out how {{organisation}} deals with concerns about an employee'
 
 ## 2. Scope
 
-It applies to all employees once they have finished their probation, and in its principles to employees on probation (see Induction, Probation and the Care Certificate). It does not apply to agency workers or self-employed contractors, whose arrangements are dealt with through their agency or contract.
+It applies to all employees once they have finished their probation, and in its principles to employees on probation (see Induction, Probation and the Care Certificate). Once an employee has worked for us for six months it applies in full, even if their probation has been extended. It does not apply to agency workers or self-employed contractors, whose arrangements are dealt with through their agency or contract.
 
 It covers two kinds of case:
 

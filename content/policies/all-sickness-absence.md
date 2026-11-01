@@ -44,7 +44,7 @@ Statutory Sick Pay is paid to those entitled to it, at the rate and under the ru
 
 > State any company sick pay you offer on top of Statutory Sick Pay, and its conditions — or say that you pay Statutory Sick Pay only.
 
-Sick pay may be withheld if you do not follow this reporting procedure without good reason.
+Sick pay may be withheld if you do not follow this reporting procedure without good reason, as far as the Statutory Sick Pay rules allow.
 
 ## 6. Returning to work
 

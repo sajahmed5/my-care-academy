@@ -70,7 +70,7 @@ The environmental risk assessment notes where products are kept, and whether the
 
 ## 8. Bodily fluids and infection
 
-Bodily fluids can carry infection. Wear gloves and an apron when you may come into contact with them, clean spills promptly with the product and method set out in our Infection Prevention and Control policy, and dispose of waste as the person's care plan or the home's procedure says. If you are injured by a used needle or splashed in the eyes or mouth with blood or other bodily fluid, wash the area, make it bleed if it is a puncture, and get medical advice straight away — then report it.
+Bodily fluids can carry infection. Wear gloves and an apron when you may come into contact with them, clean spills promptly with the product and method set out in our Infection Prevention and Control policy, and dispose of waste as the person's care plan or the home's procedure says. If you are injured by a used needle or splashed in the eyes or mouth with blood or other bodily fluid, wash the area with running water and soap, encourage it to bleed if it is a puncture, and get medical advice straight away — then report it.
 
 ## 9. Looking after your skin
 
@@ -85,7 +85,7 @@ Gloves we provide are latex-free. Tell us if you have, or think you may have, a 
 
 ## 10. If something goes wrong
 
-- Splash in the eyes — rinse with clean running water for several minutes and get medical advice.
+- Splash in the eyes — hold the eye open and rinse it with clean, cool running water for at least 20 minutes, then get medical advice. For a strong chemical such as bleach or oven cleaner, call 999 and keep rinsing while you wait.
 - On the skin — wash off with plenty of water, and remove contaminated clothing.
 - Swallowed — do not make the person sick. Call 111 or 999, and have the product container or label to hand.
 - Breathed in — move to fresh air, and get medical advice if the person feels unwell.
@@ -104,7 +104,7 @@ All staff complete COSHH training during induction and refresh it every year wit
 
 ## 13. Records
 
-COSHH assessments and safety data sheets are kept by the registered manager and reviewed every year, or when a product or how it is used changes. Exposures and reactions are kept through the concerns process. Health surveillance checks are kept on the staff member's file, for the long period COSHH requires, which runs for many years after they leave. Everything else is kept for the periods set in Record Keeping and Retention.
+COSHH assessments and safety data sheets are kept by the registered manager and reviewed every year, or when a product or how it is used changes. Exposures and reactions are kept through the concerns process. Health surveillance checks are kept on the staff member's file, for at least 40 years from the last entry, as COSHH requires. Everything else is kept for the periods set in Record Keeping and Retention.
 
 ## 14. Related policies
 

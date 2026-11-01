@@ -81,7 +81,7 @@ Radiators and exposed hot pipes that a resident could touch, fall against or bec
 ## 9. If something goes wrong
 
 - If a check finds water outside the expected temperature, the responsible person investigates the same day and follows the scheme of control.
-- If a resident is scalded, cool the burn under cool running water, call 111 or 999 depending on how serious it is, and tell the shift leader. Take the bath or shower out of use until it has been checked. Record it through the site's concerns process; a scald is likely to need a CQC notification and a safeguarding referral (see Reportable Incidents).
+- If a resident is scalded, cool the burn under cool or lukewarm running water for 20 minutes while keeping the resident warm, call 111 or 999 depending on how serious it is, and tell the shift leader. Take the bath or shower out of use until it has been checked. Record it through the site's concerns process; a scald is likely to need a CQC notification and a safeguarding referral (see Reportable Incidents).
 - If a resident or member of staff is diagnosed with Legionnaires' disease, the registered manager contacts the UK Health Security Agency health protection team straight away and follows its advice, tells the water hygiene contractor, and considers whether a report to the Health and Safety Executive is needed.
 
 ## 10. Roles and responsibilities

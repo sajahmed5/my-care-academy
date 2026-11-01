@@ -75,7 +75,7 @@ Concerns are raised as soon as they arise, not saved for a review. An employee w
 At the end of probation the outcome is one of three:
 
 - Passed — confirmed in writing, and employment continues.
-- Extended — when more time would help, the employee is told in writing how long the extension is, why, and what they need to show. Probation is extended only once, unless there is a good reason, such as a long absence.
+- Extended — when more time would help, the employee is told in writing how long the extension is, why, and what they need to show. Probation is extended only once, unless there is a good reason, such as a long absence. From 1 January 2027 employees can claim unfair dismissal after six months' employment, so once someone has worked for us for six months, a decision not to pass them follows our Disciplinary policy in full.
 - Not passed — when the employee has not reached the standard despite support. They are invited to a meeting, told the concerns in advance, and may bring a colleague or trade union representative. If employment ends, the decision and the notice are confirmed in writing, with the right to appeal.
 
 Serious misconduct during probation is dealt with under the principles of our Disciplinary policy.

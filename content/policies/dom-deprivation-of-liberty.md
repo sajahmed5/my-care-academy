@@ -17,7 +17,8 @@ It applies to every client aged 16 or over who receives care from us in their ow
 
 - Human Rights Act 1998 and Article 5 of the European Convention on Human Rights — the right to liberty. Nobody may be deprived of their liberty except by a procedure the law sets out.
 - Mental Capacity Act 2005 — a deprivation of liberty of someone who lacks capacity to consent to it is lawful only if authorised. In a person's own home this needs an order of the Court of Protection.
-- The Supreme Court's judgment in P v Cheshire West and Chester Council (2014) — the "acid test" for when care amounts to a deprivation of liberty.
+- The Supreme Court's judgment in A Reference by the Attorney General for Northern Ireland (June 2026), which overruled the 2014 Cheshire West judgment and its "acid test" — whether care amounts to a deprivation of liberty now depends on the person's whole situation, including whether they object.
+- Department of Health and Social Care guidance, UK Supreme Court 2026 judgment on what constitutes a deprivation of liberty (June 2026, updated September 2026) — where there is doubt, the Court of Protection process is still used.
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 13: Safeguarding service users from abuse and improper treatment — a person must not be deprived of their liberty for the purpose of care without lawful authority.
 - Mental Capacity Act 2005 Code of Practice and Deprivation of Liberty Safeguards Code of Practice.
 
@@ -25,14 +26,15 @@ The Deprivation of Liberty Safeguards (DoLS), under which care homes and hospita
 
 ## 4. What a deprivation of liberty is
 
-A person is deprived of their liberty when all of these apply:
+There is no single test. Whether a client is deprived of their liberty depends on their whole situation, including:
 
-- they are under continuous supervision and control;
-- they are not free to leave — meaning to move away permanently, not just to go out for a walk;
-- they lack the capacity to consent to those arrangements;
-- the arrangements are the responsibility of the state — for example, the care is arranged or paid for by a local authority or the NHS, or a public body knows about it.
+- how closely they are supervised and controlled, for how long, and how the restrictions are carried out;
+- whether they are free to leave — meaning to move away to live somewhere else, not just to go out for a walk;
+- whether they object, by what they say or do, or are content with their arrangements;
+- how ordinary their life at home is, and whether the limits come from their illness or from what other people do;
+- whether the arrangements are the responsibility of the state — for example, the care is arranged or paid for by a local authority or the NHS, or a public body knows about it.
 
-It does not matter that the person seems content, that they are not trying to leave, or that the arrangements are for their own good, or the same as anyone with their condition would need.
+A client who lacks capacity under the Mental Capacity Act may still give valid consent to their arrangements if they have a basic understanding of their situation and show they are happy with it. But going along with care is not the same as agreeing to it, and where there is serious doubt about what the client wants, agreement must not be assumed. A client who tries to leave, resists care, is restrained, or is given medicine covertly or to sedate them is much more likely to be deprived of their liberty. Care workers do not decide this; where there is doubt, we treat it as a possible deprivation of liberty.
 
 Signs to look out for at home include:
 
@@ -77,7 +79,9 @@ Court applications can take time. Meanwhile we keep restrictions to the minimum 
 
 ### 6.5 When the Court makes an order
 
-The registered manager keeps a copy of the order, makes sure the care plan follows it and any conditions in it, and tells the commissioner when the client's needs change so that the order can be reviewed. An order usually sets a date by which it must be reviewed; we remind the commissioner well before that date. The registered manager checks CQC's current guidance on notifications under Regulation 18 of the Care Quality Commission (Registration) Regulations 2009 and notifies CQC where it applies.
+The registered manager keeps a copy of the order, makes sure the care plan follows it and any conditions in it, and tells the commissioner when the client's needs change so that the order can be reviewed. An order usually sets a date by which it must be reviewed; we remind the commissioner well before that date. We keep to an existing order until the court or the commissioner tells us otherwise, and tell the commissioner if a client with an order seems content with their care, as the 2026 judgment may mean it is no longer needed.
+
+Regulation 18 of the Care Quality Commission (Registration) Regulations 2009 requires CQC to be told the outcome of any application to the court to deprive a client of their liberty, whoever made it. The registered manager notifies CQC once the outcome is known, or if the application is withdrawn.
 
 ### 6.6 When nothing is done
 

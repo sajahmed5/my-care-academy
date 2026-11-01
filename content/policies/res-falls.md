@@ -89,11 +89,13 @@ When the shift leader has checked the resident and is satisfied they are not inj
 ### 6.4 After the fall
 
 - Check the resident for injuries again, and look after any wounds.
-- Carry out post-fall observations — pulse, breathing, level of alertness and pain — at the intervals our post-fall procedure sets, and for longer after a head injury. Night staff continue them through the night.
+- Carry out post-fall observations — pulse, breathing, level of alertness and pain — at the intervals set by the post-fall protocol we follow, and for longer after a head injury. Night staff continue them through the night.
 - Watch for pain, drowsiness, vomiting or confusion over the following hours and days. Call 999 or 111 if they appear.
 - Tell the resident's family or representative, as the resident wishes, and the GP.
 - Record the fall in the resident's notes and through the site's concerns process as an incident, before the end of the shift.
 - Hand over the fall, the observations and any concerns at the next handover.
+
+> Name the post-fall protocol you follow (many integrated care boards publish one) and its observation intervals, including after a head injury.
 
 ### 6.5 Unwitnessed falls
 

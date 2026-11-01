@@ -18,7 +18,7 @@ It applies to all staff on every shift, including nights, weekends and agency st
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 12: Safe care and treatment, and Regulation 13: Safeguarding service users from abuse and improper treatment (including that residents must not be deprived of their liberty without lawful authority).
 - Care Quality Commission (Registration) Regulations 2009, Regulation 18 — notifying CQC of incidents reported to or investigated by the police, and of serious injuries.
 - Mental Capacity Act 2005 and the Deprivation of Liberty Safeguards — residents with capacity can come and go as they choose; restrictions on residents who lack capacity must be in their best interests, the least restrictive option, and, where they amount to a deprivation of liberty, authorised.
-- The Herbert Protocol — a national scheme run by police forces, in which information about a person at risk of going missing is gathered in advance and handed to the police if they go missing.
+- The Herbert Protocol — a scheme used by police forces across England, in which information about a person at risk of going missing is gathered in advance and handed to the police if they go missing.
 
 ## 4. Our policy
 

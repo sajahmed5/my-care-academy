@@ -16,7 +16,7 @@ It applies to everyone who works in the home, including night staff, agency staf
 ## 3. The law and guidance
 
 - Mental Capacity Act 2005 — advance decisions to refuse treatment, lasting powers of attorney for health and welfare, and best interests decisions.
-- Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 9: Person-centred care, Regulation 9A: Visiting and accompanying in care homes, Regulation 10: Dignity and respect, and Regulation 11: Need for consent.
+- Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 9: Person-centred care, Regulation 9A: Visiting and accompanying in care homes, hospitals and hospices, Regulation 10: Dignity and respect, and Regulation 11: Need for consent.
 - Care Quality Commission (Registration) Regulations 2009, Regulation 16 — notifying CQC of the death of a resident.
 - Coroners and Justice Act 2009 — deaths that must be referred to the coroner, and the medical examiner system that reviews other deaths.
 - NICE guideline NG31: Care of dying adults in the last days of life, and NICE guideline NG142: End of life care for adults: service delivery.
@@ -50,7 +50,7 @@ An advance decision lets a person aged 18 or over, while they have capacity, ref
 
 ### 5.2 DNACPR and ReSPECT
 
-A DNACPR (do not attempt cardiopulmonary resuscitation) decision is made by a doctor or senior clinician, with the resident or, if they lack capacity, with those close to them. A ReSPECT form (Recommended Summary Plan for Emergency Care and Treatment) records the resident's wishes and clinical recommendations for emergencies. The original is kept at the front of the resident's care file so that it can be found at once, and its existence is passed on at every handover. It applies only to CPR, and the resident receives all other care. The shift leader checks at the start of every shift which residents have one.
+A DNACPR (do not attempt cardiopulmonary resuscitation) decision is made by a doctor or senior clinician, with the resident or, if they lack capacity, with those close to them. A ReSPECT form (Recommended Summary Plan for Emergency Care and Treatment) records the resident's wishes and clinical recommendations for emergencies. The original is kept at the front of the resident's care file so that it can be found at once, and its existence is passed on at every handover. A DNACPR decision applies only to CPR, and the resident receives all other care. The shift leader checks at the start of every shift which residents have one.
 
 ## 6. Caring for a resident who is dying
 
@@ -82,7 +82,7 @@ An unexpected death is reported to the coroner, and the police usually attend on
 ### 7.3 After any death
 
 - Write a full account on the resident's record: the time, who was present, who was contacted, and what was done.
-- Keep the resident's medicines separate and do not return or destroy them until the period set out in our Medicines Management policy has passed, in case the coroner needs them.
+- Keep the resident's medicines separate and do not return or destroy them until the registered manager is satisfied the coroner will not need them; they are then returned as our Medicines Management policy sets out.
 - Lock the resident's room or keep their belongings safe, and list their property against the admission inventory. Belongings and any money we hold are returned to the executor or the person dealing with the estate, as our Residents' Money and Property policy sets out.
 - Tell other residents sensitively.
 

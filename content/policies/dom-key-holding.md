@@ -22,7 +22,7 @@ It applies to everyone who works for us and to every client whose home we enter 
 ## 4. Our policy
 
 - We enter a client's home only by the arrangement agreed in writing with the client or their representative.
-- Key safe codes and keys are given only to staff who need them for a visit, and are never written down or labelled with the client's name or address.
+- Key safe codes and keys are given only to staff who need them for a visit. Care workers never write a code down, and a key is never labelled with the client's name or address.
 - Care workers always knock or ring and announce themselves before going in, even when they have a key.
 - A lost key, or a code that may have been seen by someone else, is reported straight away and put right.
 - We do not have keys copied, and do not keep a client's key overnight unless agreed in writing.
@@ -90,7 +90,6 @@ Access agreements are kept on the client's care record. The key log and records 
 ## 14. Related policies
 
 - No Reply and Unable to Gain Entry
-- Safety and Security of Premises
 - Data Security and Breaches
 - Confidentiality
 - Lone Working

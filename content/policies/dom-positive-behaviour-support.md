@@ -15,7 +15,7 @@ It applies to every client whose behaviour is described as challenging, or as di
 
 ## 3. The law and guidance
 
-- Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 9: Person-centred care, and Regulation 13: Safeguarding service users from abuse and improper treatment — which treats control or restraint that is not necessary or proportionate as abuse.
+- Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 9: Person-centred care, and Regulation 13: Safeguarding service users from abuse and improper treatment — which forbids control or restraint that is not necessary or proportionate.
 - Mental Capacity Act 2005, sections 5 and 6 — when acts done to protect a person who lacks capacity are lawful, and the limits on restraint.
 - Human Rights Act 1998 — freedom from degrading treatment, the right to liberty and the right to respect for private life.
 - Health and Care Act 2022 — registered providers must make sure staff receive training on learning disability and autism appropriate to their role.

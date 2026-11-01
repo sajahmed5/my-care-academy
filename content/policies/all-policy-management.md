@@ -11,7 +11,7 @@ Policies only protect people if they are right, up to date, and known by the peo
 
 ## 2. Scope
 
-It applies to every policy and procedure the company uses: those adopted from the library on the site, and the company's own policies uploaded to it. It applies to everyone who prepares, approves or must follow a policy.
+It applies to every policy and procedure the company uses: those adopted from the library on the site, and any other policy the company keeps. It applies to everyone who prepares, approves or must follow a policy.
 
 ## 3. The law and guidance
 
@@ -31,7 +31,7 @@ It applies to every policy and procedure the company uses: those adopted from th
 
 ### 5.1 Adopting
 
-The registered manager chooses the policies the service needs from the library, for its type of service. A company may also upload its own policy, as a Word or PDF document, and manage it in the same way.
+The registered manager chooses the policies the service needs from the library, for its type of service. Any policy the company keeps outside the library is managed in the same way: approved, given a review date, and read and accepted by the staff it applies to.
 
 ### 5.2 Completing
 
@@ -95,7 +95,7 @@ A policy is reviewed before its date when:
 
 ## 8. Retiring a policy
 
-A policy that is no longer needed — because the service no longer does that work, or it has been replaced — is retired by a manager. It is no longer shown to staff, but it is kept, with its versions, reviews and acceptances, for the period set in Record Keeping and Retention.
+A policy that is no longer needed — because the service no longer does that work, or it has been replaced — is withdrawn by the registered manager, and staff are told it no longer applies. It is kept, with its versions, reviews and acceptances, for the period set in Record Keeping and Retention.
 
 ## 9. Roles and responsibilities
 

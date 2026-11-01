@@ -18,7 +18,7 @@ It applies to everyone who works for us, in every place we provide care, and to 
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 10: Dignity and respect — people are treated with dignity and respect, their privacy is respected, their independence and involvement in the community are supported, and equality characteristics are taken into account.
 - Regulation 9: Person-centred care — care reflects the person's needs and preferences.
 - Human Rights Act 1998 — in particular the right not to be subjected to degrading treatment (Article 3) and the right to respect for private and family life, home and correspondence (Article 8).
-- Equality Act 2010 — people must not be discriminated against because of age, disability, gender reassignment, marriage or civil partnership, pregnancy or maternity, race, religion or belief, sex or sexual orientation.
+- Equality Act 2010 — people must not be discriminated against because of age, disability, gender reassignment, pregnancy or maternity, race, religion or belief, sex or sexual orientation.
 - Care Act 2014 — the wellbeing principle, which includes personal dignity and control over day-to-day life.
 - Data Protection Act 2018 and UK GDPR — personal information is kept private.
 

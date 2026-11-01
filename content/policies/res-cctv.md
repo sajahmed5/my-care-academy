@@ -16,7 +16,7 @@ It applies to all surveillance in and around the home: fixed CCTV, video doorbel
 ## 3. The law and guidance
 
 - UK GDPR and the Data Protection Act 2018 — images of identifiable people are personal information. We must have a lawful basis, use surveillance only when necessary and proportionate, complete a data protection impact assessment, tell people, keep footage secure and for no longer than needed, and respond to requests for it.
-- Information Commissioner's Office guidance on video surveillance, including CCTV.
+- The Information Commission's guidance on video surveillance, including CCTV (first published by the Information Commissioner's Office, which the Commission replaced on 30 September 2026).
 - Human Rights Act 1998, Article 8 — the right to respect for private and family life, for residents, visitors and staff.
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 10: Dignity and respect, Regulation 13: Safeguarding, and Regulation 17: Good governance.
 - Care Quality Commission guidance for providers on using surveillance in care services, and its information for the public on using cameras to check someone's care.
@@ -101,4 +101,4 @@ We keep data protection impact assessments, decisions about cameras in residents
 
 ## 13. Review
 
-This policy is reviewed every year, and sooner when the law, ICO or CQC guidance or something that happens here shows it needs to change. Each camera's impact assessment is also reviewed every year.
+This policy is reviewed every year, and sooner when the law, Information Commission or CQC guidance or something that happens here shows it needs to change. Each camera's impact assessment is also reviewed every year.

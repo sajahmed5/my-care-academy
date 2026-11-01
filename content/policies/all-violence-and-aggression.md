@@ -18,7 +18,7 @@ Abuse or harassment from a colleague is dealt with under our Bullying and Harass
 ## 3. The law and guidance
 
 - Health and Safety at Work etc. Act 1974 and the Management of Health and Safety at Work Regulations 1999 — the duty to assess and control the risk of violence to staff. The Health and Safety Executive defines work-related violence as any incident in which a person is abused, threatened or assaulted in circumstances relating to their work.
-- Equality Act 2010, as amended by the Worker Protection (Amendment of Equality Act 2010) Act 2023 — employers must take reasonable steps to prevent sexual harassment of their employees, including harassment by people who are not employees, such as the people they support and their families.
+- Equality Act 2010, as amended by the Worker Protection (Amendment of Equality Act 2010) Act 2023 and the Employment Rights Act 2025 — employers must take all reasonable steps to prevent sexual harassment of their employees, and, since 30 October 2026, are liable for harassment of staff by people who are not employees, such as the people we support and their families, unless they took all reasonable steps to prevent it.
 - Reporting of Injuries, Diseases and Dangerous Occurrences Regulations 2013 — some injuries to staff from violence at work must be reported to the Health and Safety Executive.
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 12: Safe care and treatment, and Regulation 13: Safeguarding service users from abuse and improper treatment — which limits how staff may respond.
 

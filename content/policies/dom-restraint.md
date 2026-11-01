@@ -16,7 +16,7 @@ It applies to everyone who works for us and to every client, in their own home, 
 ## 3. The law and guidance
 
 - Mental Capacity Act 2005, section 6 — restraint of a person who lacks capacity is lawful only if the person using it reasonably believes it is necessary to prevent harm to that person, and it is a proportionate response to the likelihood and seriousness of the harm. Restraint that goes further may be a deprivation of liberty and needs authorisation.
-- Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 13: Safeguarding service users from abuse and improper treatment — control or restraint that is not necessary or proportionate is treated as abuse.
+- Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 13: Safeguarding service users from abuse and improper treatment — control or restraint that is not necessary to prevent harm, or not proportionate to it, is not allowed.
 - Human Rights Act 1998 — freedom from inhuman or degrading treatment (Article 3), the right to liberty (Article 5) and the right to respect for private life and home (Article 8).
 - Department of Health, Positive and Proactive Care: reducing the need for restrictive interventions (2014).
 - Restraint Reduction Network Training Standards.

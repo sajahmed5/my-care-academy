@@ -17,7 +17,7 @@ It applies to everyone who works for us, and to the people we support wherever t
 
 - Human Rights Act 1998 — Article 8, the right to respect for private and family life, which includes relationships and sexual life.
 - Equality Act 2010 — sexual orientation, gender reassignment, and marriage and civil partnership are protected characteristics; we must not discriminate.
-- Mental Capacity Act 2005 — capacity to consent to sexual relations is decided by the person alone; section 27 means nobody, including a court or attorney, can consent to sex or marriage on another person's behalf.
+- Mental Capacity Act 2005 — section 27 means nobody, including a court or attorney, can consent to sex or marriage on another person's behalf; the decision is the person's alone.
 - Sexual Offences Act 2003 — sexual activity without consent is a crime, and sexual activity between a care worker and a person with a mental disorder they care for is a crime whether or not the person appears to agree.
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 10: Dignity and respect, and Regulation 13: Safeguarding service users from abuse and improper treatment.
 - Care Quality Commission guidance on relationships and sexuality in adult social care services.
@@ -53,7 +53,7 @@ Support may include helping a person to meet friends or partners, to use a phone
 
 ## 6. Capacity and consent
 
-Capacity to consent to sexual relations is about whether the person understands, in general terms, what sex involves, that they can say no, that the other person must also consent and keep consenting, and the risks to health, including pregnancy and infection. It is judged about sex in general, not about a particular partner. Capacity to consent to sex, to marriage, and to contact with a particular person are separate decisions.
+Capacity to consent to sexual relations is about whether the person understands, in general terms, what sex involves, that they can say no, that the other person must also consent and keep consenting, and the risks to health, including pregnancy and infection. It is usually judged about sex in general, not about a particular partner. Capacity to consent to sex, to marriage, and to contact with a particular person are separate decisions.
 
 If you think a person may not be able to consent to a sexual relationship, or that their partner may not be able to, tell the registered manager straight away. The registered manager decides whether a formal capacity assessment is needed, and takes advice from the local authority. Because no one can consent on another's behalf, if a person lacks capacity to consent to sex, sexual activity with them must be prevented, and the matter is raised as a safeguarding concern.
 

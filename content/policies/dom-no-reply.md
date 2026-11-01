@@ -57,7 +57,7 @@ If the client is found to be safe somewhere else, the visit is recorded as a no 
 
 ### 6.3 When the client cannot be found
 
-If the client has not been found, and there is any reason to think they may be inside and unwell, or they are at risk because of their health, the on-call manager phones the police (999 if there is a risk to life), explains the concern, and asks them to check on the client. The police decide whether to force entry. The care worker waits for the police where it is safe and the on-call manager asks them to, and the office arranges cover for their next visits.
+If the client has not been found, and there is any reason to think they may be inside and unwell, or they are at risk because of their health, the on-call manager phones the police (999 if there is a risk to life), explains the concern, and asks them to check on the client. Many police forces now attend only where there is a real risk to life or of serious harm, so explain clearly why you are worried: the client's health, when they were last seen, and what the care worker has seen or heard. The police decide whether to force entry. The care worker waits for the police where it is safe and the on-call manager asks them to, and the office arranges cover for their next visits.
 
 If a family member or key holder is coming, the care worker waits for them where it is safe, and goes in with them.
 

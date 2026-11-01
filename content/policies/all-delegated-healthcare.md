@@ -18,7 +18,7 @@ It does not cover the everyday support with medicines described in our Medicines
 ## 3. The law and guidance
 
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 12: Safe care and treatment — staff have the qualifications, competence, skills and experience to provide care safely; Regulation 18: Staffing — staff receive the training they need; Regulation 11: Need for consent.
-- Skills for Care and partners, guiding principles for delegated healthcare activities — how delegation should work between health and social care: person-centred, agreed by everyone involved, with training and competency for each person and each task, and clear accountability.
+- Delegated healthcare activities: guiding principles for health and social care in England (Skills for Care and partners, revised 2024) — how delegation should work between health and social care: person-centred, agreed by everyone involved, with training and competency for each person and each task, and clear accountability.
 - The Nursing and Midwifery Council's Code, and the standards of the Health and Care Professions Council — the delegating professional's duty to delegate only to someone competent, and to give the support and supervision needed.
 - NICE guideline NG67, Managing medicines for adults receiving social care in the community, and NICE guideline SC1, Managing medicines in care homes — where the delegated task involves medicines.
 - Mental Capacity Act 2005 — the person's consent to the task, or a best interests decision where they lack capacity.

@@ -19,7 +19,7 @@ It applies to everyone who gives or plans personal care, and to every person we 
 - Mental Capacity Act 2005 — consent to personal care, and best interests where a person cannot consent.
 - NICE guideline NG48, Oral health for adults in care homes, and NICE quality standard QS151, Oral health in care homes — mouth care assessment, daily mouth care and access to dental treatment. We follow the same approach for people we support in their own homes.
 - NICE guideline NG21, Home care: delivering personal care and practical support to older people living in their own homes.
-- NICE guidance on healthcare-associated infections in community care, including the care of long-term urinary catheters.
+- NICE clinical guideline CG139, Healthcare-associated infections: prevention and control in primary and community care — including the care of long-term urinary catheters.
 - Health and Safety Executive guidance on managing the risks from hot water and surfaces in health and social care.
 
 ## 4. Our policy
@@ -39,7 +39,7 @@ It applies to everyone who gives or plans personal care, and to every person we 
 - Read the care plan: how the person likes to be washed and dressed, what they do for themselves, the equipment to use, and any preference about the gender of who helps.
 - Wash your hands and put on the personal protective equipment the task needs.
 - Close doors and curtains. Get everything ready so the person is not left exposed while you fetch things.
-- Check the water temperature with your hand and, where provided, a thermometer, before anyone gets into a bath or shower. In a care home, bath and shower temperatures are controlled and checked as our Legionella and Water Safety policy sets out.
+- Check the water temperature before anyone gets into a bath or shower, with a thermometer where provided and with your wrist or elbow, not your fingertips. In a care home, bath and shower temperatures are controlled and checked as our Legionella and Water Safety policy sets out.
 
 ### 5.2 Washing and dressing
 

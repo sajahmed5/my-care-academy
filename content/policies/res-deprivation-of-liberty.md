@@ -17,7 +17,8 @@ It applies to every resident aged 18 or over, and to everyone who works in the h
 
 - Human Rights Act 1998 and Article 5 of the European Convention on Human Rights — the right to liberty.
 - Mental Capacity Act 2005, Schedule A1 — the Deprivation of Liberty Safeguards (DoLS): the care home, as the managing authority, asks the local authority, as the supervisory body, to authorise a deprivation of liberty.
-- The Supreme Court's judgment in P v Cheshire West and Chester Council (2014) — the "acid test" for when care amounts to a deprivation of liberty.
+- The Supreme Court's judgment in A Reference by the Attorney General for Northern Ireland (June 2026), which overruled the 2014 Cheshire West judgment and its "acid test" — whether care amounts to a deprivation of liberty now depends on the person's whole situation, including whether they object.
+- Department of Health and Social Care guidance, UK Supreme Court 2026 judgment on what constitutes a deprivation of liberty (June 2026, updated September 2026) — where there is doubt, a DoLS authorisation is still requested.
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 13: Safeguarding service users from abuse and improper treatment — a person must not be deprived of their liberty for the purpose of care without lawful authority.
 - Care Quality Commission (Registration) Regulations 2009, Regulation 18 — we notify CQC without delay of the outcome of each request for a DoLS authorisation.
 - Mental Capacity Act 2005 Code of Practice and Deprivation of Liberty Safeguards Code of Practice.
@@ -26,9 +27,11 @@ The Liberty Protection Safeguards, which were meant to replace DoLS, have not be
 
 ## 4. What a deprivation of liberty is
 
-A resident is deprived of their liberty when they lack the capacity to consent to living here and being cared for here, they are under continuous supervision and control, and they are not free to leave — meaning to move away permanently. It does not matter that they seem content, are not trying to leave, or that the arrangements are kind and in their best interests.
+There is no single test. Whether a resident is deprived of their liberty depends on their whole situation: how closely they are supervised and controlled, for how long, and how; whether they are free to leave — meaning to move away to live somewhere else; whether they object or are content; and whether the limits come from their illness or from what we do. That the arrangements are kind and in their best interests does not settle it.
 
-In practice, a resident who lacks capacity to decide where to live, cannot go out without staff, and would be brought back if they tried to leave, is likely to be deprived of their liberty. Other signs include sensor mats or door alarms used to monitor them, bed rails or lap belts, medicine to calm them, and restrictions on who they may see.
+A resident who lacks capacity under the Mental Capacity Act may still give valid consent to living and being cared for here if they have a basic understanding of their situation and show they are happy with it. But going along with care is not the same as agreeing to it, and where there is serious doubt about what the resident wants, agreement must not be assumed.
+
+In practice, a resident who lacks capacity to decide where to live, cannot go out without staff, and would be brought back if they tried to leave, may well be deprived of their liberty — and is much more likely to be if they object, try to leave, resist care, are restrained, or are given medicine covertly or to sedate them. Other signs include sensor mats or door alarms used to monitor them, bed rails or lap belts, and restrictions on who they may see. Where there is doubt, we treat it as a deprivation of liberty and request an authorisation.
 
 ## 5. Our policy
 
@@ -54,7 +57,7 @@ The supervisory body arranges the assessments the law requires, including of the
 
 If a resident needs to be deprived of their liberty before a standard authorisation can be obtained — for example, after an emergency admission — the registered manager, or the senior in charge if they cannot be reached, may grant an urgent authorisation. It lasts for up to seven days. A request for a standard authorisation must be made at the same time. If the supervisory body has not decided before the urgent authorisation ends, the registered manager may ask it to extend the urgent authorisation, once, for up to seven more days, giving the reasons.
 
-An urgent authorisation is for genuine urgency. It is recorded on the form, and a copy is kept on the resident's record and given to the resident and their representative.
+An urgent authorisation is for genuine urgency. It is recorded on the form, and a copy is kept on the resident's record and given to the resident, and to any independent mental capacity advocate supporting them.
 
 ### 6.4 When an authorisation is granted
 
@@ -73,6 +76,8 @@ If the supervisory body refuses, the resident must not be deprived of their libe
 ### 6.6 Changes and reviews
 
 Ask the supervisory body to review an authorisation when the resident's needs or restrictions change, when a condition is no longer workable, or when the resident regains capacity. If the resident's care stops amounting to a deprivation of liberty, tell the supervisory body.
+
+Since the Supreme Court's 2026 judgment, some residents with an authorisation may no longer be deprived of their liberty — for example, because they are content with their care. Supervisory bodies are reviewing existing authorisations. Tell the supervisory body about any resident you think this applies to, and keep to the authorisation and its conditions until it decides. Restrictions can always be reduced without waiting for a review.
 
 ### 6.7 Rights and challenges
 

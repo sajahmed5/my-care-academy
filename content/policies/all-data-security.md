@@ -15,7 +15,7 @@ It applies to everyone who works for us, and to all systems, devices and informa
 
 ## 3. The law and guidance
 
-- UK GDPR, Article 32 — appropriate security for personal information; Articles 33 and 34 — reporting personal data breaches to the Information Commissioner's Office and telling the people affected.
+- UK GDPR, Article 32 — appropriate security for personal information; Articles 33 and 34 — reporting personal data breaches to the Information Commission (until 30 September 2026, the Information Commissioner's Office) and telling the people affected.
 - Data Protection Act 2018.
 - Computer Misuse Act 1990 — accessing a computer system or information without authority is a criminal offence.
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 17: Good governance — records kept securely.
@@ -78,7 +78,7 @@ Tell {{registered_manager}}, or on-call out of hours, straight away. Say what ha
 - Contains it — for example, recalls an email, asks the wrong recipient to delete a message and confirm it, locks or wipes a device, changes passwords, or removes access.
 - Assesses the risk to the people whose information is involved: what information, how sensitive, how many people, and what could happen to them.
 - Records it in our breach log, with the facts, the effects and what was done, whether or not it needs reporting.
-- Decides whether it must be reported. If the breach is likely to result in a risk to people's rights and freedoms, it is reported to the Information Commissioner's Office without undue delay and within 72 hours of our becoming aware of it, through the Data Security and Protection Toolkit's incident reporting tool or directly to the Information Commissioner's Office.
+- Decides whether it must be reported. Unless the breach is unlikely to result in a risk to people's rights and freedoms, it is reported to the Information Commission without undue delay and within 72 hours of our becoming aware of it, through the Data Security and Protection Toolkit's incident reporting tool or directly to the Information Commission.
 - Tells the people affected without undue delay if the breach is likely to result in a high risk to them, explaining what happened and what they can do.
 - Considers whether it is also a safeguarding matter, needs reporting to the police, or must be reported to commissioners under our contracts.
 - Looks at why it happened and what will stop it happening again, and shares the learning.

@@ -82,7 +82,7 @@ Every member of staff takes part in a fire drill at least twice a year. Drills a
 ## 12. Preventing fire
 
 - Smoking is allowed only in the places the home has designated for it, and never in shared areas indoors. Residents who smoke have an individual risk assessment, which may include supervision, flame-retardant aprons or bedding, and storing lighters and cigarettes safely.
-- Emollient creams soak into clothing and bedding and make them burn more easily. Residents who use them have this noted in their care plan, and their bedding and clothing are changed and washed regularly.
+- Emollient creams, including paraffin-free ones, soak into clothing and bedding and make them burn more easily. Residents who use them have this noted in their care plan and are kept away from naked flames and smoking, and their bedding and clothing are changed and washed regularly — washing reduces the build-up but does not remove it.
 - Residents who use oxygen have a risk assessment; oxygen is stored safely, and no one smokes or uses a naked flame near it. The fire and rescue service is told where oxygen is stored.
 - Residents' own electrical items are checked before use. Charging of phones, e-cigarettes and mobility scooters is done safely, as the risk assessment says.
 - Kitchens and laundries are kept free of grease and lint, and rubbish is removed regularly and kept away from the building.

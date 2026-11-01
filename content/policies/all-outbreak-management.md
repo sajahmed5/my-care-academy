@@ -21,7 +21,7 @@ It applies to everyone who works for us. It covers outbreaks of respiratory infe
 - Control of Substances Hazardous to Health Regulations 2002 — protecting staff from exposure to harmful biological agents at work.
 - Reporting of Injuries, Diseases and Dangerous Occurrences Regulations 2013 — some infections caught at work must be reported to the Health and Safety Executive.
 - Care Quality Commission (Registration) Regulations 2009, Regulation 18 — notifying CQC of events that stop, or may stop, the service running safely.
-- Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 9A: Visiting and accompanying in care homes — residents can still receive visitors during an outbreak.
+- Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 9A: Visiting and accompanying in care homes, hospitals and hospices — residents can still receive visitors during an outbreak.
 
 ## 4. Our policy
 

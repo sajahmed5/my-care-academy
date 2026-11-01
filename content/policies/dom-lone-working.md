@@ -46,7 +46,7 @@ Log the start and end of every visit as you have been shown. Visit logging lets 
 
 - Park in a well-lit place, facing the way out, where you can.
 - Have your ID badge visible.
-- If something does not feel right — a raised voice, someone you do not expect, a strong smell of gas — do not go in. Phone the office or on-call from a safe place.
+- If something does not feel right — a raised voice, someone you do not expect, a strong smell of gas — do not go in. Phone the office or on-call from a safe place. If you smell gas, first call the gas emergency number, 0800 111 999.
 - If there is no answer, follow our No Reply and Unable to Gain Entry policy.
 
 ### 6.4 During the visit

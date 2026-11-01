@@ -49,8 +49,6 @@ You may cancel approved leave with reasonable notice. In exceptional circumstanc
 
 You are encouraged to take all your leave within the leave year. Leave cannot normally be carried over, except where the law allows it — for example, if you could not take it because of sickness or family leave — or where your manager agrees in advance in exceptional circumstances.
 
-> State any carry-over you allow by agreement, and the deadline for using it.
-
 Leave cannot be replaced by payment except when your employment ends.
 
 ## 7. Holiday pay

@@ -15,7 +15,7 @@ It applies to all staff, and to agency workers, students and volunteers who work
 
 ## 3. The law and guidance
 
-- Equality Act 2010 — protection from harassment related to a protected characteristic, from sexual harassment, and from victimisation for complaining. Since October 2024, employers have a duty to take reasonable steps to prevent sexual harassment of their employees in the course of their employment, including by third parties such as clients and their families.
+- Equality Act 2010, as amended by the Worker Protection (Amendment of Equality Act 2010) Act 2023 and the Employment Rights Act 2025 — protection from harassment related to a protected characteristic, from sexual harassment, and from victimisation for complaining. Since 30 October 2026, employers must take all reasonable steps to prevent sexual harassment of their employees, and are liable for harassment of their employees by people who are not employees, such as the people we support and their families, unless they took all reasonable steps to prevent it.
 - Equality and Human Rights Commission, technical guidance on sexual harassment and harassment at work — what reasonable steps look like.
 - Protection from Harassment Act 1997 — a course of conduct that causes alarm or distress is a criminal offence and a civil wrong.
 - Health and Safety at Work etc. Act 1974 — our duty to protect employees' health, including from stress caused by bullying.
@@ -35,7 +35,7 @@ Reasonable management — fair feedback, setting standards, or dealing with poor
 
 - Bullying and harassment are not tolerated, and are dealt with as misconduct. Serious cases may be gross misconduct.
 - Everyone who raises a concern in good faith, or helps with an investigation, is protected from victimisation.
-- We take reasonable steps to prevent sexual harassment, and do not wait for a complaint before acting.
+- We take all reasonable steps to prevent sexual harassment, and harassment by the people we support, their families and visitors, and do not wait for a complaint before acting.
 
 ## 6. How we prevent it
 

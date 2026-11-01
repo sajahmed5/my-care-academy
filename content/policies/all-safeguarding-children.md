@@ -7,7 +7,7 @@ sort: 15
 ---
 ## 1. Purpose
 
-{{organisation}} supports adults, but our staff meet children every day: grandchildren visiting, children living in a client's home, young carers, and the children of our own staff. This policy makes sure that anyone who works for us recognises when a child may be at risk of harm and knows exactly what to do about it.
+{{organisation}} supports adults, but our staff meet children every day: grandchildren visiting, children living with a person we support, young carers, and the children of our own staff. This policy makes sure that anyone who works for us recognises when a child may be at risk of harm and knows exactly what to do about it.
 
 ## 2. Scope
 
@@ -15,7 +15,7 @@ It applies to everyone who works for us, in every place we work. A child is anyo
 
 ## 3. The law and guidance
 
-- Children Act 1989 and Children Act 2004 — the local authority's duty to investigate when a child may be suffering significant harm, and every agency's duty to co-operate.
+- Children Act 1989 and Children Act 2004 — the local authority's duty to investigate when a child may be suffering significant harm, and the duty of named public bodies to co-operate to safeguard children.
 - Working Together to Safeguard Children — the statutory guidance on how organisations work together to protect children.
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 13: Safeguarding service users from abuse and improper treatment.
 - Data Protection Act 2018 — allows us to share information without consent where it is needed to protect a child.
@@ -45,7 +45,7 @@ Signs to look out for include unexplained injuries, a child who is frightened of
 
 ### 6.1 If a child is in immediate danger
 
-Call 999. Then tell the office straight away.
+Call 999. Then tell the office or on-call (in home care) or the shift leader (in a care home) straight away.
 
 ### 6.2 If a child tells you something
 

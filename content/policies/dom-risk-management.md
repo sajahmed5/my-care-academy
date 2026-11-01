@@ -63,7 +63,7 @@ We do not control a client's home, but some clients are at high risk from fire â
 
 ### 6.3 Positive risk-taking
 
-Clients have the right to make their own choices, including choices we would not make. A client with capacity who wants to keep using their stairs, go out alone or cook for themselves is supported to do so as safely as possible. We talk through the risks with them, agree what would help, and record their decision. If a client may lack capacity to decide about a significant risk, a capacity assessment and best interests decision are made. See Choice and Positive Risk-Taking.
+Clients have the right to make their own choices, including choices we would not make. A client with capacity who wants to keep using their stairs, go out alone or cook for themselves is supported to do so as safely as possible. We talk through the risks with them, agree what would help, and record their decision. If a client may lack capacity to decide about a significant risk, their capacity is assessed and, if they lack it, a best interests decision is made. See Choice and Positive Risk-Taking.
 
 ### 6.4 When the risk is to our staff
 

@@ -67,7 +67,7 @@ Larger decisions — a change of where someone lives, serious medical treatment,
 
 ### 5.5 Lasting powers of attorney, deputies and advance decisions
 
-Ask at assessment whether the person has a lasting power of attorney for health and welfare or for property and financial affairs, a deputy appointed by the Court of Protection, or an advance decision to refuse treatment. Check the document or the Office of the Public Guardian register, keep a copy or a note of it on file, and record what it covers. An attorney or deputy may only make the decisions their authority covers, and must also act in the person's best interests. A valid advance decision to refuse treatment must be followed.
+Ask at assessment whether the person has a lasting power of attorney for health and welfare or for property and financial affairs, a deputy appointed by the Court of Protection, or an advance decision to refuse treatment. Check the document or the Office of the Public Guardian register, keep a copy or a note of it on file, and record what it covers. An attorney or deputy may only make the decisions their authority covers, and must also act in the person's best interests. A valid and applicable advance decision to refuse treatment must be followed.
 
 ### 5.6 Advocacy
 

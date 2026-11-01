@@ -16,7 +16,7 @@ It applies to every admission: planned moves, moves from hospital, emergency adm
 ## 3. The law and guidance
 
 - Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 9: Person-centred care — care is designed with the person, after an assessment of their needs and preferences.
-- Regulation 9A: Visiting and accompanying in care homes — residents can receive visitors, including on the day they arrive, and be accompanied to hospital and outpatient appointments.
+- Regulation 9A: Visiting and accompanying in care homes, hospitals and hospices — residents can receive visitors and be accompanied to hospital and outpatient appointments.
 - Regulation 12: Safe care and treatment — risks are assessed and reduced, and medicines are managed safely from the day the person arrives.
 - Regulation 18: Staffing — we admit a person only when we have enough suitably skilled staff to meet their needs as well as everyone else's.
 - Care Quality Commission (Registration) Regulations 2009, Regulation 19: Fees — the person, or whoever pays, receives a written statement of the terms and the fees.
@@ -57,7 +57,7 @@ The registered manager decides, considering not only the person's needs but also
 
 ### 5.4 Capacity and liberty
 
-If the person may not be able to decide for themselves to move here, a capacity assessment and, if needed, a best interests decision are completed and recorded before admission — usually by the local authority or hospital that arranges the move. If their care here will mean they are under continuous supervision and control and not free to leave, the registered manager plans to apply for a Deprivation of Liberty Safeguards authorisation on or before the day they arrive (see Deprivation of Liberty).
+If the person may not be able to decide for themselves to move here, a capacity assessment and, if needed, a best interests decision are completed and recorded before admission — usually by the local authority or hospital that arranges the move. If their care here may amount to a deprivation of liberty, the registered manager plans to apply for a Deprivation of Liberty Safeguards authorisation on or before the day they arrive (see Deprivation of Liberty).
 
 ### 5.5 The contract
 

@@ -7,7 +7,7 @@ sort: 130
 ---
 ## 1. Purpose
 
-Contact with family, friends and the wider community is essential to residents' wellbeing, and the home is their home. This policy sets out how {{organisation}} welcomes visitors, supports residents to go out with them, and limits visiting only where it is truly necessary — in line with Regulation 9A, which makes visiting and accompanying a legal requirement in care homes.
+Contact with family, friends and the wider community is essential to residents' wellbeing, and the home is their home. This policy sets out how {{organisation}} welcomes visitors, supports residents to go out with them, and limits visiting only where it is truly necessary — in line with Regulation 9A, which makes supporting visits a legal requirement in care homes.
 
 ## 2. Scope
 
@@ -15,7 +15,7 @@ It applies to all residents, everyone who visits them, and all staff. Visitors i
 
 ## 3. The law and guidance
 
-- Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 9A: Visiting and accompanying in care homes — residents must be able to receive visitors and must not be discouraged from doing so, and any restriction must be justified; the same regulation requires hospitals and hospices to let people be accompanied when they attend outpatient and emergency appointments.
+- Health and Social Care Act 2008 (Regulated Activities) Regulations 2014, Regulation 9A: Visiting and accompanying in care homes, hospitals and hospices — residents must be supported to receive visitors and must not be discouraged from going out to visit others, unless there are exceptional circumstances; the same regulation requires hospitals and hospices to let people be accompanied when they attend for treatment or day care.
 - Care Quality Commission guidance on Regulation 9A.
 - Human Rights Act 1998 — Article 8, the right to respect for private and family life.
 - Mental Capacity Act 2005 — decisions about contact for a resident who lacks capacity are made in their best interests, and restrictions on contact may form part of a deprivation of liberty.

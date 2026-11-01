@@ -45,7 +45,7 @@ The registered manager sets staffing for each shift with the residents' moving a
 
 ## 7. The home's equipment
 
-The home keeps an equipment register listing every hoist, bath hoist, stand aid, sling, profiling bed, bed rail, slide sheet and other moving aid, with its location, owner and the dates of its last and next thorough examination and service.
+The home keeps an equipment register listing every hoist, bath hoist, stand aid, sling, profiling bed, bed rail, slide sheet and other moving aid, with its location, owner and, where it needs them, the dates of its last and next thorough examination and service.
 
 - The registered manager arranges thorough examination of all lifting equipment and slings by a competent person, and servicing in line with the maker's instructions, and acts on any defect the examiner reports.
 - Each resident who uses a hoist has their own slings, of the type and size their assessment specifies, labelled with their name and not used for anyone else.
@@ -56,7 +56,7 @@ The home keeps an equipment register listing every hoist, bath hoist, stand aid,
 ### 7.1 Before each use
 
 - Check the equipment for damage: frayed or torn fabric, worn loops or stitching, cracks, loose parts, a flat battery.
-- Check the examination label is in date. If it is not, do not use the equipment and tell the shift leader.
+- For a hoist or sling, check the examination label is in date. If it is not, do not use it and tell the shift leader.
 - Check the sling is the resident's own, the right size, and clean.
 - Check brakes, bed height and space before you start.
 
