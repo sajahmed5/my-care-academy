@@ -93,7 +93,7 @@ export default function CqcCompliancePage() {
           <h1 className="font-display mt-4 max-w-3xl text-balance text-4xl font-bold leading-[1.04] tracking-tight text-[#0f2f3c] sm:text-5xl">
             CQC training courses and mock inspections, from one place
           </h1>
-          <p className="mt-5 max-w-2xl text-lg text-[#0f2f3c]/65">
+          <p className="mt-5 max-w-2xl text-lg text-[#0f2f3c]/70">
             Most providers buy their e-learning from one company and their mock
             inspection from another. We do both: {COURSE_COUNT} CQC-aligned
             courses with evidence attached, and a consultant who will come and
@@ -112,7 +112,7 @@ export default function CqcCompliancePage() {
 
       <Section className="pt-12">
         <H2>Evidence against the five key questions</H2>
-        <p className="mt-3 max-w-2xl text-[#0f2f3c]/65">
+        <p className="mt-3 max-w-2xl text-[#0f2f3c]/70">
           Regulation 18 is the legal hook: staff must get the training and
           support their role needs. What an inspector then wants is proof. Here
           is where training supplies it.
@@ -202,10 +202,10 @@ export default function CqcCompliancePage() {
             ].map(([t, b]) => (
               <li key={t} className="rounded-2xl bg-white p-4 ring-1 ring-[#134f63]/10">
                 <span className="flex items-center gap-2 font-semibold">
-                  <GraduationCap className="size-4 text-[#b7791f]" />
+                  <GraduationCap className="size-4 text-[#9a6414]" />
                   {t}
                 </span>
-                <span className="mt-1 block text-sm text-[#0f2f3c]/65">{b}</span>
+                <span className="mt-1 block text-sm text-[#0f2f3c]/70">{b}</span>
               </li>
             ))}
           </ul>
@@ -222,7 +222,7 @@ export default function CqcCompliancePage() {
             </div>
           ))}
         </dl>
-        <p className="mt-6 text-sm text-[#0f2f3c]/65">
+        <p className="mt-6 text-sm text-[#0f2f3c]/70">
           Also worth reading:{" "}
           <Link href="/training/mandatory-training" className="font-semibold text-[#1d6f8a] underline underline-offset-2">
             mandatory training for care staff

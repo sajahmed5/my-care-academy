@@ -88,7 +88,7 @@ export default function CareCertificatePage() {
 
       <Section className="pt-12">
         <H2>The {OFFICIAL_STANDARDS} standards, and the course that covers each</H2>
-        <p className="mt-3 max-w-2xl text-[#0f2f3c]/65">
+        <p className="mt-3 max-w-2xl text-[#0f2f3c]/70">
           Every standard has a course written for UK adult social care, with an
           assessment and a certificate anyone can verify.
         </p>
@@ -96,15 +96,15 @@ export default function CareCertificatePage() {
           {CARE_CERT_STANDARDS.map((s) => (
             <li
               key={s.no}
-              className={`rounded-2xl p-4 ring-1 ${s.extra ? "bg-[#fff8ee] ring-[#b7791f]/25" : "bg-white ring-[#134f63]/10"}`}
+              className={`rounded-2xl p-4 ring-1 ${s.extra ? "bg-[#fff8ee] ring-[#9a6414]/25" : "bg-white ring-[#134f63]/10"}`}
             >
               <div className="flex items-baseline gap-2">
-                <span className="font-mono text-xs text-[#b7791f]">
+                <span className="font-mono text-xs text-[#9a6414]">
                   {s.extra ? "+" : String(s.no).padStart(2, "0")}
                 </span>
                 <span className="font-semibold">{s.name}</span>
               </div>
-              <div className="mt-1.5 pl-7 text-sm text-[#0f2f3c]/65">{s.course}</div>
+              <div className="mt-1.5 pl-7 text-sm text-[#0f2f3c]/70">{s.course}</div>
               {s.extra && (
                 <div className="mt-1.5 pl-7 text-xs text-[#8a4d0c]">
                   Not one of the {OFFICIAL_STANDARDS} — added because providers
@@ -123,12 +123,12 @@ export default function CareCertificatePage() {
             const I = Icon as typeof GraduationCap;
             return (
               <li key={title as string} className="rounded-2xl bg-white p-5 ring-1 ring-[#134f63]/10">
-                <span className="grid size-10 place-items-center rounded-xl bg-[#fcefdc] text-[#b7791f]">
+                <span className="grid size-10 place-items-center rounded-xl bg-[#fcefdc] text-[#9a6414]">
                   <I className="size-5" />
                 </span>
-                <div className="mt-3 font-mono text-xs text-[#0f2f3c]/45">Step {i + 1}</div>
+                <div className="mt-3 font-mono text-xs text-[#0f2f3c]/70">Step {i + 1}</div>
                 <h3 className="font-display mt-1 text-lg font-semibold">{title as string}</h3>
-                <p className="mt-1.5 text-sm text-[#0f2f3c]/65">{body as string}</p>
+                <p className="mt-1.5 text-sm text-[#0f2f3c]/70">{body as string}</p>
               </li>
             );
           })}
@@ -164,7 +164,7 @@ export default function CareCertificatePage() {
             ].map(([t, b]) => (
               <li key={t} className="rounded-2xl bg-white p-4 ring-1 ring-[#134f63]/10">
                 <span className="font-semibold">{t}</span>
-                <span className="mt-1 block text-sm text-[#0f2f3c]/65">{b}</span>
+                <span className="mt-1 block text-sm text-[#0f2f3c]/70">{b}</span>
               </li>
             ))}
           </ul>
@@ -181,7 +181,7 @@ export default function CareCertificatePage() {
             </div>
           ))}
         </dl>
-        <p className="mt-6 text-sm text-[#0f2f3c]/65">
+        <p className="mt-6 text-sm text-[#0f2f3c]/70">
           Also worth reading:{" "}
           <Link href="/training/mandatory-training" className="font-semibold text-[#8a4d0c] underline underline-offset-2">
             mandatory training for care staff

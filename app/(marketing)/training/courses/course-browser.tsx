@@ -45,13 +45,13 @@ export function CourseBrowser({
         </div>
         <label className="relative block w-full lg:w-72">
           <span className="sr-only">Search courses</span>
-          <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#0f2f3c]/40" />
+          <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[#0f2f3c]/70" />
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search courses"
-            className="w-full rounded-full bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm ring-1 ring-[#134f63]/15 outline-none placeholder:text-[#0f2f3c]/40 focus:ring-2 focus:ring-[#3a9fc4]"
+            className="w-full rounded-full bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm ring-1 ring-[#134f63]/15 outline-none placeholder:text-[#0f2f3c]/70 focus:ring-2 focus:ring-[#3a9fc4]"
           />
         </label>
       </div>
@@ -85,7 +85,7 @@ export function CourseBrowser({
                   <Icon className="size-5" />
                 </span>
                 <h2 className="font-display text-2xl font-semibold tracking-tight">{t}</h2>
-                <span className="text-sm text-[#0f2f3c]/50">
+                <span className="text-sm text-[#0f2f3c]/70">
                   {list.length} {list.length === 1 ? "course" : "courses"}
                 </span>
               </div>
@@ -115,8 +115,8 @@ function CourseCard({ course, color }: { course: CatalogueCourse; color: string 
       style={{ borderTopColor: color }}
     >
       <h3 className="font-semibold leading-snug text-[#0f2f3c]">{course.title}</h3>
-      <p className="mt-2 flex-1 text-sm leading-relaxed text-[#0f2f3c]/65">{course.summary}</p>
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[#0f2f3c]/55">
+      <p className="mt-2 flex-1 text-sm leading-relaxed text-[#0f2f3c]/70">{course.summary}</p>
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[#0f2f3c]/70">
         <span className="inline-flex items-center gap-1.5">
           <Clock className="size-3.5" /> About {course.minutes} min
         </span>

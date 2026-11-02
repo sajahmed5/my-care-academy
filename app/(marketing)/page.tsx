@@ -69,7 +69,7 @@ function Point({ tag, title, children }: { tag: string; title: string; children:
       <span className="font-mono text-xs text-[#8a4d0c]">{tag}</span>
       <div>
         <div className="font-semibold">{title}</div>
-        <div className="text-sm text-[#0f2f3c]/65">{children}</div>
+        <div className="text-sm text-[#0f2f3c]/70">{children}</div>
       </div>
     </div>
   );
@@ -130,7 +130,7 @@ export default function Home() {
                 ))}
               </span>
             </h1>
-            <p className="mt-6 max-w-xl text-lg text-[#0f2f3c]/65">
+            <p className="mt-6 max-w-xl text-lg text-[#0f2f3c]/70">
               {COURSES} CQC-aligned home care courses your carers finish on
               their phones, certificates anyone can verify, and a compliance
               position you can show an inspector the moment they ask. Built in
@@ -162,16 +162,16 @@ export default function Home() {
               <span className="size-2.5 shrink-0 rounded-full bg-[#c2413a] ring-4 ring-[#c2413a]/15" />
               <span>
                 <span className="block text-[13px] font-semibold">2 carers have training overdue</span>
-                <span className="block text-xs text-[#0f2f3c]/60">One reminder each, sent this morning</span>
+                <span className="block text-xs text-[#0f2f3c]/70">One reminder each, sent this morning</span>
               </span>
             </div>
-            <div className="mca-float mca-float-late mca-cert absolute -right-2 w-56 rounded-2xl p-4 shadow-xl shadow-[#0f2f3c]/15 ring-1 ring-[#b7791f]/20 max-sm:static max-sm:w-full sm:-right-5 sm:bottom-10 sm:w-64 border-t-4 border-[#b7791f]">
+            <div className="mca-float mca-float-late mca-cert absolute -right-2 w-56 rounded-2xl p-4 shadow-xl shadow-[#0f2f3c]/15 ring-1 ring-[#9a6414]/20 max-sm:static max-sm:w-full sm:-right-5 sm:bottom-10 sm:w-64 border-t-4 border-[#9a6414]">
               <div className="flex items-center justify-between">
                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">✓ Verified certificate</span>
                 <ShieldCheck className="size-4 text-[#134f63]" />
               </div>
               <div className="font-display mt-2.5 font-semibold leading-tight text-[#2b1d0e]">Safeguarding Adults Level 2</div>
-              <div className="mt-1 text-xs text-[#2b1d0e]/60">
+              <div className="mt-1 text-xs text-[#2b1d0e]/70">
                 Passed 92% ·{" "}
                 <Link href="/verify" className="underline underline-offset-2">anyone can check it</Link>
               </div>
@@ -186,7 +186,7 @@ export default function Home() {
           {TRUST.map(([n, l], k) => (
             <div key={l} className={`py-5 pr-4 ${k % 2 ? "pl-4 sm:pl-6" : ""} ${k > 1 ? "border-t border-[#134f63]/10 lg:border-t-0" : ""} ${k > 0 ? "lg:border-l lg:border-[#134f63]/10 lg:pl-6" : ""}`}>
               <div className="font-display text-3xl font-bold leading-none text-[#134f63]">{n}</div>
-              <div className="mt-1.5 text-sm text-[#0f2f3c]/60">{l}</div>
+              <div className="mt-1.5 text-sm text-[#0f2f3c]/70">{l}</div>
             </div>
           ))}
         </div>
@@ -196,7 +196,7 @@ export default function Home() {
       <Section id="what-you-get">
         <div className="grid items-end gap-6 md:grid-cols-[1.1fr_1fr]">
           <H2>Mandatory care training, start to certificate.</H2>
-          <p className="text-lg text-[#0f2f3c]/65">
+          <p className="text-lg text-[#0f2f3c]/70">
             Assign a course, and the chasing, marking, certificates and expiry
             dates are handled for you. You watch one number: who is up to date.
           </p>
@@ -205,7 +205,7 @@ export default function Home() {
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           <article className="mca-day grid gap-5 rounded-[1.75rem] p-7 sm:p-8">
             <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[#8a4d0c]">
-              <span className="grid size-7 place-items-center rounded-lg bg-[#b7791f]/15"><Smartphone className="size-4" /></span>
+              <span className="grid size-7 place-items-center rounded-lg bg-[#9a6414]/15"><Smartphone className="size-4" /></span>
               For your carers
             </span>
             <h3 className="font-display text-3xl font-semibold leading-tight">
@@ -218,7 +218,7 @@ export default function Home() {
                 "A 20-question assessment, marked instantly",
                 "Their certificate lands in their record the same second",
               ].map((t) => (
-                <li key={t} className="flex gap-2.5"><span className="font-bold text-[#b7791f]">✓</span>{t}</li>
+                <li key={t} className="flex gap-2.5"><span className="font-bold text-[#9a6414]">✓</span>{t}</li>
               ))}
             </ul>
             <div className="self-end rounded-2xl bg-white p-3.5 shadow-lg shadow-[#8a4d0c]/15" aria-hidden>
@@ -231,7 +231,7 @@ export default function Home() {
               ))}
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <Link href="/training" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#b7791f] px-5 text-sm font-semibold text-white transition hover:bg-[#8a4d0c]">
+              <Link href="/training" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#9a6414] px-5 text-sm font-semibold text-white transition hover:bg-[#8a4d0c]">
                 See the courses <ArrowRight className="size-4" />
               </Link>
               <span className="text-sm text-[#2b1d0e]/70">Works on any phone</span>
@@ -290,7 +290,7 @@ export default function Home() {
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a4d0c]">Inside the system</div>
             <H2 className="mt-3">Open it and see what needs you.</H2>
-            <p className="mt-3 text-lg text-[#0f2f3c]/65">
+            <p className="mt-3 text-lg text-[#0f2f3c]/70">
               Not a wall of charts. Who is behind, which course it is, and how
               long it really takes your staff to get through it.
             </p>
@@ -310,7 +310,7 @@ export default function Home() {
       <Section tone="soft" className="pt-0">
         <div className="grid items-end gap-6 md:grid-cols-[1.1fr_1fr]">
           <H2>{COURSES} care training courses, all included.</H2>
-          <p className="text-lg text-[#0f2f3c]/65">
+          <p className="text-lg text-[#0f2f3c]/70">
             Mandatory training, clinical awareness and the Care Certificate —
             written for care work in England, not adapted from an office
             induction.
@@ -329,7 +329,7 @@ export default function Home() {
                 />
               </div>
               <div className="flex items-center gap-2 p-4">
-                <GraduationCap className="size-4 shrink-0 text-[#b7791f]" />
+                <GraduationCap className="size-4 shrink-0 text-[#9a6414]" />
                 <span className="font-semibold">{title}</span>
               </div>
             </div>
@@ -345,7 +345,7 @@ export default function Home() {
         <div className="max-w-2xl">
           <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1d6f8a]">When something goes wrong</div>
           <H2 className="mt-3">From a complaint to proof it was dealt with</H2>
-          <p className="mt-3 text-[#0f2f3c]/65">
+          <p className="mt-3 text-[#0f2f3c]/70">
             A near miss on a hoist, a medication error, a concern from a
             family — the answer is nearly always training, and the hard part is
             showing you did it. One week, start to evidence. Click a step.
@@ -369,9 +369,9 @@ export default function Home() {
             const I = Icon as typeof BellRing;
             return (
               <div key={title as string} className={`pt-7 pr-6 ${k > 0 ? "lg:border-l lg:border-[#134f63]/10 lg:pl-6" : ""}`}>
-                <span className={`mb-4 grid size-12 place-items-center rounded-2xl ${tone === "amber" ? "bg-[#fcefdc] text-[#b7791f]" : "bg-[#e4f2f6] text-[#1d6f8a]"}`}><I className="size-5" /></span>
+                <span className={`mb-4 grid size-12 place-items-center rounded-2xl ${tone === "amber" ? "bg-[#fcefdc] text-[#9a6414]" : "bg-[#e4f2f6] text-[#1d6f8a]"}`}><I className="size-5" /></span>
                 <h3 className="font-display text-lg font-semibold">{title as string}</h3>
-                <p className="mt-1 text-sm text-[#0f2f3c]/65">{body as string}</p>
+                <p className="mt-1 text-sm text-[#0f2f3c]/70">{body as string}</p>
               </div>
             );
           })}
@@ -382,7 +382,7 @@ export default function Home() {
       <Section className="pt-0">
         <div className="grid items-center gap-10 rounded-[2rem] bg-[#f7e6d2] p-8 sm:p-12 lg:grid-cols-[1.5fr_1fr]">
           <blockquote>
-            <span className="font-display block text-7xl leading-[0.6] text-[#b7791f]" aria-hidden>&ldquo;</span>
+            <span className="font-display block text-7xl leading-[0.6] text-[#9a6414]" aria-hidden>&ldquo;</span>
             <p className="font-display text-balance text-2xl font-semibold leading-snug text-[#3b2710] sm:text-3xl">
               We did not build features. We fixed the things that kept us up at night.
             </p>

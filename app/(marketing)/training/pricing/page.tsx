@@ -71,7 +71,7 @@ export default function TrainingPricingPage() {
       />
       <section className="mca-day -mt-24 px-4 pb-10 pt-32 sm:pt-40">
         <div className="mx-auto max-w-6xl">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#b7791f]">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#9a6414]">
             <GraduationCap className="size-4" /> Training · pricing
           </div>
           <h1 className="font-display mt-4 max-w-3xl text-balance text-4xl font-semibold leading-[1.02] tracking-tight text-[#2b1d0e] sm:text-6xl">
@@ -81,9 +81,9 @@ export default function TrainingPricingPage() {
             Four packages, from training alone to everything a care service runs on. Unlimited learners on every one.
           </p>
           <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#2b1d0e]/75">
-            <li className="inline-flex items-center gap-2"><Users className="size-4 text-[#b7791f]" /> Unlimited learners and admins</li>
-            <li className="inline-flex items-center gap-2"><GraduationCap className="size-4 text-[#b7791f]" /> 59 CQC-aligned courses</li>
-            <li className="inline-flex items-center gap-2"><ShieldCheck className="size-4 text-[#b7791f]" /> Certificates verifiable online</li>
+            <li className="inline-flex items-center gap-2"><Users className="size-4 text-[#9a6414]" /> Unlimited learners and admins</li>
+            <li className="inline-flex items-center gap-2"><GraduationCap className="size-4 text-[#9a6414]" /> 59 CQC-aligned courses</li>
+            <li className="inline-flex items-center gap-2"><ShieldCheck className="size-4 text-[#9a6414]" /> Certificates verifiable online</li>
           </ul>
         </div>
       </section>
@@ -99,7 +99,7 @@ export default function TrainingPricingPage() {
             highlight: PRICE[tier.value].highlight,
           }))}
         />
-        <p className="mt-4 text-center text-sm text-[#0f2f3c]/65">Prices exclude VAT. Annual plans get two months free.</p>
+        <p className="mt-4 text-center text-sm text-[#0f2f3c]/70">Prices exclude VAT. Annual plans get two months free.</p>
       </Section>
 
       <Section>
@@ -122,7 +122,7 @@ export default function TrainingPricingPage() {
                 <tr key={row.label} className="border-t border-[#134f63]/10">
                   <th scope="row" className="px-5 py-3.5 text-left font-normal">
                     <span className="font-semibold">{row.label}</span>
-                    {row.detail && <span className="block text-[13px] text-[#0f2f3c]/65">{row.detail}</span>}
+                    {row.detail && <span className="block text-[13px] text-[#0f2f3c]/70">{row.detail}</span>}
                   </th>
                   {PACKAGE_TIERS.map((t, i) => (
                     <td key={t.value} className="px-3 py-3.5 text-center">
@@ -144,7 +144,7 @@ export default function TrainingPricingPage() {
         <div className="grid items-center gap-8 md:grid-cols-[1.2fr_1fr]">
           <div>
             <H2>Mock inspections and management support</H2>
-            <p className="mt-3 text-[#0f2f3c]/65">
+            <p className="mt-3 text-[#0f2f3c]/70">
               A mock CQC inspection, help with governance, ISO standards, recruitment or client feedback is quoted for
               your service, not sold as a plan. Most providers start with a mock inspection and go from there.
             </p>
@@ -164,7 +164,7 @@ export default function TrainingPricingPage() {
             {FAQ.map(([q, a]) => (
               <div key={q} className="py-5">
                 <dt className="font-semibold">{q}</dt>
-                <dd className="mt-1 text-[#0f2f3c]/65">{a}</dd>
+                <dd className="mt-1 text-[#0f2f3c]/70">{a}</dd>
               </div>
             ))}
           </dl>
@@ -172,7 +172,7 @@ export default function TrainingPricingPage() {
       </Section>
 
       <Section className="pt-0">
-        <p className="text-center text-sm text-[#0f2f3c]/65">
+        <p className="text-center text-sm text-[#0f2f3c]/70">
           See the{" "}
           <Link href="/training/courses" className="font-semibold text-[#8a4d0c] underline underline-offset-2">
             full course library

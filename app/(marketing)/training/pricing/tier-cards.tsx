@@ -45,12 +45,12 @@ export default function TierCards({ tiers }: { tiers: TierCard[] }) {
                 t.highlight ? "mca-dusk text-white ring-[#134f63]" : "bg-white ring-[#134f63]/8"
               }`}
             >
-              <div className={`text-xs font-semibold uppercase tracking-[0.2em] ${t.highlight ? "text-[#8fd3ea]" : "text-[#b7791f]"}`}>{t.label}</div>
+              <div className={`text-xs font-semibold uppercase tracking-[0.2em] ${t.highlight ? "text-[#8fd3ea]" : "text-[#9a6414]"}`}>{t.label}</div>
               <div className="font-display mt-3 text-4xl font-semibold">
                 {gbp(price)}
-                <span className={`text-base font-medium ${t.highlight ? "text-white/60" : "text-[#0f2f3c]/50"}`}> /month</span>
+                <span className={`text-base font-medium ${t.highlight ? "text-white/60" : "text-[#0f2f3c]/70"}`}> /month</span>
               </div>
-              <div className={`text-sm ${t.highlight ? "text-white/70" : "text-[#0f2f3c]/60"}`}>
+              <div className={`text-sm ${t.highlight ? "text-white/70" : "text-[#0f2f3c]/70"}`}>
                 {annual ? `${gbp(t.monthly * 10)} a year, billed annually` : "per organisation, cancel any time"}
               </div>
               <p className={`mt-4 text-sm ${t.highlight ? "text-white/85" : "text-[#0f2f3c]/70"}`}>{t.tagline}</p>

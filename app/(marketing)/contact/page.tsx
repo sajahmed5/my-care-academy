@@ -63,7 +63,7 @@ export default async function ContactPage({
         <div className="grid gap-8 lg:grid-cols-[1.35fr_1fr] lg:gap-12">
           <div>
             <H2>Send us a message</H2>
-            <p className="mt-3 text-[#0f2f3c]/65">
+            <p className="mt-3 text-[#0f2f3c]/70">
               Tell us a little about your service and we&apos;ll come back to
               you with the right answer — including a live walkthrough if that
               helps.
@@ -93,7 +93,7 @@ export default async function ContactPage({
                     >
                       0161 694 4701
                     </a>
-                    <p className="text-[#0f2f3c]/60">
+                    <p className="text-[#0f2f3c]/70">
                       9am–5pm, Monday to Friday
                     </p>
                   </div>
@@ -109,7 +109,7 @@ export default async function ContactPage({
                     >
                       hello@mycareacademy.co.uk
                     </a>
-                    <p className="text-[#0f2f3c]/60">
+                    <p className="text-[#0f2f3c]/70">
                       For anything you&apos;d rather put in writing
                     </p>
                   </div>
@@ -122,7 +122,7 @@ export default async function ContactPage({
                     <p className="font-semibold text-[#0f2f3c]">
                       107 Wellington Road
                     </p>
-                    <p className="text-[#0f2f3c]/60">
+                    <p className="text-[#0f2f3c]/70">
                       Stockport, SK4 2LR
                       <br />
                       Greater Manchester
@@ -148,7 +148,7 @@ export default async function ContactPage({
                   from any page with the Report button.
                 </li>
                 <li className="flex gap-2">
-                  <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#b7791f]" />
+                  <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#9a6414]" />
                   <span>
                     Checking someone&apos;s certificate?{" "}
                     <Link
@@ -189,7 +189,7 @@ export default async function ContactPage({
                   {i + 1}
                 </span>
                 <p className="mt-3 font-semibold text-[#0f2f3c]">{title}</p>
-                <p className="mt-1 text-sm text-[#0f2f3c]/65">{body}</p>
+                <p className="mt-1 text-sm text-[#0f2f3c]/70">{body}</p>
               </li>
             ))}
           </ol>

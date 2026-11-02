@@ -26,7 +26,7 @@ export default function CoursesPage() {
       />
       <section className="mca-day -mt-24 px-4 pb-14 pt-32 sm:pt-40">
         <div className="mx-auto max-w-6xl">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#b7791f]">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#9a6414]">
             <GraduationCap className="size-4" /> The course library
           </div>
           <h1 className="font-display mt-4 max-w-3xl text-balance text-4xl font-semibold leading-[1.02] tracking-tight text-[#2b1d0e] sm:text-6xl">
@@ -38,9 +38,9 @@ export default function CoursesPage() {
             anyone can verify, and every one is included in every plan.
           </p>
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#2b1d0e]/75">
-            <li className="inline-flex items-center gap-2"><Smartphone className="size-4 text-[#b7791f]" /> About 20 minutes each, on a phone</li>
-            <li className="inline-flex items-center gap-2"><ShieldCheck className="size-4 text-[#b7791f]" /> Certificates verifiable online</li>
-            <li className="inline-flex items-center gap-2"><Award className="size-4 text-[#b7791f]" /> Refresher reminders before they lapse</li>
+            <li className="inline-flex items-center gap-2"><Smartphone className="size-4 text-[#9a6414]" /> About 20 minutes each, on a phone</li>
+            <li className="inline-flex items-center gap-2"><ShieldCheck className="size-4 text-[#9a6414]" /> Certificates verifiable online</li>
+            <li className="inline-flex items-center gap-2"><Award className="size-4 text-[#9a6414]" /> Refresher reminders before they lapse</li>
           </ul>
         </div>
       </section>
@@ -48,7 +48,7 @@ export default function CoursesPage() {
       <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10">
         <CourseBrowser courses={COURSE_CATALOGUE} topics={COURSE_TOPICS} />
 
-        <p className="mt-12 max-w-3xl text-sm text-[#0f2f3c]/60">
+        <p className="mt-12 max-w-3xl text-sm text-[#0f2f3c]/70">
           The clinical courses (catheter, stoma, PEG and tracheostomy care,
           diabetes, epilepsy and the like) are at awareness level. A carer
           still needs task-specific training, assessed competence and
@@ -68,7 +68,7 @@ export default function CoursesPage() {
             <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-3xl">
               Need a course that isn&apos;t here?
             </h2>
-            <p className="mt-3 text-[#0f2f3c]/65">
+            <p className="mt-3 text-[#0f2f3c]/70">
               Tell us what your service needs and we will talk it through.
             </p>
           </div>
