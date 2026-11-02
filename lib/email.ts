@@ -81,6 +81,16 @@ async function asCompany(
  * `organisationId` is the company the email is for: pass it wherever there is
  * one, and with white label the email goes out in its name and dress.
  */
+/**
+ * The key to send with, or null when sending is off: no key, or
+ * EMAIL_SENDING=off (the QA harness, a preview that must never write to a
+ * real inbox). Every send goes through here.
+ */
+export function emailApiKey(): string | null {
+  if (process.env.EMAIL_SENDING === "off") return null;
+  return process.env.RESEND_API_KEY || null;
+}
+
 export async function sendEmail({
   to,
   subject,
@@ -97,7 +107,7 @@ export async function sendEmail({
   attachments?: { filename: string; content: string }[];
   organisationId?: string | null;
 }): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = emailApiKey();
   if (!apiKey) return false;
   const company = await asCompany(organisationId, html, replyTo);
   try {
@@ -144,7 +154,7 @@ const BATCH_MAX = 100;
 export async function sendEmailBatch(
   messages: { to: string; subject: string; html: string; organisationId?: string | null }[],
 ): Promise<boolean[]> {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = emailApiKey();
   if (!apiKey) return messages.map(() => false);
   const lookup = companyLookupOnce();
   const ready = await Promise.all(
@@ -228,7 +238,7 @@ export async function sendInviteEmail({
   orgName,
   organisationId,
 }: InviteEmailOptions): Promise<SendResult> {
-  if (!process.env.RESEND_API_KEY) return { sent: false, link: inviteUrl };
+  if (!emailApiKey()) return { sent: false, link: inviteUrl };
 
   const company = await accountName(organisationId);
   const joining = orgName && !company ? ` for <strong>${esc(orgName)}</strong>` : "";
