@@ -47,9 +47,14 @@ async function readForms(supabase: SupabaseClient, organisationId: string): Prom
 /** Once per request, per organisation. */
 export const loadServiceForms = cache(async (organisationId: string): Promise<ServiceAuditForm[]> => readForms(await createClient(), organisationId));
 
-/** The client QA as the company asks it: ours, or its own medication and extra questions and due period. */
-export const loadQaForm = cache(async (organisationId: string): Promise<QaForm> => {
-  const supabase = await createClient();
+/**
+ * The same, with a client handed in: for code that has no request cookies
+ * to read — the cached Due count runs under the service role, and
+ * `cookies()` cannot be read inside `unstable_cache()`.
+ */
+export const loadServiceFormsWith = (supabase: SupabaseClient, organisationId: string): Promise<ServiceAuditForm[]> => readForms(supabase, organisationId);
+
+async function readQaForm(supabase: SupabaseClient, organisationId: string): Promise<QaForm> {
   const { data } = await supabase
     .from("service_audit_forms")
     .select("questions, due_every, due_unit")
@@ -57,7 +62,13 @@ export const loadQaForm = cache(async (organisationId: string): Promise<QaForm> 
     .eq("key", QA_FORM_KEY)
     .maybeSingle();
   return resolveQaForm(data ? { questions: data.questions, due_every: data.due_every as number, due_unit: data.due_unit === "weeks" ? "weeks" : "months" } : null);
-});
+}
+
+/** The client QA as the company asks it: ours, or its own medication and extra questions and due period. */
+export const loadQaForm = cache(async (organisationId: string): Promise<QaForm> => readQaForm(await createClient(), organisationId));
+
+/** As loadQaForm, with a client handed in (see loadServiceFormsWith). */
+export const loadQaFormWith = readQaForm;
 
 export const loadReviewBelow = cache(async (organisationId: string): Promise<number> => {
   const supabase = await createClient();

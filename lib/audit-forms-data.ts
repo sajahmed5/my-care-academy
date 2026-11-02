@@ -31,3 +31,10 @@ async function read(supabase: SupabaseClient, organisationId: string): Promise<R
 
 /** Once per request, per organisation: the file page and its forms all ask. */
 export const loadAuditForms = cache(async (organisationId: string): Promise<ResolvedForms> => read(await createClient(), organisationId));
+
+/**
+ * The same read with a client the caller already holds — the service role
+ * inside the cached Due count (lib/due-badge), where the request's cookies
+ * can't be read: a cold cache there crashed whichever page was loading.
+ */
+export const loadAuditFormsWith = (client: SupabaseClient, organisationId: string): Promise<ResolvedForms> => read(client, organisationId);
