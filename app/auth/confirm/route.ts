@@ -1,6 +1,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { safeInternalPath } from "@/lib/safe-path";
 
 /**
  * Accepts email OTP links (invites, magic links, recovery). Verifies the token,
@@ -22,11 +23,8 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ type, token_hash });
     if (!error) {
-      // Only allow internal redirects.
-      const safeNext = next.startsWith("/") && !next.startsWith("//")
-        ? next
-        : "/dashboard";
-      return NextResponse.redirect(new URL(safeNext, origin));
+      // Only a path on this site: anything else is an open redirect.
+      return NextResponse.redirect(new URL(safeInternalPath(next, "/dashboard"), origin));
     }
   }
 

@@ -5,6 +5,7 @@ import { dashboardPathForRole, getUserContext } from "@/lib/auth";
 import { AuthShell } from "@/components/auth-shell";
 import { LoginForm } from "./login-form";
 import { hostCompany } from "@/lib/company-host";
+import { safeInternalPath } from "@/lib/safe-path";
 
 export async function generateMetadata(): Promise<Metadata> {
   const brand = await hostCompany();
@@ -27,11 +28,8 @@ export default async function LoginPage({
   }
 
   const { redirectTo } = await searchParams;
-  // Only allow internal relative paths to prevent open-redirects.
-  const safeRedirect =
-    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
-      ? redirectTo
-      : "/dashboard";
+  // Only a path on this site: anything else is an open redirect.
+  const safeRedirect = safeInternalPath(redirectTo, "/dashboard");
 
   // On a company's own web address: its name and dress, and none of our
   // public site's links (white label).
