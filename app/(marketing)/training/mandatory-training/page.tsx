@@ -87,7 +87,7 @@ export default function MandatoryTrainingPage() {
           <h1 className="font-display mt-4 max-w-3xl text-balance text-4xl font-bold leading-[1.04] tracking-tight text-[#0f2f3c] sm:text-5xl">
             Mandatory training for care staff: what CQC expects, subject by subject
           </h1>
-          <p className="mt-5 max-w-2xl text-lg text-[#0f2f3c]/65">
+          <p className="mt-5 max-w-2xl text-lg text-[#0f2f3c]/70">
             There is no official list — which is exactly why managers go
             looking for one. Here is what care services are routinely expected
             to cover, where the legal duty actually comes from, and how to
@@ -110,7 +110,7 @@ export default function MandatoryTrainingPage() {
         </div>
 
         <H2 className="mt-10">The subjects care services are expected to cover</H2>
-        <p className="mt-3 max-w-2xl text-[#0f2f3c]/65">
+        <p className="mt-3 max-w-2xl text-[#0f2f3c]/70">
           Refresher intervals below are common practice across the sector, not
           law. Set your own policy and apply it consistently.
         </p>
@@ -118,7 +118,7 @@ export default function MandatoryTrainingPage() {
         <div className="mt-6 overflow-x-auto rounded-2xl bg-white ring-1 ring-[#134f63]/10">
           <table className="w-full min-w-[46rem] text-sm">
             <thead>
-              <tr className="border-b text-left text-[#0f2f3c]/60">
+              <tr className="border-b text-left text-[#0f2f3c]/70">
                 <th className="px-4 py-3 font-medium">Subject</th>
                 <th className="px-4 py-3 font-medium">Why it is expected</th>
                 <th className="px-4 py-3 font-medium">Typical refresher</th>
@@ -130,14 +130,14 @@ export default function MandatoryTrainingPage() {
                 <tr key={r.subject} className="border-b last:border-0 align-top">
                   <th scope="row" className="px-4 py-3 text-left font-semibold">{r.subject}</th>
                   <td className="px-4 py-3 text-[#0f2f3c]/70">{r.why}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-[#0f2f3c]/60">{r.refresh}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-[#0f2f3c]/70">{r.refresh}</td>
                   <td className="px-4 py-3 text-[#0f2f3c]/70">{r.course}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p className="mt-4 text-sm text-[#0f2f3c]/65">
+        <p className="mt-4 text-sm text-[#0f2f3c]/70">
           Specialist subjects — catheter care, PEG feeding, stoma care,
           epilepsy, end of life — depend on who you support.{" "}
           <Link href="/training/courses" className="font-semibold text-[#1d6f8a] underline underline-offset-2">
@@ -157,7 +157,7 @@ export default function MandatoryTrainingPage() {
           ].map(([t, b]) => (
             <div key={t} className="rounded-2xl bg-white p-5 ring-1 ring-[#134f63]/10">
               <h3 className="font-display text-lg font-semibold">{t}</h3>
-              <p className="mt-2 text-sm text-[#0f2f3c]/65">{b}</p>
+              <p className="mt-2 text-sm text-[#0f2f3c]/70">{b}</p>
             </div>
           ))}
         </div>
@@ -177,7 +177,7 @@ export default function MandatoryTrainingPage() {
             </div>
           ))}
         </dl>
-        <p className="mt-6 max-w-3xl text-xs text-[#0f2f3c]/50">
+        <p className="mt-6 max-w-3xl text-xs text-[#0f2f3c]/70">
           This guide is general information for UK care providers, not legal
           advice. Your own policy, your regulator and your commissioners decide
           what your service must do.

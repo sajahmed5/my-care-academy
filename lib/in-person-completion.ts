@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { chunked } from "@/lib/fetch-all";
 import { issueCertificate } from "@/lib/issue-certificate";
 
 /**
@@ -33,12 +34,12 @@ export async function completeInPerson({
   const issued = new Map<string, string>();
   if (userIds.length === 0) return issued;
   const issuedAt = new Date(`${heldOn}T12:00:00Z`);
-  const { data: existing } = await admin
-    .from("enrolments")
-    .select("id, user_id, completion_count")
-    .eq("course_id", courseId)
-    .in("user_id", userIds);
-  const byUser = new Map((existing ?? []).map((e) => [e.user_id as string, e]));
+  // A hundred ids a request: the list travels in the URL, which a big
+  // classroom's attendance would overflow.
+  const existing = (
+    await Promise.all(chunked(userIds).map((part) => admin.from("enrolments").select("id, user_id, completion_count").eq("course_id", courseId).in("user_id", part)))
+  ).flatMap((r) => r.data ?? []);
+  const byUser = new Map(existing.map((e) => [e.user_id as string, e]));
   for (const userId of userIds) {
     const prior = byUser.get(userId);
     if (prior) {

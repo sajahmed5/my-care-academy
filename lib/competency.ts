@@ -12,6 +12,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "./fetch-all";
 import { COMPETENCY_FORMS, type CheckAnswer } from "./audit-forms";
 import type { CourseRef, Suggestion } from "./complaints/categories";
 
@@ -105,16 +106,21 @@ export async function loadCompetencyChecks(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<CompetencyCheck[]> {
-  const { data } = await supabase
-    .from("competency_checks")
-    .select(
-      "id, area, outcome, checked_on, notes, next_due, criteria, assessor:users!competency_checks_assessor_id_fkey (full_name, email)",
-    )
-    .eq("user_id", userId)
-    .order("checked_on", { ascending: false })
-    .limit(200);
+  // Every check, paged (Saj, 2 Nov 2026): a cap of 200 would have left the
+  // oldest out of the evidence pack without a word.
+  const data = await fetchAll<Record<string, unknown>>((from, to) =>
+    supabase
+      .from("competency_checks")
+      .select(
+        "id, area, outcome, checked_on, notes, next_due, criteria, assessor:users!competency_checks_assessor_id_fkey (full_name, email)",
+      )
+      .eq("user_id", userId)
+      .order("checked_on", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 
-  return (data ?? []).map((row) => {
+  return data.map((row) => {
     // PostgREST returns an embedded row as an object, or an array when it
     // cannot prove the relationship is to-one.
     const raw = (row as { assessor?: unknown }).assessor;
@@ -154,15 +160,18 @@ export interface SpotCheck {
 
 /** One carer's spot checks, newest first. */
 export async function loadSpotChecks(supabase: SupabaseClient, userId: string): Promise<SpotCheck[]> {
-  const { data } = await supabase
-    .from("spot_checks")
-    .select(
-      "id, checked_on, client_id, client_name, items, outcome, notes, next_due, carer_signature, carer_signed_name, carer_signed_at, carer_unsigned_reason, assessor:users!spot_checks_assessor_id_fkey (full_name, email)",
-    )
-    .eq("user_id", userId)
-    .order("checked_on", { ascending: false })
-    .limit(100);
-  return (data ?? []).map((row) => {
+  const data = await fetchAll<Record<string, unknown>>((from, to) =>
+    supabase
+      .from("spot_checks")
+      .select(
+        "id, checked_on, client_id, client_name, items, outcome, notes, next_due, carer_signature, carer_signed_name, carer_signed_at, carer_unsigned_reason, assessor:users!spot_checks_assessor_id_fkey (full_name, email)",
+      )
+      .eq("user_id", userId)
+      .order("checked_on", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
+  return data.map((row) => {
     const raw = (row as { assessor?: unknown }).assessor;
     const assessor = (Array.isArray(raw) ? raw[0] : raw) as { full_name?: string | null; email?: string | null } | undefined;
     return {
@@ -188,13 +197,16 @@ export async function loadAuditTraining(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<Map<string, Map<string, string | null>>> {
-  const { data } = await supabase
-    .from("staff_audit_training")
-    .select("source_type, source_id, course_id, reason")
-    .eq("user_id", userId)
-    .limit(500);
+  const data = await fetchAll<Record<string, unknown>>((from, to) =>
+    supabase
+      .from("staff_audit_training")
+      .select("id, source_type, source_id, course_id, reason")
+      .eq("user_id", userId)
+      .order("id")
+      .range(from, to),
+  );
   const out = new Map<string, Map<string, string | null>>();
-  for (const r of data ?? []) {
+  for (const r of data) {
     const key = `${r.source_type}:${r.source_id}`;
     const m = out.get(key) ?? new Map<string, string | null>();
     m.set(r.course_id as string, (r.reason as string | null) ?? null);

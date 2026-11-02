@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireConsole } from "@/lib/auth";
 import { hasFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { complaintGuidance } from "@/lib/complaints/guidance";
 import { renderGuidancePdf } from "@/lib/complaints/pdf";
 import { safeName } from "@/lib/complaints/papers";
@@ -22,15 +23,18 @@ export async function GET() {
     supabase.from("organisations").select("name").eq("id", context.organisationId).maybeSingle(),
     hasFeature(context, "clients.list").then(async (on) => {
       if (!on) return [];
-      const { data } = await supabase
-        .from("clients")
-        .select("funder_name")
-        .eq("organisation_id", context.organisationId!)
-        .eq("funder_type", "council")
-        .eq("status", "active")
-        .not("funder_name", "is", null)
-        .limit(1000);
-      return [...new Set((data ?? []).map((r) => (r.funder_name as string).trim()).filter(Boolean))].sort();
+      const data = await fetchAll<{ id: string; funder_name: string }>((f, t) =>
+        supabase
+          .from("clients")
+          .select("id, funder_name")
+          .eq("organisation_id", context.organisationId!)
+          .eq("funder_type", "council")
+          .eq("status", "active")
+          .not("funder_name", "is", null)
+          .order("id")
+          .range(f, t),
+      );
+      return [...new Set(data.map((r) => r.funder_name.trim()).filter(Boolean))].sort();
     }),
   ]);
   const name = (org?.name as string) ?? "Our organisation";

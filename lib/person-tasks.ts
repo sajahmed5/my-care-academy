@@ -20,6 +20,7 @@
 
 import type { StaffDocTask } from "./staff-documents";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "./fetch-all";
 import type { Certificate, Enrolment } from "./learner-data";
 import { daysUntil, expiryFlag, isExpired, isOverdue } from "./engine-logic";
 
@@ -227,12 +228,16 @@ export async function loadPersonActions(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<ActionRow[]> {
-  const { data } = await supabase
-    .from("record_actions")
-    .select("id, title, detail, due_date, source_type, completed_at")
-    .eq("user_id", userId)
-    .order("completed_at", { nullsFirst: true })
-    .order("due_date", { nullsFirst: false })
-    .limit(200);
-  return (data ?? []) as ActionRow[];
+  // Every action, paged (Saj, 2 Nov 2026): a cap of 200 would have left the
+  // oldest out of the file without a word.
+  return fetchAll<ActionRow>((from, to) =>
+    supabase
+      .from("record_actions")
+      .select("id, title, detail, due_date, source_type, completed_at")
+      .eq("user_id", userId)
+      .order("completed_at", { nullsFirst: true })
+      .order("due_date", { nullsFirst: false })
+      .order("id")
+      .range(from, to),
+  );
 }

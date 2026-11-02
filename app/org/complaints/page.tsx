@@ -3,7 +3,9 @@ import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { siteOrigin } from "@/lib/site-url";
+import { allHref, latest } from "@/lib/latest";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { ViewAll } from "@/components/view-all";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatTile } from "@/components/learner-ui";
@@ -24,11 +26,11 @@ import { CopyConcernLink } from "./copy-concern-link";
 export default async function ComplaintsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; kind?: string }>;
+  searchParams: Promise<{ status?: string; kind?: string; all?: string }>;
 }) {
   const context = await requireConsole();
   await requireFeature(context, "complaints.register");
-  const { status, kind } = await searchParams;
+  const { status, kind, all } = await searchParams;
 
   const supabase = await createClient();
   const orgId = context.organisationId!;
@@ -61,8 +63,11 @@ export default async function ComplaintsPage({
     const p = new URLSearchParams(Object.entries(q).filter(([, v]) => v) as [string, string][]).toString();
     return `/org/complaints${p ? `?${p}` : ""}`;
   };
-  const shown = rows.filter(
-    (r) => (!status || r.complaint.status === status) && (!kind || r.complaint.kind === kind),
+  // Newest first, and the most recent 200 unless asked for everything; the
+  // counts above come from the whole register.
+  const shown = latest(
+    rows.filter((r) => (!status || r.complaint.status === status) && (!kind || r.complaint.kind === kind)),
+    all,
   );
 
   return (
@@ -123,7 +128,7 @@ export default async function ComplaintsPage({
             </Card>
           ))}
 
-        {shown.length === 0 ? (
+        {shown.total === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-sm text-muted-foreground">
               {complaints.length === 0
@@ -133,9 +138,10 @@ export default async function ComplaintsPage({
           </Card>
         ) : (
           <div className="space-y-3">
-            {shown.map((r) => (
+            {shown.rows.map((r) => (
               <ComplaintRow key={r.complaint.id} complaint={r.complaint} next={r.next} stepLabel={r.stepLabel} />
             ))}
+            <ViewAll list={shown} href={allHref("/org/complaints", { status, kind })} noun="records" />
           </div>
         )}
       </div>

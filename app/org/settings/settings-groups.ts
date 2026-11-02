@@ -36,6 +36,11 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         label: "Account and package",
         hint: "Your package and billing, AI drafting, and who has the console.",
       },
+      {
+        href: "/org/settings/access",
+        label: "Who can see what",
+        hint: "Managers see everything. Office workers see everything too, unless you switch an area off here.",
+      },
     ],
   },
   {

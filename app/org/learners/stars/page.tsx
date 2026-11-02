@@ -218,7 +218,7 @@ export default async function StarsPage({
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <table className="w-full min-w-[760px] border-collapse text-[15px]">
                 <thead>
                   <tr className="border-b text-left text-[12.5px] font-bold uppercase tracking-wider text-muted-foreground">

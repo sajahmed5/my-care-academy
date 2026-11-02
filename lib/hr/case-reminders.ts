@@ -1,5 +1,6 @@
 import "server-only";
 import { fetchAll } from "@/lib/fetch-all";
+import { sanitiseHiddenAreas } from "@/lib/office-access";
 import { sendEmailBatch } from "@/lib/email";
 import { emailButton, emailLayout, esc } from "@/lib/email-layout";
 import { siteOrigin } from "@/lib/site-url";
@@ -38,6 +39,9 @@ export async function processCaseReminders(admin: Admin, now: Date, dryRun: bool
   ]);
   const settings = settingsParts.flat();
   const staff = staffParts.flat();
+  // Who can see what: an office worker whose company switched cases off gets no reminder.
+  const orgRows = (await Promise.all(parts.map((ids) => fetchAll((f, t) => admin.from("organisations").select("id, office_hidden_areas").in("id", ids).order("id").range(f, t))))).flat();
+  const casesOff = new Set(orgRows.filter((o) => sanitiseHiddenAreas(o.office_hidden_areas).includes("people.cases")).map((o) => o.id as string));
 
   // One email per recipient, sent as their company.
   const lines = new Map<string, { to: string; orgId: string; items: string[] }>();
@@ -60,7 +64,7 @@ export async function processCaseReminders(admin: Admin, now: Date, dryRun: bool
         u.organisation_id === orgId &&
         u.id !== c.user_id &&
         u.id !== c.about_user_id &&
-        (u.role === "org_admin" || s.officeAccess.includes(u.id as string)),
+        (u.role === "org_admin" || (u.role === "org_office" && !casesOff.has(orgId))),
     );
     for (const u of who) {
       if (!u.email) continue;

@@ -21,6 +21,7 @@ import { EditOrgForm } from "./edit-org-form";
 import { OrgAdmins, type OrgPerson } from "./org-admins";
 import { OrgNudgeButton } from "../../org-nudge-button";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchAll } from "@/lib/fetch-all";
 import { hasFeatureForOrg } from "@/lib/entitlements";
 import { siteOrigin } from "@/lib/site-url";
 import { IntegrationPanel } from "./integration-panel";
@@ -41,6 +42,15 @@ const SECTIONS = [
   { key: "integration", label: "Integration" },
 ] as const;
 type Section = (typeof SECTIONS)[number]["key"];
+
+interface StaffRecord {
+  id: string;
+  full_name: string | null;
+  email: string;
+  role: string;
+  status: string | null;
+  created_at: string;
+}
 
 export default async function OrganisationDetailPage({
   params,
@@ -72,14 +82,20 @@ export default async function OrganisationDetailPage({
       )
       .eq("id", id)
       .single(),
+    // Everyone in the organisation, leavers included, paged past the
+    // 1,000-row answer: the console users and the promotion picker come
+    // from this list, so nobody can be missing from it.
     section === "overview"
-      ? supabase
-          .from("users")
-          .select("id, full_name, email, role, status, created_at")
-          .eq("organisation_id", id)
-          .order("created_at", { ascending: true })
-          .then((r) => r.data ?? [])
-      : [],
+      ? fetchAll<StaffRecord>((from, to) =>
+          supabase
+            .from("users")
+            .select("id, full_name, email, role, status, created_at")
+            .eq("organisation_id", id)
+            .order("created_at", { ascending: true })
+            .order("id")
+            .range(from, to),
+        )
+      : ([] as StaffRecord[]),
     showsLearners ? loadOrgLearners(supabase, id) : [],
     section === "settings"
       ? Promise.all([

@@ -58,4 +58,12 @@ revoke insert, update, delete on public.issue_reports          from authenticate
 revoke truncate, references, trigger on all tables in schema public from authenticated;
 
 -- The leftover certificate-expiry backup has no policies and no reader.
-revoke all on public._bk_hg_cert_expiry_20260927 from authenticated;
+-- The backup table was made by hand in the live project and is not in any
+-- migration, so a fresh database (supabase db reset, a preview branch) has no
+-- such table: only touch it where it exists.
+do $$
+begin
+  if to_regclass('public._bk_hg_cert_expiry_20260927') is not null then
+    revoke all on public._bk_hg_cert_expiry_20260927 from authenticated;
+  end if;
+end $$;

@@ -3,7 +3,10 @@ import { Plus } from "lucide-react";
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
+import { allHref, latest } from "@/lib/latest";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { ViewAll } from "@/components/view-all";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { auditKind } from "@/lib/audits";
@@ -37,31 +40,40 @@ interface Done {
  * where each audit stands — across the service, and client by client — and
  * the audits carried out.
  */
-export default async function AuditsPage() {
+export default async function AuditsPage({ searchParams }: { searchParams: Promise<{ all?: string }> }) {
   const context = await requireConsole();
   await requireFeature(context, "quality.audits");
+  const { all } = await searchParams;
   const supabase = await createClient();
   const orgId = context.organisationId!;
-  const [due, { data: audits }, { data: qas }] = await Promise.all([
+  // Both registers read in full, a page at a time: what waits for review is
+  // found among all of them, not the latest hundred.
+  const [due, audits, qas] = await Promise.all([
     loadServiceDue(supabase, orgId),
-    supabase
-      .from("audits")
-      .select("id, kind, title, subject, client_name, held_on, created_at, score, review_status")
-      .eq("organisation_id", orgId)
-      .order("held_on", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(100),
-    supabase
-      .from("client_qas")
-      .select("id, client_name, held_on, created_at, completed, score, review_status")
-      .eq("organisation_id", orgId)
-      .order("held_on", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(100),
+    fetchAll<Record<string, unknown>>((f, t) =>
+      supabase
+        .from("audits")
+        .select("id, kind, title, subject, client_name, held_on, created_at, score, review_status")
+        .eq("organisation_id", orgId)
+        .order("held_on", { ascending: false })
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(f, t),
+    ),
+    fetchAll<Record<string, unknown>>((f, t) =>
+      supabase
+        .from("client_qas")
+        .select("id, client_name, held_on, created_at, completed, score, review_status")
+        .eq("organisation_id", orgId)
+        .order("held_on", { ascending: false })
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(f, t),
+    ),
   ]);
   // Audits and QAs side by side, newest first: both are how the service checks itself.
   const done: Done[] = [
-    ...(audits ?? []).map((a) => ({
+    ...audits.map((a) => ({
       href: `/org/audits/${a.id}`,
       title: (a.title as string | null) ?? auditKind(a.kind as string)?.label ?? (a.kind as string),
       about: ((a.client_name ?? a.subject) as string | null) ?? null,
@@ -70,7 +82,7 @@ export default async function AuditsPage() {
       score: a.score as number | null,
       review: a.review_status as string,
     })),
-    ...(qas ?? []).map((q) => ({
+    ...qas.map((q) => ({
       href: `/org/audits/qa/${q.id}`,
       title: q.completed ? "Client QA" : "Client QA — attempted",
       about: q.client_name as string,
@@ -81,6 +93,8 @@ export default async function AuditsPage() {
     })),
   ].sort((a, b) => b.heldOn.localeCompare(a.heldOn) || b.createdAt.localeCompare(a.createdAt));
   const waiting = done.filter((d) => d.review === "waiting").reverse();
+  // The most recent 200 carried out, unless asked for everything.
+  const shown = latest(done, all);
   const service = due.filter((d) => d.form.scope === "service");
   const byClient = due.filter((d) => d.form.scope === "client");
 
@@ -188,7 +202,7 @@ export default async function AuditsPage() {
           ) : (
             <Card>
               <CardContent className="divide-y p-0">
-                {done.map((a) => (
+                {shown.rows.map((a) => (
                   <Link key={a.href} href={a.href} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm hover:bg-muted/50">
                     <span className="flex flex-wrap items-center gap-2">
                       {a.title}
@@ -204,6 +218,7 @@ export default async function AuditsPage() {
               </CardContent>
             </Card>
           )}
+          <ViewAll list={shown} href={allHref("/org/audits")} noun="audits and QAs" />
         </section>
       </div>
     </DashboardShell>

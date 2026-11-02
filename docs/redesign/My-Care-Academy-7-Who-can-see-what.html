@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who can see what</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+  /* Mock-up (2 Nov 2026, QA review Q2): a page under Settings → Your company where a
+     manager switches whole areas of the console off for office workers. Same tokens
+     as the other console mock-ups. */
+  :root {
+    --bg: #f4f7f6; --card: #ffffff; --border: #e1e9e7; --fg: #13302e; --muted: #5b6b69;
+    --muted-bg: #eef3f2; --primary: #0f766e; --primary-hover: #0b5a54; --accent: #e6f4f1;
+    --accent-fg: #0b5a54; --warn: #fef3c7; --warn-fg: #92400e; --ring: #d9e3e0;
+    --font: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1b1a; --card: #172726; --border: #27403c; --fg: #e7efed; --muted: #9db2ad;
+      --muted-bg: #1f3331; --primary: #3cbfb0; --primary-hover: #5fd3c6; --accent: #163833;
+      --accent-fg: #8fe0d4; --warn: #3b2a08; --warn-fg: #fcd34d; --ring: #2c4541; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1b1a; --card: #172726; --border: #27403c; --fg: #e7efed; --muted: #9db2ad;
+    --muted-bg: #1f3331; --primary: #3cbfb0; --primary-hover: #5fd3c6; --accent: #163833;
+    --accent-fg: #8fe0d4; --warn: #3b2a08; --warn-fg: #fcd34d; --ring: #2c4541; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+  a { color: var(--primary); text-decoration: none; font-weight: 700; }
+  h1, h2, h3, p { margin: 0; }
+  h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.2; }
+  h2 { font-size: 16px; font-weight: 700; }
+  h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .muted { color: var(--muted); }
+  /* top bar */
+  .bar { background: var(--card); border-bottom: 1px solid var(--border); height: 68px; }
+  .bar-in { max-width: 1320px; margin: 0 auto; padding: 0 32px; height: 100%; display: flex; align-items: center; gap: 28px; }
+  .logo { font-weight: 800; color: var(--primary); letter-spacing: -0.02em; }
+  .nav { display: flex; gap: 22px; font-weight: 600; }
+  .nav span.on { color: var(--primary); }
+  .spacer { flex: 1; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--fg); color: var(--bg); display: grid; place-items: center; font-weight: 800; font-size: 13px; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 28px 32px 64px; }
+  .grid { display: grid; gap: 24px; grid-template-columns: 15rem minmax(0, 1fr); align-items: start; margin-top: 20px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .bar-in, .wrap { padding-inline: 16px; } .nav { display: none; } }
+  .side { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 8px; }
+  .side h3 { padding: 6px 12px 4px; font-size: 11.5px; }
+  .side a { display: flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 8px; color: var(--fg); font-weight: 500; opacity: .85; font-size: 14px; }
+  .side a.on { background: var(--accent); color: var(--primary); font-weight: 600; opacity: 1; }
+  .side a.new { outline: 2px dashed var(--primary); outline-offset: -2px; }
+  .main { display: grid; gap: 16px; min-width: 0; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px 22px; }
+  .intro p + p { margin-top: 8px; }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 12px 0; border-top: 1px solid var(--border); }
+  .row:first-of-type { border-top: 0; }
+  .row b { font-weight: 700; }
+  .row .what { font-size: 13.5px; color: var(--muted); }
+  /* switch */
+  .sw { display: inline-flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+  .sw i { width: 44px; height: 26px; border-radius: 999px; background: var(--ring); position: relative; display: inline-block; transition: background .15s; }
+  .sw i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: left .15s; }
+  .sw.on i { background: var(--primary); } .sw.on i::after { left: 21px; }
+  .sw.on { color: var(--fg); }
+  .pill { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 12.5px; font-weight: 700; background: var(--warn); color: var(--warn-fg); margin-left: 8px; }
+  .lock { background: var(--muted-bg); color: var(--muted); }
+  .actions { display: flex; align-items: center; gap: 14px; }
+  .btn { border: 0; border-radius: 12px; padding: 0 18px; height: 44px; font: inherit; font-weight: 700; background: var(--primary); color: #fff; cursor: pointer; }
+  .note { background: var(--accent); color: var(--accent-fg); border-radius: 12px; padding: 12px 16px; font-size: 14px; }
+  .note b { font-weight: 800; }
+  .who { font-size: 13.5px; }
+  .who span { display: inline-block; background: var(--muted-bg); border-radius: 999px; padding: 2px 10px; margin: 4px 6px 0 0; }
+</style>
+</head>
+<body>
+<div class="bar"><div class="bar-in">
+  <span class="logo">mycareacademy</span>
+  <nav class="nav"><span>Today</span><span>Due</span><span>People ▾</span><span>Training ▾</span><span>Compliance ▾</span><span>Documents ▾</span></nav>
+  <span class="spacer"></span><span class="avatar">PT</span>
+</div></div>
+
+<div class="wrap">
+  <h1>Settings</h1>
+  <div class="grid">
+    <nav class="side" aria-label="Settings">
+      <h3>Your company</h3>
+      <a>Account and package</a>
+      <a class="on new" aria-current="page">Who can see what</a>
+      <h3>HR</h3>
+      <a>How you recruit</a><a>Forms and literacy test</a><a>Documents to sign</a><a>Probation</a><a>Absence</a><a>Holidays</a><a>Disciplinary and grievance</a><a>Letters</a>
+      <h3>Staff audits</h3><a>Forms and due periods</a>
+      <h3>Forms</h3><a>Your forms</a><a>Feedback surveys</a>
+      <h3>Incidents, complaints &amp; safeguarding</h3><a>The process</a><a>Raise-a-concern link</a>
+      <h3>Service audits</h3><a>Audits and due periods</a>
+      <h3>Policies &amp; procedures</h3><a>Reading, reviews and your details</a>
+    </nav>
+
+    <div class="main">
+      <div>
+        <h2>Who can see what</h2>
+        <p class="muted">Managers see everything. Office workers see everything too, unless you switch an area off here.</p>
+      </div>
+
+      <section class="card intro">
+        <p class="who"><b>Your office workers:</b> <span>Tom Testtrainer</span><span>Sam Officer</span></p>
+        <p class="muted" style="margin-top:10px">A switch applies to all of them. Settings, billing and this page are always managers only. Nobody ever sees a case about themselves.</p>
+      </section>
+
+      <section class="card">
+        <h3>People</h3>
+        <div class="row"><div><b>Staff files and training</b><div class="what">The staff list, each person's file, the training matrix and stars.</div></div><label class="sw on"><i></i>On</label></div>
+        <div class="row"><div><b>Staff documents</b><div class="what">Right to work, DBS and other documents on a person's file, and their evidence pack.</div></div><label class="sw on"><i></i>On</label></div>
+        <div class="row"><div><b>Clients</b><div class="what">The client list and each client's record.</div></div><label class="sw on"><i></i>On</label></div>
+        <div class="row"><div><b>Recruitment</b><div class="what">Candidates, interviews, references, offers and starter forms.</div></div><label class="sw on"><i></i>On</label></div>
+        <div class="row"><div><b>Absence, holidays and leavers</b><div class="what">Sickness, leave requests, allowances, probation reviews and leavers.</div></div><label class="sw on"><i></i>On</label></div>
+        <div class="row"><div><b>Disciplinary and grievance</b><div class="what">Cases, meetings, letters and statements. <span class="pill">On for office workers since 2 Nov</span></div></div><label class="sw on"><i></i>On</label></div>
+      </section>
+
+      <section class="card">
+        <h3>Training</h3>
+        <div class="row"><div><b>Courses, certificates and the Care Certificate</b><div class="what">Assigning training, certificates, observations and sign-off.</div></div><label class="sw on"><i></i>On</label></div>
+        <div class="row"><div><b>Face-to-face and classroom</b><div class="what">Sessions, bookings and attendance.</div></div><label class="sw on"><i></i>On</label></div>
+      </section>
+
+      <section class="card">
+        <h3>Compliance</h3>
+        <div class="row"><div><b>Supervisions, appraisals, spot checks and competency</b><div class="what">Booking, holding and recording them; who's due.</div></div><label class="sw on"><i></i>On</label></div>
+        <div class="row"><div><b>Performance plans</b><div class="what">Improvement goals and reviews.</div></div><label class="sw on"><i></i>On</label></div>
+        <div class="row"><div><b>Service audits and the governance report</b><div class="what">Infection control, files, medication and the monthly overview.</div></div><label class="sw on"><i></i>On</label></div>
+        <div class="row"><div><b>Incidents, complaints and safeguarding</b><div class="what">Concerns, complaints, compliments and their papers.</div></div><label class="sw on"><i></i>On</label></div>
+        <div class="row"><div><b>Feedback</b><div class="what">Surveys to clients, families and staff, and their answers.</div></div><label class="sw on"><i></i>On</label></div>
+      </section>
+
+      <section class="card">
+        <h3>Documents</h3>
+        <div class="row"><div><b>Policies and forms</b><div class="what">The policy library, form records and logs.</div></div><label class="sw on"><i></i>On</label></div>
+        <div class="row"><div><b>Reports and exports</b><div class="what">Bespoke reports, CSV exports and the certificate pack.</div></div><label class="sw on"><i></i>On</label></div>
+        <div class="row"><div><b>Settings and billing</b><div class="what">Everything under Settings, the package and invoices.</div></div><span class="sw lock" style="padding:4px 12px;border-radius:999px">Managers only</span></div>
+      </section>
+
+      <div class="note"><b>When an area is off</b> it leaves the office worker's menu, search, Today's "Needs your attention" list and the Due badge, and every link into it. Opening one of its pages says "This is for managers." Daily and weekly emails about that area go to managers only.</div>
+
+      <div class="actions"><button class="btn">Save</button><span class="muted">Saved. Applies the next time they open a page.</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

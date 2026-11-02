@@ -7,6 +7,9 @@ import { RequestDue, RequestStatus } from "@/components/bespoke/request-parts";
 import { frequencyLabel } from "@/lib/bespoke/requests";
 import { REPORT_WORKING_DAYS, ukToday } from "@/lib/bespoke/working-days";
 import { formatDate } from "@/lib/dates";
+import { fetchAll } from "@/lib/fetch-all";
+import { allHref, latest } from "@/lib/latest";
+import { ViewAll } from "@/components/view-all";
 import { NewReport } from "./new-report";
 
 export const metadata = { title: "Bespoke reports" };
@@ -31,34 +34,64 @@ const COLUMNS = "id, request_no, title, status, frequency, due_on, ready_at, cre
  * Bespoke reports, our side (BESPOKE-REPORTS.md): every company's requests,
  * the open ones in the order they fall due against the 10-working-day
  * promise.
+ *
+ * Each list is read in full, paged past the 1,000-row answer. The open queue
+ * is shown whole — it is work to do; the two finished lists show their most
+ * recent 200 unless ?all=1 asks for everything.
  */
-export default async function BespokeReportsPage() {
+export default async function BespokeReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ all?: string }>;
+}) {
   const context = await requireRole("platform_admin");
+  const q = await searchParams;
   const supabase = await createClient();
-  const [{ data: open }, { data: done }, { data: reports }, { data: orgs }, { data: ticks }, { data: overrides }] = await Promise.all([
-    supabase.from("report_requests").select(COLUMNS).in("status", ["asked", "building"]).order("due_on").limit(500),
-    supabase
-      .from("report_requests")
-      .select(COLUMNS)
-      .in("status", ["ready", "withdrawn"])
-      .order("updated_at", { ascending: false })
-      .limit(50),
-    supabase
-      .from("bespoke_reports")
-      .select("id, title, archived_at, updated_at, organisation:organisations (name), request:report_requests (request_no)")
-      .order("updated_at", { ascending: false })
-      .limit(500),
-    supabase.from("organisations").select("id, name, package_tier").eq("status", "active").order("name"),
+  const [open, doneAll, reportsAll, orgs, { data: ticks }, overrides] = await Promise.all([
+    fetchAll<Row>((from, to) =>
+      supabase.from("report_requests").select(COLUMNS).in("status", ["asked", "building"]).order("due_on").order("id").range(from, to),
+    ),
+    fetchAll<Row>((from, to) =>
+      supabase
+        .from("report_requests")
+        .select(COLUMNS)
+        .in("status", ["ready", "withdrawn"])
+        .order("updated_at", { ascending: false })
+        .order("id")
+        .range(from, to),
+    ),
+    fetchAll<BuiltRow>((from, to) =>
+      supabase
+        .from("bespoke_reports")
+        .select("id, title, archived_at, updated_at, organisation:organisations (name), request:report_requests (request_no)")
+        .order("updated_at", { ascending: false })
+        .order("id")
+        .range(from, to),
+    ),
+    // The company picker offers every active company.
+    fetchAll<{ id: string; name: string; package_tier: string | null }>((from, to) =>
+      supabase.from("organisations").select("id, name, package_tier").eq("status", "active").order("name").order("id").range(from, to),
+    ),
     supabase.from("tier_features").select("tier_key").eq("feature_key", "reports.bespoke"),
-    supabase.from("organisation_features").select("organisation_id, enabled").eq("feature_key", "reports.bespoke"),
+    fetchAll<{ organisation_id: string; enabled: boolean }>((from, to) =>
+      supabase
+        .from("organisation_features")
+        .select("organisation_id, enabled")
+        .eq("feature_key", "reports.bespoke")
+        .order("organisation_id")
+        .range(from, to),
+    ),
   ]);
+  const done = latest(doneAll, q.all);
+  const reports = latest(reportsAll, q.all);
   // The companies whose package has bespoke reports, overrides included.
   const tiers = new Set((ticks ?? []).map((t) => t.tier_key as string));
-  const override = new Map((overrides ?? []).map((o) => [o.organisation_id as string, o.enabled as boolean]));
-  const companies = (orgs ?? [])
-    .filter((o) => override.get(o.id as string) ?? tiers.has(o.package_tier as string))
-    .map((o) => ({ id: o.id as string, name: o.name as string }));
+  const override = new Map(overrides.map((o) => [o.organisation_id, o.enabled]));
+  const companies = orgs
+    .filter((o) => override.get(o.id) ?? tiers.has(o.package_tier ?? ""))
+    .map((o) => ({ id: o.id, name: o.name }));
   const today = ukToday();
+  const viewAll = allHref("/platform/bespoke-reports", q);
 
   return (
     <DashboardShell title="Bespoke reports" context={context}>
@@ -74,7 +107,7 @@ export default async function BespokeReportsPage() {
             <CardDescription>Asked or being built, the soonest due first.</CardDescription>
           </CardHeader>
           <CardContent>
-            <RequestTable rows={(open ?? []) as Row[]} today={today} empty="Nothing waiting." />
+            <RequestTable rows={open} today={today} empty="Nothing waiting." />
           </CardContent>
         </Card>
 
@@ -86,7 +119,8 @@ export default async function BespokeReportsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
-            <BuiltTable rows={(reports ?? []) as BuiltRow[]} />
+            <BuiltTable rows={reports.rows} />
+            <ViewAll list={reports} href={viewAll} noun="reports" />
             <NewReport companies={companies} />
           </CardContent>
         </Card>
@@ -97,7 +131,8 @@ export default async function BespokeReportsPage() {
             <CardDescription>Ready or withdrawn, most recent first.</CardDescription>
           </CardHeader>
           <CardContent>
-            <RequestTable rows={(done ?? []) as Row[]} today={today} empty="None yet." />
+            <RequestTable rows={done.rows} today={today} empty="None yet." />
+            <ViewAll list={done} href={viewAll} noun="requests" />
           </CardContent>
         </Card>
       </div>

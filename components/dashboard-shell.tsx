@@ -17,6 +17,7 @@ import { isConsoleRole, isStaffRole, memberStatus, roleLabel, type UserContext }
 import { enabledMap } from "@/lib/entitlements";
 import type { FeatureKey } from "@/lib/features";
 import { loadDueBadge } from "@/lib/due-badge";
+import { hiddenAreasFor } from "@/lib/office-access-server";
 import { daysLeftLabel, trialState } from "@/lib/trial";
 import { CoachMark } from "@/components/walkthrough/coach-mark";
 import { HelpPanel } from "@/components/walkthrough/help-panel";
@@ -135,6 +136,8 @@ export async function DashboardShell({
   // The trial pill (TRIAL.md): managers get the way to choose a package;
   // office workers can't change it. Carers never see it.
   const trial = console_ ? trialState(member?.trialEndsAt ?? null) : { kind: "none" as const };
+  // Who can see what: the areas an office worker can't open leave the menu, search and the Due badge.
+  const hidden = console_ && !learn ? [...(await hiddenAreasFor(context))] : [];
   const trialPill =
     trial.kind === "active"
       ? { label: `Trial · ${daysLeftLabel(trial.daysLeft)}`, href: context.role === "org_admin" ? "/org/billing" : null }
@@ -168,6 +171,7 @@ export async function DashboardShell({
         brandLogo={branding?.logoUrl}
         brandName={branding?.name}
         due={due ?? undefined}
+        hidden={hidden}
         trial={trialPill}
         notifications={badges["/learn/notifications"] ?? 0}
         help={help || undefined}

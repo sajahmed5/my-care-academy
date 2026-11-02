@@ -65,7 +65,7 @@ const STEPS: Step[] = [
 
 const TONES = {
   alert: { dot: "bg-[#c2413a]", chip: "bg-[#c2413a]/10 text-[#9c332d]", panel: "bg-[#fdf0ef] ring-[#c2413a]/20", text: "text-[#9c332d]" },
-  amber: { dot: "bg-[#b7791f]", chip: "bg-[#b7791f]/10 text-[#8a4d0c]", panel: "bg-[#fff8ee] ring-[#b7791f]/25", text: "text-[#8a4d0c]" },
+  amber: { dot: "bg-[#9a6414]", chip: "bg-[#9a6414]/10 text-[#8a4d0c]", panel: "bg-[#fff8ee] ring-[#9a6414]/25", text: "text-[#8a4d0c]" },
   teal: { dot: "bg-[#1d6f8a]", chip: "bg-[#1d6f8a]/10 text-[#1d6f8a]", panel: "bg-[#eef6fa] ring-[#1d6f8a]/20", text: "text-[#1d6f8a]" },
 } as const;
 
@@ -108,7 +108,7 @@ export default function IncidentToEvidence() {
                 </div>
                 <div className="mt-2 text-sm font-semibold text-[#0f2f3c]">{s.title}</div>
                 {/* The step number carries the order of a real sequence. */}
-                <div className="mt-2 flex items-center gap-2 text-[11px] text-[#0f2f3c]/45">
+                <div className="mt-2 flex items-center gap-2 text-[11px] text-[#0f2f3c]/70">
                   <span className={`size-1.5 rounded-full ${t.dot}`} aria-hidden />
                   Step {k + 1} of {STEPS.length}
                 </div>
@@ -146,7 +146,7 @@ export default function IncidentToEvidence() {
               <ShieldCheck className="size-4 shrink-0 text-[#1d6f8a]" />
               {title}
             </div>
-            <p className="mt-1.5 text-sm text-[#0f2f3c]/65">{body}</p>
+            <p className="mt-1.5 text-sm text-[#0f2f3c]/70">{body}</p>
           </div>
         ))}
       </div>

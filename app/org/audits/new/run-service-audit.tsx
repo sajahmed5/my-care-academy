@@ -107,6 +107,7 @@ export function RunServiceAudit({
   async function takePhoto(id: string, file: File | undefined) {
     if (!file) return;
     setPhotoError(null);
+    if (file.size > 25 * 1024 * 1024) return setPhotoError("That photo is very large; take it again at a lower size.");
     try {
       const blob = await shrink(file);
       setPhotos((cur) => ({ ...cur, [id]: { blob, url: URL.createObjectURL(blob) } }));

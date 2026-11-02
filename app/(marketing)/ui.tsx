@@ -160,7 +160,7 @@ export function CheckItem({ title, children }: { title: string; children: React.
       </span>
       <div>
         <div className="font-semibold text-[#0f2f3c]">{title}</div>
-        <div className="text-sm text-[#0f2f3c]/65">{children}</div>
+        <div className="text-sm text-[#0f2f3c]/70">{children}</div>
       </div>
     </li>
   );
@@ -170,7 +170,7 @@ export function Stat({ n, label }: { n: string; label: string }) {
   return (
     <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-[#134f63]/8">
       <div className="font-display text-4xl font-semibold text-[#1d6f8a]">{n}</div>
-      <div className="mt-1 text-sm text-[#0f2f3c]/65">{label}</div>
+      <div className="mt-1 text-sm text-[#0f2f3c]/70">{label}</div>
     </div>
   );
 }
@@ -188,7 +188,7 @@ export function ShotFrame({ label, src, children }: { label: string; src?: strin
         ) : children ?? (
           <div className="px-6 text-center">
             <div className="font-display text-lg font-semibold text-[#134f63]">{label}</div>
-            <div className="mt-1 text-sm text-[#0f2f3c]/55">Screenshot from the live portal to follow</div>
+            <div className="mt-1 text-sm text-[#0f2f3c]/70">Screenshot from the live portal to follow</div>
           </div>
         )}
       </div>

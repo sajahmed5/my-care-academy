@@ -1,5 +1,6 @@
 "use client";
 
+import { tooBigMessage } from "@/lib/upload-check";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -170,7 +171,17 @@ export function StepRow({ candidateId, step }: { candidateId: string; step: Step
         <div className="mt-3 flex flex-wrap items-end gap-3 rounded-xl bg-muted/50 p-3">
           <label className="text-sm">
             <span className="block text-xs text-muted-foreground">File (photo or PDF)</span>
-            <input type="file" accept="image/*,application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="mt-1 block text-sm" />
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              onChange={(e) => {
+                const big = tooBigMessage(e.target.files?.[0]);
+                if (big) e.target.value = "";
+                setError(big);
+                setFile(big ? null : (e.target.files?.[0] ?? null));
+              }}
+              className="mt-1 block text-sm"
+            />
           </label>
           {step.tracksExpiry && (
             <label className="text-sm">

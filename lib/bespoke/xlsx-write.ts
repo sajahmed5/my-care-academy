@@ -25,7 +25,6 @@ const xml = (s: string) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     // Control characters other than tab and newlines are not allowed in XML.
-    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "");
 
 /** "A", "B", … "Z", "AA" for a zero-based column. */

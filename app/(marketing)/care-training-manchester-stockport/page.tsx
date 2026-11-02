@@ -82,7 +82,7 @@ export default function CareTrainingManchesterStockportPage() {
           <h1 className="font-display mt-4 max-w-3xl text-balance text-4xl font-bold leading-[1.04] tracking-tight text-[#0f2f3c] sm:text-5xl">
             Care training for Manchester and Stockport providers
           </h1>
-          <p className="mt-5 max-w-2xl text-lg text-[#0f2f3c]/65">
+          <p className="mt-5 max-w-2xl text-lg text-[#0f2f3c]/70">
             {COURSE_COUNT} CQC-aligned courses for home care agencies, care
             homes and supported living across Greater Manchester — online, and
             face to face at our Stockport training office. Written by a
@@ -107,9 +107,9 @@ export default function CareTrainingManchesterStockportPage() {
         <div className="grid gap-6 md:grid-cols-3">
           {WHO.map(([title, body]) => (
             <div key={title} className="rounded-2xl bg-white p-6 ring-1 ring-[#134f63]/10">
-              <GraduationCap className="size-5 text-[#b7791f]" />
+              <GraduationCap className="size-5 text-[#9a6414]" />
               <h2 className="font-display mt-3 text-lg font-semibold">{title}</h2>
-              <p className="mt-2 text-sm text-[#0f2f3c]/65">{body}</p>
+              <p className="mt-2 text-sm text-[#0f2f3c]/70">{body}</p>
             </div>
           ))}
         </div>
@@ -159,7 +159,7 @@ export default function CareTrainingManchesterStockportPage() {
               <ShieldCheck className="size-4 shrink-0 text-[#1d6f8a]" />
               <Link href="/verify" className="font-semibold hover:underline">Check a certificate</Link>
             </p>
-            <p className="mt-4 text-sm text-[#0f2f3c]/60">
+            <p className="mt-4 text-sm text-[#0f2f3c]/70">
               Delivering home care in Stockport since 2002.
             </p>
           </address>
@@ -188,7 +188,7 @@ export default function CareTrainingManchesterStockportPage() {
                 "Online or face to face, or both: nobody has to finish the online course first",
               ].map((line) => (
                 <li key={line} className="flex gap-2">
-                  <span aria-hidden className="text-[#b7791f]">·</span>
+                  <span aria-hidden className="text-[#9a6414]">·</span>
                   {line}
                 </li>
               ))}
@@ -204,7 +204,7 @@ export default function CareTrainingManchesterStockportPage() {
               <MapPin className="mt-0.5 size-4 shrink-0 text-[#1d6f8a]" />
               {OFFICE_ADDRESS}
             </p>
-            <p className="mt-4 text-sm text-[#0f2f3c]/65">
+            <p className="mt-4 text-sm text-[#0f2f3c]/70">
               Sessions run in Stockport. Need training somewhere else in
               Greater Manchester, or on a date that isn&apos;t listed?{" "}
               <Link href="/contact?topic=face-to-face" className="font-semibold text-[#1d6f8a] hover:underline">
@@ -218,7 +218,7 @@ export default function CareTrainingManchesterStockportPage() {
 
       <Section className="pt-0">
         <H2>Every course your Greater Manchester service needs</H2>
-        <p className="mt-3 max-w-2xl text-[#0f2f3c]/65">
+        <p className="mt-3 max-w-2xl text-[#0f2f3c]/70">
           Mandatory training, clinical awareness and the Care Certificate —
           all {COURSE_COUNT} included, with an assessment and a verifiable
           certificate on each one.
@@ -226,7 +226,7 @@ export default function CareTrainingManchesterStockportPage() {
         <ul className="mt-6 grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
           {CARE_COURSES.map((c) => (
             <li key={c} className="flex gap-2 text-sm text-[#0f2f3c]/80">
-              <span aria-hidden className="text-[#b7791f]">·</span>
+              <span aria-hidden className="text-[#9a6414]">·</span>
               {c}
             </li>
           ))}

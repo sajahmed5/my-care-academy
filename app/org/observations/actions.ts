@@ -1,5 +1,6 @@
 "use server";
 
+import { UPLOAD_LIMIT_BYTES, checkUploadBytes, storedType } from "@/lib/upload-check";
 import { revalidatePath } from "next/cache";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -43,15 +44,14 @@ export async function recordObservationAction(
   let evidencePath: string | undefined;
   const file = formData.get("evidence");
   if (file instanceof File && file.size > 0) {
-    if (file.size > 10 * 1024 * 1024) {
-      return { ok: false, error: "Evidence file must be under 10 MB." };
-    }
+    const problem = checkUploadBytes(file, new Uint8Array(await file.slice(0, 16).arrayBuffer()), { maxBytes: UPLOAD_LIMIT_BYTES, kinds: ["pdf", "image", "document"], label: "The evidence file" });
+    if (problem) return { ok: false, error: problem };
     const admin = createAdminClient();
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
     const path = `${context.organisationId}/${userId}/s${standardNo}-${crypto.randomUUID()}.${ext}`;
     const { error: upErr } = await admin.storage
       .from("observation-evidence")
-      .upload(path, file, { contentType: file.type || undefined, upsert: false });
+      .upload(path, file, { contentType: storedType(file), upsert: false });
     if (upErr) return { ok: false, error: `Upload failed: ${upErr.message}` };
     evidencePath = path;
   }

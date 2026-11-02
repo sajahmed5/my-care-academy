@@ -65,7 +65,7 @@ export default function MarketingLayout({
           <div className="grid gap-10 sm:grid-cols-3">
             <div>
               <Logo width={140} />
-              <p className="mt-4 text-[#0f2f3c]/65">
+              <p className="mt-4 text-[#0f2f3c]/70">
                 CQC-aligned training, verifiable certificates and management
                 support for UK care providers. Built by a care company.
               </p>
@@ -73,7 +73,7 @@ export default function MarketingLayout({
 
             <div>
               <p className="font-semibold">Training</p>
-              <ul className="mt-3 space-y-2 text-[#0f2f3c]/65">
+              <ul className="mt-3 space-y-2 text-[#0f2f3c]/70">
                 <li><Link href="/training" className="hover:text-[#134f63]">Overview</Link></li>
                 <li><Link href="/training/courses" className="hover:text-[#134f63]">All courses</Link></li>
                 <li><Link href="/training#elearning-training" className="hover:text-[#134f63]">eLearning &amp; mandatory training</Link></li>
@@ -89,7 +89,7 @@ export default function MarketingLayout({
 
             <div>
               <p className="font-semibold">Get in touch</p>
-              <ul className="mt-3 space-y-2 text-[#0f2f3c]/65">
+              <ul className="mt-3 space-y-2 text-[#0f2f3c]/70">
                 <li>
                   <Link href="/contact" className="hover:text-[#134f63]">
                     Contact us &amp; book a demo
@@ -114,10 +114,10 @@ export default function MarketingLayout({
             </div>
           </div>
 
-          <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#134f63]/10 pt-6 text-[#0f2f3c]/55">
+          <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-[#134f63]/10 pt-6 text-[#0f2f3c]/70">
             <span className="flex items-center gap-2">
               © My Care Academy
-              <span className="text-xs text-[#0f2f3c]/40">{VERSION_LABEL}</span>
+              <span className="text-xs text-[#0f2f3c]/70">{VERSION_LABEL}</span>
             </span>
             <span className="flex flex-wrap items-center gap-x-5 gap-y-2">
               <Link href="/privacy" className="hover:text-[#134f63]">

@@ -5,7 +5,7 @@ import type { FeatureKey } from "@/lib/features";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAll } from "@/lib/fetch-all";
 import { STAFF_ROLES } from "@/lib/roles";
-import { loadAuditForms } from "@/lib/audit-forms-data";
+import { loadAuditFormsWith } from "@/lib/audit-forms-data";
 import { staffAuditDigest, type DigestLine } from "@/lib/staff-audit-digest";
 import { loadHrDigests } from "@/lib/hr-digest";
 import { hasCaseAccess } from "@/lib/hr/case-access";
@@ -52,7 +52,7 @@ async function staffAudits(supabase: SupabaseClient, orgId: string, meetings: bo
     checks
       ? fetchAll((f, t) => supabase.from("competency_checks").select("id, user_id, area, checked_on, next_due").eq("organisation_id", orgId).order("id").range(f, t))
       : [],
-    loadAuditForms(orgId),
+    loadAuditFormsWith(supabase, orgId),
   ]);
   const person = (u: Record<string, unknown>) => ({ id: u.id as string, name: (u.full_name as string | null) || (u.email as string) });
   const lines = staffAuditDigest({

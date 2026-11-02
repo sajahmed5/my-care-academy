@@ -130,15 +130,15 @@ export default async function VerifyPage({
               <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
                 {result.holder_name && (
                   <>
-                    <dt className="text-[#0f2f3c]/60">Awarded to</dt>
+                    <dt className="text-[#0f2f3c]/70">Awarded to</dt>
                     <dd className="font-medium text-[#0f2f3c]">{result.holder_name}</dd>
                   </>
                 )}
-                <dt className="text-[#0f2f3c]/60">Course</dt>
+                <dt className="text-[#0f2f3c]/70">Course</dt>
                 <dd className="font-medium text-[#0f2f3c]">{result.course_title}</dd>
-                <dt className="text-[#0f2f3c]/60">Issued</dt>
+                <dt className="text-[#0f2f3c]/70">Issued</dt>
                 <dd className="font-medium text-[#0f2f3c]">{fmt(result.issued_at)}</dd>
-                <dt className="text-[#0f2f3c]/60">Expires</dt>
+                <dt className="text-[#0f2f3c]/70">Expires</dt>
                 <dd className="font-medium text-[#0f2f3c]">
                   {result.expires_at ? fmt(result.expires_at) : "No expiry"}
                 </dd>

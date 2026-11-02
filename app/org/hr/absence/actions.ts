@@ -1,5 +1,6 @@
 "use server";
 
+import { UPLOAD_LIMIT_BYTES, checkUploadBytes, storedType } from "@/lib/upload-check";
 import { revalidatePath } from "next/cache";
 import { refreshDueBadge } from "@/lib/due-badge";
 import { requireConsole, type UserContext } from "@/lib/auth";
@@ -125,9 +126,11 @@ export async function uploadFitNoteAction(id: string, file: { name: string; data
   if (!absence) return { ok: false, error: "Absence not found." };
   if (!ISO.test(until)) return { ok: false, error: "Enter the date the fit note runs to." };
   const { buffer, contentType } = fileFromDataUrl(file.dataUrl);
-  if (buffer.length > 10 * 1024 * 1024) return { ok: false, error: "That file is over 10MB." };
+  const facts = { name: file.name, type: contentType, size: buffer.length };
+  const problem = checkUploadBytes(facts, buffer.subarray(0, 16), { maxBytes: UPLOAD_LIMIT_BYTES, kinds: ["pdf", "image", "document"], label: "The fit note" });
+  if (problem) return { ok: false, error: problem };
   const path = `${context.organisationId}/${absence.user_id as string}/fit-notes/${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ]+/g, "")}`;
-  const { error: upErr } = await admin.storage.from(HR_BUCKET).upload(path, buffer, { contentType });
+  const { error: upErr } = await admin.storage.from(HR_BUCKET).upload(path, buffer, { contentType: storedType(facts) });
   if (upErr) return { ok: false, error: "The file couldn't be uploaded. Try again." };
   if (absence.fit_note_path) await admin.storage.from(HR_BUCKET).remove([absence.fit_note_path as string]);
   await admin.from("sickness_absences").update({ fit_note_path: path, fit_note_name: file.name.slice(0, 200), fit_note_until: until, certification: "fit_note" }).eq("id", id);

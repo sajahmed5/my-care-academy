@@ -1,5 +1,6 @@
 "use server";
 
+import { UPLOAD_LIMIT_BYTES, checkUploadBytes, storedType } from "@/lib/upload-check";
 import { revalidatePath } from "next/cache";
 import { refreshDueBadge } from "@/lib/due-badge";
 import { redirect } from "next/navigation";
@@ -882,7 +883,8 @@ export async function uploadDocumentAction(_prev: SaveState, formData: FormData)
   const stageId = str(formData, "stageId");
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose a file." };
-  if (file.size > 20 * 1024 * 1024) return { ok: false, error: "Files must be under 20 MB." };
+  const problem = checkUploadBytes(file, new Uint8Array(await file.slice(0, 16).arrayBuffer()), { maxBytes: UPLOAD_LIMIT_BYTES, kinds: ["pdf", "image", "document"] });
+  if (problem) return { ok: false, error: problem };
 
   const supabase = await createClient();
   // The record must be theirs before anything lands in the bucket.
@@ -894,7 +896,7 @@ export async function uploadDocumentAction(_prev: SaveState, formData: FormData)
   const path = `${context.organisationId}/${complaintId}/${crypto.randomUUID()}.${ext}`;
   const { error: upErr } = await admin.storage
     .from(BUCKET)
-    .upload(path, file, { contentType: file.type || undefined, upsert: false });
+    .upload(path, file, { contentType: storedType(file), upsert: false });
   if (upErr) return { ok: false, error: `Upload failed: ${upErr.message}` };
 
   const { error } = await supabase.from("complaint_documents").insert({

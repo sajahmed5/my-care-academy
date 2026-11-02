@@ -388,6 +388,10 @@ export function buildOrgLearners(data: OrgTraining): OrgLearnerRow[] {
   const certByUser = new Map<string, Certificate[]>();
   const latestByUser = new Map<string, { title: string; date: string }>();
   const lateByUser = new Map<string, number>();
+  // A course is completed late once, however many certificates (renewals,
+  // an expired one) it has gathered: only the newest counts, so "completed
+  // late" can never exceed "completed".
+  const lateCounted = new Set<string>();
   for (const c of certRaw) {
     const co = courseOf(courses, c.course_id);
     const list = certByUser.get(c.user_id) ?? [];
@@ -408,8 +412,12 @@ export function buildOrgLearners(data: OrgTraining): OrgLearnerRow[] {
         date: c.issued_at,
       });
     }
-    if (isLateCompletion(c.issued_at, dueByUserCourse.get(`${c.user_id}:${c.course_id}`))) {
-      lateByUser.set(c.user_id, (lateByUser.get(c.user_id) ?? 0) + 1);
+    const courseKey = `${c.user_id}:${c.course_id}`;
+    if (!lateCounted.has(courseKey)) {
+      lateCounted.add(courseKey);
+      if (isLateCompletion(c.issued_at, dueByUserCourse.get(courseKey))) {
+        lateByUser.set(c.user_id, (lateByUser.get(c.user_id) ?? 0) + 1);
+      }
     }
   }
 

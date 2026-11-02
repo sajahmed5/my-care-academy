@@ -21,8 +21,8 @@ export function ReadinessCard({ r }: { r: Readiness }) {
       </ProgressRing>
       <div className="min-w-0">
         <p className="text-xl font-extrabold leading-tight">Inspection ready</p>
-        <p className="mt-1 text-sm text-primary-foreground/80">{line}</p>
-        <p className="mt-1 text-xs text-primary-foreground/60">
+        <p className="mt-1 text-sm text-primary-foreground/90">{line}</p>
+        <p className="mt-1 text-xs text-primary-foreground/90">
           {r.met} of {r.total} checks clear
         </p>
       </div>
@@ -71,7 +71,7 @@ export function FigureCard({
 /** "Needs your attention": the list, each line with one button to where it is done. */
 export function AttentionList({ rows, allHref, allCount }: { rows: AttentionRow[]; allHref: string; allCount: number }) {
   return (
-    <section aria-labelledby="attention-heading" data-tour="today-attention" className="rounded-card border bg-card">
+    <section aria-labelledby="attention-heading" data-tour="today-attention" className="min-w-0 rounded-card border bg-card">
       <div className="flex items-center justify-between gap-3 px-5 py-4 sm:px-6">
         <h2 id="attention-heading" className="text-lg font-extrabold tracking-tight">
           Needs your attention

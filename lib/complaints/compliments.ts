@@ -9,6 +9,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "../fetch-all";
 
 export interface Compliment {
   id: string;
@@ -39,37 +40,40 @@ function shape(r: Record<string, unknown>): Compliment {
   };
 }
 
-/** Every compliment in the organisation, newest first. */
+/** Every compliment in the organisation, newest first. Paged: the page decides how many to show. */
 export async function loadCompliments(supabase: SupabaseClient, organisationId: string): Promise<Compliment[]> {
-  const { data } = await supabase
-    .from("compliments")
-    .select(SELECT)
-    .eq("organisation_id", organisationId)
-    .order("received_on", { ascending: false })
-    .limit(500);
-  return (data ?? []).map((r) => shape(r as Record<string, unknown>));
+  const data = await fetchAll<Record<string, unknown>>((from, to) =>
+    supabase
+      .from("compliments")
+      .select(SELECT)
+      .eq("organisation_id", organisationId)
+      .order("received_on", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
+  return data.map(shape);
 }
 
 /** The compliments about one member of staff. */
 export async function loadComplimentsForPerson(supabase: SupabaseClient, userId: string): Promise<Compliment[]> {
   // The same people embedded twice: once, inner-joined, to pick this
   // person's compliments; once in full, to say who else each was about.
-  const { data } = await supabase
-    .from("compliments")
-    .select(`mine:compliment_people!inner (user_id), ${SELECT}`)
-    .eq("mine.user_id", userId)
-    .order("received_on", { ascending: false })
-    .limit(200);
-  return (data ?? []).map((r) => shape(r as unknown as Record<string, unknown>));
+  const rows = await fetchAll((f, t) =>
+    supabase
+      .from("compliments")
+      .select(`mine:compliment_people!inner (user_id), ${SELECT}`)
+      .eq("mine.user_id", userId)
+      .order("received_on", { ascending: false })
+      .order("id")
+      .range(f, t),
+  );
+  return rows.map((r) => shape(r as unknown as Record<string, unknown>));
 }
 
 /** The compliments from or about one client. */
 export async function loadComplimentsForClient(supabase: SupabaseClient, clientId: string): Promise<Compliment[]> {
-  const { data } = await supabase
-    .from("compliments")
-    .select(SELECT)
-    .eq("client_id", clientId)
-    .order("received_on", { ascending: false })
-    .limit(200);
-  return (data ?? []).map((r) => shape(r as Record<string, unknown>));
+  const rows = await fetchAll((f, t) =>
+    supabase.from("compliments").select(SELECT).eq("client_id", clientId).order("received_on", { ascending: false }).order("id").range(f, t),
+  );
+  return rows.map((r) => shape(r as Record<string, unknown>));
 }

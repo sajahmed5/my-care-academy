@@ -1,5 +1,6 @@
 "use server";
 
+import { UPLOAD_LIMIT_BYTES, checkUploadBytes, storedType } from "@/lib/upload-check";
 import { revalidatePath } from "next/cache";
 import { refreshDueBadge } from "@/lib/due-badge";
 import { requireConsole, type UserContext } from "@/lib/auth";
@@ -77,7 +78,7 @@ export interface OpenCaseInput {
 export async function openCaseAction(input: OpenCaseInput): Promise<Result> {
   const context = await requireConsole();
   const admin = createAdminClient();
-  if (!(await hasCaseAccess(admin, context))) return { ok: false, error: "Only managers, and office workers a manager has named, can open a case." };
+  if (!(await hasCaseAccess(admin, context))) return { ok: false, error: "Only managers and office workers can open a case." };
   const person = await hrPerson(admin, context.organisationId, input.userId);
   if (!person) return { ok: false, error: "Choose one of your staff." };
   if (person.id === context.userId) return { ok: false, error: "You can't open a case about yourself: another manager does." };
@@ -165,10 +166,6 @@ export async function setInvestigatorAction(id: string, investigatorId: string):
   const who = await hrPerson(admin, context.organisationId, investigatorId);
   if (!who || who.role === "learner") return { ok: false, error: "Choose a manager or office worker." };
   if (who.id === c.user_id || who.id === c.about_user_id) return { ok: false, error: "They can't investigate a case about themselves." };
-  if (who.role === "org_office") {
-    const s = await caseSettings(admin, context.organisationId!);
-    if (!s.officeAccess.includes(who.id)) return { ok: false, error: `${personName(who)} can't see cases yet. A manager gives them access under Settings → HR → Disciplinary and grievance.` };
-  }
   const stage = c.kind === "disciplinary" && c.stage === "concern" ? "investigation" : (c.stage as string);
   await admin.from("hr_cases").update({ investigator_id: who.id, stage }).eq("id", id);
   await event(admin, c, context.userId, `${personName(who)} named as investigator.`);
@@ -209,10 +206,12 @@ export async function uploadEvidenceAction(id: string, file: { name: string; dat
   const g = await gate(context, id);
   if (!g) return NOT_FOUND;
   const { buffer, contentType } = fileFromDataUrl(file.dataUrl);
-  if (!buffer.length || buffer.length > 15 * 1024 * 1024) return { ok: false, error: "Choose a file up to 15MB." };
+  const facts = { name: file.name, type: contentType, size: buffer.length };
+  const problem = checkUploadBytes(facts, buffer.subarray(0, 16), { maxBytes: UPLOAD_LIMIT_BYTES, kinds: ["pdf", "image", "document"] });
+  if (problem) return { ok: false, error: problem };
   const name = file.name.replace(/[^\w.\- ]+/g, "").slice(0, 120) || "evidence";
   const path = `${context.organisationId}/cases/${id}/${crypto.randomUUID()}-${name}`;
-  const { error } = await g.admin.storage.from(HR_BUCKET).upload(path, buffer, { contentType });
+  const { error } = await g.admin.storage.from(HR_BUCKET).upload(path, buffer, { contentType: storedType(facts) });
   if (error) return { ok: false, error: "The file couldn't be uploaded. Try again." };
   await g.admin.from("hr_case_notes").insert({
     organisation_id: context.organisationId,

@@ -12,6 +12,7 @@ import { initials } from "@/lib/initials";
 import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/auth";
 import { withoutGated, type FeatureKey } from "@/lib/features";
+import { isHiddenPath } from "@/lib/office-access";
 import { OPEN_REPORT_EVENT } from "@/components/report-widget";
 import { TOUR_EVENT, type TourEventDetail } from "@/components/walkthrough/tour";
 import { OPEN_HELP_EVENT } from "@/components/walkthrough/help-panel";
@@ -178,7 +179,7 @@ const ORG_MENU: MenuItem[] = [
         ],
       },
       { href: "/org/pips", label: "Performance plans", code: "PP", description: "Track improvement goals", group: "Staff checks", feature: "people.performance_plans" },
-      { href: "/org/audits", label: "Service audits", code: "SA", description: "Infection control, files, meds", group: "Service quality", feature: "quality.audits", exact: true, also: ["/org/audits/new", "/org/audits/qa"] },
+      { href: "/org/audits", label: "Service audits", code: "SA", description: "Infection control, files, meds", group: "Service quality", feature: "quality.audits", exact: true, also: ["/org/audits/new", "/org/audits/qa", "/org/due/audits"] },
       { href: "/org/audits/governance", label: "Governance report", code: "GR", description: "Monthly overview for CQC", group: "Service quality", feature: "quality.audits" },
       { href: "/org/feedback", label: "Feedback", code: "FB", description: "Surveys from clients and families", group: "Service quality", feature: "quality.feedback" },
       // Named so nobody looks for accidents elsewhere (Saj, 1 Nov 2026): the
@@ -310,6 +311,18 @@ function itemActive(pathname: string, item: MenuItem): boolean {
 }
 
 /** The late count behind a drop-down entry: its own page and the pages it stands for. */
+/** The menu without the links `open` says no to; a drop-down left empty goes with it. */
+function withoutHidden(items: MenuItem[], open: (href: string) => boolean): MenuItem[] {
+  return items
+    .filter((item) => !item.href || item.children?.length || open(item.href))
+    .map((item) =>
+      item.children
+        ? { ...item, children: item.children.filter((c) => open(c.href)).map((c) => (c.row ? { ...c, row: c.row.filter((r) => open(r.href)) } : c)) }
+        : item,
+    )
+    .filter((item) => !item.children || item.children.length > 0);
+}
+
 function lateBehind(link: MenuLink, byPath: Record<string, number>): number {
   const paths = [link.href, ...(link.also ?? []), ...(link.row ?? []).map((r) => r.href)].map((p) => p.split("?")[0]);
   return Object.entries(byPath).reduce((n, [path, count]) => (paths.some((p) => path === p || path.startsWith(p + "/")) ? n + count : n), 0);
@@ -348,7 +361,12 @@ function useOpenMenu() {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(null);
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(null);
+      if (e.key !== "Escape") return;
+      // Escape from inside a panel sends the keyboard back to the button
+      // that opened it, instead of dropping focus on the page.
+      const button = ref.current?.querySelector<HTMLButtonElement>('button[aria-expanded="true"]');
+      setOpen(null);
+      if (button && ref.current?.contains(document.activeElement)) button.focus();
     }
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
@@ -470,6 +488,7 @@ export function TopNav({
   search,
   stars,
   due,
+  hidden = [],
   trial,
   notifications = 0,
   help,
@@ -490,6 +509,8 @@ export function TopNav({
   stars?: React.ReactNode;
   /** What's late across the company, for the Due item and the drop-downs. */
   due?: { total: number; byPath: Record<string, number> };
+  /** Who can see what: the area keys an office worker can't open (lib/office-access.ts). */
+  hidden?: string[];
   /** The free trial, while it runs: "Trial · 7 days left", linking to the packages for a manager. */
   trial?: { label: string; href: string | null } | null;
   /** Unread notifications about their own training. */
@@ -507,14 +528,21 @@ export function TopNav({
     : role
       ? (MENUS[role] ?? [])
       : [];
-  const items = withoutGated(menu, enabled).map((item) =>
+  // Who can see what: an office worker's menu leaves out the areas a
+  // manager switched off, and so do the search, the quick-create list, the
+  // row under the bar and the Due counts.
+  const hiddenSet = new Set(hidden);
+  const open_ = (href: string) => !isHiddenPath(href, hiddenSet);
+  const items = withoutHidden(withoutGated(menu, enabled), open_).map((item) =>
     item.href && item.children?.length ? { ...item, href: item.children[0].href } : item,
   );
-  const quick = console_ ? withoutGated(QUICK_NEW, enabled) : [];
+  const quick = console_ ? withoutGated(QUICK_NEW, enabled).filter((q) => open_(q.href)) : [];
   const person = personLinks(role, learnView);
   const showLearnerBits = role === "learner" || learnView;
   const current = items.find((item) => itemActive(pathname, item));
-  const byPath = due?.byPath ?? {};
+  const byPath: Record<string, number> = {};
+  for (const [path, n] of Object.entries(due?.byPath ?? {})) if (open_(path)) byPath[path] = n;
+  const dueTotal = due ? (hiddenSet.size ? Object.values(byPath).reduce((a, b) => a + b, 0) : due.total) : 0;
 
   // The pages the search can jump to: everything in the menu.
   const pages: SearchPage[] = items.flatMap((item) =>
@@ -529,7 +557,7 @@ export function TopNav({
   );
 
   // The row under the bar: the pages of the section you are in.
-  const rowLinks: MenuLink[] = (current?.children ?? []).flatMap((c) => (c.row ? withoutGated(c.row, enabled) : [c]));
+  const rowLinks: MenuLink[] = (current?.children ?? []).flatMap((c) => (c.row ? withoutGated(c.row, enabled).filter((r) => open_(r.href)) : [c]));
   const showRow = rowLinks.length > 1 && open !== "__all";
 
   // On a phone the row scrolls sideways; bring the open page into it.
@@ -574,7 +602,7 @@ export function TopNav({
           {items.map((item) => {
             // Only the one whose pages are showing: Audits sits under both Due and Compliance.
             const active = item === current;
-            const count = item.due ? (due?.total ?? 0) : (badges[item.href ?? ""] ?? 0);
+            const count = item.due ? dueTotal : (badges[item.href ?? ""] ?? 0);
             const badge = count > 0 && (
               <span
                 className={cn(
@@ -701,7 +729,7 @@ export function TopNav({
               type="button"
               aria-expanded={open === "__person"}
               aria-haspopup="true"
-              aria-label="Your account"
+              aria-label={`${initials(name, email)}: your account`}
               data-tour="nav-person"
               onClick={() => toggle("__person")}
               className="inline-flex size-11 items-center justify-center rounded-full bg-sidebar text-sm font-bold text-sidebar-foreground ring-offset-2 transition-shadow hover:ring-2 hover:ring-border"
@@ -793,11 +821,11 @@ export function TopNav({
             item.href && !item.children?.length ? (
               // A plain link after a drop-down's list would read as part of it.
               <div key={item.label} className={items[i - 1]?.children ? "mt-3" : undefined}>
-                <MobileLink href={item.href} label={item.label} badge={item.due ? (due?.total ?? 0) : (badges[item.href] ?? 0)} due={item.due} active={itemActive(pathname, item)} />
+                <MobileLink href={item.href} label={item.label} badge={item.due ? dueTotal : (badges[item.href] ?? 0)} due={item.due} active={itemActive(pathname, item)} />
               </div>
             ) : item.href ? (
               <div key={item.label} className="pt-3">
-                <MobileLink href={item.href} label={item.label} badge={item.due ? (due?.total ?? 0) : 0} due={item.due} active={itemActive(pathname, item)} />
+                <MobileLink href={item.href} label={item.label} badge={item.due ? dueTotal : 0} due={item.due} active={itemActive(pathname, item)} />
                 <div className="ml-3 border-l pl-1">
                   {(item.children ?? []).map((c) => (
                     <MobileLink key={c.href} href={c.href} label={c.label} active={linkActive(pathname, c)} />

@@ -36,11 +36,14 @@ export function ProfileTabs({
   active,
   enabled,
   counts = {},
+  hiddenSections = [],
 }: {
   userId: string;
   active: string;
   enabled: Record<FeatureKey, boolean>;
   counts?: Record<string, SectionCount>;
+  /** Who can see what: sections in an area an office worker can't open. */
+  hiddenSections?: string[];
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
@@ -73,7 +76,7 @@ export function ProfileTabs({
     if (row && link) row.scrollLeft = link.offsetLeft - (row.clientWidth - link.offsetWidth) / 2;
   }, [active]);
 
-  const shown = SECTIONS.filter((s) => s.key === active || sectionState(s, enabled) !== "locked");
+  const shown = SECTIONS.filter((s) => !hiddenSections.includes(s.key) && (s.key === active || sectionState(s, enabled) !== "locked"));
   const main = shown.filter((s) => !s.more);
   const more = shown.filter((s) => s.more);
   const activeInMore = more.find((s) => s.key === active);
@@ -103,7 +106,7 @@ export function ProfileTabs({
 
   return (
     <nav aria-label="Sections of this file" className="relative border-t">
-      <div ref={rowRef} className="flex min-w-0 gap-1 overflow-x-auto px-2 [scrollbar-width:none] sm:px-3 [&::-webkit-scrollbar]:hidden">
+      <div ref={rowRef} className="relative flex min-w-0 gap-1 overflow-x-auto px-2 [scrollbar-width:none] sm:px-3 [&::-webkit-scrollbar]:hidden">
         {main.map((s) => {
           const isActive = s.key === active;
           return (

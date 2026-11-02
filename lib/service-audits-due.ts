@@ -9,7 +9,7 @@ import { fetchAll } from "./fetch-all";
 import { dueStatus } from "./records";
 import type { DueRowStatus } from "./due-view";
 import { clientDueRows, clientsFor, type ClientDueRow, type ServiceAuditForm } from "./service-audits";
-import { loadDueClients, loadQaForm, loadServiceForms } from "./service-audits-data";
+import { loadDueClients, loadQaFormWith, loadServiceFormsWith } from "./service-audits-data";
 import { qaAsServiceForm } from "./client-qa";
 
 export interface ServiceDue {
@@ -56,8 +56,8 @@ export async function loadQaRecords(supabase: SupabaseClient, organisationId: st
 
 export async function loadServiceDue(supabase: SupabaseClient, organisationId: string, now = new Date()): Promise<ServiceDue[]> {
   const [forms, qaForm, clients, records, qas] = await Promise.all([
-    loadServiceForms(organisationId),
-    loadQaForm(organisationId),
+    loadServiceFormsWith(supabase, organisationId),
+    loadQaFormWith(supabase, organisationId),
     loadDueClients(supabase, organisationId),
     loadAuditRecords(supabase, organisationId),
     loadQaRecords(supabase, organisationId),

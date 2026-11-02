@@ -2,7 +2,9 @@ import Link from "next/link";
 import { requireConsole } from "@/lib/auth";
 import { hasFeature, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { allHref, latest } from "@/lib/latest";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { ViewAll } from "@/components/view-all";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatTile } from "@/components/learner-ui";
@@ -19,9 +21,10 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 /** Every plan, with where it has got to and what is owed next. */
-export default async function PipsPage() {
+export default async function PipsPage({ searchParams }: { searchParams: Promise<{ all?: string }> }) {
   const context = await requireConsole();
   await requireFeature(context, "people.performance_plans");
+  const { all } = await searchParams;
   const supabase = await createClient();
   const [pips, withComplaints] = await Promise.all([
     loadPips(supabase, context.organisationId),
@@ -32,6 +35,8 @@ export default async function PipsPage() {
   const rows = pips.map((p) => ({ pip: p, ...pipSteps(p, today) }));
   const open = rows.filter((r) => r.pip.status === "open");
   const late = open.filter((r) => r.next.late).length;
+  // Newest first; the most recent 200 unless asked for everything. The counts above are of every plan.
+  const shown = latest(rows, all);
 
   return (
     <DashboardShell title="Performance plans" context={context}>
@@ -60,7 +65,7 @@ export default async function PipsPage() {
           </Card>
         ) : (
           <div className="space-y-3">
-            {rows.map(({ pip, steps, next }) => {
+            {shown.rows.map(({ pip, steps, next }) => {
               const current = steps.find((s) => s.state === "current");
               return (
                 <Link key={pip.id} href={`/org/pips/${pip.id}`} className="block">
@@ -90,6 +95,7 @@ export default async function PipsPage() {
                 </Link>
               );
             })}
+            <ViewAll list={shown} href={allHref("/org/pips")} noun="plans" />
           </div>
         )}
       </div>

@@ -147,7 +147,9 @@ begin
   select count(*) into n from public.policy_documents where status = 'published' and kind = 'policy';
   select count(*) into stray from public.policy_documents
    where status = 'published' and (kind <> 'policy' or pack <> 'full' or collection is not null);
-  if n <> 27 or stray <> 0 then
+  -- A fresh database (supabase db reset, a preview branch) has no policies
+  -- yet: the check is about the live library, so it only runs where one is.
+  if n > 0 and (n <> 27 or stray <> 0) then
     raise exception 'Policy clean-up left % published policies and % strays', n, stray;
   end if;
 end $$;

@@ -5,7 +5,9 @@ import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
+import { allHref, latest } from "@/lib/latest";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { ViewAll } from "@/components/view-all";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,11 +31,11 @@ export default async function LogPage({
   searchParams,
 }: {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ from?: string; to?: string }>;
+  searchParams: Promise<{ from?: string; to?: string; all?: string }>;
 }) {
   const context = await requireConsole();
   await requireFeature(context, "forms.builder");
-  const [{ code: rawCode }, { from: rawFrom, to: rawTo }] = await Promise.all([params, searchParams]);
+  const [{ code: rawCode }, { from: rawFrom, to: rawTo, all }] = await Promise.all([params, searchParams]);
   const code = decodeURIComponent(rawCode);
   const supabase = await createClient();
   const orgId = context.organisationId!;
@@ -76,6 +78,9 @@ export default async function LogPage({
   // Your own lines from the last day can be taken back out (RLS says the same).
   const dayAgo = new Date(new Date().getTime() - 86_400_000).toISOString();
   const flaggedCount = entries.filter((e) => lineFlagged(template.fields, e.answers)).length;
+  // The whole range is read (the count and the downloads cover it all); the
+  // table shows the most recent 200 lines unless asked for everything.
+  const shown = latest(entries, all);
 
   return (
     <DashboardShell title={template.title} context={context} back={{ href: "/org/forms#logs", label: "Forms" }}>
@@ -132,7 +137,7 @@ export default async function LogPage({
             </Card>
           ) : (
             <Card>
-              <CardContent className="overflow-x-auto p-0">
+              <CardContent className="relative overflow-x-auto p-0">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
@@ -146,7 +151,7 @@ export default async function LogPage({
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {entries.map((e) => {
+                    {shown.rows.map((e) => {
                       const mine = e.recorded_by === context.userId && e.created_at > dayAgo;
                       return (
                         <tr key={e.id} className="align-top">
@@ -172,6 +177,7 @@ export default async function LogPage({
               </CardContent>
             </Card>
           )}
+          <ViewAll list={shown} href={allHref(base, { from: from ?? undefined, to: to ?? undefined })} noun="lines" />
         </section>
       </div>
     </DashboardShell>

@@ -8,8 +8,13 @@ import { loadOrgEngagement } from "@/lib/platform-orgs";
 import { OrgsTable } from "./orgs-table";
 import { InviteOrgPanel } from "./invite-org-panel";
 
-export default async function OrganisationsPage() {
+export default async function OrganisationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ all?: string }>;
+}) {
   const context = await requireRole("platform_admin");
+  const q = await searchParams;
   const supabase = await createClient();
   const { orgs, totals } = await loadOrgEngagement(supabase);
 
@@ -39,7 +44,7 @@ export default async function OrganisationsPage() {
 
         <InviteOrgPanel />
 
-        <OrgsTable rows={orgs} />
+        <OrgsTable rows={orgs} all={q.all} />
       </div>
     </DashboardShell>
   );

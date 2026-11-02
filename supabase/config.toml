@@ -301,8 +301,10 @@ max_enrolled_factors = 10
 
 # Control MFA via App Authenticator (TOTP)
 [auth.mfa.totp]
-enroll_enabled = false
-verify_enabled = false
+# Managers and office workers step up to AAL2 (lib/auth.ts); on by default in
+# the live project, so the local stack matches it and tests/mfa.test.ts runs.
+enroll_enabled = true
+verify_enabled = true
 
 # Configure MFA via Phone Messaging
 [auth.mfa.phone]

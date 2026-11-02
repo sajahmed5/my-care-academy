@@ -3,7 +3,7 @@ import dns from "node:dns/promises";
 import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hasFeatureForOrg } from "@/lib/entitlements";
-import { fetchAll } from "@/lib/fetch-all";
+import { chunked, fetchAll } from "@/lib/fetch-all";
 import { afterAlertTry, isPrivateAddress, signAlert, SIGNATURE_HEADER, type AlertEvent } from "@/lib/alert-signing";
 
 type Admin = ReturnType<typeof createAdminClient>;
@@ -287,14 +287,16 @@ export async function processOverdueAlerts(
       continue;
     }
     const courseIds = [...new Set(enrolments.map((x) => x.course_id))];
-    const [users, { data: courses }] = await Promise.all([
+    const [users, courseParts] = await Promise.all([
       fetchAll<{ id: string; external_ref: string | null; full_name: string | null; email: string | null; status: string }>((f, t) =>
         admin.from("users").select("id, external_ref, full_name, email, status").eq("organisation_id", e.organisation_id).order("id").range(f, t),
       ),
-      admin.from("courses").select("id, title").in("id", courseIds.slice(0, 300)),
+      // A hundred course ids a request (they travel in the URL): every title,
+      // not the first 300 (Saj, 2 Nov 2026).
+      Promise.all(chunked(courseIds).map((part) => admin.from("courses").select("id, title").in("id", part))),
     ]);
     const byUser = new Map(users.map((u) => [u.id, u]));
-    const byCourse = new Map((courses ?? []).map((c) => [c.id as string, c.title as string]));
+    const byCourse = new Map(courseParts.flatMap((r) => r.data ?? []).map((c) => [c.id as string, c.title as string]));
     const items = enrolments
       .filter((x) => byUser.get(x.user_id)?.status === "active")
       .map((x) => ({

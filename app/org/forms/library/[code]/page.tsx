@@ -5,7 +5,9 @@ import { requireConsole } from "@/lib/auth";
 import { enabledMap, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
+import { allHref, latest } from "@/lib/latest";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { ViewAll } from "@/components/view-all";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ClipboardPen } from "lucide-react";
@@ -28,10 +30,16 @@ import { AssignmentList } from "./assignment-list";
  * themselves (issue #50). A client form: pick a client and fill it in, and
  * every one filled in so far. A company form: fill it in, and every version.
  */
-export default async function OrgFormPage({ params }: { params: Promise<{ code: string }> }) {
+export default async function OrgFormPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ code: string }>;
+  searchParams: Promise<{ all?: string }>;
+}) {
   const context = await requireConsole();
   await requireFeature(context, "forms.builder");
-  const { code } = await params;
+  const [{ code }, { all }] = await Promise.all([params, searchParams]);
 
   const supabase = await createClient();
   const [enabled, template] = await Promise.all([
@@ -71,6 +79,16 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
     id: u.id as string,
     name: (u.full_name as string | null) ?? (u.email as string),
   }));
+  // Everyone still to complete it is shown; of those who have, the most
+  // recent 200 unless asked for everything. Records: the newest 200 likewise.
+  const open = assignments.filter((a) => !a.completed_at);
+  const done = latest(
+    assignments.filter((a) => a.completed_at).sort((a, b) => (b.completed_at as string).localeCompare(a.completed_at as string)),
+    all,
+  );
+  const askedShown = [...open, ...done.rows];
+  const shownRecords = latest(records, all);
+  const viewAllHref = allHref(`/org/forms/library/${encodeURIComponent(template.code)}`);
 
   return (
     <DashboardShell title={template.title} context={context}>
@@ -100,7 +118,8 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
               </form>
             </div>
 
-            <AssignmentList assignments={assignments} currentUserId={context.userId} />
+            <AssignmentList assignments={askedShown} currentUserId={context.userId} />
+            <ViewAll list={done} href={viewAllHref} noun="completed" />
           </>
         )}
 
@@ -130,7 +149,8 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
             )}
             <section className="space-y-2">
               <h3 className="text-sm font-semibold">Filled in ({records.length})</h3>
-              <RecordList records={records} show="client" empty="Not filled in for anyone yet." />
+              <RecordList records={shownRecords.rows} show="client" empty="Not filled in for anyone yet." />
+              <ViewAll list={shownRecords} href={viewAllHref} noun="records" />
             </section>
           </>
         )}
@@ -143,7 +163,8 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
             </Link>
             <section className="space-y-2">
               <h3 className="text-sm font-semibold">Versions on record ({records.length})</h3>
-              <RecordList records={records} show="date" empty="Not filled in yet." />
+              <RecordList records={shownRecords.rows} show="date" empty="Not filled in yet." />
+              <ViewAll list={shownRecords} href={viewAllHref} noun="versions" />
             </section>
           </>
         )}
@@ -151,7 +172,8 @@ export default async function OrgFormPage({ params }: { params: Promise<{ code: 
         {!isCarer && assignments.length > 0 && (
           <section className="space-y-2">
             <h3 className="text-sm font-semibold text-muted-foreground">Asked of staff before it became a {template.audience} form</h3>
-            <AssignmentList assignments={assignments} currentUserId={context.userId} />
+            <AssignmentList assignments={askedShown} currentUserId={context.userId} />
+            <ViewAll list={done} href={viewAllHref} noun="completed" />
           </section>
         )}
 

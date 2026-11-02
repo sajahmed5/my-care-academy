@@ -1,6 +1,7 @@
 import { STAFF_ROLES } from "@/lib/roles";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hasOutgrownBand } from "@/lib/organisations";
+import { fetchAll } from "@/lib/fetch-all";
 
 /** One organisation's platform-level engagement rollup. */
 export interface OrgEngagementRow {
@@ -46,6 +47,23 @@ export interface PlatformEngagement {
 
 const DORMANT_DAYS = 30;
 
+/** One organisation as the engagement query returns it. */
+interface OrgRecord {
+  id: string;
+  name: string;
+  package_tier: string | null;
+  status: string | null;
+  size_band: string | null;
+  trial_ends_at: string | null;
+  created_at: string;
+  learners: unknown;
+  staff: unknown;
+  seen: { last_seen_at: string }[] | null;
+  assigned: unknown;
+  overdue: unknown;
+  completed: unknown;
+}
+
 /** An embedded `table(count)` — PostgREST returns it as `[{ count }]`. */
 const embeddedCount = (v: unknown): number =>
   (v as { count?: number }[] | null)?.[0]?.count ?? 0;
@@ -59,6 +77,9 @@ const embeddedCount = (v: unknown): number =>
  * the platform and tally them here — three whole tables on every visit to
  * the console, each silently cut off at 1,000 rows, so the numbers would have
  * stopped adding up long before anyone noticed.
+ *
+ * The organisations themselves are read in full, a page at a time (fetchAll):
+ * one request answers at most 1,000 rows and drops the rest silently.
  */
 export async function loadOrgEngagement(
   supabase: SupabaseClient,
@@ -69,26 +90,31 @@ export async function loadOrgEngagement(
 
   // Each alias is its own embedded read, filtered on its own: the filters
   // narrow what is counted, never which organisations come back.
-  const { data: orgs } = await supabase
-    .from("organisations")
-    .select(
-      "id, name, package_tier, status, size_band, trial_ends_at, created_at, learners:users(count), staff:users(count), seen:users(last_seen_at), assigned:enrolments(count), overdue:enrolments(count), completed:certificates(count)",
-    )
-    .in("learners.role", STAFF_ROLES)
-    // Bands are measured against current staff, as on the organisation's own
-    // page — a leaver kept for their training history is not a seat.
-    .in("staff.role", STAFF_ROLES)
-    .neq("staff.status", "deactivated")
-    // Most recent learner sign-in: the newest one only.
-    .in("seen.role", STAFF_ROLES)
-    .not("seen.last_seen_at", "is", null)
-    .order("last_seen_at", { referencedTable: "seen", ascending: false })
-    .limit(1, { referencedTable: "seen" })
-    .neq("overdue.status", "completed")
-    .lte("overdue.due_date", today)
-    .order("name", { ascending: true });
+  const orgs = await fetchAll<OrgRecord>((from, to) =>
+    supabase
+      .from("organisations")
+      .select(
+        "id, name, package_tier, status, size_band, trial_ends_at, created_at, learners:users(count), staff:users(count), seen:users(last_seen_at), assigned:enrolments(count), overdue:enrolments(count), completed:certificates(count)",
+      )
+      .in("learners.role", STAFF_ROLES)
+      // Bands are measured against current staff, as on the organisation's own
+      // page — a leaver kept for their training history is not a seat.
+      .in("staff.role", STAFF_ROLES)
+      .neq("staff.status", "deactivated")
+      // Most recent learner sign-in: the newest one only.
+      .in("seen.role", STAFF_ROLES)
+      .not("seen.last_seen_at", "is", null)
+      .order("last_seen_at", { referencedTable: "seen", ascending: false })
+      .limit(1, { referencedTable: "seen" })
+      .neq("overdue.status", "completed")
+      .lte("overdue.due_date", today)
+      // Two organisations can share a name; the id keeps the pages apart.
+      .order("name", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to),
+  );
 
-  const rows: OrgEngagementRow[] = (orgs ?? []).map((o) => {
+  const rows: OrgEngagementRow[] = orgs.map((o) => {
     const sizeBand = (o.size_band as string | null) ?? null;
     const asg = embeddedCount(o.assigned);
     const cmp = embeddedCount(o.completed);

@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate } from "@/lib/dates";
@@ -36,14 +37,18 @@ export default async function ClassroomSessionPage({ params }: { params: Promise
       .select("user_id, signed_in_at, created_at, person:users!classroom_attendance_user_id_fkey (full_name, email)")
       .eq("session_id", id)
       .order("created_at"),
-    supabase
-      .from("users")
-      .select("id, full_name, email")
-      .eq("organisation_id", context.organisationId!)
-      .eq("status", "active")
-      .in("role", ["learner", "org_admin", "org_office"])
-      .order("full_name")
-      .limit(1000),
+    // The staff pick-list a page at a time: one read returns at most 1,000 rows.
+    fetchAll<{ id: string; full_name: string | null; email: string }>((f, t) =>
+      supabase
+        .from("users")
+        .select("id, full_name, email")
+        .eq("organisation_id", context.organisationId!)
+        .eq("status", "active")
+        .in("role", ["learner", "org_admin", "org_office"])
+        .order("full_name")
+        .order("id")
+        .range(f, t),
+    ).then((data) => ({ data })),
   ]);
   if (!s) notFound();
   if (s.finished_at) redirect("/org/classroom");

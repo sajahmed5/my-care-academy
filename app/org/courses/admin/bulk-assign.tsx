@@ -129,6 +129,7 @@ export function BulkAssign({ courseTitles = [] }: { courseTitles?: string[] }) {
 
       <input
         type="file"
+        aria-label="Spreadsheet of people and courses"
         accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         onChange={onFile}
         className="block text-sm"

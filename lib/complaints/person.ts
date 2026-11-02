@@ -8,6 +8,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "@/lib/fetch-all";
 
 export interface PersonConcern {
   id: string;
@@ -36,14 +37,19 @@ const nameOf = (raw: unknown): string | null => {
  * there is no `.in(…)` read to keep under the URL limit.
  */
 export async function loadConcernsForPerson(supabase: SupabaseClient, userId: string): Promise<PersonConcern[]> {
-  const { data } = await supabase
-    .from("complaint_people")
-    .select(
-      "involvement, complaint:complaints!inner (id, reference, kind, category, occurred_on, reported_on, description, outcome_summary, status, closed_on, complaint_people (user_id, person:users!complaint_people_user_id_fkey (full_name, email)))",
-    )
-    .eq("user_id", userId)
-    .limit(500);
-  return (data ?? [])
+  // Every concern they were ever part of (it was cut at 500 with no note);
+  // (complaint_id, user_id) is the key, so complaint_id orders the pages.
+  const rows = await fetchAll((f, t) =>
+    supabase
+      .from("complaint_people")
+      .select(
+        "involvement, complaint:complaints!inner (id, reference, kind, category, occurred_on, reported_on, description, outcome_summary, status, closed_on, complaint_people (user_id, person:users!complaint_people_user_id_fkey (full_name, email)))",
+      )
+      .eq("user_id", userId)
+      .order("complaint_id")
+      .range(f, t),
+  );
+  return rows
     .map((row) => {
       const c = (Array.isArray(row.complaint) ? row.complaint[0] : row.complaint) as Record<string, unknown> | null;
       if (!c) return null;

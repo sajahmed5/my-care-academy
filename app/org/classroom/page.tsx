@@ -1,7 +1,10 @@
 import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
+import { allHref, latest } from "@/lib/latest";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { ViewAll } from "@/components/view-all";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/lib/dates";
 import Link from "next/link";
@@ -17,33 +20,41 @@ const fmt = (d: string) => formatDate(d, { day: "numeric", month: "short", year:
  * practical, so it sits in the same matrix as the e-learning. Since 29 Oct
  * 2026 a session can be started on the day, with people signing in by QR code.
  */
-export default async function ClassroomPage({ searchParams }: { searchParams: Promise<{ finished?: string }> }) {
+export default async function ClassroomPage({ searchParams }: { searchParams: Promise<{ finished?: string; all?: string }> }) {
   const context = await requireConsole();
-  const { finished } = await searchParams;
+  const { finished, all } = await searchParams;
   await requireFeature(context, "training.classroom");
   const supabase = await createClient();
   const orgId = context.organisationId!;
-  const [{ data: sessions }, { data: courses }, { data: staff }] = await Promise.all([
-    supabase
-      .from("classroom_sessions")
-      .select("id, title, held_on, trainer_name, duration_minutes, location, finished_at, course:courses (title), attendance:classroom_attendance (user_id, certificate_id, practical_passed, person:users!classroom_attendance_user_id_fkey (full_name, email))")
-      .eq("organisation_id", orgId)
-      .order("held_on", { ascending: false })
-      .limit(200),
+  // Sessions and the staff pick-list a page at a time: one read returns at most 1,000 rows.
+  const [sessions, { data: courses }, staff] = await Promise.all([
+    fetchAll<Record<string, unknown>>((f, t) =>
+      supabase
+        .from("classroom_sessions")
+        .select("id, title, held_on, trainer_name, duration_minutes, location, finished_at, course:courses (title), attendance:classroom_attendance (user_id, certificate_id, practical_passed, person:users!classroom_attendance_user_id_fkey (full_name, email))")
+        .eq("organisation_id", orgId)
+        .order("held_on", { ascending: false })
+        .order("id")
+        .range(f, t),
+    ),
     supabase.from("courses").select("id, title").is("retired_at", null).order("title"),
-    supabase
-      .from("users")
-      .select("id, full_name, email")
-      .eq("organisation_id", orgId)
-      .eq("status", "active")
-      .in("role", ["learner", "org_admin", "org_office"])
-      .order("full_name")
-      .limit(1000),
+    fetchAll<{ id: string; full_name: string | null; email: string }>((f, t) =>
+      supabase
+        .from("users")
+        .select("id, full_name, email")
+        .eq("organisation_id", orgId)
+        .eq("status", "active")
+        .in("role", ["learner", "org_admin", "org_office"])
+        .order("full_name")
+        .order("id")
+        .range(f, t),
+    ),
   ]);
 
   const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
-  const open = (sessions ?? []).filter((s) => !s.finished_at);
-  const done = (sessions ?? []).filter((s) => s.finished_at);
+  const open = sessions.filter((s) => !s.finished_at);
+  // Every open session; of the finished ones, the most recent 200 unless asked for everything.
+  const done = latest(sessions.filter((s) => s.finished_at), all);
   const courseList = (courses ?? []).map((c) => ({ id: c.id as string, title: c.title as string }));
 
   return (
@@ -63,7 +74,7 @@ export default async function ClassroomPage({ searchParams }: { searchParams: Pr
           <StartSignIn courses={courseList} />
           <RecordSession
             courses={courseList}
-            staff={(staff ?? []).map((u) => ({ id: u.id as string, name: (u.full_name as string | null) || (u.email as string) }))}
+            staff={staff.map((u) => ({ id: u.id, name: u.full_name || u.email }))}
           />
         </div>
         {open.length > 0 && (
@@ -88,13 +99,13 @@ export default async function ClassroomPage({ searchParams }: { searchParams: Pr
             </CardContent>
           </Card>
         )}
-        {done.length === 0 ? (
+        {done.total === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-sm text-muted-foreground">No sessions recorded yet.</CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
-            {done.map((s) => {
+            {done.rows.map((s) => {
               const course = one(s.course as { title?: string } | { title?: string }[] | null);
               const attendance =
                 (s.attendance as { user_id: string; certificate_id: string | null; practical_passed: boolean | null; person: unknown }[]) ?? [];
@@ -137,6 +148,7 @@ export default async function ClassroomPage({ searchParams }: { searchParams: Pr
                 </Card>
               );
             })}
+            <ViewAll list={done} href={allHref("/org/classroom")} noun="sessions" />
           </div>
         )}
       </div>

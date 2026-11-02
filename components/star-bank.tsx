@@ -105,7 +105,7 @@ export function StarBank({ initialTotal }: { initialTotal: number }) {
           onBlur={() => setOpen(false)}
           onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
           aria-expanded={open}
-          aria-label={`Your stars: ${total}. What are these?`}
+          aria-label={`${total} ${total === 1 ? "star" : "stars"}. What are these?`}
         >
           <span
             ref={pillRef}
@@ -113,7 +113,7 @@ export function StarBank({ initialTotal }: { initialTotal: number }) {
             style={popping ? { animation: "star-pop 0.32s ease-out" } : undefined}
           >
             <Star className="size-4" fill={GLYPH} stroke={GLYPH} />
-            {total}
+            {total}{" "}
             <span className="hidden font-medium sm:inline">{total === 1 ? "star" : "stars"}</span>
           </span>
         </button>

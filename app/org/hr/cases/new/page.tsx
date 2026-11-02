@@ -52,7 +52,7 @@ export default async function NewCasePage({
           }}
         />
       ) : (
-        <p className="text-sm text-muted-foreground">Only managers, and office workers a manager has named, can open a case.</p>
+        <p className="text-sm text-muted-foreground">Only managers and office workers can open a case.</p>
       )}
     </DashboardShell>
   );

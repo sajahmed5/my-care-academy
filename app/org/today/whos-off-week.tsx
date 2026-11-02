@@ -21,7 +21,7 @@ export async function WhosOffWeek({ context }: { context: UserContext }) {
   const [{ data: leave }, { data: sick }] = await Promise.all([
     supabase
       .from("leave_requests")
-      .select("id, user_id, start_date, end_date, leave_type, users(full_name, email)")
+      .select("id, user_id, start_date, end_date, leave_type, users!leave_requests_user_id_fkey(full_name, email)")
       .eq("organisation_id", context.organisationId!)
       .eq("status", "approved")
       .lte("start_date", weekEnd)
@@ -30,7 +30,7 @@ export async function WhosOffWeek({ context }: { context: UserContext }) {
       .limit(200),
     supabase
       .from("sickness_absences")
-      .select("id, user_id, start_date, users(full_name, email)")
+      .select("id, user_id, start_date, users!sickness_absences_user_id_fkey(full_name, email)")
       .eq("organisation_id", context.organisationId!)
       .is("returned_on", null)
       .limit(200),
@@ -83,7 +83,7 @@ export async function WhosOffWeek({ context }: { context: UserContext }) {
             >
               <span className="text-[11px] font-semibold text-muted-foreground">{DAY_LABEL[date.getUTCDay()]}</span>
               <span className="text-base font-extrabold">{date.getUTCDate()}</span>
-              <span className={cn("mt-1 size-1.5 rounded-full", busy ? "bg-indigo-500" : "bg-transparent")} aria-label={busy ? "Someone is off" : undefined} />
+              <span className={cn("mt-1 size-1.5 rounded-full", busy ? "bg-indigo-500" : "bg-transparent")} role={busy ? "img" : undefined} aria-label={busy ? "Someone is off" : undefined} />
             </li>
           );
         })}

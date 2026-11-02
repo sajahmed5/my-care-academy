@@ -1,5 +1,6 @@
 "use client";
 
+import { tooBigMessage } from "@/lib/upload-check";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -173,7 +174,17 @@ export function FitNote({ id, held, name, until }: { id: string; held: boolean; 
       )}
       <div className="flex flex-wrap items-center gap-2">
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-8 w-40" aria-label="Fit note runs to" />
-        <Input type="file" accept="image/*,application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="h-8 w-56 text-xs" />
+        <Input
+          type="file"
+          accept="image/*,application/pdf"
+          onChange={(e) => {
+            const big = tooBigMessage(e.target.files?.[0], "The fit note");
+            if (big) e.target.value = "";
+            setMessage(big);
+            setFile(big ? null : (e.target.files?.[0] ?? null));
+          }}
+          className="h-8 w-56 text-xs"
+        />
         <Button
           size="xs"
           disabled={pending || !file}

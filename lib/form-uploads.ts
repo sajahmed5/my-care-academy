@@ -1,3 +1,4 @@
+import { UPLOAD_LIMIT_BYTES, checkUploadBytes, storedType } from "@/lib/upload-check";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FormField } from "./forms";
 
@@ -28,12 +29,13 @@ export async function storeFormFiles(
       delete answers[f.id];
       continue;
     }
-    if (file.size > 3 * 1024 * 1024) return fail(`${f.label}: keep the file under 3 MB.`);
-    if (!/^(image\/|application\/pdf$)/.test(file.type)) return fail(`${f.label}: use a photo or a PDF.`);
+    const bytes = Buffer.from(await file.arrayBuffer());
+    const problem = checkUploadBytes(file, bytes, { maxBytes: UPLOAD_LIMIT_BYTES, kinds: ["image", "pdf"], label: f.label });
+    if (problem) return fail(problem);
     const path = `${prefix}/${f.id}-${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ]+/g, "")}`;
     const { error } = await admin.storage
       .from("form-uploads")
-      .upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type });
+      .upload(path, bytes, { contentType: storedType(file) });
     if (error) return fail(`${f.label}: ${error.message}`);
     uploaded.push(path);
     answers[f.id] = { file: path, name: file.name };

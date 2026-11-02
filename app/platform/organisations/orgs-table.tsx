@@ -7,6 +7,8 @@ import { tierLabel } from "@/lib/organisations";
 import { OrgNudgeButton } from "../org-nudge-button";
 import { formatDate } from "@/lib/dates";
 import { daysLeftLabel, trialState } from "@/lib/trial";
+import { allHref, latest } from "@/lib/latest";
+import { ViewAll } from "@/components/view-all";
 
 const DAY = 86_400_000;
 
@@ -52,9 +54,23 @@ function matches(r: OrgEngagementRow, f: Filter): boolean {
 const csvCell = (v: string) =>
   /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 
-export function OrgsTable({ rows }: { rows: OrgEngagementRow[] }) {
+/**
+ * `rows` is every organisation, in name order. The table shows the 200 most
+ * recently created of those that match the filter unless `all` (the ?all=1
+ * flag) asks for everything; the CSV always has the whole filtered list.
+ */
+export function OrgsTable({ rows, all }: { rows: OrgEngagementRow[]; all?: string }) {
   const [filter, setFilter] = useState<Filter>("all");
-  const shown = useMemo(() => rows.filter((r) => matches(r, filter)), [rows, filter]);
+  const matched = useMemo(() => rows.filter((r) => matches(r, filter)), [rows, filter]);
+  const list = useMemo(
+    () => latest([...matched].sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id)), all),
+    [matched, all],
+  );
+  // Back in name order once cut, as the whole list is read.
+  const shown = useMemo(
+    () => [...list.rows].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id)),
+    [list],
+  );
 
   function exportCsv() {
     const header = [
@@ -68,7 +84,7 @@ export function OrgsTable({ rows }: { rows: OrgEngagementRow[] }) {
       "Overdue",
       "Last active",
     ];
-    const body = shown.map((r) =>
+    const body = matched.map((r) =>
       [
         r.name,
         tierLabel(r.tier),
@@ -222,6 +238,7 @@ export function OrgsTable({ rows }: { rows: OrgEngagementRow[] }) {
           </tbody>
         </table>
       </div>
+      <ViewAll list={list} href={allHref("/platform/organisations")} noun="organisations" />
     </div>
   );
 }

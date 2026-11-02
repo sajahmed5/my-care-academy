@@ -1,5 +1,6 @@
 "use server";
 
+import { UPLOAD_LIMIT_BYTES, checkUploadBytes, storedType } from "@/lib/upload-check";
 import { revalidatePath } from "next/cache";
 import { refreshDueBadge } from "@/lib/due-badge";
 import { requireConsole, type UserContext } from "@/lib/auth";
@@ -52,8 +53,11 @@ export async function uploadStaffDocAction(
     .maybeSingle();
 
   const { buffer, contentType } = fileFromDataUrl(file.dataUrl);
+  const facts = { name: file.name, type: contentType, size: buffer.length };
+  const problem = checkUploadBytes(facts, buffer.subarray(0, 16), { maxBytes: UPLOAD_LIMIT_BYTES, kinds: ["pdf", "image", "document"] });
+  if (problem) return { ok: false, error: problem };
   const path = `${context.organisationId}/${userId}/${docType}-${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ]+/g, "")}`;
-  const { error: upErr } = await admin.storage.from(BUCKET).upload(path, buffer, { contentType });
+  const { error: upErr } = await admin.storage.from(BUCKET).upload(path, buffer, { contentType: storedType(facts) });
   if (upErr) return { ok: false, error: upErr.message };
 
   const { error } = await admin.from("staff_documents").upsert(

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/lib/dates";
 import { PROBATION_STATUS_LABEL, outcomeLabel, probationFromRow, schedule, type ReviewRecord } from "@/lib/hr/probation";
@@ -93,13 +94,12 @@ export async function ProbationPanel({ supabase, userId, orgId }: { supabase: Su
 
 /** Letters sent to them, and drafts waiting to be sent. */
 export async function LettersPanel({ supabase, userId }: { supabase: Supabase; userId: string }) {
-  const { data: letters } = await supabase
-    .from("hr_letters")
-    .select("id, kind, subject, status, sent_at, created_at")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(200);
-  if (!letters?.length) {
+  // Each panel reads the whole list, paged (Saj, 2 Nov 2026): a cap would
+  // have left the oldest rows out of their file without a word.
+  const letters = await fetchAll<Record<string, unknown>>((from, to) =>
+    supabase.from("hr_letters").select("id, kind, subject, status, sent_at, created_at").eq("user_id", userId).order("created_at", { ascending: false }).order("id").range(from, to),
+  );
+  if (!letters.length) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-sm text-muted-foreground">No letters yet. Letters are written from a probation review, a case or their leaving.</CardContent>
@@ -127,16 +127,19 @@ export async function LettersPanel({ supabase, userId }: { supabase: Supabase; u
 
 /** Their sickness absences, Bradford score, and a way to record one (HR-PACK.md). */
 export async function AbsencePanel({ supabase, userId, orgId }: { supabase: Supabase; userId: string; orgId: string }) {
-  const [{ data: rows }, { data: settings }] = await Promise.all([
-    supabase
-      .from("sickness_absences")
-      .select("id, user_id, start_date, returned_on, reason, certification, fit_note_until, excluded_from_triggers, rtw_status, reported_by_self")
-      .eq("user_id", userId)
-      .order("start_date", { ascending: false })
-      .limit(500),
+  const [rows, { data: settings }] = await Promise.all([
+    fetchAll<Record<string, unknown>>((from, to) =>
+      supabase
+        .from("sickness_absences")
+        .select("id, user_id, start_date, returned_on, reason, certification, fit_note_until, excluded_from_triggers, rtw_status, reported_by_self")
+        .eq("user_id", userId)
+        .order("start_date", { ascending: false })
+        .order("id")
+        .range(from, to),
+    ),
     supabase.from("hr_settings").select("bradford_triggers").eq("organisation_id", orgId).maybeSingle(),
   ]);
-  const absences = (rows ?? []) as unknown as Absence[];
+  const absences = rows as unknown as Absence[];
   const today = new Date().toISOString().slice(0, 10);
   const triggers = sanitiseTriggers(settings?.bradford_triggers);
   const b = bradford(absences, today, triggers);
@@ -193,17 +196,20 @@ export async function HolidaysPanel({ supabase, userId, orgId, me }: { supabase:
   ]);
   const s = holidaySettingsFromRow(settingsRow);
   const year = leaveYear(today, s.yearStart);
-  const [{ data: allowance }, { data: rows }] = await Promise.all([
+  const [{ data: allowance }, rows] = await Promise.all([
     supabase.from("leave_allowances").select("amount, unit").eq("user_id", userId).eq("year_start", year.start).maybeSingle(),
-    supabase
-      .from("leave_requests")
-      .select("id, user_id, leave_type, start_date, end_date, amount, unit, status, note, decision_note")
-      .eq("user_id", userId)
-      .order("start_date", { ascending: false })
-      .limit(200),
+    fetchAll<Record<string, unknown>>((from, to) =>
+      supabase
+        .from("leave_requests")
+        .select("id, user_id, leave_type, start_date, end_date, amount, unit, status, note, decision_note")
+        .eq("user_id", userId)
+        .order("start_date", { ascending: false })
+        .order("id")
+        .range(from, to),
+    ),
   ]);
   const types = leaveTypesFor(s.own);
-  const requests = (rows ?? []) as unknown as Array<LeaveRequest & { note: string | null; decision_note: string | null }>;
+  const requests = rows as unknown as Array<LeaveRequest & { note: string | null; decision_note: string | null }>;
   const b = balance(allowance ? { amount: Number(allowance.amount), unit: allowance.unit as string } : null, requests, year, types, today);
   const unit = (allowance?.unit as string | undefined) ?? "days";
   const decides = person ? canApprove(me, { id: person.id as string, role: person.role as string }) : false;
@@ -261,14 +267,16 @@ export async function HolidaysPanel({ supabase, userId, orgId, me }: { supabase:
  * sees them; anyone else sees nothing here.
  */
 export async function CasesPanel({ supabase, userId }: { supabase: Supabase; userId: string }) {
-  const { data: rows } = await supabase
-    .from("hr_cases")
-    .select("id, ref, kind, subtype, stage, outcome, outcome_on, warning_expires_on, appeal_outcome, raised_on, closed_on")
-    .eq("user_id", userId)
-    .order("raised_on", { ascending: false })
-    .limit(100);
+  const cases = await fetchAll<Record<string, unknown>>((from, to) =>
+    supabase
+      .from("hr_cases")
+      .select("id, ref, kind, subtype, stage, outcome, outcome_on, warning_expires_on, appeal_outcome, raised_on, closed_on")
+      .eq("user_id", userId)
+      .order("raised_on", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
   const today = new Date().toISOString().slice(0, 10);
-  const cases = rows ?? [];
   const active = cases.filter((c) => activeWarning(c as never, today));
   return (
     <div className="space-y-4">

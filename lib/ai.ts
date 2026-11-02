@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetch-all";
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -39,14 +40,18 @@ function monthStartIso(now = new Date()): string {
 export const OUR_AI_FEATURE = "bespoke_report_builder";
 
 export async function monthCharge(admin: Admin, orgId: string): Promise<{ chargedGbp: number; requests: number }> {
-  const { data } = await admin
-    .from("ai_usage")
-    .select("charge_gbp")
-    .eq("organisation_id", orgId)
-    .neq("feature", OUR_AI_FEATURE)
-    .gte("created_at", monthStartIso())
-    .limit(5000);
-  const rows = data ?? [];
+  // Every request this month: a single read stops at 1,000 rows however
+  // large its limit, and the monthly limit is only as good as this count.
+  const rows = await fetchAll<{ charge_gbp: number | null }>((f, t) =>
+    admin
+      .from("ai_usage")
+      .select("charge_gbp")
+      .eq("organisation_id", orgId)
+      .neq("feature", OUR_AI_FEATURE)
+      .gte("created_at", monthStartIso())
+      .order("id")
+      .range(f, t),
+  );
   return { chargedGbp: rows.reduce((s, r) => s + Number(r.charge_gbp ?? 0), 0), requests: rows.length };
 }
 

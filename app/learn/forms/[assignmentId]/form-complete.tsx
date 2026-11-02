@@ -1,5 +1,6 @@
 "use client";
 
+import { tooBigMessage } from "@/lib/upload-check";
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ export function FormComplete({
     }
     return start;
   });
+  const [fileProblems, setFileProblems] = useState<Record<string, string | null>>({});
   const [signedName, setSignedName] = useState("");
   const [signer, setSigner] = useState<{ role: SignerRole; name: string; relationship: string; image: string | null }>({
     role: "client",
@@ -102,7 +104,14 @@ export function FormComplete({
   }
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form
+      action={formAction}
+      className="space-y-4"
+      // A file the browser already refused (too big) stays refused: nothing is sent until it is swapped.
+      onSubmit={(e) => {
+        if (Object.values(fileProblems).some(Boolean)) e.preventDefault();
+      }}
+    >
       {assignmentId && <input type="hidden" name="assignmentId" value={assignmentId} />}
       {record && <input type="hidden" name="templateId" value={record.templateId} />}
       {record?.clientId && <input type="hidden" name="clientId" value={record.clientId} />}
@@ -192,9 +201,16 @@ export function FormComplete({
                     type="file"
                     name={`file_${f.id}`}
                     accept="image/*,application/pdf"
-                    onChange={(e) => set(f.id, e.target.files?.[0] ? { pending: e.target.files[0].name } : undefined)}
+                    onChange={(e) => {
+                      const picked = e.target.files?.[0];
+                      const big = tooBigMessage(picked, f.label);
+                      if (big) e.target.value = "";
+                      setFileProblems((cur) => ({ ...cur, [f.id]: big }));
+                      set(f.id, picked && !big ? { pending: picked.name } : undefined);
+                    }}
                   />
                   <p className="text-xs text-muted-foreground">A photo or PDF, under 3 MB.</p>
+                  {fileProblems[f.id] && <p className="text-xs text-destructive">{fileProblems[f.id]}</p>}
                 </div>
               )}
               {f.type === "signature" && (

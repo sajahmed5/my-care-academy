@@ -120,7 +120,7 @@ export function StatTile({
       </div>
       <p className={`mt-3 text-3xl font-semibold tracking-tight${quiet ? " text-muted-foreground" : ""}`}>{value}</p>
       <p className="text-sm text-muted-foreground">{label}</p>
-      {hint && <p className="text-xs text-muted-foreground/80">{hint}</p>}
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </>
   );
 
@@ -246,7 +246,7 @@ export function BadgeChip({
     <div
       className={cn(
         "rounded-2xl border p-3 text-center",
-        earned ? "bg-card shadow-sm" : "bg-muted/40 opacity-60",
+        earned ? "bg-card shadow-sm" : "bg-muted/40 text-muted-foreground grayscale",
       )}
     >
       <div

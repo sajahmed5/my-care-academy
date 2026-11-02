@@ -10,7 +10,7 @@ import { TEAM_SIZES, TOPICS, TOPIC_KEYS, type EnquiryTopic } from "./topics";
 const field =
   "w-full rounded-xl border border-[#134f63]/15 bg-white px-4 py-3 text-sm text-[#0f2f3c] outline-none transition placeholder:text-[#0f2f3c]/35 focus:border-[#3a9fc4] focus:ring-4 focus:ring-[#3a9fc4]/15";
 const labelClass = "block text-sm font-semibold text-[#0f2f3c]";
-const hintClass = "text-xs font-normal text-[#0f2f3c]/50";
+const hintClass = "text-xs font-normal text-[#0f2f3c]/70";
 
 function FieldError({ id, children }: { id: string; children?: string }) {
   if (!children) return null;
@@ -76,7 +76,7 @@ export function EnquiryForm({
         <h2 className="font-display mt-5 text-2xl font-semibold text-[#0f2f3c]">
           Thanks — we&apos;ve got it
         </h2>
-        <p className="mx-auto mt-3 max-w-sm text-[#0f2f3c]/65">
+        <p className="mx-auto mt-3 max-w-sm text-[#0f2f3c]/70">
           We&apos;ve sent a copy to your inbox and one of us will come back to you
           within one working day. If it&apos;s urgent, give us a ring.
         </p>
@@ -262,7 +262,7 @@ export function EnquiryForm({
           )}
         </button>
 
-        <p className="text-xs text-[#0f2f3c]/55">
+        <p className="text-xs text-[#0f2f3c]/70">
           We&apos;ll only use your details to answer your enquiry — see our{" "}
           <Link href="/privacy" className="underline underline-offset-2 hover:text-[#134f63]">
             privacy policy

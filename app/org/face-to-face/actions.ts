@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { onFreeTrial, requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { chunked } from "@/lib/fetch-all";
 import { logAudit } from "@/lib/audit";
 import { canCancelBooking } from "@/lib/face-to-face";
 import { emailBookings } from "@/lib/face-to-face-email";
@@ -31,17 +32,20 @@ export async function bookStaffAction(_prev: BookState, formData: FormData): Pro
   if (picked.length === 0) return { ok: false, error: "Tick who's going." };
 
   const admin = createAdminClient();
-  const [{ data: session }, { data: staff }, { data: taken }] = await Promise.all([
+  const [{ data: session }, staffParts, { data: taken }] = await Promise.all([
     admin.from("face_to_face_sessions").select("id, starts_at, places, cancelled_at").eq("id", sessionId).maybeSingle(),
-    // A ticked box is not a permission check: only this company's current staff.
-    admin.from("users").select("id").eq("organisation_id", orgId).eq("status", "active").in("id", picked.slice(0, 200)),
+    // A ticked box is not a permission check: only this company's current
+    // staff. A hundred ids a request (they travel in the URL), so nobody past
+    // a cut-off is silently left unbooked (Saj, 2 Nov 2026).
+    Promise.all(chunked(picked).map((part) => admin.from("users").select("id").eq("organisation_id", orgId).eq("status", "active").in("id", part))),
     admin.from("face_to_face_bookings").select("user_id").eq("session_id", sessionId).neq("status", "cancelled"),
   ]);
+  const staff = staffParts.flatMap((r) => r.data ?? []);
   if (!session || session.cancelled_at) return { ok: false, error: "That session isn't running any more." };
   if (new Date(session.starts_at as string) <= new Date()) return { ok: false, error: "That session has already started." };
 
   const already = new Set((taken ?? []).map((t) => t.user_id as string));
-  const people = (staff ?? []).map((u) => u.id as string).filter((id) => !already.has(id));
+  const people = staff.map((u) => u.id as string).filter((id) => !already.has(id));
   if (people.length === 0) return { ok: false, error: "They're already booked on it." };
   const left = (session.places as number) - already.size;
   if (people.length > left) {

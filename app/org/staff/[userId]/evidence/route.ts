@@ -2,6 +2,7 @@ import { orgBranding } from "@/lib/branding";
 import { NextResponse, type NextRequest } from "next/server";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { enabledMap } from "@/lib/entitlements";
 import { logAudit } from "@/lib/audit";
 import { loadOrgLearnerTraining } from "@/lib/org-learner";
@@ -76,7 +77,7 @@ export async function GET(
     { data: org },
     actions,
     [supervisions, checks, concerns, formResponses, spotChecks],
-    { data: classroomRows },
+    classroomRows,
     reading,
   ] = await Promise.all([
     enabledRead,
@@ -92,25 +93,32 @@ export async function GET(
           : Promise.resolve([]),
         // Their completed library forms, with the questions to read them by —
         // their own carer forms, not client or company forms they filled in.
+        // Every one, paged (Saj, 2 Nov 2026): the pack is complete or it is
+        // not a pack. A cap of 200 used to drop the oldest without a word.
         on["forms.builder"]
-          ? supabase
-              .from("form_responses")
-              .select("answers, signed_name, submitted_at, template:form_templates (title, fields)")
-              .eq("user_id", userId)
-              .eq("subject", "carer")
-              .order("submitted_at", { ascending: false })
-              .limit(200)
-              .then((r) => r.data ?? [])
+          ? fetchAll<Record<string, unknown>>((from, to) =>
+              supabase
+                .from("form_responses")
+                .select("answers, signed_name, submitted_at, template:form_templates (title, fields)")
+                .eq("user_id", userId)
+                .eq("subject", "carer")
+                .order("submitted_at", { ascending: false })
+                .order("id")
+                .range(from, to),
+            )
           : Promise.resolve([]),
         on["people.competency"] ? loadSpotChecks(supabase, userId) : Promise.resolve([]),
       ]),
     ),
     // Face-to-face sessions they attended, printed with the training record.
-    supabase
-      .from("classroom_attendance")
-      .select("certificate_id, session:classroom_sessions (title, held_on, trainer_name, duration_minutes)")
-      .eq("user_id", userId)
-      .limit(200),
+    fetchAll<{ certificate_id: string | null; session: unknown }>((from, to) =>
+      supabase
+        .from("classroom_attendance")
+        .select("certificate_id, session:classroom_sessions (title, held_on, trainer_name, duration_minutes)")
+        .eq("user_id", userId)
+        .order("id")
+        .range(from, to),
+    ),
     enabledRead.then((on) =>
       on["documents.library"] ? loadReading(supabase, context.organisationId!, { userId }) : null,
     ),
@@ -121,7 +129,7 @@ export async function GET(
   // means the same thing in every section.
   const trainingRows = since(enrolments, (e) => e.assigned_at, from);
   const classroomSessions = since(
-    (classroomRows ?? []).flatMap((r) => {
+    classroomRows.flatMap((r) => {
       const s = (Array.isArray(r.session) ? r.session[0] : r.session) as
         | { title: string; held_on: string; trainer_name: string | null; duration_minutes: number | null }
         | null;

@@ -16,6 +16,17 @@
  * a unique column so pages don't overlap. A failed read throws: a job acting
  * on half the data is exactly the silent failure this exists to prevent.
  */
+/**
+ * Ids in groups small enough for one `.in()` filter. The ids travel in the
+ * request URL, which fails past roughly 390 uuids; 100 a time is what the
+ * scheduled jobs use.
+ */
+export function chunked<T>(items: readonly T[], size = 100): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
 export async function fetchAll<T>(
   page: (from: number, to: number) => PromiseLike<{
     data: T[] | null;

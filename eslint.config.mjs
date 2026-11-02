@@ -21,6 +21,17 @@ const eslintConfig = defineConfig([
     // the .next at the root.
     ".claude/**",
   ]),
+  {
+    rules: {
+      // `const { secret: _s, ...rest } = row` is how a field is left out of
+      // an object; the leading underscore says so. Without this the rule
+      // reported every one of them as unused.
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_", ignoreRestSiblings: true },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

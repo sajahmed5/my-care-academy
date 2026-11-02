@@ -81,7 +81,8 @@ do $$
 declare n int;
 begin
   select count(*) into n from public.policy_documents where replaced_by is not null;
-  if n <> 27 then
+  -- A fresh database has no library yet; the check is about the live one.
+  if n <> 27 and exists (select 1 from public.policy_documents) then
     raise exception 'Expected 27 replaced templates, linked %', n;
   end if;
 end $$;
