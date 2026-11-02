@@ -107,6 +107,14 @@ export function parseCsv(text: string): { rows: Row[]; problem?: string } {
       };
     }
     start = 1;
+  } else if (!first.some((cell) => cell.includes("@"))) {
+    // A header row we don't recognise (QA review, 2 Nov 2026): say so now,
+    // rather than invite nobody and report "0 invited, 1 failed" after the send.
+    // A file with no header at all starts with an email address somewhere.
+    return {
+      rows: [],
+      problem: `Couldn't recognise the header row ("${first.slice(0, 3).join(", ")}"). Use headers: name, email, role — or no header, with the columns in that order.`,
+    };
   }
 
   const rows: Row[] = [];
