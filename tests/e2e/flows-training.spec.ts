@@ -716,7 +716,7 @@ test.describe("Care Certificate assessment", () => {
       expect(data?.notes).toContain(RUN);
       const award = m.page.getByRole("button", { name: "Sign off & award" });
       await expect(award).toBeDisabled();
-      await expect(m.page.getByText("Complete all standards to enable.")).toBeVisible();
+      await expect(m.page.getByText(/Still needed: .*a competent observation for 13 standards\./)).toBeVisible();
     } finally {
       await m.context.close();
     }

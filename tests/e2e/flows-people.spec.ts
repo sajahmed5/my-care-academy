@@ -344,17 +344,17 @@ test.describe("clients (manager)", () => {
     expect(count).toBe(0);
   });
 
-  test("a date of birth in 1900, or in the year 2999, is accepted without comment", async ({ page }) => {
-    // Finding (Low): nothing checks that a date of birth is in the past or a
-    // start date is plausible. Recorded as the app behaves today.
+  test("a date of birth in 1900, or in the year 2999, is refused", async ({ page }) => {
+    // Fixed 2 Nov 2026: a birth date more than 120 years ago or in the future,
+    // and a start date that far out, can't be right.
     for (const [label, dob] of [["Old", "1900-01-01"], ["Future", "2999-12-31"]] as const) {
       await page.goto("/org/clients/new");
       await page.getByLabel("Name").fill(`${prefix} ${label} Fakeclient`);
       await page.getByLabel("Date of birth").fill(dob);
       await page.getByLabel("Care started").fill(dob);
       await page.getByRole("button", { name: "Add client" }).click();
-      await expect(page).toHaveURL(/\/org\/clients\/[0-9a-f-]{36}$/);
-      await expect(page.getByLabel("Date of birth")).toHaveValue(dob);
+      await expect(alertOf(page)).toContainText("can't be right");
+      await expect(page).toHaveURL(/\/org\/clients\/new$/);
     }
   });
 
@@ -504,10 +504,8 @@ test.describe("spreadsheet uploads (manager)", () => {
     await input.setInputFiles(csvFile("empty.csv", ""));
     await expect(page.getByText("The file is empty.")).toBeVisible();
     await input.setInputFiles(csvFile("wrong.csv", "Foo,Bar\r\nSomething,Else\r\n"));
-    // Finding (Low): with no recognised header the first two columns are
-    // taken as name and email; the "email" fails validation so nothing is
-    // sent, but the file isn't refused up front like the client upload is.
-    await expect(page.getByText(/row\(s\) ready — .* highlighted in red/)).toBeVisible();
+    // Fixed 2 Nov 2026: a header row we don't recognise is refused up front, like the client upload.
+    await expect(page.getByText(/Couldn't recognise the header row \("foo, bar"\)/)).toBeVisible();
     await input.setInputFiles(csvFile("noemail.csv", "name,phone\r\nJo,0161\r\n"));
     await expect(page.getByText("Couldn't find an email column. Use headers: name, email, role.")).toBeVisible();
   });
