@@ -33,6 +33,43 @@ const ts = (n, hour = 10) => {
 };
 const password = () => randomBytes(15).toString("base64url") + "!Qa1";
 
+// ---------------------------------------------------------------------------
+// Certificate PDFs. In real use a certificate's PDF is rendered when it is
+// issued (lib/issue-certificate.ts); the seed writes a small plain PDF for
+// each one so the certificate pack, the carer's download and the evidence
+// ZIP have something to serve. One page, one line of text, no fonts
+// embedded: Helvetica is a standard PDF font every reader has.
+function minimalPdf(lines) {
+  const esc = (t) => String(t).replace(/[\\()]/g, (m) => "\\" + m);
+  const text = lines.map((l, i) => `BT /F1 ${i === 0 ? 20 : 12} Tf 60 ${740 - i * 28} Td (${esc(l)}) Tj ET`).join("\n");
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+    `<< /Length ${Buffer.byteLength(text, "latin1")} >>\nstream\n${text}\nendstream`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+  ];
+  let out = "%PDF-1.4\n";
+  const offsets = [];
+  objects.forEach((o, i) => { offsets.push(Buffer.byteLength(out, "latin1")); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const xref = Buffer.byteLength(out, "latin1");
+  out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n` + offsets.map((o) => String(o).padStart(10, "0") + " 00000 n \n").join("");
+  out += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(out, "latin1");
+}
+
+async function storeCertificatePdfs(rows, titleOf) {
+  const { error: bucketError } = await admin.storage.createBucket("certificates", { public: false });
+  if (bucketError && !/already exists/i.test(bucketError.message)) throw new Error(`certificates bucket: ${bucketError.message}`);
+  for (const r of rows) {
+    const path = `${r.user_id}/${r.id}.pdf`;
+    const pdf = minimalPdf(["Certificate of completion (QA seed)", titleOf(r), `Certificate ${r.certificate_number}`, "My Care Academy · QA Test Care Ltd"]);
+    const { error } = await admin.storage.from("certificates").upload(path, pdf, { contentType: "application/pdf", upsert: true });
+    if (error) throw new Error(`certificate pdf ${path}: ${error.message}`);
+    await upd("certificates", { id: r.id }, { pdf_path: path });
+  }
+}
+
 async function ins(table, rows, select = "id") {
   if (!rows.length) return [];
   // Rows in one insert may name different columns; the unnamed ones take
@@ -280,7 +317,8 @@ async function testCare(courses) {
     if (e.user_id === c.omar.id) issued.setTime(Date.now() - 2 * DAY); // completed late
     certs.push({ certificate_number: `MCA-QA-${String(++n).padStart(4, "0")}`, organisation_id: orgId, user_id: e.user_id, course_id: e.course_id, issued_at: issued.toISOString(), expires_at: expires.toISOString() });
   }
-  await ins("certificates", certs);
+  const certRows = await ins("certificates", certs, "id, user_id, certificate_number, course_id");
+  await storeCertificatePdfs(certRows, (r) => `${Object.values(c).find((p) => p.id === r.user_id)?.fullName ?? "Learner"} · ${courses.find((x) => x.id === r.course_id)?.title ?? "Course"}`);
 
   // Assessment attempts, for pass/fail history and the Stars leaderboard.
   await ins("quiz_attempts", [

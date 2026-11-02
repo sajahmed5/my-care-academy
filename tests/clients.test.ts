@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseClientsCsv, parseFunder, parseUkDate } from "../lib/clients";
+import { clientProblems, parseClientsCsv, parseFunder, parseUkDate } from "../lib/clients";
 
 describe("parseUkDate", () => {
   it("reads a UK date, a short year and an ISO date", () => {
@@ -42,5 +42,27 @@ describe("parseClientsCsv", () => {
     expect(rows[0].problems).toContain("No name");
     expect(rows[1].problems[0]).toMatch(/isn't a date/);
     expect(parseClientsCsv("Client ref,DOB\nA1,01/01/1950\n").problem).toMatch(/Name column/);
+  });
+});
+
+describe("clientProblems: dates that can't be right", () => {
+  const base = { fullName: "Pat Fakeclient", dateOfBirth: null, region: null, postcode: null, funderType: "council" as const, funderName: null, medicationSupport: false, startDate: null, status: "active" as const };
+  const today = "2026-11-02";
+  it("accepts ordinary dates", () => {
+    expect(clientProblems({ ...base, dateOfBirth: "1940-02-29", startDate: "2026-10-25" }, today)).toEqual([]);
+    expect(clientProblems({ ...base, dateOfBirth: "2026-11-02", startDate: "2027-11-02" }, today)).toEqual([]);
+  });
+  it("refuses a birth date in the future or more than 120 years ago", () => {
+    expect(clientProblems({ ...base, dateOfBirth: "2026-11-03" }, today)).toEqual(["The date of birth can't be right"]);
+    expect(clientProblems({ ...base, dateOfBirth: "1900-01-01" }, today)).toEqual(["The date of birth can't be right"]);
+    expect(clientProblems({ ...base, dateOfBirth: "1906-11-02" }, today)).toEqual([]);
+  });
+  it("refuses care that started more than 120 years ago or more than a year ahead", () => {
+    expect(clientProblems({ ...base, startDate: "2999-12-31" }, today)).toEqual(["The start date can't be right"]);
+    expect(clientProblems({ ...base, startDate: "2027-11-03" }, today)).toEqual(["The start date can't be right"]);
+    expect(clientProblems({ ...base, startDate: "1900-01-01" }, today)).toEqual(["The start date can't be right"]);
+  });
+  it("refuses care that started before they were born", () => {
+    expect(clientProblems({ ...base, dateOfBirth: "1990-05-05", startDate: "1989-01-01" }, today)).toEqual(["Care can't have started before they were born"]);
   });
 });

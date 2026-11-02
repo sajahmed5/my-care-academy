@@ -18,10 +18,13 @@ export function AwardPanel({
   userId,
   eligible,
   signedOffAt,
+  missing,
 }: {
   userId: string;
   eligible: boolean;
   signedOffAt: string | null;
+  /** What still stands in the way: standards without the knowledge, and without a competent observation. */
+  missing?: { knowledge: number; observation: number };
 }) {
   const [state, action, pending] = useActionState(
     awardCareCertificateAction,
@@ -60,7 +63,14 @@ export function AwardPanel({
         </Button>
         {!eligible && (
           <span className="text-xs text-muted-foreground">
-            Complete all standards to enable.
+            {missing && missing.knowledge + missing.observation > 0
+              ? `Still needed: ${[
+                  missing.knowledge > 0 && `the knowledge for ${missing.knowledge === 1 ? "1 standard" : `${missing.knowledge} standards`}`,
+                  missing.observation > 0 && `a competent observation for ${missing.observation === 1 ? "1 standard" : `${missing.observation} standards`}`,
+                ]
+                  .filter(Boolean)
+                  .join(" and ")}.`
+              : "Complete all standards to enable."}
           </span>
         )}
         {state.error && (

@@ -69,10 +69,19 @@ export function parseFunder(raw: string): { type: FunderType; name: string | nul
 }
 
 /** Check one client before it's saved: what's wrong with it, or nothing. */
-export function clientProblems(c: ClientInput): string[] {
+export function clientProblems(c: ClientInput, today = new Date().toISOString().slice(0, 10)): string[] {
   const problems: string[] = [];
   if (!c.fullName.trim()) problems.push("No name");
   if (c.fullName.length > 200) problems.push("Name is too long");
+  // Dates that can't be right (QA review, 2 Nov 2026): a birth date in the
+  // future or more than 120 years ago, care that started more than 120 years
+  // ago or more than a year from now, or care that started before they were born.
+  const year = Number(today.slice(0, 4));
+  const nextYear = `${year + 1}${today.slice(4)}`;
+  const oldest = `${year - 120}${today.slice(4)}`;
+  if (c.dateOfBirth && (c.dateOfBirth < oldest || c.dateOfBirth > today)) problems.push("The date of birth can't be right");
+  if (c.startDate && (c.startDate < oldest || c.startDate > nextYear)) problems.push("The start date can't be right");
+  if (c.dateOfBirth && c.startDate && c.startDate < c.dateOfBirth && !problems.some((p) => p.includes("can't be right"))) problems.push("Care can't have started before they were born");
   return problems;
 }
 

@@ -58,6 +58,10 @@ export default async function LearnerAssessmentPage({
           userId={learner.userId}
           eligible={learner.eligibleToAward}
           signedOffAt={learner.signedOff?.signedAt ?? null}
+          missing={{
+            knowledge: learner.standards.filter((s) => !s.knowledgeComplete).length,
+            observation: learner.standards.filter((s) => s.status !== "competent").length,
+          }}
         />
 
         <div className="space-y-2">
