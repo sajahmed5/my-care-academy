@@ -1,5 +1,6 @@
 "use client";
 
+import { tooBigMessage } from "@/lib/upload-check";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera } from "lucide-react";
@@ -27,6 +28,8 @@ export function UploadStep({
 
   async function send(file: File | undefined) {
     if (!file) return;
+    const big = tooBigMessage(file);
+    if (big) return setError(big);
     setBusy(true);
     setError(null);
     try {

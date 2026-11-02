@@ -1,5 +1,6 @@
 "use client";
 
+import { tooBigMessage } from "@/lib/upload-check";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -164,7 +165,16 @@ function DocRow({ userId, def, doc }: { userId: string; def: StaffDocDef; doc: S
               aria-label={def.key === "dbs" ? "Recheck by" : "Expiry date"}
             />
           )}
-          <Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="h-8 w-48 text-xs" />
+          <Input
+            type="file"
+            onChange={(e) => {
+              const big = tooBigMessage(e.target.files?.[0]);
+              if (big) e.target.value = "";
+              setError(big);
+              setFile(big ? null : (e.target.files?.[0] ?? null));
+            }}
+            className="h-8 w-48 text-xs"
+          />
           <Button
             size="xs"
             disabled={busy || !file}

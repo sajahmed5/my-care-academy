@@ -1,5 +1,6 @@
 "use server";
 
+import { UPLOAD_LIMIT_BYTES, checkUpload, checkUploadBytes, storedType } from "@/lib/upload-check";
 import { revalidatePath } from "next/cache";
 import { refreshDueBadge } from "@/lib/due-badge";
 import { requireConsole, type UserContext } from "@/lib/auth";
@@ -209,10 +210,12 @@ export async function uploadEvidenceAction(id: string, file: { name: string; dat
   const g = await gate(context, id);
   if (!g) return NOT_FOUND;
   const { buffer, contentType } = fileFromDataUrl(file.dataUrl);
-  if (!buffer.length || buffer.length > 15 * 1024 * 1024) return { ok: false, error: "Choose a file up to 15MB." };
+  const facts = { name: file.name, type: contentType, size: buffer.length };
+  const problem = checkUploadBytes(facts, buffer.subarray(0, 16), { maxBytes: UPLOAD_LIMIT_BYTES, kinds: ["pdf", "image", "document"] });
+  if (problem) return { ok: false, error: problem };
   const name = file.name.replace(/[^\w.\- ]+/g, "").slice(0, 120) || "evidence";
   const path = `${context.organisationId}/cases/${id}/${crypto.randomUUID()}-${name}`;
-  const { error } = await g.admin.storage.from(HR_BUCKET).upload(path, buffer, { contentType });
+  const { error } = await g.admin.storage.from(HR_BUCKET).upload(path, buffer, { contentType: storedType(facts) });
   if (error) return { ok: false, error: "The file couldn't be uploaded. Try again." };
   await g.admin.from("hr_case_notes").insert({
     organisation_id: context.organisationId,

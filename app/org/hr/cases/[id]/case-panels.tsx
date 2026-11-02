@@ -1,5 +1,6 @@
 "use client";
 
+import { tooBigMessage } from "@/lib/upload-check";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -162,9 +163,21 @@ export function EvidenceUpload({ caseId }: { caseId: string }) {
   const { run, pending, note } = useRun(caseId);
   const [file, setFile] = useState<File | null>(null);
   const [what, setWhat] = useState("");
+  const [tooBig, setTooBig] = useState<string | null>(null);
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="h-8 w-56 text-xs" aria-label="Evidence file" />
+      <Input
+        type="file"
+        onChange={(e) => {
+          const big = tooBigMessage(e.target.files?.[0]);
+          if (big) e.target.value = "";
+          setTooBig(big);
+          setFile(big ? null : (e.target.files?.[0] ?? null));
+        }}
+        className="h-8 w-56 text-xs"
+        aria-label="Evidence file"
+      />
+      {tooBig && <p className="w-full text-xs text-rose-600">{tooBig}</p>}
       <Input value={what} onChange={(e) => setWhat(e.target.value)} placeholder="What it is" className="h-8 w-64" maxLength={1000} />
       <Button size="xs" disabled={pending || !file} onClick={async () => file && run(async () => uploadEvidenceAction(caseId, await readFile(file), what), "Uploaded.")}>
         Upload

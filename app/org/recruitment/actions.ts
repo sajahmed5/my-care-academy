@@ -1,5 +1,6 @@
 "use server";
 
+import { UPLOAD_LIMIT_BYTES, checkUpload, checkUploadBytes, storedType } from "@/lib/upload-check";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { refreshDueBadge } from "@/lib/due-badge";
@@ -135,8 +136,11 @@ export async function uploadDocumentAction(
   if (typeof step === "string") return { ok: false, error: step };
 
   const { buffer, contentType } = fileFromDataUrl(file.dataUrl);
-  const path = `${context.organisationId}/${candidateId}/${docType}-${crypto.randomUUID()}-${file.name}`;
-  const { error: upErr } = await admin.storage.from("candidate-docs").upload(path, buffer, { upsert: true, contentType });
+  const facts = { name: file.name, type: contentType, size: buffer.length };
+  const problem = checkUploadBytes(facts, buffer.subarray(0, 16), { maxBytes: UPLOAD_LIMIT_BYTES, kinds: ["pdf", "image", "document"] });
+  if (problem) return { ok: false, error: problem };
+  const path = `${context.organisationId}/${candidateId}/${docType}-${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ]+/g, "")}`;
+  const { error: upErr } = await admin.storage.from("candidate-docs").upload(path, buffer, { upsert: true, contentType: storedType(facts) });
   if (upErr) return { ok: false, error: "The file couldn't be uploaded. Try again." };
 
   const previous = loaded.docs.find((d) => d.doc_type === docType);

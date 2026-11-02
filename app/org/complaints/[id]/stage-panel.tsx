@@ -1,5 +1,6 @@
 "use client";
 
+import { tooBigMessage } from "@/lib/upload-check";
 import { startTransition, useActionState, useState } from "react";
 import { FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -581,6 +582,7 @@ function AddAction({ complaint, stage, staff }: { complaint: Complaint; stage: C
 function DocumentsBox({ complaint, stage, disabled }: PanelProps) {
   const [upState, upload, uploading] = useActionState<SaveState, FormData>(uploadDocumentAction, {});
   const [, del] = useActionState<SaveState, FormData>(deleteDocumentAction, {});
+  const [tooBig, setTooBig] = useState<string | null>(null);
   const docs = complaint.documents.filter((d) => d.stageId === stage.id);
   return (
     <div className="space-y-2 border-t pt-4">
@@ -612,9 +614,19 @@ function DocumentsBox({ complaint, stage, disabled }: PanelProps) {
         <form action={upload} className="flex flex-wrap items-center gap-2">
           <input type="hidden" name="complaintId" value={complaint.id} />
           <input type="hidden" name="stageId" value={stage.id} />
-          <Input name="file" type="file" className="w-auto" required />
+          <Input
+            name="file"
+            type="file"
+            className="w-auto"
+            required
+            onChange={(e) => {
+              const big = tooBigMessage(e.target.files?.[0]);
+              if (big) e.target.value = "";
+              setTooBig(big);
+            }}
+          />
           <Button type="submit" size="sm" variant="outline" disabled={uploading}>{uploading ? "Uploading…" : "Upload"}</Button>
-          {upState.error && <p className="w-full text-xs text-rose-600">{upState.error}</p>}
+          {(tooBig || upState.error) && <p className="w-full text-xs text-rose-600">{tooBig ?? upState.error}</p>}
         </form>
       )}
     </div>

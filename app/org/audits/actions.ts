@@ -1,5 +1,6 @@
 "use server";
 
+import { UPLOAD_LIMIT_BYTES, checkUpload, checkUploadBytes, storedType } from "@/lib/upload-check";
 import { revalidatePath } from "next/cache";
 import { refreshDueBadge } from "@/lib/due-badge";
 import { redirect } from "next/navigation";
@@ -130,8 +131,10 @@ export async function saveServiceAuditAction(_prev: SaveState, formData: FormDat
   if (photos.size) {
     const admin = createAdminClient();
     for (const [id, file] of photos) {
+      // A photo, under 10 MB: anything else (a program, a page) is skipped.
+      if (checkUploadBytes(file, new Uint8Array(await file.slice(0, 16).arrayBuffer()), { maxBytes: UPLOAD_LIMIT_BYTES, kinds: ["image"] })) continue;
       const path = `${orgId}/${auditId}/${id}.jpg`;
-      const { error: upErr } = await admin.storage.from(PHOTO_BUCKET).upload(path, file, { contentType: file.type, upsert: true });
+      const { error: upErr } = await admin.storage.from(PHOTO_BUCKET).upload(path, file, { contentType: storedType(file), upsert: true });
       if (!upErr) items.find((i) => i.id === id)!.photo = path;
     }
     await supabase.from("audits").update({ items }).eq("id", auditId);

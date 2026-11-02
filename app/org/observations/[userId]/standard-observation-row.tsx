@@ -1,5 +1,6 @@
 "use client";
 
+import { tooBigMessage } from "@/lib/upload-check";
 import { useActionState, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ export function StandardObservationRow({
   standard: StandardObservation;
 }) {
   const [open, setOpen] = useState(false);
+  const [tooBig, setTooBig] = useState<string | null>(null);
   const [state, action, pending] = useActionState(
     recordObservationAction,
     {} as ObsState,
@@ -123,7 +125,13 @@ export function StandardObservationRow({
               type="file"
               name="evidence"
               className="text-sm"
+              onChange={(e) => {
+                const big = tooBigMessage(e.target.files?.[0], "The evidence file");
+                if (big) e.target.value = "";
+                setTooBig(big);
+              }}
             />
+            {tooBig && <p className="text-xs text-destructive">{tooBig}</p>}
             {standard.evidencePath && (
               <p className="text-xs text-muted-foreground">
                 Evidence already attached.
