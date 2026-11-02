@@ -483,15 +483,33 @@ pack, the certificate pack and the portal API, so those are safe. Every
 the weekly policy digest, organisation removal, the AI spend limit, and
 sending a feedback round (findings 7–10).
 
-Still capped, in order of how likely they are to be hit:
+Decision (Q6, Saj, 2 Nov 2026): every list is read in full and the page
+shows the most recent 200 with a "View all N" link (`?all=1`), through
+`lib/latest.ts` and `components/view-all.tsx`; exports, packs and pickers
+always carry everything. Applied the same day (v3.11.7 onwards):
 
-- Platform pages across every organisation (`app/platform/reports/page.tsx` issue reports — grows forever; `lib/platform-orgs.ts` and its CSV, `lib/platform-analytics.ts`, `app/platform/billing`, `/tiers`, `/bespoke-reports`): fine until the platform has 1,000 organisations.
-- Per company, everyone including leavers: the platform's organisation page people list, the Care Certificate rollup (`lib/observations.ts`), complaint people pickers (`lib/complaints/data.ts:132`).
-- Per company lists with their own caps: complaints register 500, compliments 500, performance plans 500, form records 500 per form, form assignments 500 per form, audits list 100, feedback rounds 200, classroom sessions 200, face-to-face bookings 2,000 (really 1,000), reminder history 1,000, form logs 5,000 (CSV/PDF) and 1,000 (on screen).
-- Per person, small caps that could in theory truncate an evidence pack: form responses 200, classroom attendance 200, tasks 200, supervisions 100, competency 200/100; the evidence ZIP route (`app/org/staff/[userId]/evidence/files/route.ts`) and `lib/org-learner.ts` read unpaged; the certificate pack stops at 400 files without a note in the ZIP.
-- `.in()` lists cut before the URL limit, dropping the rest silently: classroom attendees 300, face-to-face bookings 200, alert course titles 300, `app/org/actions.ts:476` 100.
+- Platform pages: organisations (and the CSV), issue reports, billing, tiers,
+  analytics totals, bespoke-report queues and threads, the organisation
+  page's people list.
+- Per company: complaints and compliments (and their people pickers),
+  performance plans, form records and assignments, form logs (screen and
+  CSV/PDF), audits and QAs, feedback rounds, classroom sessions, face-to-face
+  sessions and bookings, reminder history, the Care Certificate rollup, the
+  company's bespoke reports list.
+- Per person: form asks and responses, classroom attendance, supervisions,
+  bookings, spot checks, competency, audit training, actions, letters,
+  absences, leave, HR cases, concerns, compliments, a client's logs and
+  compliments; the evidence PDF and ZIP; the leaver's training-record email.
+- `.in()` lists go in groups of 100: classroom attendees, face-to-face
+  picks, alert course titles, in-person completion, the actions page.
 
-Recommendation (Q6): page the platform lists and the per-company registers the same way (`fetchAll`), and show "Showing the latest N" where a cap is deliberate.
+Caps that stay, each now said out loud: the certificate pack ZIP holds 400
+files (the 60-second function limit) and carries a README listing what was
+left out and where to get it; the leaver's email attaches the most recent
+25 certificates and says so; the stars streak looks at the last 300 quiz
+attempts; the HR summary tiles show the last few checks; the alert retry
+job works in batches of 100. The staff rollup (`org_learner_rollup`) returns
+one JSON value, so it has no row cap.
 
 ## 7. The redesign against the mock-ups (docs/redesign)
 
@@ -542,7 +560,7 @@ UK dates and the clock change: `lib/dates.ts` formats everything in
 Europe/London and `tests/dates.test.ts` / `tests/trial.test.ts` already cover
 a timestamp either side of the 25 October 2026 change and a trial that spans it.
 
-## 10. Final run (2 Nov 2026, v3.11.6)
+## 10. Final runs (2 Nov 2026, v3.11.6 and v3.12.5)
 
 | Check | Result |
 |---|---|
@@ -552,8 +570,32 @@ a timestamp either side of the 25 October 2026 change and a trial that spans it.
 | `npm run test:qa` → Playwright | 896 passed, 0 failed (desktop 1440px and phone 390px projects: smoke, permissions matrix, cross-company isolation, page crawl, accessibility, navigation, phone widths, and the people, training and documents flows) |
 | `npm run test:qa` → Vitest | 130 files, 983 tests passed |
 
+After the decisions (§11) were applied, the suite was run again on that
+build (v3.12.5): Playwright 915 passed (the 19 new tests cover the lists'
+View all, the certificate pack's README and Who can see what), Vitest 133
+files, 998 tests passed; lint, type-check and build clean.
+
 Two earlier runs of the same suite each had one test fail with the local
 stack's `An invalid response was received from the upstream server` (finding
 12: the Dockerised PostgREST under four parallel browsers), on different pages
 each time; the page answered correctly on retry. It is the local stack's
 limit, not the app's, and does not happen on the hosted project.
+
+## 11. Decisions applied (2 Nov 2026)
+
+Saj answered the thirteen questions the same morning. What was done:
+
+| Question | Decision | Done |
+|---|---|---|
+| Q1 trainer role | Leave it: office worker covers trainers | — |
+| Q2 office workers and HR cases | Every office worker sees disciplinary and grievance cases; a "Who can see what" page under Settings lets a manager switch whole areas off for office workers | `can_see_hr_case()` rewritten (migration `20261102100423`), the named-list setting removed from Settings → HR → Disciplinary and grievance. The page is built (mock-up `docs/redesign/My-Care-Academy-7-Who-can-see-what.html`, agreed by Saj): 15 areas, all on by default, stored as `organisations.office_hidden_areas` (migration `20261102110000`); `requireConsole()` sends an office worker to `/org/managers-only` for a page in an area that is off, and the menu, search, Today's list, the Due badge and the case reminder emails leave it out. Server actions are not gated one by one: the check runs on the page the action was called from, and the data stays the company's own. `tests/e2e/access.spec.ts` |
+| Q3, Q4 | Intended | — |
+| Q5 platform admin inside a company | Leave it; a logged read-only "open as this company" mode if support ever needs it | — |
+| Q6 1,000-row caps | Read everything, show the most recent 200 with View all | §6 |
+| Q7 | Turn on leaked-password protection (Saj, in the dashboard); drop the backup table | Table dropped live and in migration `20261102100206` (49 rows, a copy of HG certificates from 27 Sep 2026 before the 12-month change; nothing read it) |
+| Q8 | Index the hot foreign keys | Migration `20261102100418`: 49 indexes (every `organisation_id`, and the columns lists and joins look up); the 80-odd `created_by`-style author columns left alone |
+| Q9 colours | Keep the new shades | — |
+| Q10 inactivity | 12 hours for console roles | Saj, in the dashboard: Auth → Sessions (Pro plan) |
+| Q11 small buttons | 44px on phones | `components/ui/button.tsx` |
+| Q12 cookie | Accept | — |
+| Q13 sign-in limiter | Rely on Supabase's | — |
