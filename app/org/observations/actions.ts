@@ -1,6 +1,6 @@
 "use server";
 
-import { UPLOAD_LIMIT_BYTES, checkUpload, checkUploadBytes, storedType } from "@/lib/upload-check";
+import { UPLOAD_LIMIT_BYTES, checkUploadBytes, storedType } from "@/lib/upload-check";
 import { revalidatePath } from "next/cache";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";

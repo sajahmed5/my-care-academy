@@ -1,6 +1,6 @@
 "use server";
 
-import { UPLOAD_LIMIT_BYTES, checkUpload, checkUploadBytes, storedType } from "@/lib/upload-check";
+import { UPLOAD_LIMIT_BYTES, checkUploadBytes, storedType } from "@/lib/upload-check";
 import { revalidatePath } from "next/cache";
 import { refreshDueBadge } from "@/lib/due-badge";
 import { requireConsole, type UserContext } from "@/lib/auth";
