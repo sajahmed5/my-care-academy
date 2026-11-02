@@ -1,5 +1,6 @@
 "use server";
 
+import { chunked, fetchAll } from "@/lib/fetch-all";
 import crypto from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -122,17 +123,25 @@ export async function sendRoundInvitationsAction(_prev: SaveState & { count?: nu
   if (!survey.is_open) return { ok: false, error: "Reopen the round before sending it." };
   const kind = surveyKind(survey.kind as string)!;
 
-  const { data: already } = await supabase.from("feedback_invitations").select("client_id, user_id").eq("survey_id", surveyId).limit(5000);
-  const sentClients = new Set((already ?? []).map((r) => r.client_id as string | null).filter(Boolean));
-  const sentUsers = new Set((already ?? []).map((r) => r.user_id as string | null).filter(Boolean));
+  // Everyone already invited, however many: a single read stops at 1,000
+  // rows, after which a second send would invite people twice.
+  const already = await fetchAll<{ client_id: string | null; user_id: string | null }>((f, t) =>
+    supabase.from("feedback_invitations").select("client_id, user_id").eq("survey_id", surveyId).order("id").range(f, t),
+  );
+  const sentClients = new Set(already.map((r) => r.client_id).filter(Boolean));
+  const sentUsers = new Set(already.map((r) => r.user_id).filter(Boolean));
 
   type Pending = { client_id: string | null; user_id: string | null; name: string | null; email: string; clientName: string | null };
   const pending: Pending[] = [];
   if (kind.key === "client") {
     const picked = formData.getAll("clientId").map(String).filter((id) => id && !sentClients.has(id));
     if (picked.length === 0) return { ok: false, error: "Tick the clients whose families should get it." };
-    const { data: clients } = await supabase.from("clients").select("id, full_name").in("id", picked.slice(0, 300));
-    for (const c of clients ?? []) {
+    // The ticked ids go in the request URL, a hundred at a time (past about
+    // 390 the request fails); nothing ticked is dropped.
+    const clients = (
+      await Promise.all(chunked(picked).map(async (ids) => (await supabase.from("clients").select("id, full_name").in("id", ids)).data ?? []))
+    ).flat();
+    for (const c of clients) {
       const email = String(formData.get(`email_${c.id}`) ?? "").trim().toLowerCase();
       if (!email) continue;
       if (!EMAIL.test(email)) return { ok: false, error: `${c.full_name}: that email address does not look right.` };
@@ -143,13 +152,15 @@ export async function sendRoundInvitationsAction(_prev: SaveState & { count?: nu
   } else {
     const picked = formData.getAll("userId").map(String).filter((id) => id && !sentUsers.has(id));
     if (picked.length === 0) return { ok: false, error: "Tick who should get it." };
-    const { data: users } = await supabase
-      .from("users")
-      .select("id, full_name, email")
-      .eq("organisation_id", orgId)
-      .eq("status", "active")
-      .in("id", picked.slice(0, 1000));
-    for (const u of users ?? []) {
+    const users = (
+      await Promise.all(
+        chunked(picked).map(
+          async (ids) =>
+            (await supabase.from("users").select("id, full_name, email").eq("organisation_id", orgId).eq("status", "active").in("id", ids)).data ?? [],
+        ),
+      )
+    ).flat();
+    for (const u of users) {
       if (!u.email) continue;
       pending.push({ client_id: null, user_id: u.id as string, name: (u.full_name as string | null) ?? null, email: u.email as string, clientName: null });
     }
