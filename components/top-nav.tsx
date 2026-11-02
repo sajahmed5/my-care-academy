@@ -178,7 +178,7 @@ const ORG_MENU: MenuItem[] = [
         ],
       },
       { href: "/org/pips", label: "Performance plans", code: "PP", description: "Track improvement goals", group: "Staff checks", feature: "people.performance_plans" },
-      { href: "/org/audits", label: "Service audits", code: "SA", description: "Infection control, files, meds", group: "Service quality", feature: "quality.audits", exact: true, also: ["/org/audits/new", "/org/audits/qa"] },
+      { href: "/org/audits", label: "Service audits", code: "SA", description: "Infection control, files, meds", group: "Service quality", feature: "quality.audits", exact: true, also: ["/org/audits/new", "/org/audits/qa", "/org/due/audits"] },
       { href: "/org/audits/governance", label: "Governance report", code: "GR", description: "Monthly overview for CQC", group: "Service quality", feature: "quality.audits" },
       { href: "/org/feedback", label: "Feedback", code: "FB", description: "Surveys from clients and families", group: "Service quality", feature: "quality.feedback" },
       // Named so nobody looks for accidents elsewhere (Saj, 1 Nov 2026): the
