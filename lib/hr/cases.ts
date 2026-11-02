@@ -92,7 +92,6 @@ export interface CaseSettings {
   hearingNoticeDays: number;
   appealDays: number;
   grievanceAckDays: number;
-  officeAccess: string[];
 }
 
 export function caseSettingsFromRow(row: Record<string, unknown> | null | undefined): CaseSettings {
@@ -103,7 +102,6 @@ export function caseSettingsFromRow(row: Record<string, unknown> | null | undefi
     hearingNoticeDays: n("hearing_notice_days", 5),
     appealDays: n("appeal_days", 5),
     grievanceAckDays: n("grievance_ack_days", 5),
-    officeAccess: Array.isArray(row?.case_office_access) ? (row!.case_office_access as string[]) : [],
   };
 }
 

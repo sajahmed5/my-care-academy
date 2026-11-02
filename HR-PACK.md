@@ -39,9 +39,11 @@ sub-page; Documents due under HR; an HR line in the weekly email.*
   raise an award by up to 25% for not following. A company can edit its
   letters and timescales, but can't remove the right to be accompanied or the
   right to appeal.
-- **Who sees cases.** Managers only, by default. A manager can give named
-  office workers access. A grievance about a manager is handled by someone
-  else, and that manager can't see it.
+- **Who sees cases.** Managers and office workers (office workers do the
+  admin for the managers — Saj, 2 Nov 2026), unless a manager switches
+  "Disciplinary and grievance" off for office workers under Settings → Your
+  company → Who can see what. A grievance about a manager is handled by
+  someone else, and that manager can't see it.
 - **The carer.** Raises a grievance from their own login, and can read the
   letters sent to them. Never the investigation notes or witness statements.
 - **Letters.** Every letter is a template the company can edit, emailed to the
@@ -97,8 +99,8 @@ spot check or competency that wasn't met, an absence trigger or a failed
 probation, linked to it. Staff raise a grievance from My HR; managers are
 emailed, never one it's about. Deadlines are emailed daily to whoever can
 see the case, and counted in the weekly email. Settings → HR →
-Disciplinary and grievance holds the timescales, warning lengths, and the
-office workers who can see cases. A company with one manager can have
+Disciplinary and grievance holds the timescales and warning lengths. A
+company with one manager can have
 the appeal heard by that manager ("wherever possible").*
 
 ## Probation reviews

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import type { CaseSettings } from "@/lib/hr/cases";
 import { saveCaseSettingsAction } from "../actions";
 
-export function CaseSettingsForm({ initial, office }: { initial: CaseSettings; office: Array<{ id: string; name: string }> }) {
+export function CaseSettingsForm({ initial }: { initial: CaseSettings }) {
   const [v, setV] = useState({
     warningFirstMonths: String(initial.warningFirstMonths),
     warningFinalMonths: String(initial.warningFinalMonths),
@@ -14,7 +14,6 @@ export function CaseSettingsForm({ initial, office }: { initial: CaseSettings; o
     appealDays: String(initial.appealDays),
     grievanceAckDays: String(initial.grievanceAckDays),
   });
-  const [access, setAccess] = useState<string[]>(initial.officeAccess);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const card = "space-y-3 rounded-2xl border bg-card p-5";
@@ -37,7 +36,6 @@ export function CaseSettingsForm({ initial, office }: { initial: CaseSettings; o
             hearingNoticeDays: Number(v.hearingNoticeDays),
             appealDays: Number(v.appealDays),
             grievanceAckDays: Number(v.grievanceAckDays),
-            officeAccess: access,
           });
           setMessage(r.ok ? "Saved." : r.error ?? "That didn't save.");
         });
@@ -57,18 +55,8 @@ export function CaseSettingsForm({ initial, office }: { initial: CaseSettings; o
       <section className={card}>
         <h3 className="font-semibold">Who sees cases</h3>
         <p className="text-sm text-muted-foreground">
-          Managers, always. Tick office workers who should too. Nobody ever sees a case about themselves.
+          Managers and office workers. Nobody ever sees a case about themselves, and the employee never sees their own.
         </p>
-        {office.length === 0 ? (
-          <p className="text-sm text-muted-foreground">You have no office workers.</p>
-        ) : (
-          office.map((o) => (
-            <label key={o.id} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={access.includes(o.id)} onChange={(e) => setAccess(e.target.checked ? [...access, o.id] : access.filter((x) => x !== o.id))} />
-              {o.name}
-            </label>
-          ))
-        )}
       </section>
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>Save</Button>

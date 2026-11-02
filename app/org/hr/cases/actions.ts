@@ -78,7 +78,7 @@ export interface OpenCaseInput {
 export async function openCaseAction(input: OpenCaseInput): Promise<Result> {
   const context = await requireConsole();
   const admin = createAdminClient();
-  if (!(await hasCaseAccess(admin, context))) return { ok: false, error: "Only managers, and office workers a manager has named, can open a case." };
+  if (!(await hasCaseAccess(admin, context))) return { ok: false, error: "Only managers and office workers can open a case." };
   const person = await hrPerson(admin, context.organisationId, input.userId);
   if (!person) return { ok: false, error: "Choose one of your staff." };
   if (person.id === context.userId) return { ok: false, error: "You can't open a case about yourself: another manager does." };
@@ -166,10 +166,6 @@ export async function setInvestigatorAction(id: string, investigatorId: string):
   const who = await hrPerson(admin, context.organisationId, investigatorId);
   if (!who || who.role === "learner") return { ok: false, error: "Choose a manager or office worker." };
   if (who.id === c.user_id || who.id === c.about_user_id) return { ok: false, error: "They can't investigate a case about themselves." };
-  if (who.role === "org_office") {
-    const s = await caseSettings(admin, context.organisationId!);
-    if (!s.officeAccess.includes(who.id)) return { ok: false, error: `${personName(who)} can't see cases yet. A manager gives them access under Settings → HR → Disciplinary and grievance.` };
-  }
   const stage = c.kind === "disciplinary" && c.stage === "concern" ? "investigation" : (c.stage as string);
   await admin.from("hr_cases").update({ investigator_id: who.id, stage }).eq("id", id);
   await event(admin, c, context.userId, `${personName(who)} named as investigator.`);

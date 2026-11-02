@@ -842,9 +842,11 @@ test.describe("the office worker", () => {
     await expect(manager.getByRole("button", { name: "Delete" })).toHaveCount(0);
     const carer = page.locator("table tbody tr", { hasText: process.env.QA_TEST_STAFF_EMAIL! });
     await expect(carer.getByRole("button", { name: "Deactivate" })).toBeVisible();
-    // Cases: not named by a manager, so they can't open one.
+    // Cases: office workers see and open them, as managers do (Saj, 2 Nov 2026).
     await page.goto("/org/hr/cases/new");
-    await expect(page.getByText("Only managers, and office workers a manager has named, can open a case.")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Open a case");
+    await expect(page.getByText(/can open a case/)).toHaveCount(0);
+    await expect(page.locator("form")).toBeVisible();
   });
 });
 
