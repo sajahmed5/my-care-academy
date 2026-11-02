@@ -4,7 +4,7 @@ import { setupUrl } from "@/lib/account-setup";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmailBatch } from "@/lib/email";
 import { siteOrigin } from "@/lib/site-url";
-import { fetchAll } from "@/lib/fetch-all";
+import { chunked, fetchAll } from "@/lib/fetch-all";
 import {
   renewalStage,
   isExpired,
@@ -651,17 +651,23 @@ async function loadPolicyDigests(admin: Admin, orgIds: string[], now: Date): Pro
     await Promise.all(orgIds.map(async (id) => ((await hasFeatureForOrg(admin, id, "documents.library")) ? id : null)))
   ).filter((id): id is string => !!id);
   if (entitled.length === 0) return out;
+  // A hundred organisations per request: every id goes in the URL, and past
+  // about 390 the request fails, taking the whole weekly digest with it.
   const [copies, reading] = await Promise.all([
-    fetchAll((f, t) =>
-      admin
-        .from("organisation_policies")
-        .select("id, organisation_id, review_due_on")
-        .in("organisation_id", entitled)
-        .eq("status", "published")
-        .gt("version", 0)
-        .order("id")
-        .range(f, t),
-    ),
+    Promise.all(
+      chunked(entitled).map((ids) =>
+        fetchAll((f, t) =>
+          admin
+            .from("organisation_policies")
+            .select("id, organisation_id, review_due_on")
+            .in("organisation_id", ids)
+            .eq("status", "published")
+            .gt("version", 0)
+            .order("id")
+            .range(f, t),
+        ),
+      ),
+    ).then((pages) => pages.flat()),
     loadReadingForOrgs(admin, entitled, ukToday(now)),
   ]);
   for (const id of entitled) {
