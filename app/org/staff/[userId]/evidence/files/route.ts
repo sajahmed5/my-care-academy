@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import JSZip from "jszip";
 import { requireConsole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { chunked, fetchAll } from "@/lib/fetch-all";
 import { hasFeatureForOrg } from "@/lib/entitlements";
 import { logAudit } from "@/lib/audit";
 import { docLabel } from "@/lib/recruitment";
@@ -53,16 +54,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
     hasFeatureForOrg(admin, orgId, "training.observations"),
   ]);
 
-  // Everything to fetch, gathered first and downloaded together.
+  // Everything to fetch, gathered first and downloaded together. Each read is
+  // paged (Saj, 2 Nov 2026): one request answers at most 1,000 rows and says
+  // nothing about the rest, and a ZIP missing files reads as a thinner file.
   const wanted: { bucket: string; path: string; folder: string; base: string; ext: string }[] = [];
+  type Row = Record<string, unknown>;
 
-  const { data: certs } = await admin
-    .from("certificates")
-    .select("issued_at, pdf_path, course:courses (title)")
-    .eq("user_id", userId)
-    .eq("organisation_id", orgId)
-    .not("pdf_path", "is", null);
-  for (const c of certs ?? []) {
+  const certs = await fetchAll<Row>((from, to) =>
+    admin
+      .from("certificates")
+      .select("issued_at, pdf_path, course:courses (title)")
+      .eq("user_id", userId)
+      .eq("organisation_id", orgId)
+      .not("pdf_path", "is", null)
+      .order("id")
+      .range(from, to),
+  );
+  for (const c of certs) {
     if (!onOrAfter(c.issued_at as string)) continue;
     const course = (Array.isArray(c.course) ? c.course[0] : c.course) as { title?: string } | null;
     wanted.push({
@@ -75,13 +83,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
   }
 
   if (recruitment) {
-    const { data: staffDocs } = await admin
-      .from("staff_documents")
-      .select("doc_type, file_path, file_name, updated_at")
-      .eq("user_id", userId)
-      .eq("organisation_id", orgId)
-      .not("file_path", "is", null);
-    for (const d of staffDocs ?? []) {
+    const staffDocs = await fetchAll<Row>((from, to) =>
+      admin
+        .from("staff_documents")
+        .select("doc_type, file_path, file_name, updated_at")
+        .eq("user_id", userId)
+        .eq("organisation_id", orgId)
+        .not("file_path", "is", null)
+        .order("id")
+        .range(from, to),
+    );
+    for (const d of staffDocs) {
       if (!onOrAfter(d.updated_at as string)) continue;
       wanted.push({
         bucket: "staff-docs",
@@ -96,19 +108,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
   // The candidate record they were hired from, matched by email within the
   // organisation: hiring creates the account from the candidate's email.
   if (recruitment && person.email) {
-    const { data: cands } = await admin
-      .from("candidates")
-      .select("id")
-      .eq("organisation_id", orgId)
-      .ilike("email", person.email as string);
-    const ids = (cands ?? []).map((c) => c.id as string);
-    if (ids.length) {
-      const { data: docs } = await admin
-        .from("candidate_documents")
-        .select("doc_type, file_path, file_name, created_at")
-        .in("candidate_id", ids)
-        .not("file_path", "is", null);
-      for (const d of docs ?? []) {
+    const cands = await fetchAll<{ id: string }>((from, to) =>
+      admin.from("candidates").select("id").eq("organisation_id", orgId).ilike("email", person.email as string).order("id").range(from, to),
+    );
+    const ids = cands.map((c) => c.id);
+    // A hundred candidate ids a request: the list travels in the URL.
+    for (const part of chunked(ids)) {
+      const docs = await fetchAll<Row>((from, to) =>
+        admin
+          .from("candidate_documents")
+          .select("doc_type, file_path, file_name, created_at")
+          .in("candidate_id", part)
+          .not("file_path", "is", null)
+          .order("id")
+          .range(from, to),
+      );
+      for (const d of docs) {
         if (!onOrAfter(d.created_at as string)) continue;
         wanted.push({
           bucket: "candidate-docs",
@@ -122,13 +137,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
   }
 
   if (observations) {
-    const [{ data: obs }, { data: signoff }] = await Promise.all([
-      admin
-        .from("care_cert_observations")
-        .select("standard_no, observed_at, evidence_path")
-        .eq("user_id", userId)
-        .eq("organisation_id", orgId)
-        .not("evidence_path", "is", null),
+    const [obs, { data: signoff }] = await Promise.all([
+      fetchAll<Row>((from, to) =>
+        admin
+          .from("care_cert_observations")
+          .select("standard_no, observed_at, evidence_path")
+          .eq("user_id", userId)
+          .eq("organisation_id", orgId)
+          .not("evidence_path", "is", null)
+          .order("id")
+          .range(from, to),
+      ),
       admin
         .from("care_cert_signoffs")
         .select("signed_at, pdf_path")
@@ -137,7 +156,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
         .not("pdf_path", "is", null)
         .maybeSingle(),
     ]);
-    for (const o of obs ?? []) {
+    for (const o of obs) {
       if (!onOrAfter(o.observed_at as string | null)) continue;
       wanted.push({
         bucket: "observation-evidence",

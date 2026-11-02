@@ -12,6 +12,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "./fetch-all";
 import type { ActionReview, AuditQuestion, TextAnswer } from "./audit-forms";
 
 export const SUPERVISION_KINDS = [
@@ -120,14 +121,19 @@ export async function loadSupervisions(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<Supervision[]> {
-  const { data } = await supabase
-    .from("supervisions")
-    .select("id, kind, held_on, summary, next_due, carer_signature, carer_signed_name, carer_signed_at, carer_unsigned_reason, answers, actions_review, manager_signature, manager_signed_name, manager_signed_at, supervisor:users!supervisions_supervisor_id_fkey (full_name, email)")
-    .eq("user_id", userId)
-    .order("held_on", { ascending: false })
-    .limit(100);
+  // Every record, paged (Saj, 2 Nov 2026): a cap of 100 would have left the
+  // oldest out of the evidence pack without a word.
+  const data = await fetchAll<Record<string, unknown>>((from, to) =>
+    supabase
+      .from("supervisions")
+      .select("id, kind, held_on, summary, next_due, carer_signature, carer_signed_name, carer_signed_at, carer_unsigned_reason, answers, actions_review, manager_signature, manager_signed_name, manager_signed_at, supervisor:users!supervisions_supervisor_id_fkey (full_name, email)")
+      .eq("user_id", userId)
+      .order("held_on", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 
-  return (data ?? []).map((row) => {
+  return data.map((row) => {
     // PostgREST gives an embedded row as an object, or an array when it cannot
     // prove the relationship is to-one.
     const raw = (row as { supervisor?: unknown }).supervisor;
@@ -195,14 +201,10 @@ function shapeBooking(row: Record<string, unknown>): Booking {
  * RLS), which is why it filters on user_id rather than trusting the policy.
  */
 export async function loadBookings(supabase: SupabaseClient, userId: string): Promise<Booking[]> {
-  const { data } = await supabase
-    .from("staff_audit_bookings")
-    .select(BOOKING_SELECT)
-    .eq("user_id", userId)
-    .eq("status", "booked")
-    .order("booked_on")
-    .limit(20);
-  return (data ?? []).map((r) => shapeBooking(r as Record<string, unknown>));
+  const data = await fetchAll<Record<string, unknown>>((from, to) =>
+    supabase.from("staff_audit_bookings").select(BOOKING_SELECT).eq("user_id", userId).eq("status", "booked").order("booked_on").order("id").range(from, to),
+  );
+  return data.map((r) => shapeBooking(r));
 }
 
 export async function loadBooking(supabase: SupabaseClient, id: string): Promise<Booking | null> {

@@ -3,14 +3,15 @@ import JSZip from "jszip";
 import { requireConsole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAll } from "@/lib/fetch-all";
+import { PACK_MAX_FILES, describeCertificate, packReadme } from "@/lib/certificate-pack";
 
 export const dynamic = "force-dynamic";
 
 const INVALID = /[\\/:*?"<>|]/g;
 const safeName = (s: string) => s.replace(INVALID, "").replace(/\s+/g, " ").trim();
 
-/** Don't zip the whole history by accident, and don't time out trying. */
-const MAX = 400;
+/** Files in one ZIP; the rest are named in its README (lib/certificate-pack). */
+const MAX = PACK_MAX_FILES;
 /** Storage downloads in flight at once. */
 const PARALLEL = 8;
 
@@ -74,9 +75,13 @@ export async function GET(req: NextRequest) {
   const zip = new JSZip();
   const used = new Set<string>();
   let packed = 0;
+  const unreadable: string[] = [];
   for (const [i, r] of wanted.entries()) {
     const file = files[i];
-    if (!file) continue;
+    if (!file) {
+      unreadable.push(describeCertificate(r));
+      continue;
+    }
     const course = (r.courses as { title?: string } | null)?.title ?? "Course";
     const u = r.users as { full_name?: string; email?: string } | null;
     const learner = u?.full_name || u?.email || "Learner";
@@ -91,6 +96,11 @@ export async function GET(req: NextRequest) {
   if (packed === 0) {
     return new NextResponse("No certificates to download.", { status: 404 });
   }
+
+  // Said inside the ZIP rather than left silent: a pack short of certificates
+  // otherwise reads as a carer, or a course, with fewer of them.
+  const readme = packReadme({ packed, total: rows.length, leftOut: rows.slice(MAX).map(describeCertificate), unreadable, byCourse: !userId });
+  if (readme) zip.file("README.txt", readme);
 
   const buffer = await zip.generateAsync({ type: "nodebuffer" });
   const label = userId

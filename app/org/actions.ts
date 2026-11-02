@@ -473,8 +473,10 @@ export async function assignTrainingAction(
   const organisationId = context.organisationId;
   after(async () => {
     const admin = createAdminClient();
-    const { data: courses } = await admin.from("courses").select("title").in("id", courseIds.slice(0, 100));
-    const titles = (courses ?? []).map((c) => c.title as string);
+    // A hundred ids a request (they travel in the URL): every title, so the
+    // email's count and its list agree (Saj, 2 Nov 2026).
+    const courseParts = await Promise.all(chunks(courseIds).map((part) => admin.from("courses").select("title").in("id", part)));
+    const titles = courseParts.flatMap((r) => r.data ?? []).map((c) => c.title as string);
     const title =
       titles.length === 1
         ? titles[0]

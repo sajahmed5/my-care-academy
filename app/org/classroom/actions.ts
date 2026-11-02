@@ -6,6 +6,7 @@ import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { chunked } from "@/lib/fetch-all";
 import { logAudit } from "@/lib/audit";
 import { completeInPerson } from "@/lib/in-person-completion";
 import { formatDate } from "@/lib/dates";
@@ -55,14 +56,14 @@ export async function recordClassroomSessionAction(_prev: ClassroomState, formDa
   }
 
   const supabase = await createClient();
-  // Attendees must be this organisation's active staff: a ticked box is not a permission check.
-  const { data: staff } = await supabase
-    .from("users")
-    .select("id")
-    .eq("organisation_id", orgId)
-    .eq("status", "active")
-    .in("id", attendees.slice(0, 300));
-  const valid = (staff ?? []).map((u) => u.id as string);
+  // Attendees must be this organisation's active staff: a ticked box is not a
+  // permission check. Checked a hundred at a time — the ids travel in the URL —
+  // so nobody past a cut-off is dropped from the register (Saj, 2 Nov 2026).
+  const valid: string[] = [];
+  for (const part of chunked(attendees)) {
+    const { data: staff } = await supabase.from("users").select("id").eq("organisation_id", orgId).eq("status", "active").in("id", part);
+    valid.push(...(staff ?? []).map((u) => u.id as string));
+  }
   if (valid.length === 0) return { ok: false, error: "None of those people are current staff." };
 
   const { data: session, error } = await supabase

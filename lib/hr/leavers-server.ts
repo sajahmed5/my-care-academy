@@ -25,16 +25,22 @@ import { firstName, personName, type Admin } from "@/lib/hr/server";
 const MAX_CERTIFICATES = 25;
 
 export async function emailTrainingRecord(admin: Admin, orgId: string, userId: string): Promise<{ ok: boolean; error?: string }> {
-  const [{ data: person }, { data: org }, { data: enrolments }, { data: certs }, brand] = await Promise.all([
+  type Row = Record<string, unknown> & { courses: unknown };
+  // Their whole record, paged (Saj, 2 Nov 2026): the PDF lists every course
+  // and certificate; only the attachments are capped, and the letter says so.
+  const [{ data: person }, { data: org }, enrolments, certs, brand] = await Promise.all([
     admin.from("users").select("id, full_name, email").eq("id", userId).maybeSingle(),
     admin.from("organisations").select("name").eq("id", orgId).maybeSingle(),
-    admin.from("enrolments").select("status, courses(title)").eq("user_id", userId).limit(1000),
-    admin
-      .from("certificates")
-      .select("certificate_number, issued_at, expires_at, pdf_path, courses(title)")
-      .eq("user_id", userId)
-      .order("issued_at", { ascending: false })
-      .limit(500),
+    fetchAll<Row>((f, t) => admin.from("enrolments").select("status, courses(title)").eq("user_id", userId).order("id").range(f, t)),
+    fetchAll<Row>((f, t) =>
+      admin
+        .from("certificates")
+        .select("certificate_number, issued_at, expires_at, pdf_path, courses(title)")
+        .eq("user_id", userId)
+        .order("issued_at", { ascending: false })
+        .order("id")
+        .range(f, t),
+    ),
     orgBranding(orgId),
   ]);
   if (!person?.email) return { ok: false, error: "They have no email address." };
@@ -65,11 +71,11 @@ export async function emailTrainingRecord(admin: Admin, orgId: string, userId: s
     { type: "para", text: "Certificates can be checked by anyone on My Care Academy's certificate checker, using the certificate number." },
   ];
   // The record renders while the certificates download, all at once.
+  const withPdf = certs.filter((c) => c.pdf_path);
   const [record, files] = await Promise.all([
     renderHrPdf(company, [{ title: "Training record", subtitle: `${personName(person as never)} · ${ukDate(new Date().toISOString())}`, blocks }], brand?.logoUrl),
     Promise.all(
-      (certs ?? [])
-        .filter((c) => c.pdf_path)
+      withPdf
         .slice(0, MAX_CERTIFICATES)
         .map(async (c) => {
           const { data } = await admin.storage.from("certificates").download(c.pdf_path as string);
@@ -90,7 +96,7 @@ export async function emailTrainingRecord(admin: Admin, orgId: string, userId: s
     html: emailLayout({
       body: `<p>Hi ${esc(firstName(person as never))},</p>
 <p>As you leave ${esc(company || "us")}, here is your training record and your certificates, attached, to take to your next job.</p>
-<p>Thank you for the care you've given, and good luck.</p>`,
+${withPdf.length > MAX_CERTIFICATES ? `<p>An email can carry ${MAX_CERTIFICATES} certificates, so the most recent ${MAX_CERTIFICATES} of your ${withPdf.length} are attached. Every one is listed in the training record, and any of them can be checked by its number on My Care Academy's certificate checker.</p>\n` : ""}<p>Thank you for the care you've given, and good luck.</p>`,
       footer: `My Care Academy — sent for ${esc(company || "your employer")}.`,
     }),
     attachments,
