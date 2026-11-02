@@ -156,7 +156,7 @@ export function LearnersTable({
                 )}
               >
                 {s.label}
-                {s.key !== "deactivated" && <span className={active ? "text-muted-foreground" : "text-muted-foreground/70"}>· {n}</span>}
+                {s.key !== "deactivated" && <span className="text-muted-foreground">· {n}</span>}
               </button>
             );
           })}
@@ -288,7 +288,7 @@ export function LearnersTable({
                   <tr
                     key={r.id}
                     onClick={href ? () => router.push(href) : undefined}
-                    className={cn("border-b last:border-0 transition-colors", href && "cursor-pointer hover:bg-muted/60", gone && "opacity-60")}
+                    className={cn("border-b last:border-0 transition-colors", href && "cursor-pointer hover:bg-muted/60", gone && "bg-muted/30 text-muted-foreground [&_a]:text-muted-foreground")}
                   >
                     <td className="px-4 py-3 sm:px-5">
                       <div className="flex items-center gap-3">

@@ -21,8 +21,8 @@ export function ReadinessCard({ r }: { r: Readiness }) {
       </ProgressRing>
       <div className="min-w-0">
         <p className="text-xl font-extrabold leading-tight">Inspection ready</p>
-        <p className="mt-1 text-sm text-primary-foreground/80">{line}</p>
-        <p className="mt-1 text-xs text-primary-foreground/60">
+        <p className="mt-1 text-sm text-primary-foreground/90">{line}</p>
+        <p className="mt-1 text-xs text-primary-foreground/90">
           {r.met} of {r.total} checks clear
         </p>
       </div>

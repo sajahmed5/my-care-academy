@@ -701,7 +701,7 @@ export function TopNav({
               type="button"
               aria-expanded={open === "__person"}
               aria-haspopup="true"
-              aria-label="Your account"
+              aria-label={`${initials(name, email)}: your account`}
               data-tour="nav-person"
               onClick={() => toggle("__person")}
               className="inline-flex size-11 items-center justify-center rounded-full bg-sidebar text-sm font-bold text-sidebar-foreground ring-offset-2 transition-shadow hover:ring-2 hover:ring-border"
