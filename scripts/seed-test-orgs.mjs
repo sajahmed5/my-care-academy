@@ -122,10 +122,13 @@ async function library() {
     // Drafts are published by a platform admin in real life; QA needs them live.
     await upd("policy_documents", { status: "draft" }, { status: "published", version: 1 });
   }
-  const { count: forms } = await admin.from("form_templates").select("id", { count: "exact", head: true });
-  if (!forms) {
-    const lib = JSON.parse(readFileSync("scripts/library-forms.json", "utf8")).forms;
-    const rows = lib.map((f, i) => ({
+  // The migrations seed the twelve logs; the forms themselves come from
+  // scripts/library-forms.json, each added unless its code is already there.
+  const lib = JSON.parse(readFileSync("scripts/library-forms.json", "utf8")).forms;
+  const { data: have } = await admin.from("form_templates").select("code").in("code", lib.map((f) => f.code));
+  const haveCodes = new Set((have ?? []).map((r) => r.code));
+  if (lib.some((f) => !haveCodes.has(f.code))) {
+    const rows = lib.filter((f) => !haveCodes.has(f.code)).map((f, i) => ({
       code: f.code,
       title: f.title,
       description: f.description ?? null,
@@ -142,8 +145,11 @@ async function library() {
       sort_order: i,
     }));
     await ins("form_templates", rows);
-    console.log(`  forms library: ${rows.length} published`);
+    console.log(`  forms library: ${rows.length} added`);
   }
+  // A library form always lands as a draft for a platform admin to publish
+  // (a trigger sees to it); QA needs the library live.
+  await upd("form_templates", { status: "draft" }, { status: "published" });
 }
 
 // ---------------------------------------------------------------------------
@@ -317,7 +323,7 @@ async function testCare(courses) {
   await ins("competency_checks", [
     { organisation_id: orgId, user_id: c.carla.id, area: "medication", outcome: "met", checked_on: d(-30), next_due: d(335), assessor_id: trainer.id },
     { organisation_id: orgId, user_id: c.mo.id, area: "medication", outcome: "not_met", checked_on: d(-10), next_due: d(20), assessor_id: trainer.id, notes: "QA seed: re-assess after training" },
-    { organisation_id: orgId, user_id: c.amina.id, area: "moving_handling", outcome: "developing", checked_on: d(-200), next_due: d(-15), assessor_id: trainer.id },
+    { organisation_id: orgId, user_id: c.amina.id, area: "moving_people", outcome: "developing", checked_on: d(-200), next_due: d(-15), assessor_id: trainer.id },
   ]);
   // Care Certificate observations for the new starter.
   await ins("care_cert_observations", [1, 2, 3].map((standard_no) => ({ organisation_id: orgId, user_id: c.jade.id, standard_no, status: standard_no < 3 ? "competent" : "pending", observed_at: standard_no < 3 ? d(-5) : null, assessor_id: trainer.id, assessor_kind: "org" })));
