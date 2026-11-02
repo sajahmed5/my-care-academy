@@ -32,10 +32,11 @@ describe("platform analytics", () => {
   it("counts MRR at list price for every active organisation", async () => {
     const admin = adminClient();
     const analytics = await loadPlatformAnalytics(admin);
-    const { data: orgs } = await admin.from("organisations").select("package_tier, status");
+    const { data: orgs } = await admin.from("organisations").select("package_tier, status, trial_ends_at");
     let total = 0;
     for (const o of orgs ?? []) {
-      if (o.status === "suspended") continue;
+      // Suspended companies and free trials (TRIAL.md) pay nothing.
+      if (o.status === "suspended" || o.trial_ends_at) continue;
       total += LIST_PRICE_GBP[(o.package_tier ?? "core") as PackageTier] ?? 0;
     }
     expect(analytics.mrr).toBe(total);
