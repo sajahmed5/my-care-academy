@@ -209,8 +209,9 @@ export default async function PolicyPage({
             <Card>
               <CardContent className="pt-6">
                 <PolicyEditor
-                  // A fresh editor when the saved text changes underneath it (details filled in).
-                  key={`${copy.id}:${blocksKey(working)}`}
+                  // A fresh editor when the company details are filled in underneath it — not after
+                  // every save, which threw away the "Draft saved." line (QA review, 2 Nov 2026).
+                  key={`${copy.id}:${missingDetails.length}`}
                   copyId={copy.id}
                   code={doc.code}
                   initial={working}
@@ -272,8 +273,3 @@ export default async function PolicyPage({
 }
 
 /** A short fingerprint of a block list, to tell the editor its text was replaced. */
-function blocksKey(blocks: { text: string }[]): string {
-  let h = 5381;
-  for (const b of blocks) for (let i = 0; i < b.text.length; i++) h = ((h << 5) + h + b.text.charCodeAt(i)) | 0;
-  return `${blocks.length}-${h >>> 0}`;
-}

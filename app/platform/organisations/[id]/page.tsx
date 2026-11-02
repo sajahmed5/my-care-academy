@@ -330,7 +330,8 @@ export default async function OrganisationDetailPage({
               {/* Keyed on what the trial buttons change, so the form doesn't
                   keep showing the old package and save it back. */}
               <EditOrgForm
-                key={`${org.package_tier}:${org.status}:${org.trial_ends_at ?? ""}`}
+                // Not keyed on the row: a save changed it and threw the form (and its "Saved.") away.
+                // The form's own fields hold what was just saved.
                 org={{
                   id: org.id,
                   name: org.name,

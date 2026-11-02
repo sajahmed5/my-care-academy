@@ -219,10 +219,8 @@ test.describe("1. Policies: adopt, complete, publish, accept, republish", () => 
   });
 
   test("Save draft tells the manager it saved", async ({ browser }) => {
-    // BUG (Low): app/org/policies/[code]/page.tsx keys the editor on a hash of
-    // the saved text, so a successful Save draft re-mounts the editor and the
-    // "Draft saved." line is lost at once (it may flash). The draft IS saved.
-    test.fail(true, "BUG: the policy editor re-mounts after Save draft, so 'Draft saved.' never stays on screen");
+    // The editor used to re-mount after Save draft (keyed on a hash of the saved
+    // text), losing the "Draft saved." line at once; fixed 2 Nov 2026.
     const { context, page } = await pageAs(browser, "testManager");
     await page.goto(`/org/policies/${code}`);
     const para = page.locator('textarea[aria-label="Paragraph"]').first();
