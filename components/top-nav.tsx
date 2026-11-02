@@ -348,7 +348,12 @@ function useOpenMenu() {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(null);
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(null);
+      if (e.key !== "Escape") return;
+      // Escape from inside a panel sends the keyboard back to the button
+      // that opened it, instead of dropping focus on the page.
+      const button = ref.current?.querySelector<HTMLButtonElement>('button[aria-expanded="true"]');
+      setOpen(null);
+      if (button && ref.current?.contains(document.activeElement)) button.focus();
     }
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
