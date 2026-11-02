@@ -18,7 +18,7 @@ async function targets(): Promise<Target[]> {
     for (const [k, v] of Object.entries(extra)) q = q.eq(k, v);
     const { data, error } = await q.limit(1);
     if (error) throw new Error(`${table}: ${error.message}`);
-    return data?.[0] as Record<string, string> | undefined;
+    return data?.[0] as unknown as Record<string, string> | undefined;
   };
   const staff = (await db.from("users").select("id").eq("organisation_id", org).eq("role", "learner").limit(1)).data?.[0];
   const client = await pick("clients");

@@ -14,7 +14,8 @@ const CRAWL: { role: RoleKey; who: string[] }[] = [
   { role: "platformAdmin", who: ["public", "any", "platform"] },
   { role: "emptyManager", who: ["any", "manager", "console", "staff"] },
 ];
-const SKIP = new Set(["/apply/form", "/apply/test", "/exit", "/statement", "/reference", "/suspended", "/trial-ended", "/login", "/mfa", "/auth/set-password", "/dashboard"]);
+/** Token pages, redirect-only pages, and the two form editors that need a ?key. */
+const SKIP = new Set(["/apply/form", "/apply/test", "/exit", "/statement", "/reference", "/suspended", "/trial-ended", "/login", "/mfa", "/auth/set-password", "/dashboard", "/org/settings/service-audits/edit", "/org/settings/staff-audits/edit"]);
 /** Console noise that is not a defect. */
 const IGNORE = [/Download the React DevTools/, /favicon/, /third-party cookie/i, /hydrat/i];
 

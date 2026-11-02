@@ -67,7 +67,7 @@ which does, in order:
 | `npm run lint` | passes, 7 warnings (unused variables in `app/org/audits/new/run-service-audit.tsx`, `lib/client-qa.ts`, `lib/bespoke/xlsx-write.ts`, `scripts/apply-rightsize.mjs`, three test files) |
 | `npx tsc --noEmit` | passes after a fresh build. Against a stale `.next/types` it reports 2 errors in the generated validator (a missing `app/org/learners/layout`), which is a stale-artefact problem, not a code one. |
 | `npm run build` | passes |
-| `npm test` (Vitest) | see §2.1 — the suite in the repo runs against the **live** project (`tests/helpers.ts` loads `.env.local`), so it was not run as-is; it is re-run against the local stack in §8. |
+| `npm test` (Vitest) | see §2.1 — the suite in the repo runs against the **live** project (`tests/helpers.ts` loads `.env.local`), so it was not run as-is; it is re-run against the local stack in §10. |
 
 ## 3. Roles found in the code
 
@@ -429,3 +429,131 @@ wrong/misleading or inaccessible), **Low** (cosmetic). Status: Open / Fixed
 
 | # | Page | Role | Steps | Expected | Actual | Severity | Status |
 |---|---|---|---|---|---|---|---|
+| 1 | `supabase db reset` / preview branch | dev | Apply the migrations to a fresh database | All 123 apply | Three stop: `20261020120000` revokes on a hand-made backup table that only exists live; `20261031130000` and `20261101120000` assert "27 published policies" | High (blocks any staging/preview database) | Fixed v3.9.3 |
+| 2 | `npm test` | dev | Run the Vitest suite on a fresh stack | Suite loads | `tests/csv-import.test.ts` cannot load (`server-only` has no package under Vitest); `tests/mfa.test.ts` fails because the local auth config had TOTP off; the MRR test counts free trials the code leaves out | Medium | Fixed v3.9.4 |
+| 3 | `/org` Today, 390px | manager | Open Today on a phone with a long "Needs your attention" list | Page fits the screen | The attention list (a long list of names) is wider than the screen: page is 662px wide, the phone zooms the whole page out | High | Fixed (`min-w-0` on the section) |
+| 4 | `/org/learners` (also Stars, form logs, Clients, a carer's file tabs), 390px | manager | Open the staff list on a phone | The table scrolls inside its card | The hidden "Open" label in the table header is absolutely positioned outside the scroll wrapper, so the page is 932px wide and the phone zooms out; the brief's "table scrolls horizontally on small screens" was not met | High | Fixed (`relative` on the scroll wrappers) + `tests/e2e/mobile.spec.ts` |
+| 5 | `/org/learners` | manager | Compare the header with the segmented control | Same count | Header says "16 people" (active only), the All chip says "All · 17" (includes leavers), footer "17 of 17" | Low | Fixed (header counts the list) |
+| 6 | `/org/courses` | manager | Read the six figures | Completed late ≤ Completed | "Completed late 19" beside "Completed 18": every certificate a course ever gathered (renewals, an expired one) counted as a late completion | Low | Fixed (newest certificate per course) |
+| 7 | Weekly digest (`/api/cron/weekly`, `lib/engine.ts`) | cron | Run with more than ~390 organisations entitled to policies | Digest sent | `.in("organisation_id", everyOrg)` puts every id in one URL; past ~390 the request fails and the whole weekly digest fails | High (future scale) | Fixed (batches of 100) |
+| 8 | Remove organisation (`lib/org-removal.ts`) | platform admin / trials cron | Remove a company with more than 1,000 people or certificates | Everything removed | Unpaged reads: logins and certificate PDFs past 1,000 are left behind | High (data retention) | Fixed (paged reads) |
+| 9 | AI monthly limit (`lib/ai.ts`) | manager | More than 1,000 AI requests in a month | Spend counted, limit enforced | `.limit(5000)` is really 1,000: spend under-counted after 1,000 requests, so the £ limit stops working | Medium | Fixed (paged) |
+| 10 | Feedback → send round (`app/org/feedback/actions.ts`) | manager | Send a round to more than 1,000 people, or tick more than 390 staff / 300 clients | Everyone invited once | Already-invited read capped at 1,000 (duplicates on a second send); ticked staff past ~390 made the request fail (nobody invited); ticked clients past 300 silently dropped | Medium | Fixed (paged + batched) |
+| 11 | Many list pages (see §6) | manager / platform admin | Lists with more than 1,000 (or 500/200/100) rows | All rows, or a "showing N of M" | Silently shorter lists; most are per-company and unlikely to be hit; the platform issue-report list and the organisations lists grow without bound | Low–Medium | Open: see §6 for the list; question Q6 |
+| 12 | Any page, under heavy parallel load | any | Many simultaneous requests to the local stack | Page renders | Occasionally "Something went wrong" with `Paged read failed: An invalid response was received from the upstream server` (the local PostgREST under load). The error page itself is correct; seen only under artificial load | Info | Noted |
+| 13 | Supabase security advisors (live project) | — | `get_advisors security` | No warnings | **Leaked-password protection is off** (Auth → Passwords); `verify_certificate()` is callable by `anon` (intended: the public certificate check); five `security definer` functions callable by signed-in users (`has_feature`, `my_entitlements`, `can_see_hr_case`, `face_to_face_places_taken`, `staff_started_at`: all read-only and intended); four service-role-only tables with RLS on and no policies (`integration_keys`, `alert_endpoints`, `alert_deliveries`, `policy_reminder_log`: intended); a leftover `_bk_hg_cert_expiry_20260927` backup table with no primary key | Low | Question Q7 (enable leaked-password protection; drop the backup table?) |
+| 14 | Supabase performance advisors (live project) | — | `get_advisors performance` | — | 131 unindexed foreign keys, 253 "multiple permissive policies" warnings (every org table has a platform-admin policy beside the member policy), 27 unused indexes | Low | Open: question Q8 |
+| 15 | Uploads: audit photos, candidate documents, fit notes, HR case evidence, staff documents (DBS etc.), complaint documents, Care Certificate evidence | manager / office | Upload a program renamed `.pdf`, an HTML page or an SVG | Refused | Stored as-is with whatever type the browser declared; only the size was checked (and audit photos had no size cap beyond the 4 MB action limit). Form uploads and the logo already checked types | Medium (security) | Fixed: `lib/upload-check.ts` on every handler + `tests/upload-check.test.ts` |
+| 16 | Accessibility (axe, WCAG AA), console | all | Run axe on Today, Staff, Courses, Complaints, Assign training | No serious violations | Contrast under 4.5:1 on the readiness card's white-on-green at 60–80%, chip counts and hints at 70–80% muted, leaver rows at 60% opacity, locked badge cards; the account button's name ("Your account") did not contain its visible text ("PT"); the stars pill likewise (and its "0stars" ran together); the bulk-assign file input had no label; the Who's off dots carried an `aria-label` with no role | Medium | Fixed + `tests/e2e/a11y.spec.ts` |
+| 17 | Accessibility, public site | visitor | axe on /, /training, /training/pricing, /contact, /verify | No serious violations | 14–18 contrast failures per page: ink colour at 40–65% opacity for body text and labels (3.0–4.4:1), the gold accent `#b7791f` as text and as a button background with white text (3.6:1), the sky link `#0284c7` (4.1:1), the footer version/links at 40%, the product monitor's address-bar label and the "CQC training in full" link in the service's own colour | Medium | Fixed: body text now at 70% of the ink colour, gold `#9a6414`, link `#0369a1` (a slightly darker gold on the public site — visible change, see Q9) |
+| 18 | Top navigation, keyboard | all | Open a drop-down with Enter, Tab into it, press Escape | Panel closes and focus returns to the menu button | Panel closes but focus is dropped on the page (the next Tab starts from the top) | Low | Fixed + `tests/e2e/nav.spec.ts` |
+| 19 | Internal links in emails, notifications, menus and pages | — | Every `/org`, `/learn`, `/platform`… string literal checked against the routes that exist | All resolve | All resolve (prefixes and image paths aside); the old URLs in `next.config.ts` redirect correctly; `/org/incidents` and `/org/forms/own` redirect to their new homes | — | OK |
+| 20 | Secrets | — | Scan tracked files for key-shaped strings, `NEXT_PUBLIC_*` names, client components importing the admin client | None | None found; only `.env.example` and `.env.test.example` are tracked | — | OK |
+| 21 | `/org` Today → "Who's off this week" | manager | Have someone on approved leave this week or off sick (seed: Lena Fakeholiday, Kai Fakesick) | They are listed with dots under the days | Always "Nobody is on leave or off sick this week": the card's `users(...)` join is ambiguous (three foreign keys to `users`), PostgREST answers PGRST201, the error is never read | High | Fixed (named joins) + test in `flows-people.spec.ts` |
+| 22 | Any console page, first load after the Due count's 2-minute cache expires (seen on `/org/clients/[id]`) | manager / office | Open a page when the cached Due count is cold | Page renders | Intermittent "Something went wrong": `cookies()` can't be read inside `unstable_cache()` — the cached count called `loadAuditForms`, which opens a cookie-based client | High (intermittent, every console page) | Fixed (the cached count reads with its own client: the audit-form loaders and the service-audit form loaders take the client they are given) |
+| 23 | QA harness | — | Run the QA server | No real email | `next start` reads `.env.local` itself, so the QA server picked up the live `RESEND_API_KEY` and tried to send real invitations (Resend answered 422) | High (harness) | Fixed: `scripts/qa/serve.mjs` blanks the email, AI and payment keys and logs the server's output to `test-results/qa-server.log` |
+| 24 | `/learn/hr` "Ask for this leave", `/org/hr/holidays` "Add the leave", `/org/hr/absence` "Record the absence", `/org/hr/leavers` "Record that they're leaving" (phone) | manager, carer | Measure the submit button at 390px | ≥ 44px touch target | 40px (`Button size="sm"` is 40px on a phone; the default size is 44) | Low | Open (small; Q11: make `sm` 44px on touch screens?) |
+| 25 | `/org/clients/new` | manager | Date of birth `1900-01-01` or `2999-12-31`, care started `2999-12-31` | A sanity check | Accepted silently | Low | Open |
+| 26 | `/org/hr/absence` "Details (optional)" | manager | Paste 10,000 characters | A field limit or a message | Saved silently cut to 1,000 characters | Low | Open |
+| 27 | `/org/learners/admin` bulk import | manager | Upload a CSV whose header isn't recognised | Refused up front, as the client import does | First two columns read as name/email, "0 invited, 1 failed" after the send | Low | Open (headerless files are deliberately allowed) |
+| 28 | `/login?redirectTo=/\evil.com` (and `next=` on `/auth/confirm`) | any | Open the link, sign in | Stay on the site | The browser lands on evil.com: the check allowed anything starting with "/" except "//", and browsers read a backslash as a slash | High (open redirect) | Fixed: `lib/safe-path.ts` + `tests/safe-path.test.ts` |
+| 29 | QA harness (follow-up to 23) | — | Run the QA server | No real email | Blanking the key was not enough: Next drops empty variables and then reads `.env.local`; a contact-form test **delivered a real enquiry to the inbox** (fake sender "Quinn Fakeenquirer", 2 Nov 2026) | Critical (harness) | Fixed: the QA server reads no env file at all, and `EMAIL_SENDING=off` stops every send in `lib/email.ts` |
+| 30 | Every upload form (carer forms, complaint documents, Care Certificate evidence, audit photos, staff documents, fit notes, case evidence, candidate documents) | all | Attach a file over ~4 MB | A clear "too big" message | "Something went wrong" and the answers are lost: the server action's whole request is capped at 4 MB, so the handlers' own 10–20 MB checks never ran | Medium | Fixed: one 3 MB limit everywhere, checked in the browser before sending and on the server |
+| 31 | Carer forms `lib/form-uploads.ts` (and every other upload) | carer | Attach a program renamed `.pdf` | Refused | Accepted: only the browser's declared type was checked, which follows the file name | Medium | Fixed: the first bytes must match the name (`checkUploadBytes`) |
+| 32 | `/org/policies/[code]` editor, `/platform/organisations/[id]?section=settings` | manager, platform admin | Save draft / Save | "Saved." stays visible | The form re-mounts on save (keyed on content), so the confirmation flashes and goes; the save lands | Low | Open |
+| 33 | Seed | — | Forms library | Carer forms assignable | Only the 12 logs existed: the seed skipped the 25 library forms because the logs satisfied its "already seeded" count | Medium (QA coverage) | Fixed (seeded by code) |
+| 34 | Seed / `/org/certificates/pack` | manager | Download the certificate ZIP | ZIP | 404 "No certificates to download": seeded certificates have no stored PDF (they are rendered on issue in real use) | Low (seed gap) | Open: the pack is tested with certificates earned in the training flow |
+| 35 | Session cookie | any | Sign in, inspect `sb-…-auth-token` | HttpOnly | `HttpOnly=false`, `SameSite=Lax`: the Supabase browser client sets it from JavaScript (the SSR package's design: the server refreshes it, the browser needs to read it) | Medium | Question Q12 |
+| 36 | Sign-in throttling | — | 10 wrong passwords | Throttled | The app itself has no limiter on sign-in (only on password reset and the contact form); the hosted Supabase Auth rate limits sign-in per IP (30 per 5 minutes by default) — not verified from here | Info | Question Q13 |
+| 37 | Empty states | manager of an empty company | Visit each list page | Wording + a primary action | Wording is helpful everywhere; `/org/certificates`, the Due tabs, `/org/observations` and `/org/courses/statistics` have no primary action (nothing to add there directly) | Low | OK / judgement |
+| 38 | Public site accreditation wording | visitor | Search all 12 public pages for "accredited", "CPD", "CQC-approved", "approved by CQC", "certified" | None unless true | None found | — | OK |
+| 39 | Due badge in the top bar (every console page) and the drop-down "n due" counts | manager | Compare the badge with Today's "things to fix" | Same count | Badge said "Due 2" (training only) while Today said 14, and no drop-down item showed a count: the cached count's to-do read failed under the service role — the same cookie-in-cache fault as finding 22 — and was swallowed | High | Fixed with 22 + `flows-training.spec.ts` |
+| 40 | Compliance → Service audits count | manager | 19 audits due | "19 due" beside Service audits | Never shown: the to-do lines point at `/org/due/audits`, the menu item at `/org/audits` | Low | Fixed (the item also stands for `/org/due/audits`) |
+| 41 | `/org/observations/[userId]` | manager | Mark standards competent, look for sign-off | Sign-off once everything is done | "Sign off & award" stays disabled with only "Complete all standards to enable." — correct, but nothing says which half (course or observation) is missing per standard | Low | Open (wording) |
+| 42 | Seed / `/org/learners/stars` | — | Seeded quiz attempts | Count towards stars | They don't: the seed's attempts carry no question ids, so the stars view derives 0 (a real pass credited 10 stars correctly) | Info (seed) | Noted |
+| 43 | Seed / Compliance → Spot checks & competency | — | Seeded overdue competency check in area `moving_handling` | Counted as late | Not counted: the to-do list and the Due badge only count the areas on the company's competency form (`medication`, `hoist`, `moving_people`…), so a check recorded in an area the form no longer lists never shows as late. Seed changed to `moving_people` | Info (seed; by design, as far as the code says) | Fixed (seed) |
+
+## 6. Reads that stop at 1,000 rows (audit, 2 Nov 2026)
+
+Supabase returns at most 1,000 rows for one request and drops the rest with
+no error. `lib/fetch-all.ts` pages through everything and is used by the
+scheduled jobs, the training matrix, the governance report, the evidence
+pack, the certificate pack and the portal API, so those are safe. Every
+`.range()` in the code base sits inside such a loop. Fixed in this review:
+the weekly policy digest, organisation removal, the AI spend limit, and
+sending a feedback round (findings 7–10).
+
+Still capped, in order of how likely they are to be hit:
+
+- Platform pages across every organisation (`app/platform/reports/page.tsx` issue reports — grows forever; `lib/platform-orgs.ts` and its CSV, `lib/platform-analytics.ts`, `app/platform/billing`, `/tiers`, `/bespoke-reports`): fine until the platform has 1,000 organisations.
+- Per company, everyone including leavers: the platform's organisation page people list, the Care Certificate rollup (`lib/observations.ts`), complaint people pickers (`lib/complaints/data.ts:132`).
+- Per company lists with their own caps: complaints register 500, compliments 500, performance plans 500, form records 500 per form, form assignments 500 per form, audits list 100, feedback rounds 200, classroom sessions 200, face-to-face bookings 2,000 (really 1,000), reminder history 1,000, form logs 5,000 (CSV/PDF) and 1,000 (on screen).
+- Per person, small caps that could in theory truncate an evidence pack: form responses 200, classroom attendance 200, tasks 200, supervisions 100, competency 200/100; the evidence ZIP route (`app/org/staff/[userId]/evidence/files/route.ts`) and `lib/org-learner.ts` read unpaged; the certificate pack stops at 400 files without a note in the ZIP.
+- `.in()` lists cut before the URL limit, dropping the rest silently: classroom attendees 300, face-to-face bookings 200, alert course titles 300, `app/org/actions.ts:476` 100.
+
+Recommendation (Q6): page the platform lists and the per-company registers the same way (`fetchAll`), and show "Showing the latest N" where a cap is deliberate.
+
+## 7. The redesign against the mock-ups (docs/redesign)
+
+Compared at 1440px and 390px with the seeded QA Test Care data (sample names
+and numbers in the mock-ups ignored). Screenshots: `node scripts/qa/screenshots.mjs <dir> [role]`.
+
+| Mock-up | Matches | Differences / notes |
+|---|---|---|
+| 1 Today | Greeting, date and company; the four cards (readiness ring, Training complete %, Supervisions up to date x/y, Service audits due) with bars and a consequence line; Needs your attention with code tile, title, meta, pill and an inline Book/Start/Choose who button; Finish setting up (trial company only); Who's off this week; Training across the team bar | "You may also be interested in" (MyRoster / Yellowloaf) card is shown to paid companies too (TRIAL.md says every company — intended). The phone layout overflowed (finding 3, fixed). Mock-up's "Trial · 7 days left" pill only shows on a trial company (correct). |
+| 2 Compliance menu | Panel with Staff checks / Service quality / Safety headings, two-letter tiles, one-line descriptions, footer line to the governance report | No "Incidents" item (the brief said skip); incidents live under "Incidents, complaints & safeguarding". Due-count badges per item appear when something is late. |
+| 3 Staff list | Title + "N people · N need attention", Training matrix / Import / + Add staff buttons; segmented control All / Needs attention / Never signed in / Leavers; search + Filters; table Name (avatar, role), Training bar + %, Supervision pill, Appraisal pill, Last active, chevron; whole row links | Header count disagreed with the All chip (finding 5, fixed). On a phone the table did not scroll inside its card (finding 4, fixed). Role under the name comes from `staff_employment.job_title`, falling back to "Care worker"/"Manager". |
+| 4 Staff profile | Breadcrumb, header card with avatar, name, role pill, email, start date; Remind / Evidence pack / Assign course / Book supervision; tabs Overview … More ▾; Overview compliance checklist (Mandatory training, Right to work & DBS, Policies read, Supervision, Appraisal, Profile details) with pill + one-click action; ring "3 of 6 checks done"; Recent activity | Matches. Right to work & DBS reads "Missing" until a document is uploaded. |
+| 5 Phone | Logo + search + hamburger; stacked cards; attention list with arrow buttons | The trial strip under the bar appears for trial companies only. Mobile overflow fixed (findings 3–4); every console and carer page now fits 390px (`tests/e2e/mobile.spec.ts`). |
+| 6 Stars (HTML mock-up) | Leaderboard under People → Staff → Stars; Stars tab on a person's file | Not re-compared in detail (built 2 Nov, v3.9.1). |
+
+Menus: every old page is reachable from Today / Due / People / Training /
+Compliance / Documents (`tests/e2e/nav.spec.ts`), each role sees only its
+own items (a carer never sees the console menus), feature-gated items
+disappear for a Growth company and direct visits land on `/org/locked/<feature>`.
+
+## 8. Questions for Saj (decisions needed)
+
+- **Q1–Q5** — roles, in §4.2.
+- **Q6** — the remaining 1,000-row caps in §6: page the platform lists and the per-company registers, or show "latest N"?
+- **Q7** — turn on leaked-password protection in Supabase (Auth → Passwords) and drop the `_bk_hg_cert_expiry_20260927` backup table from the live project?
+- **Q8** — the performance advisor's unindexed foreign keys (131) and duplicate permissive policies (253): worth a migration adding indexes on the hot ones (`enrolments`, `certificates`, `audits`, `supervisions` by `organisation_id`/`user_id` are already indexed; most of the 131 are `created_by`/`updated_by` columns)?
+- **Q9** — the public site's gold accent is now `#9a6414` (was `#b7791f`) and body text at 70% of the ink colour, so every text passes 4.5:1. Keep, or choose other shades?
+- **Q12** — the session cookie is readable by JavaScript (`HttpOnly=false`), as the Supabase SSR package needs. Accept, or move sign-in to a server action so the server sets the cookie HttpOnly (the browser client would then only be used for MFA)?
+- **Q13** — sign-in has no limiter in the app; the hosted Supabase Auth throttles per IP. Add an app-side limiter on the sign-in page (like the one on password reset) as belt and braces?
+- **Q11** — `Button size="sm"` is 40px on a phone; the HR forms use it for their submit buttons. Make the small size 44px on touch screens?
+- **Q10** — sessions: Supabase refresh tokens keep a session alive indefinitely while the app is used; nothing signs a manager out after a period of inactivity. Supabase has a "time-box sessions / inactivity timeout" setting (Pro). Wanted for console roles (e.g. 12 hours)?
+
+## 9. Performance (Lighthouse, local production build, 2 Nov 2026)
+
+| Page | Performance | Accessibility | Best practices | SEO | LCP | TBT |
+|---|---|---|---|---|---|---|
+| `/` | 99 | 96 | 100 | 100 | 1.4 s | 21 ms |
+| `/training/courses` | 100 | 96 | 100 | 100 | 1.4 s | 45 ms |
+| `/login` | 92 | 100 | 100 | 69 (noindex by design) | 3.3 s | 40 ms |
+
+Nothing to fix for size or blocking scripts; the only flagged items were the
+contrast failures (now fixed) and a render-blocking stylesheet of ~0.5 s on
+first load. Server-side, the heavy pages (Today, Staff, matrix) read with
+`fetchAll` and the per-organisation rollup function; no N+1 pattern was found
+in the pages checked (the audit in §6 covered every read).
+
+UK dates and the clock change: `lib/dates.ts` formats everything in
+Europe/London and `tests/dates.test.ts` / `tests/trial.test.ts` already cover
+a timestamp either side of the 25 October 2026 change and a trial that spans it.
+
+## 10. Final run (2 Nov 2026, v3.11.6)
+
+| Check | Result |
+|---|---|
+| `npm run lint` | clean (0 warnings) |
+| `npx tsc --noEmit` | clean |
+| `npm run build` | passes |
+| `npm run test:qa` → Playwright | 896 passed, 0 failed (desktop 1440px and phone 390px projects: smoke, permissions matrix, cross-company isolation, page crawl, accessibility, navigation, phone widths, and the people, training and documents flows) |
+| `npm run test:qa` → Vitest | 130 files, 983 tests passed |
+
+Two earlier runs of the same suite each had one test fail with the local
+stack's `An invalid response was received from the upstream server` (finding
+12: the Dockerised PostgREST under four parallel browsers), on different pages
+each time; the page answered correctly on retry. It is the local stack's
+limit, not the app's, and does not happen on the hosted project.

@@ -69,7 +69,8 @@ for (const cast of CAST) {
           expect(target, info).toMatch(/^\/login/);
         } else if (want === "locked") {
           expect(status, info).toBeGreaterThanOrEqual(300);
-          expect(target, info).toMatch(/^\/org\/locked\//);
+          // Carer-side pages have no locked page: they go back to /learn.
+          expect(target, info).toMatch(path.startsWith("/learn") ? /^\/learn(\?|$)/ : /^\/org\/locked\//);
         } else {
           expect(status, info).toBeGreaterThanOrEqual(300);
           expect(status, info).toBeLessThan(400);
