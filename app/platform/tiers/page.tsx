@@ -10,22 +10,27 @@ import {
 } from "@/components/ui/card";
 import { PACKAGE_TIERS } from "@/lib/organisations";
 import { FEATURE_CATEGORIES, FEATURES } from "@/lib/features";
+import { fetchAll } from "@/lib/fetch-all";
 import { TierMatrixForm } from "./tier-matrix-form";
 
 export default async function TiersPage() {
   const context = await requireRole("platform_admin");
 
   const supabase = await createClient();
-  const [{ data: tiers }, { data: ticks }, { data: orgs }] = await Promise.all([
+  const [{ data: tiers }, { data: ticks }, orgs] = await Promise.all([
     supabase.from("subscription_tiers").select("key, label, sort_order").order("sort_order"),
     supabase.from("tier_features").select("tier_key, feature_key"),
-    supabase.from("organisations").select("package_tier, status"),
+    // Counted per package below, so every organisation must come back: one
+    // request answers at most 1,000 rows.
+    fetchAll<{ id: string; package_tier: string | null; status: string | null }>((from, to) =>
+      supabase.from("organisations").select("id, package_tier, status").order("id").range(from, to),
+    ),
   ]);
 
   // Keep to the fixed set in code order; the label comes from the database.
   const labelOf = new Map((tiers ?? []).map((t) => [t.key as string, t.label as string]));
   const columns = PACKAGE_TIERS.map((t) => {
-    const onTier = (orgs ?? []).filter((o) => o.package_tier === t.value);
+    const onTier = orgs.filter((o) => o.package_tier === t.value);
     return {
       key: t.value,
       label: labelOf.get(t.value) ?? t.label,

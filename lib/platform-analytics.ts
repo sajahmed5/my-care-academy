@@ -42,6 +42,20 @@ export interface PlatformAnalytics {
   };
 }
 
+interface OrgRecord {
+  id: string;
+  package_tier: string | null;
+  status: string | null;
+  subscription_status: string | null;
+  trial_ends_at: string | null;
+}
+interface CourseRecord {
+  id: string;
+  title: string | null;
+  enrolments: unknown;
+  certificates: unknown;
+}
+
 /** An embedded `table(count)` — PostgREST returns it as `[{ count }]`. */
 const embeddedCount = (v: unknown): number =>
   (v as { count?: number }[] | null)?.[0]?.count ?? 0;
@@ -63,19 +77,24 @@ export async function loadPlatformAnalytics(
   const firstMonth = new Date(now.getFullYear(), now.getMonth() - (MONTHS - 1), 1);
 
   const [
-    { data: orgs },
+    orgRows,
     { count: learnerCount },
     { count: certCount },
     recentCerts,
     { count: submittedCount },
     { count: passedCount },
-    { data: courses },
+    courses,
     { data: ticks },
     exceptions,
   ] = await Promise.all([
-    supabase
-      .from("organisations")
-      .select("id, package_tier, status, subscription_status, trial_ends_at"),
+    // Every organisation, paged: one request answers at most 1,000 rows.
+    fetchAll<OrgRecord>((from, to) =>
+      supabase
+        .from("organisations")
+        .select("id, package_tier, status, subscription_status, trial_ends_at")
+        .order("id")
+        .range(from, to),
+    ),
     supabase
       .from("users")
       .select("id", { count: "exact", head: true })
@@ -99,7 +118,13 @@ export async function loadPlatformAnalytics(
       .not("submitted_at", "is", null)
       .eq("passed", true),
     // Per-course totals counted in the database: one row per course.
-    supabase.from("courses").select("id, title, enrolments(count), certificates(count)"),
+    fetchAll<CourseRecord>((from, to) =>
+      supabase
+        .from("courses")
+        .select("id, title, enrolments(count), certificates(count)")
+        .order("id")
+        .range(from, to),
+    ),
     supabase.from("tier_features").select("tier_key, feature_key"),
     // Organisations × features grows past the 1,000-row cap long before the
     // other tables here do.
@@ -113,8 +138,6 @@ export async function loadPlatformAnalytics(
           .range(from, to),
     ),
   ]);
-
-  const orgRows = orgs ?? [];
 
   // Tier mix + subscription status + MRR.
   const tierCount = new Map<PackageTier, number>();
@@ -156,7 +179,7 @@ export async function loadPlatformAnalytics(
     .sort((a, b) => b.value - a.value);
 
   // Course popularity: enrolments + completions per course, top 10 by enrolments.
-  const coursePopularity: CoursePopularity[] = (courses ?? [])
+  const coursePopularity: CoursePopularity[] = courses
     .map((c) => ({
       title: (c.title as string | null) ?? "Course",
       enrolments: embeddedCount(c.enrolments),

@@ -8,20 +8,34 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { fetchAll } from "@/lib/fetch-all";
+import { allHref, latest } from "@/lib/latest";
+import { ViewAll } from "@/components/view-all";
 import { ReportsTable, type ReportRow } from "./reports-table";
 
-export default async function ReportsAdminPage() {
+export default async function ReportsAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ all?: string }>;
+}) {
   const context = await requireRole("platform_admin");
+  const q = await searchParams;
 
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("issue_reports")
-    .select(
-      "id, report_no, summary, reporter_email, reporter_role, page_path, status, created_at",
-    )
-    .order("created_at", { ascending: false });
-  const reports = (data ?? []) as ReportRow[];
+  // Every report, newest first, paged past the 1,000-row answer; the page
+  // shows the most recent 200 unless asked for all of them.
+  const reports = await fetchAll<ReportRow>((from, to) =>
+    supabase
+      .from("issue_reports")
+      .select(
+        "id, report_no, summary, reporter_email, reporter_role, page_path, status, created_at",
+      )
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
   const openCount = reports.filter((r) => r.status === "open").length;
+  const list = latest(reports, q.all);
 
   return (
     <DashboardShell title="Issues & bug reports" context={context}>
@@ -40,7 +54,10 @@ export default async function ReportsAdminPage() {
                 No reports yet.
               </p>
             ) : (
-              <ReportsTable rows={reports} />
+              <>
+                <ReportsTable rows={list.rows} />
+                <ViewAll list={list} href={allHref("/platform/reports", q)} noun="reports" />
+              </>
             )}
           </CardContent>
         </Card>

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import {
   RequestDetails,
@@ -28,7 +29,7 @@ export default async function PlatformReportRequestPage({ params }: { params: Pr
   const context = await requireRole("platform_admin");
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: request }, { data: messages }, { data: built }] = await Promise.all([
+  const [{ data: request }, messages, built] = await Promise.all([
     supabase
       .from("report_requests")
       .select(
@@ -36,13 +37,19 @@ export default async function PlatformReportRequestPage({ params }: { params: Pr
       )
       .eq("id", id)
       .maybeSingle(),
-    supabase
-      .from("report_request_messages")
-      .select("id, body, from_us, created_at, author:users (full_name)")
-      .eq("request_id", id)
-      .order("created_at")
-      .limit(500),
-    supabase.from("bespoke_reports").select("id, title, archived_at").eq("request_id", id).limit(5),
+    // The whole conversation, oldest first, paged past the 1,000-row answer.
+    fetchAll<{ id: string; body: string; from_us: boolean; created_at: string; author: unknown }>((from, to) =>
+      supabase
+        .from("report_request_messages")
+        .select("id, body, from_us, created_at, author:users (full_name)")
+        .eq("request_id", id)
+        .order("created_at")
+        .order("id")
+        .range(from, to),
+    ),
+    fetchAll<{ id: string; title: string; archived_at: string | null }>((from, to) =>
+      supabase.from("bespoke_reports").select("id, title, archived_at").eq("request_id", id).order("id").range(from, to),
+    ),
   ]);
   if (!request) notFound();
   const r = request as unknown as RequestRecord & {
@@ -52,11 +59,11 @@ export default async function PlatformReportRequestPage({ params }: { params: Pr
   };
   const org = one(r.organisation)?.name ?? "Unknown company";
   const who = one(r.requester);
-  const thread: MessageRecord[] = (messages ?? []).map((m) => ({
-    id: m.id as string,
-    body: m.body as string,
-    from_us: m.from_us as boolean,
-    created_at: m.created_at as string,
+  const thread: MessageRecord[] = messages.map((m) => ({
+    id: m.id,
+    body: m.body,
+    from_us: m.from_us,
+    created_at: m.created_at,
     author: (one(m.author as { full_name: string | null } | { full_name: string | null }[] | null)?.full_name as string | null) ?? null,
   }));
 
@@ -84,12 +91,12 @@ export default async function PlatformReportRequestPage({ params }: { params: Pr
           )}
           <RequestSteps status={r.status} />
           <StatusButtons requestId={r.id} status={r.status} />
-          {(built ?? []).length > 0 ? (
+          {built.length > 0 ? (
             <p className="text-sm">
               Report:{" "}
-              {(built ?? []).map((b) => (
-                <Link key={b.id as string} href={`/platform/bespoke-reports/${b.id}`} className="font-medium text-primary hover:underline">
-                  {b.title as string}
+              {built.map((b) => (
+                <Link key={b.id} href={`/platform/bespoke-reports/${b.id}`} className="font-medium text-primary hover:underline">
+                  {b.title}
                   {b.archived_at ? " (taken down)" : ""}
                 </Link>
               ))}
