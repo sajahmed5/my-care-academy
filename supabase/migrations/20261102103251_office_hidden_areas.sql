@@ -7,7 +7,7 @@
 -- member can already see (the console reads organisations under RLS), and
 -- written only by the app through the service role from the managers-only
 -- Settings → Your company → Who can see what page. Empty means everything is
--- on, so the code already deployed is unaffected.
+-- on, so the code already deployed is unaffected. Applied live 2 Nov 2026.
 
 alter table public.organisations
   add column if not exists office_hidden_areas text[] not null default '{}';
