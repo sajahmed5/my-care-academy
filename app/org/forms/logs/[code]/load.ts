@@ -22,7 +22,7 @@ export async function loadLogForDownload(
   const date = (s: string | null) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null);
   const from = date(url.searchParams.get("from"));
   const to = date(url.searchParams.get("to"));
-  const entries = await loadLogEntries(supabase, { organisationId: context.organisationId, templateId: template.id, from, to, limit: 5000 });
+  const entries = await loadLogEntries(supabase, { organisationId: context.organisationId, templateId: template.id, from, to });
   return { template, entries, from, to, organisationName: (org?.name as string) ?? "This organisation" };
 }
 

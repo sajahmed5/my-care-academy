@@ -3,6 +3,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "../fetch-all";
 import { readConcerns, readExpectations, readSupport, type Pip } from "./plan";
 
 const nameOf = (raw: unknown): string | null => {
@@ -99,12 +100,14 @@ const LIST_SELECT = `
   pip_reviews (week_number, period_start, period_end, completed_at)
 `;
 
-/** Every plan in the organisation, open first, newest first. */
+/** Every plan in the organisation, newest first. Paged: the page decides how many to show. */
 export async function loadPips(supabase: SupabaseClient, organisationId?: string | null): Promise<Pip[]> {
-  let q = supabase.from("pips").select(LIST_SELECT);
-  if (organisationId) q = q.eq("organisation_id", organisationId);
-  const { data } = await q.order("created_at", { ascending: false }).limit(500);
-  return (data ?? []).map((r) => shape(r as Record<string, unknown>));
+  const data = await fetchAll<Record<string, unknown>>((from, to) => {
+    let q = supabase.from("pips").select(LIST_SELECT);
+    if (organisationId) q = q.eq("organisation_id", organisationId);
+    return q.order("created_at", { ascending: false }).order("id").range(from, to);
+  });
+  return data.map(shape);
 }
 
 export async function loadPip(supabase: SupabaseClient, id: string): Promise<Pip | null> {

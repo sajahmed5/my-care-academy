@@ -3,7 +3,10 @@ import { MapPin } from "lucide-react";
 import { onFreeTrial, requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
+import { allHref, latest } from "@/lib/latest";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { ViewAll } from "@/components/view-all";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OFFICE_ADDRESS, canCancelBooking, sessionTitle, sessionWhen } from "@/lib/face-to-face";
 import { BookSession } from "./book-session";
@@ -48,9 +51,10 @@ function resultLabel(b: { status: string; practical_passed: boolean | null; cert
  * bookings. Included in Enterprise, with no limit on places beyond each
  * session's own.
  */
-export default async function FaceToFaceBookingPage() {
+export default async function FaceToFaceBookingPage({ searchParams }: { searchParams: Promise<{ all?: string }> }) {
   const context = await requireConsole();
   await requireFeature(context, "training.face_to_face");
+  const { all } = await searchParams;
   const trial = await onFreeTrial(context);
   const supabase = await createClient();
   const orgId = context.organisationId!;
@@ -58,35 +62,46 @@ export default async function FaceToFaceBookingPage() {
   const now = today.toISOString();
   const since = new Date(today.getTime() - 180 * 86400_000).toISOString();
 
-  const [{ data: sessions }, { data: taken }, { data: bookings }, { data: staff }] = await Promise.all([
-    supabase
-      .from("face_to_face_sessions")
-      .select("id, kind, starts_at, ends_at, trainer_name, places, notes, course:courses (title)")
-      .is("cancelled_at", null)
-      .gt("starts_at", now)
-      .order("starts_at")
-      .limit(300),
+  // Everything a page at a time: one read returns at most 1,000 rows, and a
+  // company's bookings — every one it has ever made — pass that in time.
+  const [sessions, { data: taken }, bookings, staff] = await Promise.all([
+    fetchAll<Session>((f, t) =>
+      supabase
+        .from("face_to_face_sessions")
+        .select("id, kind, starts_at, ends_at, trainer_name, places, notes, course:courses (title)")
+        .is("cancelled_at", null)
+        .gt("starts_at", now)
+        .order("starts_at")
+        .order("id")
+        .range(f, t),
+    ),
     supabase.rpc("face_to_face_places_taken", { p_from: now }),
-    supabase
-      .from("face_to_face_bookings")
-      .select(
-        "id, session_id, user_id, status, practical_passed, certificate_id, person:users!face_to_face_bookings_user_id_fkey (full_name, email), session:face_to_face_sessions (id, kind, starts_at, ends_at, trainer_name, places, notes, cancelled_at, course:courses (title))",
-      )
-      .eq("organisation_id", orgId)
-      .order("created_at")
-      .limit(2000),
-    supabase
-      .from("users")
-      .select("id, full_name, email")
-      .eq("organisation_id", orgId)
-      .eq("status", "active")
-      .in("role", ["learner", "org_admin", "org_office"])
-      .order("full_name")
-      .limit(1000),
+    fetchAll<Booking & { session: unknown }>((f, t) =>
+      supabase
+        .from("face_to_face_bookings")
+        .select(
+          "id, session_id, user_id, status, practical_passed, certificate_id, person:users!face_to_face_bookings_user_id_fkey (full_name, email), session:face_to_face_sessions (id, kind, starts_at, ends_at, trainer_name, places, notes, cancelled_at, course:courses (title))",
+        )
+        .eq("organisation_id", orgId)
+        .order("created_at")
+        .order("id")
+        .range(f, t),
+    ),
+    fetchAll<{ id: string; full_name: string | null; email: string }>((f, t) =>
+      supabase
+        .from("users")
+        .select("id, full_name, email")
+        .eq("organisation_id", orgId)
+        .eq("status", "active")
+        .in("role", ["learner", "org_admin", "org_office"])
+        .order("full_name")
+        .order("id")
+        .range(f, t),
+    ),
   ]);
 
   const takenBy = new Map(((taken ?? []) as { session_id: string; taken: number }[]).map((t) => [t.session_id, t.taken]));
-  const staffList = (staff ?? []).map((u) => ({ id: u.id as string, name: (u.full_name as string | null) || (u.email as string) }));
+  const staffList = staff.map((u) => ({ id: u.id, name: u.full_name || u.email }));
   const nameOf = (b: Booking) => {
     const p = one(b.person as { full_name: string | null; email: string | null } | null);
     return p?.full_name || p?.email || "Someone no longer on the system";
@@ -95,7 +110,7 @@ export default async function FaceToFaceBookingPage() {
   // The company's bookings, grouped by session: those still to come, and
   // the last six months' worth gone by.
   const bySession = new Map<string, { session: Session & { cancelled_at: string | null }; rows: Booking[] }>();
-  for (const b of (bookings ?? []) as (Booking & { session: unknown })[]) {
+  for (const b of bookings) {
     const s = one(b.session as (Session & { cancelled_at: string | null }) | null);
     if (!s) continue;
     const entry = bySession.get(s.id) ?? { session: s, rows: [] };
@@ -104,9 +119,11 @@ export default async function FaceToFaceBookingPage() {
   }
   const groups = [...bySession.values()].sort((a, b) => a.session.starts_at.localeCompare(b.session.starts_at));
   const upcomingMine = groups.filter((g) => g.session.starts_at > now && !g.session.cancelled_at && g.rows.some((r) => r.status === "booked"));
-  const pastMine = groups
-    .filter((g) => (g.session.starts_at <= now || g.session.cancelled_at) && g.session.starts_at >= since)
-    .reverse();
+  // Newest first; the most recent 200 sessions unless asked for everything.
+  const pastMine = latest(
+    groups.filter((g) => (g.session.starts_at <= now || g.session.cancelled_at) && g.session.starts_at >= since).reverse(),
+    all,
+  );
   const bookedOn = (sessionId: string) =>
     new Set((bySession.get(sessionId)?.rows ?? []).filter((r) => r.status !== "cancelled").map((r) => r.user_id));
 
@@ -178,7 +195,7 @@ export default async function FaceToFaceBookingPage() {
             <CardTitle>Sessions coming up</CardTitle>
           </CardHeader>
           <CardContent>
-            {(sessions ?? []).length === 0 ? (
+            {sessions.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No sessions are open for booking just now.{" "}
                 <Link href="/contact?topic=face-to-face" className="text-primary underline-offset-4 hover:underline">
@@ -188,7 +205,7 @@ export default async function FaceToFaceBookingPage() {
               </p>
             ) : (
               <ul className="divide-y">
-                {((sessions ?? []) as Session[]).map((s) => {
+                {sessions.map((s) => {
                   const left = Math.max(0, s.places - (takenBy.get(s.id) ?? 0));
                   const mine = bookedOn(s.id);
                   return (
@@ -228,11 +245,11 @@ export default async function FaceToFaceBookingPage() {
           </CardContent>
         </Card>
 
-        {pastMine.length > 0 && (
-          <details className="rounded-xl border bg-card p-4">
+        {pastMine.total > 0 && (
+          <details className="rounded-xl border bg-card p-4" open={all ? true : undefined}>
             <summary className="cursor-pointer text-sm font-medium">Past and cancelled sessions</summary>
             <div className="mt-3 space-y-4">
-              {pastMine.map(({ session: s, rows }) => (
+              {pastMine.rows.map(({ session: s, rows }) => (
                 <div key={s.id} className="space-y-1">
                   <p className="text-sm font-medium">
                     {sessionTitle(s.kind, one(s.course as { title: string } | null)?.title)}
@@ -248,6 +265,7 @@ export default async function FaceToFaceBookingPage() {
                   </ul>
                 </div>
               ))}
+              <ViewAll list={pastMine} href={allHref("/org/face-to-face")} noun="sessions" />
             </div>
           </details>
         )}

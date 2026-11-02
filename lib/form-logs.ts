@@ -56,13 +56,14 @@ function toEntry(r: Record<string, unknown>): LogEntry {
 }
 
 /**
- * A log's lines, newest first, optionally between two dates, up to `limit`.
+ * A log's lines, newest first, optionally between two dates — all of them.
  * Read a page at a time: one read returns at most 1,000 rows, so a download
- * asking for 5,000 used to get 1,000 without saying so.
+ * asking for 5,000 used to get 1,000 without saying so. There is no cap any
+ * more: a download holds every line, and the page decides how many to show.
  */
 export async function loadLogEntries(
   supabase: SupabaseClient,
-  { organisationId, templateId, from, to, limit = 1000 }: { organisationId: string; templateId: string; from?: string | null; to?: string | null; limit?: number },
+  { organisationId, templateId, from, to }: { organisationId: string; templateId: string; from?: string | null; to?: string | null },
 ): Promise<LogEntry[]> {
   const page = (start: number, end: number) => {
     let q = supabase
@@ -79,9 +80,7 @@ export async function loadLogEntries(
       .order("id")
       .range(start, end);
   };
-  const rows = await fetchAll<Record<string, unknown>>((start, end) =>
-    start >= limit ? Promise.resolve({ data: [], error: null }) : page(start, Math.min(end, limit - 1)),
-  );
+  const rows = await fetchAll<Record<string, unknown>>(page);
   return rows.map(toEntry);
 }
 
@@ -90,13 +89,16 @@ export async function loadLogEntriesForClient(
   supabase: SupabaseClient,
   clientId: string,
 ): Promise<(LogEntry & { template_code: string; template_title: string; fields: FormField[] })[]> {
-  const { data } = await supabase
-    .from("form_log_entries")
-    .select(`${ENTRY_SELECT}, template:form_templates (code, title, fields)`)
-    .eq("client_id", clientId)
-    .order("entry_date", { ascending: false })
-    .limit(200);
-  return (data ?? []).map((r) => {
+  const rows = await fetchAll((f, t) =>
+    supabase
+      .from("form_log_entries")
+      .select(`${ENTRY_SELECT}, template:form_templates (code, title, fields)`)
+      .eq("client_id", clientId)
+      .order("entry_date", { ascending: false })
+      .order("id")
+      .range(f, t),
+  );
+  return rows.map((r) => {
     const t = unwrap(r.template) as { code?: string; title?: string; fields?: FormField[] } | undefined;
     return { ...toEntry(r), template_code: t?.code ?? "", template_title: t?.title ?? "Log", fields: t?.fields ?? [] };
   });

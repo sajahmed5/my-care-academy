@@ -156,13 +156,18 @@ export async function loadOrgObservationRollup(
   // All three by organisation, at once. The observations and sign-offs used to
   // wait for the staff list and then carry every id in the URL, which an
   // organisation of a few hundred would push past the URL limit.
-  const [{ data: staff }, observations, { data: signoffs }] = await Promise.all([
-    supabase
-      .from("users")
-      .select("id, full_name, email, status")
-      .eq("organisation_id", organisationId)
-      .order("full_name", { ascending: true })
-      .limit(1000),
+  // Every read paged: the staff list includes leavers, so an organisation of
+  // a few hundred passes the 1,000 rows one request returns within a few years.
+  const [staff, observations, signoffs] = await Promise.all([
+    fetchAll<{ id: string; full_name: string | null; email: string | null; status: string | null }>((from, to) =>
+      supabase
+        .from("users")
+        .select("id, full_name, email, status")
+        .eq("organisation_id", organisationId)
+        .order("full_name", { ascending: true })
+        .order("id")
+        .range(from, to),
+    ),
     fetchAll<{ id: string; user_id: string }>((from, to) =>
       supabase
         .from("care_cert_observations")
@@ -172,21 +177,20 @@ export async function loadOrgObservationRollup(
         .order("id")
         .range(from, to),
     ),
-    supabase
-      .from("care_cert_signoffs")
-      .select("user_id")
-      .eq("organisation_id", organisationId)
-      .limit(1000),
+    // One sign-off per person per organisation, so user_id orders the pages.
+    fetchAll<{ user_id: string }>((from, to) =>
+      supabase.from("care_cert_signoffs").select("user_id").eq("organisation_id", organisationId).order("user_id").range(from, to),
+    ),
   ]);
 
-  const learners = (staff ?? []).filter((u) => (u.status ?? "active") === "active");
+  const learners = staff.filter((u) => (u.status ?? "active") === "active");
   if (!learners.length) return [];
 
   const competentByUser = new Map<string, number>();
   for (const o of observations) {
     competentByUser.set(o.user_id, (competentByUser.get(o.user_id) ?? 0) + 1);
   }
-  const signedOffUsers = new Set((signoffs ?? []).map((s) => s.user_id));
+  const signedOffUsers = new Set(signoffs.map((s) => s.user_id));
 
   return learners.map((u) => ({
     userId: u.id,

@@ -3,6 +3,8 @@ import { requireConsole, roleLabel } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { fetchAll } from "@/lib/fetch-all";
+import { allHref, latest } from "@/lib/latest";
+import { ViewAll } from "@/components/view-all";
 import {
   bucketOf,
   isActiveLearner,
@@ -58,10 +60,10 @@ type Section = (typeof SECTIONS)[number]["key"];
 export default async function LearnersAdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ section?: string }>;
+  searchParams: Promise<{ section?: string; all?: string }>;
 }) {
   const context = await requireConsole();
-  const { section: sectionParam } = await searchParams;
+  const { section: sectionParam, all } = await searchParams;
   // The staff table, the reminder picker, the reminder log, the invite form
   // and the CSV import sat on one page; on a 260-person organisation the
   // invite form was below everything (Saj, 24 Oct 2026).
@@ -80,7 +82,7 @@ export default async function LearnersAdminPage({
   // email log; the Staff and Invite tabs used to pay for both on every visit.
   // The staff list stays on every tab — its count is the tab badge.
   const onReminders = section === "reminders";
-  const [{ data: organisation }, staff, { data: nudgeLog }, learnerRows] =
+  const [{ data: organisation }, staff, nudgeLog, learnerRows] =
     await Promise.all([
       supabase.from("organisations").select("name").eq("id", orgId!).single(),
       // Paged: a large roll would pass Supabase's silent 1,000-row cap.
@@ -93,16 +95,21 @@ export default async function LearnersAdminPage({
           .order("id")
           .range(f, t),
       ),
+      // Every reminder ever sent, a page at a time. Was 200, which silently
+      // hid 61 of HG Care's 261 (24 Oct 2026); then 1,000, which a year of
+      // weekly reminders to a few hundred staff passes just as silently.
       onReminders
-        ? supabase
-            .from("email_log")
-            .select("id, to_email, subject, sent, created_at, type")
-            .eq("organisation_id", orgId!)
-            .in("type", NUDGE_TYPES)
-            .order("created_at", { ascending: false })
-            // Was 200, which silently hid 61 of HG Care's 261 (24 Oct 2026).
-            .limit(1000)
-        : Promise.resolve({ data: null }),
+        ? fetchAll<{ id: string; to_email: string; subject: string; sent: boolean; created_at: string; type: string }>((f, t) =>
+            supabase
+              .from("email_log")
+              .select("id, to_email, subject, sent, created_at, type")
+              .eq("organisation_id", orgId!)
+              .in("type", NUDGE_TYPES)
+              .order("created_at", { ascending: false })
+              .order("id")
+              .range(f, t),
+          )
+        : Promise.resolve([]),
       onReminders ? loadOrgLearners(supabase, orgId) : Promise.resolve([]),
     ]);
 
@@ -142,15 +149,21 @@ export default async function LearnersAdminPage({
   for (const u of staff ?? []) {
     if (u.email) nameByEmail.set(u.email.toLowerCase(), u.full_name || u.email);
   }
-  const reminders: ReminderRow[] = (nudgeLog ?? []).map((l) => ({
-    id: l.id,
-    toEmail: l.to_email,
-    learnerName: nameByEmail.get(l.to_email.toLowerCase()) ?? null,
-    subject: l.subject,
-    sent: l.sent,
-    createdAt: l.created_at,
-    type: l.type,
-  }));
+  // Newest first; the most recent 200 unless asked for everything.
+  const reminders = latest(
+    nudgeLog.map(
+      (l): ReminderRow => ({
+        id: l.id,
+        toEmail: l.to_email,
+        learnerName: nameByEmail.get(l.to_email.toLowerCase()) ?? null,
+        subject: l.subject,
+        sent: l.sent,
+        createdAt: l.created_at,
+        type: l.type,
+      }),
+    ),
+    all,
+  );
 
   const exportRows = (staff ?? []).map((u) => ({
     full_name: u.full_name,
@@ -360,7 +373,8 @@ export default async function LearnersAdminPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <RemindersTable rows={reminders} />
+          <RemindersTable rows={reminders.rows} />
+          <ViewAll list={reminders} href={allHref("/org/learners/admin", { section })} noun="reminders" />
         </CardContent>
       </Card>
       </>

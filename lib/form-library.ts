@@ -13,6 +13,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "./fetch-all";
 import { isFieldVisible, type FormField } from "./forms";
 import { formatDate } from "./dates";
 
@@ -293,29 +294,36 @@ export async function loadAssignmentsForPerson(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<Assignment[]> {
-  const { data } = await supabase
-    .from("form_assignments")
-    .select(ASSIGNMENT_SELECT)
-    .eq("user_id", userId)
-    .order("completed_at", { nullsFirst: true })
-    .order("due_date", { nullsFirst: false })
-    .limit(200);
-  return (data ?? []).map(toAssignment);
+  // Every form they were ever asked for (it was cut at 200 with no note).
+  const rows = await fetchAll((f, t) =>
+    supabase
+      .from("form_assignments")
+      .select(ASSIGNMENT_SELECT)
+      .eq("user_id", userId)
+      .order("completed_at", { nullsFirst: true })
+      .order("due_date", { nullsFirst: false })
+      .order("id")
+      .range(f, t),
+  );
+  return rows.map(toAssignment);
 }
 
-/** Everyone asked to complete one form, for the manager's view. */
+/** Everyone asked to complete one form, for the manager's view. Paged: the page decides how many to show. */
 export async function loadAssignmentsForTemplate(
   supabase: SupabaseClient,
   templateId: string,
 ): Promise<Assignment[]> {
-  const { data } = await supabase
-    .from("form_assignments")
-    .select(ASSIGNMENT_SELECT)
-    .eq("template_id", templateId)
-    .order("completed_at", { nullsFirst: true })
-    .order("due_date", { nullsFirst: false })
-    .limit(500);
-  return (data ?? []).map(toAssignment);
+  const data = await fetchAll<Record<string, unknown>>((from, to) =>
+    supabase
+      .from("form_assignments")
+      .select(ASSIGNMENT_SELECT)
+      .eq("template_id", templateId)
+      .order("completed_at", { nullsFirst: true })
+      .order("due_date", { nullsFirst: false })
+      .order("id")
+      .range(from, to),
+  );
+  return data.map(toAssignment);
 }
 
 export async function loadAssignment(

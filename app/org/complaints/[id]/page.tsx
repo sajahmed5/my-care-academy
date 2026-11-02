@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { requireConsole } from "@/lib/auth";
 import { hasFeature, requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { buttonVariants } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
@@ -46,13 +47,11 @@ export default async function ComplaintPage({
     // Null when the client list is not in their package: the picker is not offered.
     hasFeature(context, "clients.list").then(async (on) => {
       if (!on) return null;
-      const { data } = await supabase
-        .from("clients")
-        .select("id, full_name, status")
-        .eq("organisation_id", orgId)
-        .order("full_name")
-        .limit(1000);
-      return (data ?? []).map((c) => ({ id: c.id as string, name: `${c.full_name as string}${c.status === "ended" ? " (ended)" : ""}` }));
+      // Every client, ended ones too, a page at a time: one read returns at most 1,000 rows.
+      const data = await fetchAll<{ id: string; full_name: string; status: string }>((f, t) =>
+        supabase.from("clients").select("id, full_name, status").eq("organisation_id", orgId).order("full_name").order("id").range(f, t),
+      );
+      return data.map((c) => ({ id: c.id, name: `${c.full_name}${c.status === "ended" ? " (ended)" : ""}` }));
     }),
   ]);
   if (!complaint) notFound();

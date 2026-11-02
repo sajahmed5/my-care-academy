@@ -2,6 +2,7 @@ import "server-only";
 import type { UserContext } from "@/lib/auth";
 import { hasFeature } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fetchAll } from "@/lib/fetch-all";
 import { REPORT_COLUMNS, type StoredReport } from "./render";
 
 /**
@@ -31,14 +32,16 @@ export async function reportForConsole(context: UserContext, id: string): Promis
 export async function reportsForConsole(context: UserContext): Promise<{ id: string; title: string; description: string | null; managers_only: boolean; updated_at: string }[]> {
   if (!context.organisationId || !(await hasFeature(context, "reports.bespoke"))) return [];
   const admin = createAdminClient();
-  let q = admin
-    .from("bespoke_reports")
-    .select("id, title, description, managers_only, updated_at")
-    .eq("organisation_id", context.organisationId)
-    .is("archived_at", null)
-    .order("title")
-    .limit(500);
-  if (context.role !== "org_admin") q = q.eq("managers_only", false);
-  const { data } = await q;
-  return (data ?? []) as { id: string; title: string; description: string | null; managers_only: boolean; updated_at: string }[];
+  const managersToo = context.role === "org_admin";
+  // Paged past 1,000 (it was cut at 500 with no note).
+  const rows = await fetchAll((f, t) => {
+    let q = admin
+      .from("bespoke_reports")
+      .select("id, title, description, managers_only, updated_at")
+      .eq("organisation_id", context.organisationId!)
+      .is("archived_at", null);
+    if (!managersToo) q = q.eq("managers_only", false);
+    return q.order("title").order("id").range(f, t);
+  });
+  return rows as { id: string; title: string; description: string | null; managers_only: boolean; updated_at: string }[];
 }

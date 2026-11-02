@@ -3,7 +3,9 @@ import { requireConsole } from "@/lib/auth";
 import { requireFeature } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
 import { fetchAll } from "@/lib/fetch-all";
+import { allHref, latest } from "@/lib/latest";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { ViewAll } from "@/components/view-all";
 import { Card, CardContent } from "@/components/ui/card";
 import { responseRate, surveyKind } from "@/lib/feedback";
 import { formatDate } from "@/lib/dates";
@@ -17,24 +19,30 @@ const fmt = (d: string) => formatDate(d, { day: "numeric", month: "short", year:
  * or handed out as a printed QR code, with its response rate. Client rounds
  * can be anonymous or named; staff rounds are always anonymous.
  */
-export default async function FeedbackPage() {
+export default async function FeedbackPage({ searchParams }: { searchParams: Promise<{ all?: string }> }) {
   const context = await requireConsole();
   await requireFeature(context, "quality.feedback");
+  const { all } = await searchParams;
   const supabase = await createClient();
   const orgId = context.organisationId!;
-  const [{ data: surveys }, invitations] = await Promise.all([
-    supabase
-      .from("feedback_surveys")
-      .select("id, kind, title, is_open, named, closes_on, sent_to_count, created_at, responses:feedback_responses (count)")
-      .eq("organisation_id", orgId)
-      .order("created_at", { ascending: false })
-      .limit(200),
+  const [surveys, invitations] = await Promise.all([
+    fetchAll<Record<string, unknown>>((f, t) =>
+      supabase
+        .from("feedback_surveys")
+        .select("id, kind, title, is_open, named, closes_on, sent_to_count, created_at, responses:feedback_responses (count)")
+        .eq("organisation_id", orgId)
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(f, t),
+    ),
     fetchAll<{ id: string; survey_id: string }>((f, t) =>
       supabase.from("feedback_invitations").select("id, survey_id").eq("organisation_id", orgId).order("id").range(f, t),
     ),
   ]);
   const invited = new Map<string, number>();
   for (const i of invitations) invited.set(i.survey_id, (invited.get(i.survey_id) ?? 0) + 1);
+  // Newest first; the most recent 200 rounds unless asked for everything.
+  const shown = latest(surveys, all);
 
   return (
     <DashboardShell title="Feedback" context={context}>
@@ -54,14 +62,14 @@ export default async function FeedbackPage() {
             <NewSurvey />
           </CardContent>
         </Card>
-        {(surveys ?? []).length === 0 ? (
+        {surveys.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-sm text-muted-foreground">No rounds yet.</CardContent>
           </Card>
         ) : (
           <Card>
             <CardContent className="divide-y p-0">
-              {(surveys ?? []).map((s) => {
+              {shown.rows.map((s) => {
                 const count = ((s.responses as { count: number }[] | null)?.[0]?.count as number | undefined) ?? 0;
                 const rate = responseRate({ invited: invited.get(s.id as string) ?? 0, sentTo: (s.sent_to_count as number | null) ?? null, responses: count });
                 const kind = surveyKind(s.kind as string);
@@ -93,6 +101,7 @@ export default async function FeedbackPage() {
             </CardContent>
           </Card>
         )}
+        <ViewAll list={shown} href={allHref("/org/feedback")} noun="rounds" />
       </div>
     </DashboardShell>
   );

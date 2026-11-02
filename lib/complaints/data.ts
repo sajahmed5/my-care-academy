@@ -9,6 +9,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "../fetch-all";
 import type { ComplaintStage } from "./stages";
 import { kindOf, prefixFor } from "./stages";
 
@@ -127,12 +128,16 @@ export async function loadStages(supabase: SupabaseClient, organisationId?: stri
  * The organisation's people, for the "who took part" and "staff named"
  * pickers. Deactivated people are included so older records still show their
  * names (the PDF, saved answers); a picker offers only `pickable()` ones.
+ * Paged: with leavers in, an organisation passes the 1,000 rows one read
+ * returns, and a name past that would have shown as missing.
  */
 export async function loadStaffOptions(supabase: SupabaseClient, organisationId?: string | null): Promise<StaffOption[]> {
-  let q = supabase.from("users").select("id, full_name, email, role, status").in("role", ["org_admin", "org_office", "learner"]);
-  if (organisationId) q = q.eq("organisation_id", organisationId);
-  const { data } = await q.order("full_name").limit(1000);
-  return (data ?? []).map((u) => ({
+  const data = await fetchAll<Record<string, unknown>>((from, to) => {
+    let q = supabase.from("users").select("id, full_name, email, role, status").in("role", ["org_admin", "org_office", "learner"]);
+    if (organisationId) q = q.eq("organisation_id", organisationId);
+    return q.order("full_name").order("id").range(from, to);
+  });
+  return data.map((u) => ({
     value: u.id as string,
     label: (u.full_name as string | null) || (u.email as string),
     role: u.role as string,
@@ -193,24 +198,29 @@ const LIST_ENTRY_SELECT =
  * One request: the stage entries come embedded rather than as a second
  * `.in("complaint_id", …)` read, which at 500 records would have passed both
  * the URL limit and the 1,000-row cap — and a record whose entries were
- * silently dropped would show the wrong next step.
+ * silently dropped would show the wrong next step. The records themselves
+ * are paged (fetchAll), so the register is read in full; the page decides
+ * how many to show.
  */
 export async function loadComplaintList(
   supabase: SupabaseClient,
   organisationId: string,
 ): Promise<{ complaints: ComplaintSummary[]; entries: Map<string, StageEntry[]> }> {
-  const { data } = await supabase
-    .from("complaints")
-    .select(
-      `id, reference, kind, status, raised_by_name, about_name, reported_on, complete_by, closed_on, description, category, ${CLIENT_EMBED}, complaint_stage_entries (${LIST_ENTRY_SELECT})`,
-    )
-    .eq("organisation_id", organisationId)
-    .order("reported_on", { ascending: false })
-    .order("created_at", { ascending: false })
-    .limit(500);
+  const data = await fetchAll<Record<string, unknown>>((from, to) =>
+    supabase
+      .from("complaints")
+      .select(
+        `id, reference, kind, status, raised_by_name, about_name, reported_on, complete_by, closed_on, description, category, ${CLIENT_EMBED}, complaint_stage_entries (${LIST_ENTRY_SELECT})`,
+      )
+      .eq("organisation_id", organisationId)
+      .order("reported_on", { ascending: false })
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
   const complaints: ComplaintSummary[] = [];
   const entries = new Map<string, StageEntry[]>();
-  for (const r of data ?? []) {
+  for (const r of data) {
     complaints.push(summary(r as Record<string, unknown>));
     const rows = ((r as { complaint_stage_entries?: Record<string, unknown>[] }).complaint_stage_entries ?? []);
     entries.set(

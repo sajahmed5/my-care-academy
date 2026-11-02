@@ -11,6 +11,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAll } from "./fetch-all";
 import type { FormField } from "./forms";
 import { audienceOf, type FormAudience, type FormTemplateRecord } from "./form-library";
 
@@ -123,33 +124,39 @@ function toRecord(r: Record<string, unknown>): FormRecord {
   };
 }
 
-/** Everything filled in about one client, newest first. */
+/** Everything filled in about one client, newest first. Paged, so nothing is dropped past 1,000. */
 export async function loadRecordsForClient(supabase: SupabaseClient, clientId: string): Promise<FormRecord[]> {
-  const { data } = await supabase
-    .from("form_responses")
-    .select(RECORD_SELECT)
-    .eq("client_id", clientId)
-    .order("submitted_at", { ascending: false })
-    .limit(500);
-  return (data ?? []).map(toRecord);
+  const data = await fetchAll<Record<string, unknown>>((from, to) =>
+    supabase
+      .from("form_responses")
+      .select(RECORD_SELECT)
+      .eq("client_id", clientId)
+      .order("submitted_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
+  return data.map(toRecord);
 }
 
-/** Every client or company record of one form, newest first. */
+/** Every client or company record of one form, newest first. Paged: the page decides how many to show. */
 export async function loadRecordsForTemplate(
   supabase: SupabaseClient,
   organisationId: string,
   templateId: string,
   subject: Exclude<FormAudience, "carer">,
 ): Promise<FormRecord[]> {
-  const { data } = await supabase
-    .from("form_responses")
-    .select(RECORD_SELECT)
-    .eq("organisation_id", organisationId)
-    .eq("template_id", templateId)
-    .eq("subject", subject)
-    .order("submitted_at", { ascending: false })
-    .limit(500);
-  return (data ?? []).map(toRecord);
+  const data = await fetchAll<Record<string, unknown>>((from, to) =>
+    supabase
+      .from("form_responses")
+      .select(RECORD_SELECT)
+      .eq("organisation_id", organisationId)
+      .eq("template_id", templateId)
+      .eq("subject", subject)
+      .order("submitted_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
+  return data.map(toRecord);
 }
 
 /** One completed form, with the template's current questions to read it by. */
