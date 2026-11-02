@@ -132,7 +132,7 @@ export default async function LogPage({
             </Card>
           ) : (
             <Card>
-              <CardContent className="overflow-x-auto p-0">
+              <CardContent className="relative overflow-x-auto p-0">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/40 text-left text-xs text-muted-foreground">

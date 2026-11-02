@@ -238,7 +238,7 @@ export function LearnersTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-card border bg-card">
+      <div className="relative overflow-x-auto rounded-card border bg-card">
         <table className="w-full min-w-[720px] text-[15px]">
           <thead>
             <tr className="border-b text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">

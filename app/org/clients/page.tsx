@@ -104,7 +104,7 @@ export default async function ClientsPage({
               <button type="submit" className={buttonVariants({ variant: "outline", size: "lg" })}>Show</button>
             </form>
 
-            <div className="overflow-x-auto rounded-2xl border bg-card">
+            <div className="relative overflow-x-auto rounded-2xl border bg-card">
               <table className="w-full min-w-[760px] text-sm">
                 <thead>
                   <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">

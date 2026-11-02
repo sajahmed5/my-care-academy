@@ -103,7 +103,7 @@ export function ProfileTabs({
 
   return (
     <nav aria-label="Sections of this file" className="relative border-t">
-      <div ref={rowRef} className="flex min-w-0 gap-1 overflow-x-auto px-2 [scrollbar-width:none] sm:px-3 [&::-webkit-scrollbar]:hidden">
+      <div ref={rowRef} className="relative flex min-w-0 gap-1 overflow-x-auto px-2 [scrollbar-width:none] sm:px-3 [&::-webkit-scrollbar]:hidden">
         {main.map((s) => {
           const isActive = s.key === active;
           return (
