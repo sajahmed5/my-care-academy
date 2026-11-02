@@ -73,7 +73,7 @@ export default async function StaffListPage({
           <div>
             <h1 className="text-[26px] font-extrabold leading-tight tracking-tight sm:text-[30px]">Staff</h1>
             <p className="mt-1 text-[15px] text-muted-foreground">
-              {active.length} {active.length === 1 ? "person" : "people"}
+              {rows.length} {rows.length === 1 ? "person" : "people"}
               {attention > 0 && (
                 <>
                   {" · "}
