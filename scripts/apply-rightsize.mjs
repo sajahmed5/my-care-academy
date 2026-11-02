@@ -29,7 +29,6 @@ const courseTitle = snap.title;
 const srcBlocks = snap.content_blocks;
 
 const QLIB = /^H5P\.(MultiChoice|TrueFalse|DragText|Blanks|MarkTheWords)/;
-const isText = (p) => p?.content?.library?.startsWith("H5P.AdvancedText");
 const isImage = (p) => p?.content?.library?.startsWith("H5P.Image");
 const isQuestion = (p) => QLIB.test(p?.content?.library ?? "");
 
