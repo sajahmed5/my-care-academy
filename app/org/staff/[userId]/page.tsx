@@ -1,10 +1,13 @@
 import { isStaff } from "@/lib/roles";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { BookOpen, Clock, CheckCircle2, AlertTriangle, CalendarPlus, Download, FileArchive, Plus } from "lucide-react";
 import { requireConsole, roleLabel } from "@/lib/auth";
+import { MANAGERS_ONLY_PATH, SECTION_AREAS, sectionsHidden } from "@/lib/office-access";
+import { hiddenAreasFor } from "@/lib/office-access-server";
 import { enabledMap } from "@/lib/entitlements";
 import { createClient } from "@/lib/supabase/server";
+import { fetchAll } from "@/lib/fetch-all";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
@@ -129,6 +132,10 @@ export default async function StaffDetailPage({
   // Which part of the file is open. An unknown key falls back to Training
   // rather than 404ing: these links are pasted into emails.
   const section = sectionByKey(sectionParam);
+  // Who can see what: a section of the file in an area a manager switched off.
+  const hiddenAreas = await hiddenAreasFor(context);
+  const hiddenSections = sectionsHidden(hiddenAreas);
+  if (hiddenSections.includes(section.key)) redirect(`${MANAGERS_ONLY_PATH}?area=${encodeURIComponent(SECTION_AREAS[section.key])}`);
   const supabase = await createClient();
 
   // Everything this tab needs, started together. These were one await after
@@ -158,17 +165,17 @@ export default async function StaffDetailPage({
       supervisionsOpen ? loadBookings(supabase, userId) : Promise.resolve([]),
       // Who can hold one: anyone with console access (STAFF-AUDITS.md).
       supervisionsTab
-        ? supabase
-            .from("users")
-            .select("id, full_name, email")
-            .eq("organisation_id", context.organisationId!)
-            .in("role", ["org_admin", "org_office"])
-            .eq("status", "active")
-            .order("full_name")
-            .limit(200)
-            .then((r) =>
-              (r.data ?? []).map((u) => ({ id: u.id as string, name: (u.full_name as string | null) || (u.email as string) })),
-            )
+        ? fetchAll<{ id: string; full_name: string | null; email: string }>((from, to) =>
+            supabase
+              .from("users")
+              .select("id, full_name, email")
+              .eq("organisation_id", context.organisationId!)
+              .in("role", ["org_admin", "org_office"])
+              .eq("status", "active")
+              .order("full_name")
+              .order("id")
+              .range(from, to),
+          ).then((rows) => rows.map((u) => ({ id: u.id, name: u.full_name || u.email })))
         : Promise.resolve([] as { id: string; name: string }[]),
       competencyOpen ? loadCompetencyChecks(supabase, userId) : Promise.resolve([]),
       competencyOpen ? loadSpotChecks(supabase, userId) : Promise.resolve([]),
@@ -207,7 +214,7 @@ export default async function StaffDetailPage({
     { profile, enrolments, certificates, assessments },
     { enabled, state, supervisions, bookings, holders, competencyChecks, spotChecks, auditForms, auditTraining, actionRows, formAsks, staffDocs, reading, employment },
     { data: libraryRows },
-    { data: classroomRows },
+    classroomRows,
   ] = await Promise.all([
     loadOrgLearnerTraining(supabase, userId),
     tabRead,
@@ -217,17 +224,21 @@ export default async function StaffDetailPage({
     section.key === "training"
       ? supabase.from("courses").select("id, title").is("retired_at", null).order("title")
       : Promise.resolve({ data: null }),
-    // Face-to-face sessions they attended (ROADMAP §4), on the Training tab.
+    // Face-to-face sessions they attended (ROADMAP §4), on the Training tab —
+    // every one, paged: a cap of 200 would have cut a long-serving carer's.
     section.key === "training"
-      ? supabase
-          .from("classroom_attendance")
-          .select("certificate_id, session:classroom_sessions (title, held_on, trainer_name, duration_minutes)")
-          .eq("user_id", userId)
-          .limit(200)
-      : Promise.resolve({ data: null }),
+      ? fetchAll<{ certificate_id: string | null; session: unknown }>((from, to) =>
+          supabase
+            .from("classroom_attendance")
+            .select("certificate_id, session:classroom_sessions (title, held_on, trainer_name, duration_minutes)")
+            .eq("user_id", userId)
+            .order("id")
+            .range(from, to),
+        )
+      : Promise.resolve([]),
   ]);
   if (!profile) notFound();
-  const classroom = (classroomRows ?? [])
+  const classroom = classroomRows
     .map((r) => {
       const s = (Array.isArray(r.session) ? r.session[0] : r.session) as
         | { title: string; held_on: string; trainer_name: string | null; duration_minutes: number | null }
@@ -510,7 +521,7 @@ export default async function StaffDetailPage({
             )}
           </div>
         </div>
-        <ProfileTabs userId={userId} active={section.key} enabled={enabled} counts={counts} />
+        <ProfileTabs hiddenSections={hiddenSections} userId={userId} active={section.key} enabled={enabled} counts={counts} />
       </div>
 
       <div className="mt-6 min-w-0 space-y-6">

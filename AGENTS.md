@@ -36,3 +36,11 @@ the app with `requireRole("org_admin")` on the page and its actions;
 everything else org-side uses `requireConsole()` from `lib/auth.ts`. A new
 add-on's company-level setup goes under `/org/settings/<add-on>`, listed on
 the Settings page, never in the main menu.
+
+A manager can switch whole areas of the console off for office workers
+(Settings → Your company → Who can see what; `lib/office-access.ts`). The
+areas are sets of paths: `requireConsole()` sends an office worker to
+`/org/managers-only` for a page in an area that is off, and the menu, search,
+Today and the Due badge leave it out. A new console page belongs to one of
+those areas — add its path there — or it is open to every office worker.
+Managers always see everything.

@@ -1,5 +1,8 @@
 import { cache } from "react";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { MANAGERS_ONLY_PATH, areaForPath } from "@/lib/office-access";
+import { hiddenAreasFor } from "@/lib/office-access-server";
 import { createClient } from "@/lib/supabase/server";
 import { isStaff } from "@/lib/roles";
 import { trialState } from "@/lib/trial";
@@ -275,5 +278,22 @@ export async function requireConsole(opts: { allowEndedTrial?: boolean } = {}): 
   if (!isConsoleRole(context.role)) redirect(dashboardPathForRole(context.role));
   await requireAdminMfa();
   await assertActiveMember(context, opts);
+  await assertAreaOpen(context);
   return context;
+}
+
+/**
+ * Who can see what (lib/office-access.ts): an office worker opening a page
+ * in an area a manager switched off goes to the managers-only page. The
+ * page's path comes from the proxy (x-pathname); a server action carries
+ * the path of the page it was called from.
+ */
+async function assertAreaOpen(context: UserContext): Promise<void> {
+  if (context.role !== "org_office") return;
+  const path = (await headers()).get("x-pathname");
+  if (!path || path.startsWith(MANAGERS_ONLY_PATH)) return;
+  const area = areaForPath(path);
+  if (!area) return;
+  const hidden = await hiddenAreasFor(context);
+  if (hidden.has(area.key)) redirect(`${MANAGERS_ONLY_PATH}?area=${encodeURIComponent(area.key)}`);
 }

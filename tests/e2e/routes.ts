@@ -446,6 +446,16 @@ export const ROUTES: RouteRule[] = [
     feature: "recruitment.tracker"
   },
   {
+    path: "/org/settings/access",
+    who: "manager",
+    feature: null
+  },
+  {
+    path: "/org/managers-only",
+    who: "console",
+    feature: null
+  },
+  {
     path: "/org/settings/hr/holidays",
     who: "manager",
     feature: "recruitment.tracker"

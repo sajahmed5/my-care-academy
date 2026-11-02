@@ -5,6 +5,8 @@ import { SameTeam } from "@/components/same-team";
 import { isActiveLearner, isNeverActive, loadOrgLearners, type OrgLearnerRow } from "@/lib/org-learners";
 import { enabledMap } from "@/lib/entitlements";
 import { loadOrgTodo, type TodoLine } from "@/lib/org-todo";
+import { isHiddenPath } from "@/lib/office-access";
+import { hiddenAreasFor } from "@/lib/office-access-server";
 import { isLate, loadStaffChecks, type StaffChecks } from "@/lib/staff-checks";
 import { loadServiceDue } from "@/lib/service-audits-due";
 import { dueCounts } from "@/lib/service-audits";
@@ -232,7 +234,9 @@ export default async function OrgDashboard() {
     }),
     ...todoLines.filter((l) => !own.has(l.key)).map((l) => rowFromLine(l)),
   ];
-  const sorted = sortRows(rows);
+  // Who can see what: an office worker's list leaves out the areas a manager switched off.
+  const hidden = await hiddenAreasFor(context);
+  const sorted = sortRows(rows).filter((r) => !isHiddenPath(r.href, hidden));
   const ready = readiness(complianceChecks(enabled), rows);
   const SHOWN = 8;
 
