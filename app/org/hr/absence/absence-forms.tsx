@@ -105,7 +105,10 @@ export function AbsenceForm({
       </div>
       <div className="space-y-1">
         <label htmlFor="ab-detail" className={label}>Details (optional)</label>
-        <textarea id="ab-detail" rows={2} className={textareaClass} value={f.reasonDetail} onChange={(e) => set({ reasonDetail: e.target.value })} />
+        <textarea id="ab-detail" rows={2} maxLength={1000} className={textareaClass} value={f.reasonDetail} onChange={(e) => set({ reasonDetail: e.target.value })} />
+        {f.reasonDetail.length >= 900 && (
+          <p className="text-xs text-muted-foreground">{(1000 - f.reasonDetail.length).toLocaleString("en-GB")} characters left.</p>
+        )}
       </div>
       {autoExcluded ? (
         <p className="text-xs text-muted-foreground">{f.reason} absence never counts towards the triggers.</p>

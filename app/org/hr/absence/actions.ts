@@ -29,6 +29,9 @@ export interface AbsenceInput {
   exclusionReason: string;
 }
 
+/** The details box: enough for a note, not a report (the column was cut here silently before). */
+const DETAIL_MAX = 1000;
+
 function clean(input: AbsenceInput): { row?: Record<string, unknown>; error?: string } {
   if (!ISO.test(input.startDate)) return { error: "Choose the first day off." };
   if (input.returnedOn && !ISO.test(input.returnedOn)) return { error: "Check the return date." };
@@ -39,12 +42,14 @@ function clean(input: AbsenceInput): { row?: Record<string, unknown>; error?: st
   const excluded = EXCLUDED_REASONS.includes(input.reason) || input.excluded;
   const exclusionReason = EXCLUDED_REASONS.includes(input.reason) ? input.reason : input.exclusionReason.replace(/\s+/g, " ").trim().slice(0, 200);
   if (excluded && !exclusionReason) return { error: "Say why it's left out of the triggers (for example, related to a disability)." };
+  const detail = input.reasonDetail.replace(/\r/g, "").trim();
+  if (detail.length > DETAIL_MAX) return { error: `Keep the details under ${DETAIL_MAX.toLocaleString("en-GB")} characters (${detail.length.toLocaleString("en-GB")} now).` };
   return {
     row: {
       start_date: input.startDate,
       returned_on: input.returnedOn || null,
       reason: input.reason,
-      reason_detail: input.reasonDetail.replace(/\r/g, "").trim().slice(0, 1000) || null,
+      reason_detail: detail || null,
       certification,
       excluded_from_triggers: excluded,
       exclusion_reason: excluded ? exclusionReason : null,
