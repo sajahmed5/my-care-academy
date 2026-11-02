@@ -1,3 +1,4 @@
+import { fetchAll } from "@/lib/fetch-all";
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { groupByBucket } from "@/lib/user-erasure";
@@ -58,19 +59,30 @@ export async function removeOrganisation(admin: SupabaseClient, organisationId: 
   const { data: org } = await admin.from("organisations").select("name").eq("id", organisationId).single();
   const name = (org?.name as string) ?? "Unknown organisation";
 
-  const { data: people } = await admin.from("users").select("id").eq("organisation_id", organisationId);
-  const userIds = (people ?? []).map((u) => u.id as string);
+  // Every row, a page at a time: one request returns at most 1,000, and a
+  // company with more people or certificates than that would otherwise keep
+  // its remaining logins and files after "removal".
+  const people = await fetchAll<{ id: string }>((f, t) =>
+    admin.from("users").select("id").eq("organisation_id", organisationId).order("id").range(f, t),
+  );
+  const userIds = people.map((u) => u.id);
 
   // Files named by rows, in the buckets laid out by person.
   const [certs, obs, signoffs] = await Promise.all([
-    admin.from("certificates").select("pdf_path").eq("organisation_id", organisationId),
-    admin.from("care_cert_observations").select("evidence_path").eq("organisation_id", organisationId),
-    admin.from("care_cert_signoffs").select("pdf_path").eq("organisation_id", organisationId),
+    fetchAll<{ pdf_path: string | null }>((f, t) =>
+      admin.from("certificates").select("pdf_path").eq("organisation_id", organisationId).order("id").range(f, t),
+    ),
+    fetchAll<{ evidence_path: string | null }>((f, t) =>
+      admin.from("care_cert_observations").select("evidence_path").eq("organisation_id", organisationId).order("id").range(f, t),
+    ),
+    fetchAll<{ pdf_path: string | null }>((f, t) =>
+      admin.from("care_cert_signoffs").select("pdf_path").eq("organisation_id", organisationId).order("id").range(f, t),
+    ),
   ]);
   const found = [
-    ...(certs.data ?? []).map((r) => ({ bucket: "certificates", path: r.pdf_path as string })),
-    ...(obs.data ?? []).map((r) => ({ bucket: "observation-evidence", path: r.evidence_path as string })),
-    ...(signoffs.data ?? []).map((r) => ({ bucket: "observation-evidence", path: r.pdf_path as string })),
+    ...certs.map((r) => ({ bucket: "certificates", path: r.pdf_path as string })),
+    ...obs.map((r) => ({ bucket: "observation-evidence", path: r.evidence_path as string })),
+    ...signoffs.map((r) => ({ bucket: "observation-evidence", path: r.pdf_path as string })),
   ];
   for (const bucket of ORG_FOLDER_BUCKETS) {
     for (const path of await listFolder(admin, bucket, organisationId)) found.push({ bucket, path });
