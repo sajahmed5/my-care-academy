@@ -74,6 +74,9 @@ One change per release commit, as always.
    the branded email, sign-in links removed (`lib/email-record.ts`), in new
    `email_log` columns only the service role can read; trial emails now go
    out in the company's name; the daily job clears copies after 12 months.
-4. The Emails tab.
+4. The Emails tab (v3.13.9): `lib/org-emails.ts`; each copy opens at
+   `/platform/organisations/<id>/emails/<emailId>` in a sandboxed frame, with
+   "Send again with a fresh link" (an invitation if they've never signed in,
+   else a reset) and "Set a temporary password instead".
 5. The trial welcome email.
 6. Several people at demo set-up, and adding more later with the same choices.

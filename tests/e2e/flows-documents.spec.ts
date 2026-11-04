@@ -801,6 +801,27 @@ test.describe("4. Platform admin: a throwaway organisation from invite to remova
     await context.close();
   });
 
+  test("the Emails tab lists the invitations, opens one as sent with its link removed, and sends it again", async ({ browser }) => {
+    const { context, page } = await pageAs(browser, "platformAdmin");
+    await page.goto(`/platform/organisations/${orgId}?section=emails`);
+    const row = page.locator("tr", { hasText: "Sam Throwaway" });
+    await expect(row).toContainText("Invitation");
+    await expect(row).toContainText("Not sent"); // sending is off here
+    await row.getByRole("link", { name: /View email/ }).click();
+    await expect(page.getByRole("heading", { name: "Invitation", level: 1 })).toBeVisible();
+    await expect(page.getByText("can't be used to sign in")).toBeVisible();
+    const copy = page.frameLocator('iframe[title^="Invitation to"]');
+    await expect(copy.locator("body")).toContainText("sign-in link removed");
+    await expect(copy.locator("a[href*='/auth/']")).toHaveCount(0);
+
+    const before = (await adminDb().from("email_log").select("id").eq("to_email", THROWAWAY_EMAILS[1]).eq("type", "invitation")).data!.length;
+    await page.getByRole("button", { name: "Send again with a fresh link" }).click();
+    // Sending is off in this environment, so it says so; the attempt is still on record.
+    await expect(page.getByRole("alert").filter({ hasText: "couldn't be sent" })).toBeVisible({ timeout: 20_000 });
+    await expect.poll(async () => (await adminDb().from("email_log").select("id").eq("to_email", THROWAWAY_EMAILS[1]).eq("type", "invitation")).data!.length).toBe(before + 1);
+    await context.close();
+  });
+
   test("give the second manager a temporary password; they sign in and must choose their own", async ({ browser }) => {
     const { context, page } = await pageAs(browser, "platformAdmin");
     await page.goto(`/platform/organisations/${orgId}`);

@@ -29,6 +29,8 @@ import { liveKeys } from "@/lib/integration-keys";
 import { DomainPanel } from "./domain-panel";
 import { RemoveOrganisation } from "./remove-organisation";
 import { TrialPanel } from "./trial-panel";
+import { EmailsPanel } from "./emails-panel";
+import type { EmailShow } from "@/lib/org-emails";
 
 // Removing an organisation deletes every account and file it holds, which
 // runs longer than an ordinary page action.
@@ -38,6 +40,7 @@ export const maxDuration = 300;
 const SECTIONS = [
   { key: "overview", label: "Overview" },
   { key: "learners", label: "Learners" },
+  { key: "emails", label: "Emails" },
   { key: "settings", label: "Settings" },
   { key: "integration", label: "Integration" },
 ] as const;
@@ -57,11 +60,12 @@ export default async function OrganisationDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ section?: string }>;
+  searchParams: Promise<{ section?: string; show?: string }>;
 }) {
   const context = await requireRole("platform_admin");
   const { id } = await params;
-  const { section: sectionParam } = await searchParams;
+  const { section: sectionParam, show: showParam } = await searchParams;
+  const show: EmailShow = showParam === "other" || showParam === "all" ? showParam : "account";
   // One page used to carry the stats, the admins, every learner and the
   // settings form in a single scroll; on a 260-learner organisation that was
   // a page nobody reached the bottom of (Saj, 24 Oct 2026).
@@ -283,6 +287,8 @@ export default async function OrganisationDetailPage({
             </Card>
           </>
         )}
+
+        {section === "emails" && <EmailsPanel orgId={org.id} show={show} />}
 
         {section === "learners" && (
           <Card>

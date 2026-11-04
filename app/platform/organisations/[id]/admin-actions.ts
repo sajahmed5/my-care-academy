@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createInvite } from "@/lib/invites";
+import { createInvite, createPasswordReset } from "@/lib/invites";
+import { sendInviteEmail } from "@/lib/email";
+import { setupUrl } from "@/lib/account-setup";
+import { siteOrigin } from "@/lib/site-url";
+import { loadOrgEmail } from "@/lib/org-emails";
 import { logAudit } from "@/lib/audit";
 import { giveTemporaryPassword } from "@/lib/temporary-password";
 import type { InviteState, SaveState } from "@/app/platform/actions";
@@ -223,4 +227,53 @@ export async function setTemporaryPasswordAction(
     detail: { email: target.email },
   });
   return { ok: true, password };
+}
+
+export interface ResendState {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+}
+
+/**
+ * "Send again with a fresh link", from an email on the Emails tab
+ * (ACCOUNT-ACCESS.md). Someone who has never signed in gets the invitation
+ * again, with a new 14-day button; anyone else a password reset.
+ */
+export async function resendAccountEmailAction(_prev: ResendState, formData: FormData): Promise<ResendState> {
+  const context = await requireRole("platform_admin");
+  const orgId = String(formData.get("orgId") ?? "");
+  const emailId = String(formData.get("emailId") ?? "");
+  const email = await loadOrgEmail(orgId, emailId);
+  if (!email?.person) return { ok: false, error: "That person isn't in this organisation any more." };
+  if (email.person.status === "deactivated") return { ok: false, error: "Reactivate them first: a deactivated account can't sign in." };
+
+  const admin = createAdminClient();
+  const { data: org } = await admin.from("organisations").select("name").eq("id", orgId).maybeSingle();
+  try {
+    if (!email.person.lastSeenAt) {
+      const result = await sendInviteEmail({
+        to: email.to,
+        inviteUrl: setupUrl(await siteOrigin(), email.person.id),
+        roleLabel: email.person.role === "Manager" ? "a manager" : email.person.role === "Office worker" ? "an office worker" : "a carer",
+        orgName: (org?.name as string | undefined) ?? null,
+        organisationId: orgId,
+        userId: email.person.id,
+        sentBy: context.userId,
+      });
+      await logAudit({ context, organisationId: orgId, action: "user.invitation_resent", entity: "user", entityId: email.person.id });
+      revalidatePath(`/platform/organisations/${orgId}`);
+      return result.sent
+        ? { ok: true, message: `Invitation sent again to ${email.to}, with a new 14-day button.` }
+        : { ok: false, error: "The email couldn't be sent. Set a temporary password instead." };
+    }
+    const result = await createPasswordReset(email.to);
+    await logAudit({ context, organisationId: orgId, action: "user.password_reset_sent", entity: "user", entityId: email.person.id });
+    revalidatePath(`/platform/organisations/${orgId}`);
+    return result.sent
+      ? { ok: true, message: `They've signed in before, so a password reset went to ${email.to}.` }
+      : { ok: false, error: "The email couldn't be sent. Set a temporary password instead." };
+  } catch {
+    return { ok: false, error: "The email couldn't be sent. Set a temporary password instead." };
+  }
 }
