@@ -7,27 +7,21 @@ import { setupUrl } from "@/lib/account-setup";
 /**
  * Creates the account (a Supabase invite, so the auth user carries role and org
  * in its metadata, which the handle_new_user trigger turns into a profile) and
- * emails the person a "Set up your account" button.
+ * returns its "Set up your account" button, without sending anything.
  *
  * The button goes to /auth/setup (lib/account-setup), which makes a fresh
  * set-password link at the moment it's pressed and keeps working for 14 days,
  * until the person first signs in. The invite's own link isn't used: it ran
  * out within hours, so an invitation sent one evening was dead by the next
- * morning (The Care Bureau, 4 Nov 2026).
+ * morning (The Care Bureau, 4 Nov 2026). Throws if the email is in use.
  */
-export async function createInvite(opts: {
+export async function createAccount(opts: {
   email: string;
   role: UserRole;
   organisationId: string | null;
   fullName?: string;
-  orgName?: string | null;
-  roleLabel: string;
-  /** Who's inviting them, for the copy of the email (lib/email-record). */
-  sentBy?: string | null;
-}): Promise<SendResult & { userId?: string }> {
+}): Promise<{ userId: string; setupLink: string }> {
   const admin = createAdminClient();
-  const origin = await siteOrigin();
-
   const { data, error } = await admin.auth.admin.generateLink({
     type: "invite",
     email: opts.email,
@@ -40,14 +34,26 @@ export async function createInvite(opts: {
     },
   });
   if (error) throw error;
-
   const userId = data.user?.id;
   if (!userId) throw new Error("Failed to create the account.");
-  const inviteUrl = setupUrl(origin, userId);
+  return { userId, setupLink: setupUrl(await siteOrigin(), userId) };
+}
 
+/** Creates the account and emails the invitation with its set-up button. */
+export async function createInvite(opts: {
+  email: string;
+  role: UserRole;
+  organisationId: string | null;
+  fullName?: string;
+  orgName?: string | null;
+  roleLabel: string;
+  /** Who's inviting them, for the copy of the email (lib/email-record). */
+  sentBy?: string | null;
+}): Promise<SendResult & { userId?: string }> {
+  const { userId, setupLink } = await createAccount(opts);
   const result = await sendInviteEmail({
     to: opts.email,
-    inviteUrl,
+    inviteUrl: setupLink,
     roleLabel: opts.roleLabel,
     orgName: opts.orgName,
     organisationId: opts.organisationId,

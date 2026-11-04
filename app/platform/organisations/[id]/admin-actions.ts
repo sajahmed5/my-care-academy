@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createInvite, createPasswordReset } from "@/lib/invites";
+import { createAccount, createInvite, createPasswordReset } from "@/lib/invites";
+import { consolePeople, sendTrialWelcome } from "@/lib/trial-emails";
+import { trialState, ukDateKey } from "@/lib/trial";
 import { sendInviteEmail } from "@/lib/email";
 import { setupUrl } from "@/lib/account-setup";
 import { siteOrigin } from "@/lib/site-url";
@@ -55,21 +57,44 @@ export async function inviteOrgAdminAction(
   const admin = createAdminClient();
   const { data: org } = await admin
     .from("organisations")
-    .select("name")
+    .select("name, trial_ends_at")
     .eq("id", orgId)
     .maybeSingle();
   if (!org) return { ok: false, error: "Organisation not found." };
 
   try {
-    const result = await createInvite({
-      email,
-      role: "org_admin",
-      organisationId: orgId,
-      fullName: name,
-      orgName: org.name,
-      roleLabel: "an organisation admin",
-      sentBy: context.userId,
-    });
+    // Joining a company that's on its trial: the trial welcome, naming who
+    // else is in (ACCOUNT-ACCESS.md). Otherwise the invitation.
+    const trial = trialState(org.trial_ends_at as string | null);
+    let result: { sent: boolean; link?: string };
+    if (trial.kind === "active") {
+      const { userId, setupLink } = await createAccount({ email, role: "org_admin", organisationId: orgId, fullName: name });
+      const sent = await sendTrialWelcome({
+        name: name || email,
+        email,
+        orgName: org.name as string,
+        roleLabel: "manager",
+        startsKey: null,
+        todayKey: ukDateKey(new Date()),
+        endsAt: trial.endsAt,
+        others: await consolePeople(admin, orgId, [userId]),
+        setupLink,
+        organisationId: orgId,
+        userId,
+        sentBy: context.userId,
+      });
+      result = { sent, link: setupLink };
+    } else {
+      result = await createInvite({
+        email,
+        role: "org_admin",
+        organisationId: orgId,
+        fullName: name,
+        orgName: org.name,
+        roleLabel: "an organisation admin",
+        sentBy: context.userId,
+      });
+    }
     await logAudit({
       context,
       action: "org.admin_invited",
@@ -249,8 +274,30 @@ export async function resendAccountEmailAction(_prev: ResendState, formData: For
   if (email.person.status === "deactivated") return { ok: false, error: "Reactivate them first: a deactivated account can't sign in." };
 
   const admin = createAdminClient();
-  const { data: org } = await admin.from("organisations").select("name").eq("id", orgId).maybeSingle();
+  const { data: org } = await admin.from("organisations").select("name, trial_ends_at").eq("id", orgId).maybeSingle();
+  const trial = trialState((org?.trial_ends_at as string | null) ?? null);
   try {
+    if (!email.person.lastSeenAt && email.type === "trial_welcome" && trial.kind === "active") {
+      const sent = await sendTrialWelcome({
+        name: email.person.name,
+        email: email.to,
+        orgName: (org?.name as string | undefined) ?? "your company",
+        roleLabel: email.person.role === "Manager" ? "manager" : "office worker",
+        startsKey: null,
+        todayKey: ukDateKey(new Date()),
+        endsAt: trial.endsAt,
+        others: await consolePeople(admin, orgId, [email.person.id]),
+        setupLink: setupUrl(await siteOrigin(), email.person.id),
+        organisationId: orgId,
+        userId: email.person.id,
+        sentBy: context.userId,
+      });
+      await logAudit({ context, organisationId: orgId, action: "user.invitation_resent", entity: "user", entityId: email.person.id });
+      revalidatePath(`/platform/organisations/${orgId}`);
+      return sent
+        ? { ok: true, message: `The trial welcome went again to ${email.to}, with a new 14-day button.` }
+        : { ok: false, error: "The email couldn't be sent. Set a temporary password instead." };
+    }
     if (!email.person.lastSeenAt) {
       const result = await sendInviteEmail({
         to: email.to,

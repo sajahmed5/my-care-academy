@@ -78,5 +78,9 @@ One change per release commit, as always.
    `/platform/organisations/<id>/emails/<emailId>` in a sandboxed frame, with
    "Send again with a fresh link" (an invitation if they've never signed in,
    else a reset) and "Set a temporary password instead".
-5. The trial welcome email.
+5. The trial welcome email (v3.14.0): `lib/trial-welcome.ts`, sent by
+   `sendTrialWelcome` (replies to our inbox) when a trial company is set up,
+   when someone is added to one while its trial runs ("you've joined…",
+   naming who's already in), and from the Emails tab's send-again.
+   `createAccount` (lib/invites) makes the account without sending anything.
 6. Several people at demo set-up, and adding more later with the same choices.

@@ -1,6 +1,7 @@
 import "server-only";
 import type { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
+import { trialWelcomeEmail, type TrialWelcome } from "@/lib/trial-welcome";
 import { emailButton, emailLayout, esc } from "@/lib/email-layout";
 import { formatDate } from "@/lib/dates";
 import { siteOrigin } from "@/lib/site-url";
@@ -107,4 +108,39 @@ export async function processTrialEmails(admin: Admin, now: Date, dryRun: boolea
     }
   }
   return { trialEmails: sent };
+}
+
+/**
+ * Send the trial welcome (lib/trial-welcome) in the company's name, with a
+ * copy for its Emails tab. Replies come to our inbox.
+ */
+export async function sendTrialWelcome(
+  w: TrialWelcome & { organisationId: string; userId: string; sentBy: string | null },
+): Promise<boolean> {
+  const { subject, html } = trialWelcomeEmail(w);
+  return sendEmail({
+    to: w.email,
+    subject,
+    html,
+    organisationId: w.organisationId,
+    replyTo: INBOX,
+    record: { type: "trial_welcome", userId: w.userId, sentBy: w.sentBy },
+  });
+}
+
+/** Everyone in a company with console access, for "who else is in". */
+export async function consolePeople(admin: Admin, orgId: string, except: string[] = []): Promise<{ name: string; roleLabel: string }[]> {
+  const { data } = await admin
+    .from("users")
+    .select("id, full_name, email, role")
+    .eq("organisation_id", orgId)
+    .in("role", ["org_admin", "org_office"])
+    .eq("status", "active")
+    .order("created_at");
+  return (data ?? [])
+    .filter((u) => !except.includes(u.id as string))
+    .map((u) => ({
+      name: (u.full_name as string | null) || (u.email as string),
+      roleLabel: u.role === "org_admin" ? "manager" : "office worker",
+    }));
 }

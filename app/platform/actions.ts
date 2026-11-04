@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createInvite } from "@/lib/invites";
+import { createAccount, createInvite } from "@/lib/invites";
+import { sendTrialWelcome } from "@/lib/trial-emails";
 import { logAudit } from "@/lib/audit";
 import {
   PACKAGE_TIERS,
@@ -82,15 +83,37 @@ export async function inviteOrganisationAction(
   if (error) return { ok: false, error: error.message };
 
   try {
-    const result = await createInvite({
-      email: adminEmail,
-      role: "org_admin",
-      organisationId: org.id,
-      fullName: adminName,
-      orgName,
-      roleLabel: "organisation administrator",
-      sentBy: context.userId,
-    });
+    // On a trial they get the trial welcome (ACCOUNT-ACCESS.md); otherwise
+    // the invitation. Both carry the 14-day set-up button.
+    let result: { sent: boolean; link?: string };
+    if (trial) {
+      const { userId, setupLink } = await createAccount({ email: adminEmail, role: "org_admin", organisationId: org.id, fullName: adminName });
+      const sent = await sendTrialWelcome({
+        name: adminName || adminEmail,
+        email: adminEmail,
+        orgName,
+        roleLabel: "manager",
+        startsKey: trialStart,
+        todayKey: ukDateKey(new Date()),
+        endsAt: new Date(trialEndsAt!),
+        others: [],
+        setupLink,
+        organisationId: org.id,
+        userId,
+        sentBy: context.userId,
+      });
+      result = { sent, link: setupLink };
+    } else {
+      result = await createInvite({
+        email: adminEmail,
+        role: "org_admin",
+        organisationId: org.id,
+        fullName: adminName,
+        orgName,
+        roleLabel: "organisation administrator",
+        sentBy: context.userId,
+      });
+    }
     await logAudit({
       context,
       organisationId: org.id,
