@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { friendlyAuthError } from "@/lib/auth-errors";
+import { finishTemporaryPasswordAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -15,7 +16,7 @@ const MIN_LENGTH = 8;
 // autofocused, so the download starts as soon as the form is on screen.
 const loadSupabase = () => import("@/lib/supabase/client");
 
-export function SetPasswordForm() {
+export function SetPasswordForm({ temporary = false }: { temporary?: boolean }) {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -42,7 +43,15 @@ export function SetPasswordForm() {
     let error: { message: string } | null;
     try {
       const { createClient } = await loadSupabase();
-      ({ error } = await createClient().auth.updateUser({ password }));
+      const supabase = createClient();
+      ({ error } = await supabase.auth.updateUser({ password }));
+      // Off a temporary password: clear the mark, then take a fresh token
+      // that no longer carries it, or the proxy sends them straight back.
+      if (!error && temporary) {
+        const done = await finishTemporaryPasswordAction();
+        if (!done.ok) error = { message: "" };
+        else ({ error } = await supabase.auth.refreshSession());
+      }
     } catch {
       // The chunk itself failed to load (signal dropped mid-save).
       error = { message: "" };
@@ -84,7 +93,7 @@ export function SetPasswordForm() {
         {/* The rule is stated up front rather than sprung as an error after a
             failed submit — this is someone's first minute in the product. */}
         <p id="password-hint" className="text-xs text-muted-foreground">
-          At least {MIN_LENGTH} characters. Use something you&apos;ll remember.
+          At least {MIN_LENGTH} characters{temporary ? ", and not the temporary one" : ""}. Use something you&apos;ll remember.
         </p>
       </div>
 

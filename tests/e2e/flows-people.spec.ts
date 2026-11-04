@@ -928,3 +928,71 @@ test.describe("@mobile the forms at 390px", () => {
     }
   });
 });
+
+// ───────────────────────────────────────────────────────────────────────────
+// Temporary passwords (ACCOUNT-ACCESS.md)
+// ───────────────────────────────────────────────────────────────────────────
+
+test.describe("a temporary password (manager)", () => {
+  // In order: the second test looks at the carer the first one makes.
+  test.describe.configure({ mode: "serial" });
+  test.use({ storageState: session("testManager") });
+  let userId: string | undefined;
+  test.afterAll(async () => deleteUser(userId));
+
+  test("a manager gives one to a carer who never opened the invitation; the carer must choose their own", async ({ page, browser }) => {
+    // Invited, never opened: an unconfirmed account with no password.
+    const email = `qa-run-${tag}-temp@example.com`;
+    const name = `Run${tag} Temp Fakerun`;
+    const { data, error } = await adminDb().auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: { data: { role: "learner", organisation_id: ORG(), full_name: name } },
+    });
+    if (error || !data.user) throw new Error(`invite ${email}: ${error?.message}`);
+    userId = data.user.id;
+    await expect.poll(async () => (await adminDb().from("users").select("id").eq("id", userId!).maybeSingle()).data?.id).toBe(userId);
+
+    await page.goto(`/org/staff/${userId}`);
+    const card = page.getByRole("region", { name: "Signing in" });
+    await expect(card).toContainText("Never signed in");
+    await card.getByRole("button", { name: "Set temporary password" }).click();
+    const shown = card.locator(".font-mono");
+    await expect(shown).toHaveText(/^[A-Z][a-z]{2}\d-[A-Z][a-z]{2}\d-[A-Z][a-z]{2}\d$/, { timeout: 20_000 });
+    const temporary = (await shown.textContent())!.trim();
+
+    // The carer signs in with it and is held on "Choose your own password".
+    const { context, page: them } = await signIn(browser, email, temporary);
+    await them.waitForURL(/\/auth\/set-password/);
+    await expect(them.getByRole("heading", { name: "Choose your own password" })).toBeVisible();
+    await them.goto("/learn");
+    await expect(them).toHaveURL(/\/auth\/set-password/);
+
+    const own = `Own!${tag}Pw-77`;
+    await them.getByLabel("New password").fill(own);
+    await them.getByLabel("Confirm password").fill(own);
+    await them.getByRole("button", { name: "Set password & continue" }).click();
+    await expect(them).toHaveURL(/\/learn(\/|$|\?)/, { timeout: 30_000 });
+    await them.goto("/learn");
+    await expect(them).toHaveURL(/\/learn(\/|$|\?)/);
+    await context.close();
+
+    // The temporary one no longer works; their own does.
+    const old = await signIn(browser, email, temporary, false);
+    await expect(old.page.getByRole("alert").filter({ hasText: /don't match/ })).toBeVisible();
+    await old.context.close();
+    const mine = await signIn(browser, email, own);
+    await expect(mine.page).toHaveURL(/\/learn(\/|$|\?)/);
+    await mine.context.close();
+  });
+
+  test("an office worker doesn't get the button", async ({ browser }) => {
+    test.skip(!userId, "needs the carer from the test above");
+    const context = await browser.newContext({ storageState: session("testTrainer") });
+    const page = await context.newPage();
+    await page.goto(`/org/staff/${userId}`);
+    await expect(page.getByRole("heading", { name: /Run.* Temp Fakerun/ })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Signing in" })).toHaveCount(0);
+    await context.close();
+  });
+});

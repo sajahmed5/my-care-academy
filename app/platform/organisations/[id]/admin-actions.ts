@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createInvite } from "@/lib/invites";
 import { logAudit } from "@/lib/audit";
+import { giveTemporaryPassword } from "@/lib/temporary-password";
 import type { InviteState, SaveState } from "@/app/platform/actions";
 
 /**
@@ -178,4 +179,47 @@ export async function removeOrgUserAction(
   });
   revalidatePath(`/platform/organisations/${orgId}`);
   return { ok: true };
+}
+
+export interface TemporaryPasswordState {
+  ok?: boolean;
+  error?: string;
+  password?: string;
+}
+
+/**
+ * Give someone in this organisation a temporary password (ACCOUNT-ACCESS.md),
+ * for when their invitation didn't arrive or didn't work. Returned once, to be
+ * shown on screen; never emailed or stored. They choose their own on first
+ * sign-in.
+ */
+export async function setTemporaryPasswordAction(
+  _prev: TemporaryPasswordState,
+  formData: FormData,
+): Promise<TemporaryPasswordState> {
+  const context = await requireRole("platform_admin");
+  const orgId = String(formData.get("orgId") ?? "");
+  const userId = String(formData.get("userId") ?? "");
+
+  const admin = createAdminClient();
+  const target = await assertInOrg(admin, userId, orgId);
+  if (!target) return { ok: false, error: "That person isn't in this organisation." };
+  const { data: row } = await admin.from("users").select("status").eq("id", userId).maybeSingle();
+  if (row?.status === "deactivated") return { ok: false, error: "Reactivate them first: a deactivated account can't sign in." };
+
+  let password: string;
+  try {
+    password = await giveTemporaryPassword(admin, userId);
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "The password couldn't be set." };
+  }
+  await logAudit({
+    context,
+    organisationId: orgId,
+    action: "user.temporary_password_set",
+    entity: "user",
+    entityId: userId,
+    detail: { email: target.email },
+  });
+  return { ok: true, password };
 }

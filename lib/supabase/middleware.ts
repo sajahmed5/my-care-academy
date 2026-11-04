@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { onTemporaryPassword } from "@/lib/temporary-password-claim";
 
 /** Routes that require an authenticated user. */
 const PROTECTED_PREFIXES = ["/dashboard", "/platform", "/org", "/learn", "/report", "/my-application"];
@@ -54,6 +55,19 @@ export async function updateSession(request: NextRequest) {
     url.pathname = "/login";
     url.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(url);
+  }
+
+  // On a temporary password (lib/temporary-password): nothing but choosing
+  // their own until they have. The sign-in pages, sign-out and the API stay
+  // open, so they can finish or leave.
+  if (user && onTemporaryPassword(user) && !pathname.startsWith("/auth/") && !pathname.startsWith("/api/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/set-password";
+    url.search = "";
+    // Keep any session cookie getClaims() just refreshed.
+    const redirect = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((c) => redirect.cookies.set(c));
+    return redirect;
   }
 
   if (user && pathname === "/login") {

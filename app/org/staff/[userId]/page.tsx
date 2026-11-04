@@ -19,6 +19,7 @@ import {
 } from "@/components/learner-ui";
 import { learnerStats } from "@/lib/learner-stats";
 import { NudgeButton } from "../../nudge-button";
+import { SigningIn } from "./signing-in";
 import { UnassignButton } from "../../unassign-button";
 import { AssignToPerson } from "./assign-to-person";
 import { buildPersonTasks, loadPersonActions } from "@/lib/person-tasks";
@@ -527,6 +528,16 @@ export default async function StaffDetailPage({
       <div className="mt-6 min-w-0 space-y-6">
         {section.key === "overview" && (
           <PersonOverview checks={overviewChecks} activity={activity}>
+            {/* A temporary password, for managers only and never for
+                themselves (ACCOUNT-ACCESS.md). */}
+            {context.role === "org_admin" && userId !== context.userId && profile.status !== "deactivated" && (
+              <SigningIn
+                userId={userId}
+                name={name}
+                email={profile.email ?? null}
+                lastSeen={profile.last_seen_at ? fmtDate(profile.last_seen_at) : null}
+              />
+            )}
             {/* Removing someone from their own page, where a manager looks
                 for it (#78) — the same buttons and rule as the staff list:
                 never yourself, and only a manager removes console staff. */}

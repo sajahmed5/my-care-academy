@@ -66,7 +66,10 @@ One change per release commit, as always.
 
 1. Invitations use the 14-day "Set up your account" button (v3.13.6). So
    do candidate logins that have never signed in.
-2. Temporary passwords, and choosing your own on first sign-in.
+2. Temporary passwords, and choosing your own on first sign-in (v3.13.7).
+   `lib/temporary-password.ts`; the platform's Admins list and a "Signing
+   in" card on the staff profile's Overview (managers only); the proxy holds
+   anyone with `app_metadata.password_temporary` on `/auth/set-password`.
 3. Full copies of account emails, and the Emails tab.
 4. The trial welcome email.
 5. Several people at demo set-up, and adding more later with the same choices.

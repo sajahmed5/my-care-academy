@@ -801,6 +801,30 @@ test.describe("4. Platform admin: a throwaway organisation from invite to remova
     await context.close();
   });
 
+  test("give the second manager a temporary password; they sign in and must choose their own", async ({ browser }) => {
+    const { context, page } = await pageAs(browser, "platformAdmin");
+    await page.goto(`/platform/organisations/${orgId}`);
+    const row = page.locator("li", { hasText: THROWAWAY_EMAILS[1] });
+    page.once("dialog", (d) => d.accept());
+    await row.getByRole("button", { name: "Set temporary password" }).click();
+    const shown = row.locator(".font-mono");
+    await expect(shown).toHaveText(/^[A-Z][a-z]{2}\d-[A-Z][a-z]{2}\d-[A-Z][a-z]{2}\d$/, { timeout: 20_000 });
+    const temporary = (await shown.textContent())!.trim();
+    await context.close();
+
+    const theirs = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const them = await theirs.newPage();
+    await them.goto("/login");
+    await them.getByLabel("Email").fill(THROWAWAY_EMAILS[1]);
+    await them.getByLabel("Password", { exact: true }).fill(temporary);
+    await them.getByRole("button", { name: "Sign in" }).click();
+    await them.waitForURL(/\/auth\/set-password/, { timeout: 30_000 });
+    await expect(them.getByRole("heading", { name: "Choose your own password" })).toBeVisible();
+    await them.goto("/org");
+    await expect(them).toHaveURL(/\/auth\/set-password/);
+    await theirs.close();
+  });
+
   test("issue an integration key, use it, revoke it", async ({ browser, baseURL }) => {
     const { context, page } = await pageAs(browser, "platformAdmin");
     page.on("dialog", (d) => d.accept());

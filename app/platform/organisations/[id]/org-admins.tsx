@@ -1,16 +1,19 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
-import { ShieldMinus, ShieldPlus, Trash2 } from "lucide-react";
+import { KeyRound, ShieldMinus, ShieldPlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { InviteResult } from "@/components/invite-result";
 import type { InviteState, SaveState } from "@/app/platform/actions";
+import { TemporaryPasswordReveal } from "@/components/temporary-password-reveal";
 import {
   inviteOrgAdminAction,
   removeOrgUserAction,
   setOrgUserRoleAction,
+  setTemporaryPasswordAction,
+  type TemporaryPasswordState,
 } from "./admin-actions";
 
 export interface OrgPerson {
@@ -100,6 +103,52 @@ function RemoveButton({ orgId, person }: { orgId: string; person: OrgPerson }) {
 }
 
 /**
+ * A person's row with "Set temporary password" (ACCOUNT-ACCESS.md). The
+ * password shows under the row, once.
+ */
+function AdminRow({ orgId, person, children }: { orgId: string; person: OrgPerson; children: React.ReactNode }) {
+  const [state, formAction, pending] = useActionState(setTemporaryPasswordAction, {} as TemporaryPasswordState);
+  useAlertOnError(state);
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-2 py-2">
+      <span className="min-w-0">
+        <span className="font-medium">{person.name}</span>{" "}
+        <span className="text-muted-foreground">{person.email}</span>{" "}
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+          {person.role === "org_office" ? "Office" : "Manager"}
+        </span>
+      </span>
+      <span className="flex flex-wrap items-center gap-2">
+        <form
+          action={formAction}
+          className="inline"
+          onSubmit={(e) => {
+            if (!window.confirm(`Give ${person.name} a new temporary password? Their current password stops working.`)) e.preventDefault();
+          }}
+        >
+          <input type="hidden" name="orgId" value={orgId} />
+          <input type="hidden" name="userId" value={person.id} />
+          <button
+            type="submit"
+            disabled={pending}
+            className="inline-flex items-center gap-1 rounded-full border border-primary/50 px-2.5 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+          >
+            <KeyRound className="size-3.5" aria-hidden />
+            {pending ? "Setting…" : "Set temporary password"}
+          </button>
+        </form>
+        {children}
+      </span>
+      {state.password && (
+        <div className="basis-full">
+          <TemporaryPasswordReveal name={person.name} email={person.email} password={state.password} />
+        </div>
+      )}
+    </li>
+  );
+}
+
+/**
  * The organisation's admins, with the controls to change them (issue #19).
  * Learners are not listed here — they have their own table above, which is
  * what made the old combined "Staff" list unusable at a few hundred people.
@@ -129,27 +178,15 @@ export function OrgAdmins({
       ) : (
         <ul className="divide-y text-sm">
           {admins.map((a) => (
-            <li
-              key={a.id}
-              className="flex flex-wrap items-center justify-between gap-2 py-2"
-            >
-              <span className="min-w-0">
-                <span className="font-medium">{a.name}</span>{" "}
-                <span className="text-muted-foreground">{a.email}</span>{" "}
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                  {a.role === "org_office" ? "Office" : "Manager"}
-                </span>
-              </span>
-              <span className="flex items-center gap-2">
-                {a.role === "org_office" ? (
-                  <RoleButton orgId={orgId} person={a} to="org_admin" />
-                ) : (
-                  <RoleButton orgId={orgId} person={a} to="org_office" />
-                )}
-                <RoleButton orgId={orgId} person={a} to="learner" />
-                <RemoveButton orgId={orgId} person={a} />
-              </span>
-            </li>
+            <AdminRow key={a.id} orgId={orgId} person={a}>
+              {a.role === "org_office" ? (
+                <RoleButton orgId={orgId} person={a} to="org_admin" />
+              ) : (
+                <RoleButton orgId={orgId} person={a} to="org_office" />
+              )}
+              <RoleButton orgId={orgId} person={a} to="learner" />
+              <RemoveButton orgId={orgId} person={a} />
+            </AdminRow>
           ))}
         </ul>
       )}
