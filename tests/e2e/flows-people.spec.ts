@@ -102,6 +102,13 @@ test.describe("inviting a carer (manager)", () => {
     // The profile exists already, in the right company, not yet signed in.
     const profile = (await adminDb().from("users").select("organisation_id, role, status, last_seen_at").eq("email", email).single()).data!;
     expect(profile).toMatchObject({ organisation_id: ORG(), role: "learner" });
+    // A copy of the invitation is kept for the platform, with the link taken
+    // out (sending is off here, so it's marked not sent).
+    const copy = (await adminDb().from("email_log").select("type, sent, html, sent_by, organisation_id").eq("to_email", email).single()).data!;
+    expect(copy).toMatchObject({ type: "invitation", sent: false, organisation_id: ORG() });
+    expect(copy.sent_by).toBeTruthy();
+    expect(copy.html).toContain("sign-in link removed");
+    expect(copy.html).not.toContain("/auth/setup?t=");
     // Staff list: there, enabled, never signed in.
     await page.goto("/org/learners/admin");
     const row = page.locator("table tbody tr", { hasText: email });

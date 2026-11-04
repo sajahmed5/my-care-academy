@@ -22,6 +22,8 @@ export async function createInvite(opts: {
   fullName?: string;
   orgName?: string | null;
   roleLabel: string;
+  /** Who's inviting them, for the copy of the email (lib/email-record). */
+  sentBy?: string | null;
 }): Promise<SendResult & { userId?: string }> {
   const admin = createAdminClient();
   const origin = await siteOrigin();
@@ -49,6 +51,8 @@ export async function createInvite(opts: {
     roleLabel: opts.roleLabel,
     orgName: opts.orgName,
     organisationId: opts.organisationId,
+    userId,
+    sentBy: opts.sentBy ?? null,
   });
   return { ...result, userId };
 }
@@ -90,9 +94,14 @@ export async function createPasswordReset(email: string): Promise<SendResult> {
   // The account's company, so with white label the email is in its name.
   const { data: profile } = await createAdminClient()
     .from("users")
-    .select("organisation_id")
+    .select("id, organisation_id")
     .eq("email", email.trim().toLowerCase())
     .limit(1)
     .maybeSingle();
-  return sendPasswordResetEmail({ to: email, resetUrl, organisationId: (profile?.organisation_id as string | null) ?? null });
+  return sendPasswordResetEmail({
+    to: email,
+    resetUrl,
+    organisationId: (profile?.organisation_id as string | null) ?? null,
+    userId: (profile?.id as string | null) ?? null,
+  });
 }

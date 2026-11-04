@@ -1,5 +1,6 @@
 import { brandEmailHtml, emailButton, emailLayout, emailLinkFallback, esc, pointLinksAt } from "./email-layout";
 import { SETUP_LINK_DAYS } from "./account-setup";
+import { recordAccountEmail, type AccountEmailRecord } from "./email-record";
 
 const DEFAULT_FROM = "My Care Academy <onboarding@resend.dev>";
 
@@ -99,6 +100,7 @@ export async function sendEmail({
   replyTo,
   attachments,
   organisationId,
+  record,
 }: {
   to: string;
   subject: string;
@@ -107,10 +109,27 @@ export async function sendEmail({
   /** Files to attach, as base64 (Resend's limit is 40MB for the whole email). */
   attachments?: { filename: string; content: string }[];
   organisationId?: string | null;
+  /**
+   * An account email (lib/email-record): keep a copy of it as sent, sign-in
+   * links removed, in email_log. Recorded as "not sent" when sending is off.
+   */
+  record?: AccountEmailRecord;
 }): Promise<boolean> {
   const apiKey = emailApiKey();
-  if (!apiKey) return false;
+  if (!apiKey && !record) return false;
   const company = await asCompany(organisationId, html, replyTo);
+  const sent = apiKey ? await dispatch(apiKey, to, subject, company, attachments) : false;
+  if (record) await recordAccountEmail({ to, subject, html: company.html, organisationId, sent, record });
+  return sent;
+}
+
+async function dispatch(
+  apiKey: string,
+  to: string,
+  subject: string,
+  company: { html: string; from: string; replyTo?: string },
+  attachments: { filename: string; content: string }[] | undefined,
+): Promise<boolean> {
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -203,6 +222,9 @@ interface InviteEmailOptions {
   orgName?: string | null;
   /** The same organisation, for its own name and dress with white label. */
   organisationId?: string | null;
+  /** The new account, and who invited them, for the copy (lib/email-record). */
+  userId?: string | null;
+  sentBy?: string | null;
 }
 
 export interface SendResult {
@@ -238,9 +260,11 @@ export async function sendInviteEmail({
   roleLabel,
   orgName,
   organisationId,
+  userId,
+  sentBy,
 }: InviteEmailOptions): Promise<SendResult> {
-  if (!emailApiKey()) return { sent: false, link: inviteUrl };
-
+  // Built and recorded even when sending is off, so the copy shows on the
+  // company's Emails tab; the caller shows the link to pass on instead.
   const company = await accountName(organisationId);
   const joining = orgName && !company ? ` for <strong>${esc(orgName)}</strong>` : "";
   const html = emailLayout({
@@ -257,6 +281,7 @@ export async function sendInviteEmail({
     subject: company ? `Your invitation from ${company}` : "Your My Care Academy invitation",
     html,
     organisationId,
+    record: { type: "invitation", userId, sentBy },
   });
   return { sent, link: inviteUrl };
 }
@@ -270,11 +295,14 @@ export async function sendPasswordResetEmail({
   to,
   resetUrl,
   organisationId,
+  userId,
 }: {
   to: string;
   resetUrl: string;
   /** The account's company, for its own name and dress with white label. */
   organisationId?: string | null;
+  /** The account, for the copy (lib/email-record). */
+  userId?: string | null;
 }): Promise<SendResult> {
   const company = await accountName(organisationId);
   const html = emailLayout({
@@ -290,6 +318,7 @@ export async function sendPasswordResetEmail({
     subject: company ? `Reset your ${company} training password` : "Reset your My Care Academy password",
     html,
     organisationId,
+    record: { type: "password_reset", userId },
   });
   return { sent, link: resetUrl };
 }

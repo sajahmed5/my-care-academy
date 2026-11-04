@@ -63,6 +63,7 @@ export async function inviteStaffAction(
       organisationId: context.organisationId,
       fullName: name,
       roleLabel: ROLE_LABELS[role],
+      sentBy: context.userId,
     });
     await logAudit({
       context,
@@ -292,6 +293,7 @@ export async function bulkInviteStaffAction(
         organisationId: context.organisationId,
         fullName: (row.name ?? "").trim(),
         roleLabel: ROLE_LABELS[role],
+        sentBy: context.userId,
       });
 
       // Belt and braces (issue #16): confirm the profile row exists with the

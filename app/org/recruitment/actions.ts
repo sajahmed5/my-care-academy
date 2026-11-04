@@ -597,6 +597,7 @@ export async function hireCandidateAction(
       organisationId: orgId,
       fullName: candidate.full_name as string,
       roleLabel: "learner",
+      sentBy: context.userId,
     });
     userId = result.userId ?? null;
     if (userId) await admin.from("candidates").update({ user_id: userId }).eq("id", candidateId);

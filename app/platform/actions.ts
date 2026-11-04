@@ -89,6 +89,7 @@ export async function inviteOrganisationAction(
       fullName: adminName,
       orgName,
       roleLabel: "organisation administrator",
+      sentBy: context.userId,
     });
     await logAudit({
       context,
@@ -267,7 +268,7 @@ export async function invitePlatformAdminAction(
   _prev: InviteState,
   formData: FormData,
 ): Promise<InviteState> {
-  await requireRole("platform_admin");
+  const context = await requireRole("platform_admin");
 
   const email = String(formData.get("email") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
@@ -280,6 +281,7 @@ export async function invitePlatformAdminAction(
       organisationId: null,
       fullName: name,
       roleLabel: "platform administrator",
+      sentBy: context.userId,
     });
     revalidatePath("/platform");
     return {

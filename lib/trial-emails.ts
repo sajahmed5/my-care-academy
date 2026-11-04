@@ -35,7 +35,7 @@ export async function processTrialEmails(admin: Admin, now: Date, dryRun: boolea
 
     const { data: managers } = await admin
       .from("users")
-      .select("email, full_name")
+      .select("id, email, full_name")
       .eq("organisation_id", org.id)
       .eq("role", "org_admin")
       .eq("status", "active");
@@ -70,7 +70,16 @@ export async function processTrialEmails(admin: Admin, now: Date, dryRun: boolea
 
     if (!dryRun) {
       for (const m of managers ?? []) {
-        if (await sendEmail({ to: m.email as string, ...mail })) sent += 1;
+        // In the company's name and dress, with a copy for its Emails tab.
+        if (
+          await sendEmail({
+            to: m.email as string,
+            ...mail,
+            organisationId: org.id as string,
+            record: { type: "trial_ending", userId: m.id as string },
+          })
+        )
+          sent += 1;
       }
       if (due.kind === "last_day") {
         const who = (managers ?? [])

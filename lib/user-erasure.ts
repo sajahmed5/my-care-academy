@@ -142,7 +142,8 @@ export async function anonymiseUserRecords(
   if (email) {
     const { data } = await admin
       .from("email_log")
-      .update({ to_email: REDACTED_EMAIL })
+      // The copy of an account email names them too (lib/email-record).
+      .update({ to_email: REDACTED_EMAIL, html: null })
       .eq("to_email", email)
       .select("id");
     emailLog = data?.length ?? 0;

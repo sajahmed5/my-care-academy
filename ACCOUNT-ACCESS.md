@@ -70,6 +70,10 @@ One change per release commit, as always.
    `lib/temporary-password.ts`; the platform's Admins list and a "Signing
    in" card on the staff profile's Overview (managers only); the proxy holds
    anyone with `app_metadata.password_temporary` on `/auth/set-password`.
-3. Full copies of account emails, and the Emails tab.
-4. The trial welcome email.
-5. Several people at demo set-up, and adding more later with the same choices.
+3. Full copies of account emails (v3.13.8): `sendEmail({ record })` stores
+   the branded email, sign-in links removed (`lib/email-record.ts`), in new
+   `email_log` columns only the service role can read; trial emails now go
+   out in the company's name; the daily job clears copies after 12 months.
+4. The Emails tab.
+5. The trial welcome email.
+6. Several people at demo set-up, and adding more later with the same choices.

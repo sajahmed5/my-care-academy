@@ -64,6 +64,7 @@ export async function inviteOrgAdminAction(
       fullName: name,
       orgName: org.name,
       roleLabel: "an organisation admin",
+      sentBy: context.userId,
     });
     await logAudit({
       context,

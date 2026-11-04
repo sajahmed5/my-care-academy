@@ -17,6 +17,7 @@ import { processLeavers } from "@/lib/hr/leavers-server";
 import { newAlertRun, processOverdueAlerts, retryFailedAlerts } from "@/lib/alerts";
 import { runCronJobs } from "@/lib/cron-jobs";
 import { processTrialEmails } from "@/lib/trial-emails";
+import { pruneAccountEmailCopies } from "@/lib/email-record";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -82,6 +83,8 @@ export async function GET(req: NextRequest) {
     // Free trials: their managers at 2 days left and on the last day, and us
     // on the last day (TRIAL.md).
     { name: "trials", run: () => processTrialEmails(admin, now, dryRun) },
+    // Copies of account emails are kept for 12 months (ACCOUNT-ACCESS.md).
+    { name: "emailCopies", run: () => pruneAccountEmailCopies(admin, now, dryRun) },
     // Alerts to other systems: today's newly overdue courses, and another go
     // at any alert that didn't get through.
     { name: "overdueAlerts", run: () => processOverdueAlerts(now, dryRun, alerts) },

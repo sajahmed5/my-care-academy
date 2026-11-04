@@ -80,7 +80,13 @@ export async function inviteCandidate(
       ${emailLinkFallback(link.url)}`,
     footer: `Sent for ${esc(company)} by My Care Academy.`,
   });
-  const sent = await sendEmail({ to: email, subject: `Follow your application to ${company}`, html, organisationId: c.organisation_id as string });
+  const sent = await sendEmail({
+    to: email,
+    subject: `Follow your application to ${company}`,
+    html,
+    organisationId: c.organisation_id as string,
+    record: { type: "candidate_invitation", userId },
+  });
   return sent ? { ok: true } : { ok: false, error: "The email couldn't be sent. Try again." };
 }
 
