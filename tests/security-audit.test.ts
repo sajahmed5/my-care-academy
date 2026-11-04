@@ -104,13 +104,24 @@ describe("cross-org isolation (foreign org_admin sees nothing)", () => {
     "audit_logs",
   ];
 
+  // email_log's copy of an account email (html) is service-role only, so a
+  // signed-in user reads the other columns by name (ACCOUNT-ACCESS.md).
+  const readable: Record<string, string> = {
+    email_log: "id, organisation_id, to_email, type, subject, sent, created_at, user_id, sent_by",
+  };
+
   for (const table of tables) {
     it(`${table}: no rows leak from another org`, async () => {
-      const { data, error } = await adminB.from(table).select("*");
+      const { data, error } = await adminB.from(table).select(readable[table] ?? "*");
       expect(error).toBeNull();
       expect(data ?? []).toEqual([]);
     });
   }
+
+  it("email_log: the copy of an email can't be read by a signed-in user at all", async () => {
+    const { error } = await adminB.from("email_log").select("html").limit(1);
+    expect(error?.code).toBe("42501");
+  });
 
   // organisation_features can't join the loop above: B legitimately reads its
   // own override rows, so "no rows at all" would be wrong. What must hold is
