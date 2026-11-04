@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSetPasswordLink } from "@/lib/invites";
 import { readSetupToken, setupSecret } from "@/lib/account-setup";
+import { requestOrigin } from "@/lib/request-origin";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +15,8 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(request: NextRequest) {
   // Back to the address the link was opened on — a company's own, with
-  // white label — as /auth/confirm does.
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  const proto = request.headers.get("x-forwarded-proto") ?? new URL(request.url).protocol.replace(/:$/, "");
-  const origin = host ? `${proto}://${host}` : new URL(request.url).origin;
+  // white label.
+  const origin = requestOrigin(request);
   const toLogin = (query = "") => NextResponse.redirect(new URL(`/login${query}`, origin));
 
   const userId = readSetupToken(setupSecret(), request.nextUrl.searchParams.get("t") ?? "");

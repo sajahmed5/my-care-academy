@@ -6,7 +6,7 @@ import type { UserRole } from "@/lib/auth";
 /**
  * Generates a Supabase invite link (creating the auth user with role/org in its
  * metadata, which the handle_new_user trigger turns into a profile) and emails
- * it. The invitee accepts at /auth/confirm, then sets a password.
+ * it. The invitee opens /auth/confirm, presses Continue, then sets a password.
  */
 export async function createInvite(opts: {
   email: string;

@@ -20,16 +20,33 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirectTo?: string }>;
+  searchParams: Promise<{ redirectTo?: string; error?: string }>;
 }) {
   const context = await getUserContext();
   if (context) {
     redirect(dashboardPathForRole(context.role));
   }
 
-  const { redirectTo } = await searchParams;
+  const { redirectTo, error } = await searchParams;
   // Only a path on this site: anything else is an open redirect.
   const safeRedirect = safeInternalPath(redirectTo, "/dashboard");
+
+  // Sent here by an emailed link that didn't work. Said plainly, with the way
+  // forward: a bare sign-in form leaves someone with no password yet stuck.
+  const form = (
+    <>
+      {error === "invalid_or_expired_link" && (
+        <div role="alert" className="mb-5 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          That link has expired or has already been used.{" "}
+          <Link href="/forgot-password" className="font-medium underline">
+            Send me a new one
+          </Link>
+          .
+        </div>
+      )}
+      <LoginForm redirectTo={safeRedirect} />
+    </>
+  );
 
   // On a company's own web address: its name and dress, and none of our
   // public site's links (white label).
@@ -42,7 +59,7 @@ export default async function LoginPage({
         brand={brand}
         footer={<p className="text-xs">No account yet? Your manager sets one up and emails you an invitation.</p>}
       >
-        <LoginForm redirectTo={safeRedirect} />
+        {form}
       </AuthShell>
     );
   }
@@ -73,7 +90,7 @@ export default async function LoginPage({
         </>
       }
     >
-      <LoginForm redirectTo={safeRedirect} />
+      {form}
     </AuthShell>
   );
 }

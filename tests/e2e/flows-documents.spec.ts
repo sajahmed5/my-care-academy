@@ -1167,6 +1167,10 @@ test.describe("5. Billing, packages and the free trial", () => {
 // ===========================================================================
 
 test.describe("6. Auth", () => {
+  // In order: the recovery-link test changes the new carer's password while
+  // the sign-in tests below sign in with it.
+  test.describe.configure({ mode: "serial" });
+
   test("sign out ends the session", async ({ browser }) => {
     const { context, page } = await pageAs(browser, "testStaff");
     await page.goto("/learn");
@@ -1200,7 +1204,7 @@ test.describe("6. Auth", () => {
     await context.close();
   });
 
-  test("a recovery link signs in once, sets a new password, and cannot be reused", async ({ browser, baseURL }) => {
+  test("a recovery link survives an email scanner, signs in once, sets a new password, and cannot be reused", async ({ browser, baseURL }) => {
     const db = adminDb();
     const email = process.env.QA_TEST_STAFF_NEW_EMAIL!;
     const original = credentials("testStaffNew").password;
@@ -1211,8 +1215,19 @@ test.describe("6. Auth", () => {
     const context = await browser.newContext();
     const page = await context.newPage();
     try {
+      // An email scanner (Safe Links and the like) opens the link before the
+      // person does. Opening it must not use it.
+      for (let i = 0; i < 2; i++) {
+        const scan = await fetch(link, { redirect: "manual" });
+        expect(scan.status, "opening the link only shows a page").toBe(200);
+      }
+
       await page.goto(link);
-      await expect(page).toHaveURL(/\/auth\/set-password/);
+      await expect(page).toHaveURL(/\/auth\/confirm/);
+      await page.getByRole("button", { name: "Continue" }).click();
+      // waitForURL waits for the page to load, so the form is live before
+      // anything is typed into it.
+      await page.waitForURL(/\/auth\/set-password/);
       const inputs = page.locator('input[type="password"]');
       await inputs.nth(0).fill("Recovered!Qa2026x");
       await inputs.nth(1).fill("Recovered!Qa2026x");
@@ -1232,7 +1247,9 @@ test.describe("6. Auth", () => {
       const fresh = await browser.newContext();
       const p2 = await fresh.newPage();
       await p2.goto(link);
+      await p2.getByRole("button", { name: "Continue" }).click();
       await expect(p2).toHaveURL(/\/login\?error=invalid_or_expired_link/);
+      await expect(p2.getByText("That link has expired or has already been used.")).toBeVisible();
       const r = await p2.request.get("/learn", { maxRedirects: 0 });
       expect(r.headers()["location"] ?? "").toMatch(/\/login/);
       await fresh.close();
@@ -1283,7 +1300,7 @@ test.describe("6. Auth", () => {
     // BUG (High, open redirect): app/login/page.tsx accepts any redirectTo that
     // starts with "/" and not "//". A backslash passes ("/\\evil.com"), and the
     // browser reads "/\\" as "//" — so after a genuine sign-in the person is
-    // sent to evil.com. The same check is in app/auth/confirm/route.ts (next=).
+    // sent to evil.com. The same check is in app/auth/verify/route.ts (next=).
     const { email, password } = credentials("testStaffNew");
     const context = await browser.newContext();
     const page = await context.newPage();
