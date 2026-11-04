@@ -8,7 +8,7 @@ import { SortHeader, useTableSort } from "@/components/sort-header";
 import { Pill } from "@/components/pill";
 import { initials } from "@/lib/initials";
 import { dateColumn, numberColumn, textColumn, type SortColumn } from "@/lib/table-sort";
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatDateTime } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import {
   filterLabel,
@@ -25,6 +25,9 @@ import {
 export type { Filter, StaffRow } from "@/lib/staff-list";
 
 const fmtDate = (d: string) => formatDate(d, { day: "numeric", month: "short", year: "numeric" });
+/** "4 Nov 2026, 14:42", UK time. Recorded at most every 30 minutes (dashboard-shell). */
+const fmtDateTime = (d: string) =>
+  formatDateTime(d, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 type SortKey = "name" | "training" | "supervision" | "appraisal" | "lastActive";
 
@@ -120,7 +123,7 @@ export function LearnersTable({
         String(r.stats.overdue),
         r.supervision?.label ?? "",
         r.appraisal?.label ?? "",
-        r.lastSeenAt ? fmtDate(r.lastSeenAt) : "Never",
+        r.lastSeenAt ? fmtDateTime(r.lastSeenAt) : "Never",
       ]
         .map(csvCell)
         .join(","),
@@ -328,7 +331,18 @@ export function LearnersTable({
                         {r.appraisal ? <Pill tone={r.appraisal.tone}>{r.appraisal.label}</Pill> : <span className="text-muted-foreground">—</span>}
                       </td>
                     )}
-                    <td className={cn("whitespace-nowrap px-4 py-3 sm:px-5", active.stale ? "text-danger-foreground" : "text-muted-foreground")}>{active.label}</td>
+                    <td className={cn("whitespace-nowrap px-4 py-3 sm:px-5", active.stale ? "text-danger-foreground" : "text-muted-foreground")}>
+                      {/* The exact time under "Today" or "3 days ago" (Saj, 4 Nov 2026);
+                          past a month the label is the date already, so just the date and time. */}
+                      {r.lastSeenAt && active.label === fmtDate(r.lastSeenAt) ? (
+                        fmtDateTime(r.lastSeenAt)
+                      ) : (
+                        <>
+                          {active.label}
+                          {r.lastSeenAt && <span className="block text-[13px] text-muted-foreground">{fmtDateTime(r.lastSeenAt)}</span>}
+                        </>
+                      )}
+                    </td>
                     <td className="px-3 py-3 text-muted-foreground">{href && <ChevronRight className="size-4" aria-hidden />}</td>
                   </tr>
                 );
