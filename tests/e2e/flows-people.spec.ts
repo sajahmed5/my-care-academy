@@ -97,7 +97,8 @@ test.describe("inviting a carer (manager)", () => {
     // No email service, so the page shows the link to pass on.
     await expect(page.getByText(`Invite created for ${email}`)).toBeVisible();
     const link = (await page.locator("code").first().textContent())?.trim() ?? "";
-    expect(link).toMatch(/^http:\/\/localhost:3100\/auth\/confirm\?token_hash=.+&type=invite&next=%2Fauth%2Fset-password|^http:\/\/localhost:3100\/auth\/confirm\?token_hash=.+&type=invite&next=\/auth\/set-password/);
+    // The 14-day "Set up your account" button, not a short-lived link.
+    expect(link).toMatch(/^http:\/\/localhost:3100\/auth\/setup\?t=.+/);
     // The profile exists already, in the right company, not yet signed in.
     const profile = (await adminDb().from("users").select("organisation_id, role, status, last_seen_at").eq("email", email).single()).data!;
     expect(profile).toMatchObject({ organisation_id: ORG(), role: "learner" });
@@ -110,8 +111,12 @@ test.describe("inviting a carer (manager)", () => {
     // The invitee, signed out, in their own browser.
     const theirs = await fresh(browser);
     const them = await theirs.newPage();
+    // An email scanner opens it first: that must not spoil it.
+    expect((await fetch(link, { redirect: "manual" })).status).toBeLessThan(400);
     await them.goto(link);
-    await expect(them).toHaveURL(/\/auth\/set-password/);
+    await expect(them).toHaveURL(/\/auth\/confirm/);
+    await them.getByRole("button", { name: "Continue" }).click();
+    await them.waitForURL(/\/auth\/set-password/);
     await expect(them.getByText(email)).toBeVisible();
     const password = `Strong!${tag}Pw-42`;
     await them.getByLabel("New password").fill(password);
@@ -120,11 +125,13 @@ test.describe("inviting a carer (manager)", () => {
     await expect(them).toHaveURL(/\/learn(\/|$|\?)/, { timeout: 30_000 });
     await theirs.close();
 
-    // The same link again, signed out, must not get in.
+    // The same button again, once they've signed in, goes to sign in: it
+    // never opens an account somebody is using.
     const again = await fresh(browser);
     const p2 = await again.newPage();
     await p2.goto(link);
-    await expect(p2).toHaveURL(/\/login\?error=invalid_or_expired_link/);
+    await expect(p2).toHaveURL(/\/login/);
+    await expect(p2.getByRole("button", { name: "Continue" })).toHaveCount(0);
     await again.close();
 
     // And the password they chose works at the sign-in form.

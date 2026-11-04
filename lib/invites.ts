@@ -2,11 +2,18 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { siteOrigin } from "@/lib/site-url";
 import { sendInviteEmail, sendPasswordResetEmail, type SendResult } from "@/lib/email";
 import type { UserRole } from "@/lib/auth";
+import { setupUrl } from "@/lib/account-setup";
 
 /**
- * Generates a Supabase invite link (creating the auth user with role/org in its
- * metadata, which the handle_new_user trigger turns into a profile) and emails
- * it. The invitee opens /auth/confirm, presses Continue, then sets a password.
+ * Creates the account (a Supabase invite, so the auth user carries role and org
+ * in its metadata, which the handle_new_user trigger turns into a profile) and
+ * emails the person a "Set up your account" button.
+ *
+ * The button goes to /auth/setup (lib/account-setup), which makes a fresh
+ * set-password link at the moment it's pressed and keeps working for 14 days,
+ * until the person first signs in. The invite's own link isn't used: it ran
+ * out within hours, so an invitation sent one evening was dead by the next
+ * morning (The Care Bureau, 4 Nov 2026).
  */
 export async function createInvite(opts: {
   email: string;
@@ -32,12 +39,9 @@ export async function createInvite(opts: {
   });
   if (error) throw error;
 
-  const tokenHash = data.properties?.hashed_token;
-  if (!tokenHash) throw new Error("Failed to generate invite token.");
-
-  const inviteUrl =
-    `${origin}/auth/confirm?token_hash=${tokenHash}` +
-    `&type=invite&next=/auth/set-password`;
+  const userId = data.user?.id;
+  if (!userId) throw new Error("Failed to create the account.");
+  const inviteUrl = setupUrl(origin, userId);
 
   const result = await sendInviteEmail({
     to: opts.email,
@@ -46,7 +50,7 @@ export async function createInvite(opts: {
     orgName: opts.orgName,
     organisationId: opts.organisationId,
   });
-  return { ...result, userId: data.user?.id };
+  return { ...result, userId };
 }
 
 /**

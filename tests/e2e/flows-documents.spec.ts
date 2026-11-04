@@ -717,7 +717,8 @@ test.describe("4. Platform admin: a throwaway organisation from invite to remova
     await page.getByRole("button", { name: "Invite organisation" }).last().click();
     await expect(page.getByText(`Invite created for ${THROWAWAY_EMAILS[0]}`)).toBeVisible({ timeout: 20_000 });
     inviteLink = ((await page.locator("code").last().textContent()) ?? "").trim();
-    expect(inviteLink).toMatch(/\/auth\/confirm\?token_hash=/);
+    // The 14-day "Set up your account" button, not a short-lived link.
+    expect(inviteLink).toMatch(/\/auth\/setup\?t=/);
     const { data: org } = await adminDb().from("organisations").select("id, package_tier").eq("name", THROWAWAY).single();
     orgId = org!.id as string;
     expect(org!.package_tier).toBe("core");
@@ -728,7 +729,9 @@ test.describe("4. Platform admin: a throwaway organisation from invite to remova
     managerContext = await browser.newContext();
     const page = await managerContext.newPage();
     await page.goto(inviteLink.replace(/^https?:\/\/[^/]+/, baseURL ?? ""));
-    await expect(page).toHaveURL(/\/auth\/set-password/);
+    await expect(page).toHaveURL(/\/auth\/confirm/);
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.waitForURL(/\/auth\/set-password/);
     const inputs = page.locator('input[type="password"]');
     await inputs.nth(0).fill("Throwaway!Qa2026");
     await inputs.nth(1).fill("Throwaway!Qa2026");

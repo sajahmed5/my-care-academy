@@ -1,4 +1,5 @@
 import { brandEmailHtml, emailButton, emailLayout, emailLinkFallback, esc, pointLinksAt } from "./email-layout";
+import { SETUP_LINK_DAYS } from "./account-setup";
 
 const DEFAULT_FROM = "My Care Academy <onboarding@resend.dev>";
 
@@ -247,6 +248,7 @@ export async function sendInviteEmail({
     body: `<p>You've been invited as ${esc(roleLabel)}${joining}. Click below to set your
       password and get started.</p>
       ${emailButton(inviteUrl, "Accept invitation")}
+      <p style="color:#587070;font-size:13px">The button keeps working for ${SETUP_LINK_DAYS} days, until you've signed in.</p>
       ${emailLinkFallback(inviteUrl)}`,
     footer: "My Care Academy — you're receiving this because someone invited you.",
   });

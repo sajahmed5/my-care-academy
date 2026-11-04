@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { siteOrigin } from "@/lib/site-url";
+import { setupUrl } from "@/lib/account-setup";
 import { sendEmail } from "@/lib/email";
 import { emailButton, emailLayout, emailLinkFallback, esc } from "@/lib/email-layout";
 
@@ -13,15 +14,28 @@ import { emailButton, emailLayout, emailLinkFallback, esc } from "@/lib/email-la
 
 type Admin = ReturnType<typeof createAdminClient>;
 
-async function linkFor(admin: Admin, type: "invite" | "recovery", email: string, fullName: string) {
-  const { data, error } = await admin.auth.admin.generateLink(
-    type === "invite"
-      ? { type, email, options: { data: { role: "candidate", organisation_id: null, full_name: fullName } } }
-      : { type, email },
-  );
-  if (error || !data.properties?.hashed_token) return null;
-  const url = `${await siteOrigin()}/auth/confirm?token_hash=${data.properties.hashed_token}&type=${type}&next=/auth/set-password`;
-  return { url, userId: data.user?.id ?? null };
+/**
+ * The button for the email. Someone who has never signed in gets the 14-day
+ * "Set up your account" button (lib/account-setup), as every invitation does:
+ * a set-password link runs out within hours. Someone who has signed in before
+ * gets a set-password link, which that route won't make for them.
+ */
+async function linkFor(admin: Admin, existing: { id: string; last_seen_at: string | null } | null, email: string, fullName: string) {
+  const origin = await siteOrigin();
+  if (existing?.last_seen_at) {
+    const { data, error } = await admin.auth.admin.generateLink({ type: "recovery", email });
+    if (error || !data.properties?.hashed_token) return null;
+    const url = `${origin}/auth/confirm?token_hash=${data.properties.hashed_token}&type=recovery&next=/auth/set-password`;
+    return { url, userId: existing.id };
+  }
+  if (existing) return { url: setupUrl(origin, existing.id), userId: existing.id };
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "invite",
+    email,
+    options: { data: { role: "candidate", organisation_id: null, full_name: fullName } },
+  });
+  if (error || !data.user?.id) return null;
+  return { url: setupUrl(origin, data.user.id), userId: data.user.id };
 }
 
 /**
@@ -43,13 +57,16 @@ export async function inviteCandidate(
   const email = (c.email as string).trim().toLowerCase();
   const company = (c.organisations as unknown as { name: string } | null)?.name ?? "the company";
 
-  const { data: existing } = await admin.from("users").select("id, role").ilike("email", email).maybeSingle();
+  const { data: existing } = await admin.from("users").select("id, role, last_seen_at").ilike("email", email).maybeSingle();
   if (existing && existing.role !== "candidate") {
     return { ok: false, error: "This email already has a My Care Academy login as staff, so it can't be used for a candidate's." };
   }
-  const link = existing
-    ? await linkFor(admin, "recovery", email, c.full_name as string)
-    : await linkFor(admin, "invite", email, c.full_name as string);
+  const link = await linkFor(
+    admin,
+    existing ? { id: existing.id as string, last_seen_at: (existing.last_seen_at as string | null) ?? null } : null,
+    email,
+    c.full_name as string,
+  );
   if (!link) return { ok: false, error: "The login couldn't be made. Try again." };
   const userId = existing?.id ?? link.userId;
   if (userId && c.user_id !== userId) await admin.from("candidates").update({ user_id: userId }).eq("id", candidateId);
