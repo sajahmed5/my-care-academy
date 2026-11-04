@@ -1,18 +1,19 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { startTransition, useActionState, useEffect } from "react";
 import { KeyRound, ShieldMinus, ShieldPlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { InviteResult } from "@/components/invite-result";
-import type { InviteState, SaveState } from "@/app/platform/actions";
+import { PersonOutcomeView } from "@/components/person-outcome";
+import type { SaveState } from "@/app/platform/actions";
 import { TemporaryPasswordReveal } from "@/components/temporary-password-reveal";
 import {
   inviteOrgAdminAction,
   removeOrgUserAction,
   setOrgUserRoleAction,
   setTemporaryPasswordAction,
+  type AddPersonState,
   type TemporaryPasswordState,
 } from "./admin-actions";
 
@@ -165,7 +166,7 @@ export function OrgAdmins({
 }) {
   const [inviteState, inviteAction, inviting] = useActionState(
     inviteOrgAdminAction,
-    {} as InviteState,
+    {} as AddPersonState,
   );
 
   return (
@@ -213,25 +214,52 @@ export function OrgAdmins({
         </details>
       )}
 
-      <form action={inviteAction} className="space-y-3 border-t pt-4">
-        <p className="text-sm font-medium">Invite a new admin</p>
+      <form
+        // Through a transition, so an error doesn't wipe what was typed.
+        onSubmit={(e) => {
+          e.preventDefault();
+          const data = new FormData(e.currentTarget);
+          startTransition(() => inviteAction(data));
+        }}
+        className="space-y-3 border-t pt-4"
+      >
+        <p className="text-sm font-medium">Add a manager or office worker</p>
         <input type="hidden" name="orgId" value={orgId} />
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-4">
           <div className="space-y-1.5">
             <Label htmlFor="org-admin-name">Full name</Label>
-            <Input id="org-admin-name" name="name" />
+            <Input id="org-admin-name" name="personName" />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="org-admin-email">Email</Label>
-            <Input id="org-admin-email" name="email" type="email" required />
+            <Input id="org-admin-email" name="personEmail" type="email" required />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="org-admin-role">Role</Label>
+            <select id="org-admin-role" name="personRole" defaultValue="org_admin" className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm">
+              <option value="org_admin">Manager</option>
+              <option value="org_office">Office worker</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="org-admin-access">How they get in</Label>
+            <select id="org-admin-access" name="personAccess" defaultValue="email" className="flex h-9 w-full rounded-lg border border-input bg-background px-3 text-sm">
+              <option value="email">Email</option>
+              <option value="password">Temporary password</option>
+            </select>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <Button type="submit" disabled={inviting}>
-            {inviting ? "Inviting…" : "Send invite"}
+            {inviting ? "Adding…" : "Send invite"}
           </Button>
-          <InviteResult state={inviteState} />
+          {inviteState.error && (
+            <p role="alert" className="text-sm text-destructive">
+              {inviteState.error}
+            </p>
+          )}
         </div>
+        {inviteState.outcome && <PersonOutcomeView outcome={inviteState.outcome} orgId={orgId} />}
       </form>
     </div>
   );

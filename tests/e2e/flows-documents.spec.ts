@@ -690,6 +690,85 @@ async function dropThrowaway() {
   for (const u of list?.users ?? []) if (THROWAWAY_EMAILS.includes(u.email ?? "")) await db.auth.admin.deleteUser(u.id);
 }
 
+const TRIAL_CO = "QA Trial Welcome Care Ltd";
+const TRIAL_PEOPLE = ["qa-trial-priya@example.com", "qa-trial-tom@example.com", "qa-trial-aisha@example.com"];
+
+async function dropTrialCo() {
+  const db = adminDb();
+  const { data: orgs } = await db.from("organisations").select("id").eq("name", TRIAL_CO);
+  for (const o of orgs ?? []) {
+    const { data: users } = await db.from("users").select("id").eq("organisation_id", o.id);
+    for (const u of users ?? []) await db.auth.admin.deleteUser(u.id as string);
+    await db.from("email_log").delete().eq("organisation_id", o.id);
+    await db.from("organisations").delete().eq("id", o.id);
+  }
+  for (const email of TRIAL_PEOPLE) {
+    const { data: u } = await db.from("users").select("id").eq("email", email).maybeSingle();
+    if (u) await db.auth.admin.deleteUser(u.id as string);
+  }
+}
+
+test.describe("4b. Platform admin: a trial company set up for three people", () => {
+  test.beforeAll(dropTrialCo);
+  test.afterAll(dropTrialCo);
+
+  test("two get the trial welcome naming the others, one a temporary password; a clash is refused up front", async ({ browser }) => {
+    const { context, page } = await pageAs(browser, "platformAdmin");
+    await page.goto("/platform/organisations");
+    await page.getByRole("button", { name: "Invite organisation" }).click();
+    await page.locator("#orgName").fill(TRIAL_CO);
+    await page.getByLabel("Start on a 7-day free trial").check();
+
+    // A clash with an existing account is refused before anything is made.
+    await page.locator("#person-0-name").fill("Priya Trial");
+    await page.locator("#person-0-email").fill(process.env.QA_TEST_STAFF_EMAIL!);
+    await page.getByRole("button", { name: "Invite organisation" }).last().click();
+    await expect(page.getByRole("alert").filter({ hasText: "already has an account" })).toBeVisible({ timeout: 20_000 });
+    expect((await adminDb().from("organisations").select("id").eq("name", TRIAL_CO)).data).toEqual([]);
+    // What was typed is still there to correct.
+    await expect(page.locator("#orgName")).toHaveValue(TRIAL_CO);
+    await expect(page.locator("#person-0-name")).toHaveValue("Priya Trial");
+
+    await page.locator("#person-0-email").fill(TRIAL_PEOPLE[0]);
+    await page.getByRole("button", { name: "Add another person" }).click();
+    await page.locator("#person-1-name").fill("Tom Trial");
+    await page.locator("#person-1-email").fill(TRIAL_PEOPLE[1]);
+    await page.locator("#person-1-role").selectOption("org_office");
+    await page.getByRole("button", { name: "Add another person" }).click();
+    await page.locator("#person-2-name").fill("Aisha Trial");
+    await page.locator("#person-2-email").fill(TRIAL_PEOPLE[2]);
+    await page.locator("#person-2-access").selectOption("password");
+    await page.getByRole("button", { name: "Invite organisation" }).last().click();
+
+    const done = page.getByRole("region", { name: "Set up" });
+    await expect(done).toContainText(`${TRIAL_CO} is set up`, { timeout: 30_000 });
+    await expect(done).toContainText(`Invite created for ${TRIAL_PEOPLE[0]}`);
+    await expect(done).toContainText(`Invite created for ${TRIAL_PEOPLE[1]}`);
+    await expect(done.locator(".font-mono")).toHaveText(/^[A-Z][a-z]{2}\d-[A-Z][a-z]{2}\d-[A-Z][a-z]{2}\d$/);
+    await context.close();
+
+    const db = adminDb();
+    const { data: org } = await db.from("organisations").select("id, package_tier, trial_ends_at").eq("name", TRIAL_CO).single();
+    expect(org!.package_tier).toBe("full");
+    expect(org!.trial_ends_at).toBeTruthy();
+    const { data: people } = await db.from("users").select("email, role").eq("organisation_id", org!.id).order("email");
+    expect(people).toEqual([
+      { email: TRIAL_PEOPLE[2], role: "org_admin" },
+      { email: TRIAL_PEOPLE[0], role: "org_admin" },
+      { email: TRIAL_PEOPLE[1], role: "org_office" },
+    ]);
+    const { data: emails } = await db.from("email_log").select("to_email, type, subject, html").eq("organisation_id", org!.id).order("to_email");
+    expect(emails!.map((e) => [e.to_email, e.type])).toEqual([
+      [TRIAL_PEOPLE[0], "trial_welcome"],
+      [TRIAL_PEOPLE[1], "trial_welcome"],
+    ]);
+    expect(emails![0].subject).toMatch(/^Your 7-day My Care Academy trial starts today$/);
+    expect(emails![0].html).toContain("You're set up as a manager. Tom Trial (office worker) and Aisha Trial (manager) have been invited too.");
+    expect(emails![1].html).toContain("You're set up as an office worker.");
+    for (const e of emails!) expect(e.html).not.toContain("/auth/setup?t=");
+  });
+});
+
 test.describe("4. Platform admin: a throwaway organisation from invite to removal", () => {
   test.describe.configure({ mode: "serial" });
   let orgId = "";
@@ -710,8 +789,8 @@ test.describe("4. Platform admin: a throwaway organisation from invite to remova
     }
     await page.getByRole("button", { name: "Invite organisation" }).click();
     await page.locator("#orgName").fill(THROWAWAY);
-    await page.locator("#adminName").fill("Tia Throwaway");
-    await page.locator("#adminEmail").fill(THROWAWAY_EMAILS[0]);
+    await page.locator("#person-0-name").fill("Tia Throwaway");
+    await page.locator("#person-0-email").fill(THROWAWAY_EMAILS[0]);
     await page.locator("#packageTier").selectOption("core");
     await page.locator("#serviceType").selectOption("homecare");
     await page.getByRole("button", { name: "Invite organisation" }).last().click();

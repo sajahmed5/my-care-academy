@@ -83,4 +83,8 @@ One change per release commit, as always.
    when someone is added to one while its trial runs ("you've joined…",
    naming who's already in), and from the Emails tab's send-again.
    `createAccount` (lib/invites) makes the account without sending anything.
-6. Several people at demo set-up, and adding more later with the same choices.
+6. Several people at demo set-up, and adding more later with the same
+   choices (v3.14.1): `lib/company-people.ts`. Every address is checked
+   before anything is made; the company is removed again if nobody could be
+   added. Both forms submit through a transition, so an error keeps what
+   was typed.

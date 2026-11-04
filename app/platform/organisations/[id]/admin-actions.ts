@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createAccount, createInvite, createPasswordReset } from "@/lib/invites";
+import { createPasswordReset } from "@/lib/invites";
+import { addCompanyPerson, emailsInUse, parsePeople, type PersonOutcome } from "@/lib/company-people";
 import { consolePeople, sendTrialWelcome } from "@/lib/trial-emails";
 import { trialState, ukDateKey } from "@/lib/trial";
 import { sendInviteEmail } from "@/lib/email";
@@ -12,7 +13,7 @@ import { siteOrigin } from "@/lib/site-url";
 import { loadOrgEmail } from "@/lib/org-emails";
 import { logAudit } from "@/lib/audit";
 import { giveTemporaryPassword } from "@/lib/temporary-password";
-import type { InviteState, SaveState } from "@/app/platform/actions";
+import type { SaveState } from "@/app/platform/actions";
 
 /**
  * Managing an organisation's admins from the platform side (issue #19). The
@@ -42,17 +43,27 @@ async function assertInOrg(
   return data;
 }
 
-/** Invite a new org admin into this organisation. */
+export interface AddPersonState {
+  ok?: boolean;
+  error?: string;
+  outcome?: PersonOutcome;
+}
+
+/**
+ * Add a manager or office worker to this organisation (ACCOUNT-ACCESS.md),
+ * let in by email (the trial welcome while its trial runs, naming who's
+ * already in; else the invitation) or a temporary password shown once.
+ */
 export async function inviteOrgAdminAction(
-  _prev: InviteState,
+  _prev: AddPersonState,
   formData: FormData,
-): Promise<InviteState> {
+): Promise<AddPersonState> {
   const context = await requireRole("platform_admin");
   const orgId = String(formData.get("orgId") ?? "");
-  const email = String(formData.get("email") ?? "").trim();
-  const name = String(formData.get("name") ?? "").trim();
   if (!orgId) return { ok: false, error: "Missing organisation." };
-  if (!email) return { ok: false, error: "Email is required." };
+  const { people, error } = parsePeople(formData);
+  if (error || people.length !== 1) return { ok: false, error: error ?? "Add one person at a time here." };
+  const person = people[0];
 
   const admin = createAdminClient();
   const { data: org } = await admin
@@ -61,59 +72,26 @@ export async function inviteOrgAdminAction(
     .eq("id", orgId)
     .maybeSingle();
   if (!org) return { ok: false, error: "Organisation not found." };
+  if ((await emailsInUse(admin, [person.email])).length > 0) return { ok: false, error: `${person.email} already has an account.` };
 
-  try {
-    // Joining a company that's on its trial: the trial welcome, naming who
-    // else is in (ACCOUNT-ACCESS.md). Otherwise the invitation.
-    const trial = trialState(org.trial_ends_at as string | null);
-    let result: { sent: boolean; link?: string };
-    if (trial.kind === "active") {
-      const { userId, setupLink } = await createAccount({ email, role: "org_admin", organisationId: orgId, fullName: name });
-      const sent = await sendTrialWelcome({
-        name: name || email,
-        email,
-        orgName: org.name as string,
-        roleLabel: "manager",
-        startsKey: null,
-        todayKey: ukDateKey(new Date()),
-        endsAt: trial.endsAt,
-        others: await consolePeople(admin, orgId, [userId]),
-        setupLink,
-        organisationId: orgId,
-        userId,
-        sentBy: context.userId,
-      });
-      result = { sent, link: setupLink };
-    } else {
-      result = await createInvite({
-        email,
-        role: "org_admin",
-        organisationId: orgId,
-        fullName: name,
-        orgName: org.name,
-        roleLabel: "an organisation admin",
-        sentBy: context.userId,
-      });
-    }
-    await logAudit({
-      context,
-      action: "org.admin_invited",
-      entity: "user",
-      detail: { email, organisationId: orgId },
-    });
-    revalidatePath(`/platform/organisations/${orgId}`);
-    return {
-      ok: true,
-      sent: result.sent,
-      link: result.sent ? undefined : result.link,
-      email,
-    };
-  } catch (e) {
-    return {
-      ok: false,
-      error: e instanceof Error ? e.message : "Failed to send invite.",
-    };
-  }
+  const trial = trialState(org.trial_ends_at as string | null);
+  const outcome = await addCompanyPerson(admin, person, {
+    orgId,
+    orgName: org.name as string,
+    trial: trial.kind === "active" ? { startsKey: null, endsAt: trial.endsAt } : null,
+    others: trial.kind === "active" ? await consolePeople(admin, orgId) : [],
+    sentBy: context.userId,
+  });
+  if (!outcome.ok) return { ok: false, error: outcome.error };
+  await logAudit({
+    context,
+    organisationId: orgId,
+    action: "org.admin_invited",
+    entity: "user",
+    detail: { email: person.email, organisationId: orgId, role: person.role, access: person.access },
+  });
+  revalidatePath(`/platform/organisations/${orgId}`);
+  return { ok: true, outcome };
 }
 
 /** Move a person between learner, office worker and manager. */

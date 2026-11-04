@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createAccount, createInvite } from "@/lib/invites";
-import { sendTrialWelcome } from "@/lib/trial-emails";
+import { createInvite } from "@/lib/invites";
+import { addCompanyPerson, emailsInUse, parsePeople, roleWord, type PersonOutcome } from "@/lib/company-people";
 import { logAudit } from "@/lib/audit";
 import {
   PACKAGE_TIERS,
@@ -29,19 +29,29 @@ export interface InviteState {
   email?: string;
 }
 
+export interface SetUpState {
+  ok?: boolean;
+  error?: string;
+  orgId?: string;
+  orgName?: string;
+  people?: PersonOutcome[];
+}
+
 /**
- * platform_admin invites a new organisation: creates the org and sends its
- * first org_admin an invite. Rolls the org back if the invite fails.
+ * platform_admin sets up a new organisation and its first people
+ * (ACCOUNT-ACCESS.md): one or more managers and office workers, each let in
+ * by email (the trial welcome on a trial, else the invitation) or a
+ * temporary password shown here once. Every address is checked first, so a
+ * clash never leaves a half-made company; the company is removed again if
+ * nobody could be added.
  */
 export async function inviteOrganisationAction(
-  _prev: InviteState,
+  _prev: SetUpState,
   formData: FormData,
-): Promise<InviteState> {
+): Promise<SetUpState> {
   const context = await requireRole("platform_admin");
 
   const orgName = String(formData.get("orgName") ?? "").trim();
-  const adminEmail = String(formData.get("adminEmail") ?? "").trim();
-  const adminName = String(formData.get("adminName") ?? "").trim();
   const packageTier = String(formData.get("packageTier") ?? "");
   const serviceType = String(formData.get("serviceType") ?? "");
   const sizeBand = String(formData.get("sizeBand") ?? "");
@@ -50,9 +60,10 @@ export async function inviteOrganisationAction(
   const trial = formData.get("trial") === "on";
   const trialStart = String(formData.get("trialStart") ?? "") || ukDateKey(new Date());
 
-  if (!orgName || !adminEmail) {
-    return { ok: false, error: "Organisation name and admin email are required." };
-  }
+  if (!orgName) return { ok: false, error: "The organisation needs a name." };
+  const { people, error: peopleError } = parsePeople(formData);
+  if (peopleError) return { ok: false, error: peopleError };
+  if (!people.some((p) => p.role === "org_admin")) return { ok: false, error: "At least one person must be a manager." };
   if (trial) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(trialStart)) return { ok: false, error: "Choose the day the trial starts." };
     if (trialStart < ukDateKey(new Date())) return { ok: false, error: "A trial can't start in the past." };
@@ -69,6 +80,11 @@ export async function inviteOrganisationAction(
   }
 
   const admin = createAdminClient();
+  const taken = await emailsInUse(admin, people.map((p) => p.email));
+  if (taken.length > 0) {
+    return { ok: false, error: `${taken.join(", ")} already ${taken.length === 1 ? "has an account" : "have accounts"}. Take ${taken.length === 1 ? "it" : "them"} out, or use another address.` };
+  }
+
   const { data: org, error } = await admin
     .from("organisations")
     .insert({
@@ -82,67 +98,45 @@ export async function inviteOrganisationAction(
     .single();
   if (error) return { ok: false, error: error.message };
 
-  try {
-    // On a trial they get the trial welcome (ACCOUNT-ACCESS.md); otherwise
-    // the invitation. Both carry the 14-day set-up button.
-    let result: { sent: boolean; link?: string };
-    if (trial) {
-      const { userId, setupLink } = await createAccount({ email: adminEmail, role: "org_admin", organisationId: org.id, fullName: adminName });
-      const sent = await sendTrialWelcome({
-        name: adminName || adminEmail,
-        email: adminEmail,
+  const outcomes: PersonOutcome[] = [];
+  for (const person of people) {
+    const others = people
+      .filter((o) => o !== person)
+      .map((o) => ({ name: o.name || o.email, roleLabel: roleWord(o.role) }));
+    outcomes.push(
+      await addCompanyPerson(admin, person, {
+        orgId: org.id as string,
         orgName,
-        roleLabel: "manager",
-        startsKey: trialStart,
-        todayKey: ukDateKey(new Date()),
-        endsAt: new Date(trialEndsAt!),
-        others: [],
-        setupLink,
-        organisationId: org.id,
-        userId,
+        trial: trial ? { startsKey: trialStart, endsAt: new Date(trialEndsAt!) } : null,
+        others,
         sentBy: context.userId,
-      });
-      result = { sent, link: setupLink };
-    } else {
-      result = await createInvite({
-        email: adminEmail,
-        role: "org_admin",
-        organisationId: org.id,
-        fullName: adminName,
-        orgName,
-        roleLabel: "organisation administrator",
-        sentBy: context.userId,
-      });
-    }
-    await logAudit({
-      context,
-      organisationId: org.id,
-      action: "organisation.invited",
-      entity: "organisation",
-      entityId: org.id,
-      detail: {
-        package_tier: tier,
-        service_type: serviceType || null,
-        size_band: sizeBand || null,
-        ...(trial && { trial_starts: trialStart, trial_ends_at: trialEndsAt }),
-      },
-    });
-    revalidatePath("/platform");
-    revalidatePath("/platform/organisations");
-    return {
-      ok: true,
-      sent: result.sent,
-      link: result.sent ? undefined : result.link,
-      email: adminEmail,
-    };
-  } catch (e) {
-    // Invite failed (e.g. email already in use) — undo the org we just created.
-    await admin.from("organisations").delete().eq("id", org.id);
-    return {
-      ok: false,
-      error: e instanceof Error ? e.message : "Failed to send invite.",
-    };
+      }),
+    );
   }
+
+  if (!outcomes.some((o) => o.ok)) {
+    // Nobody could be added: undo the company rather than leave it empty.
+    await admin.from("organisations").delete().eq("id", org.id);
+    return { ok: false, error: outcomes[0]?.error ?? "Nobody could be added, so the company wasn't set up." };
+  }
+
+  await logAudit({
+    context,
+    organisationId: org.id,
+    action: "organisation.invited",
+    entity: "organisation",
+    entityId: org.id,
+    detail: {
+      package_tier: tier,
+      service_type: serviceType || null,
+      size_band: sizeBand || null,
+      people: outcomes.map((o) => ({ email: o.email, role: o.role, access: o.access, ok: o.ok })),
+      ...(trial && { trial_starts: trialStart, trial_ends_at: trialEndsAt }),
+    },
+  });
+  revalidatePath("/platform");
+  revalidatePath("/platform/organisations");
+  return { ok: true, orgId: org.id as string, orgName, people: outcomes };
 }
 
 export interface SaveState {
