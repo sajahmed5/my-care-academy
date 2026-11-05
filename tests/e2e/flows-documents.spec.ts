@@ -717,7 +717,7 @@ test.describe("4b. Platform admin: a trial company set up for three people", () 
     await page.goto("/platform/organisations");
     await page.getByRole("button", { name: "Invite organisation" }).click();
     await page.locator("#orgName").fill(TRIAL_CO);
-    await page.getByLabel("Start on a 7-day free trial").check();
+    await page.getByLabel("Start on a 30-day free trial").check();
 
     // A clash with an existing account is refused before anything is made.
     await page.locator("#person-0-name").fill("Priya Trial");
@@ -762,7 +762,7 @@ test.describe("4b. Platform admin: a trial company set up for three people", () 
       [TRIAL_PEOPLE[0], "trial_welcome"],
       [TRIAL_PEOPLE[1], "trial_welcome"],
     ]);
-    expect(emails![0].subject).toMatch(/^Your 7-day My Care Academy trial starts today$/);
+    expect(emails![0].subject).toMatch(/^Your 30-day My Care Academy trial starts today$/);
     expect(emails![0].html).toContain("You're set up as a manager. Tom Trial (office worker) and Aisha Trial (manager) have been invited too.");
     expect(emails![1].html).toContain("You're set up as an office worker.");
     for (const e of emails!) expect(e.html).not.toContain("/auth/setup?t=");
@@ -822,7 +822,7 @@ test.describe("4. Platform admin: a throwaway organisation from invite to remova
   test("start, extend and convert a free trial", async ({ browser }) => {
     const { context, page } = await pageAs(browser, "platformAdmin");
     await page.goto(`/platform/organisations/${orgId}?section=settings`);
-    await page.getByRole("button", { name: "Start 7-day trial" }).click();
+    await page.getByRole("button", { name: "Start 30-day trial" }).click();
     await expect(page.getByText(/days left|Last day/)).toBeVisible({ timeout: 20_000 });
     const db = adminDb();
     const first = (await db.from("organisations").select("trial_ends_at, package_tier").eq("id", orgId).single()).data!;
@@ -837,7 +837,7 @@ test.describe("4. Platform admin: a throwaway organisation from invite to remova
 
     await page.locator("#trial-convert").selectOption("core_forms");
     await page.getByRole("button", { name: "Convert", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Start 7-day trial" })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("button", { name: "Start 30-day trial" })).toBeVisible({ timeout: 20_000 });
     const after = (await db.from("organisations").select("trial_ends_at, package_tier").eq("id", orgId).single()).data!;
     expect(after.trial_ends_at).toBeNull();
     expect(after.package_tier).toBe("core_forms");

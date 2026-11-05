@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PersonOutcomeView } from "@/components/person-outcome";
 import { PACKAGE_TIERS, SERVICE_TYPES, SIZE_BANDS } from "@/lib/organisations";
-import { ukDateKey } from "@/lib/trial";
+import { TRIAL_DAYS, ukDateKey } from "@/lib/trial";
 import { inviteOrganisationAction, type SetUpState } from "./actions";
 
 const initial: SetUpState = {};
@@ -100,9 +100,9 @@ export function InviteOrgForm() {
             className="mt-0.5 size-4"
           />
           <span>
-            <span className="font-medium">Start on a 7-day free trial</span>
+            <span className="font-medium">Start on a {TRIAL_DAYS}-day free trial</span>
             <span className="block text-muted-foreground">
-              Everything in Enterprise for 7 days, ending at 11:59pm on the 7th day. Face-to-face booking, bespoke
+              Everything in Enterprise for {TRIAL_DAYS} days, ending at 11:59pm on the last day. Face-to-face booking, bespoke
               report building and AI are held back. When it ends the whole company pauses, and their records are kept
               for 30 days. Everyone below gets the trial welcome email.
             </span>

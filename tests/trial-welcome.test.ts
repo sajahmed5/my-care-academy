@@ -17,9 +17,9 @@ const base: TrialWelcome = {
 describe("the trial welcome email", () => {
   it("starting today: the dates, the role, who else, the 14-day button, three things to try", () => {
     const { subject, html } = trialWelcomeEmail(base);
-    expect(subject).toBe("Your 7-day My Care Academy trial starts today");
+    expect(subject).toBe("Your 30-day My Care Academy trial starts today");
     expect(html).toContain("Welcome, Priya: your free trial starts today");
-    expect(html).toContain("until the end of <strong>Monday 9 November</strong>");
+    expect(html).toContain("until the end of <strong>Wednesday 2 December</strong>");
     expect(html).toContain("You're set up as a manager. Tom Reid (office worker) has been invited too.");
     expect(html).toContain('href="https://www.mycareacademy.co.uk/auth/setup?t=abc"');
     expect(html).toContain("Set your password and start");
@@ -30,7 +30,7 @@ describe("the trial welcome email", () => {
 
   it("starting on a later day says which day", () => {
     const { subject, html } = trialWelcomeEmail({ ...base, startsKey: "2026-11-09", endsAt: trialEndFrom("2026-11-09"), others: [] });
-    expect(subject).toBe("Your 7-day My Care Academy trial starts on Monday 9 November");
+    expect(subject).toBe("Your 30-day My Care Academy trial starts on Monday 9 November");
     expect(html).toContain("your free trial starts on Monday 9 November");
     expect(html).toContain("You're set up as a manager.</p>");
   });

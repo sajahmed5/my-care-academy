@@ -7,11 +7,12 @@ end of Monday 9 November.
 
 ## The trial
 
-- **7 days of Enterprise.** A trial company is on the Enterprise package
-  (`full`), so every feature and add-on is on. Nothing new in entitlements.
+- **30 days of Enterprise** (7 days until 5 Nov 2026; `TRIAL_DAYS` in
+  `lib/trial.ts`). A trial company is on the Enterprise package (`full`), so
+  every feature and add-on is on. Nothing new in entitlements.
 - **`organisations.trial_ends_at`** — empty means not on a trial. Set from
-  the platform's organisation page: **Start 7-day trial** (Enterprise, ends
-  at the end of the 7th day, UK time), **Extend 7 days**, and **Convert**
+  the platform's organisation page: **Start 30-day trial** (Enterprise, ends
+  at the end of the 30th day, UK time), **Extend 7 days**, and **Convert**
   (the package they chose, date cleared). The organisations list shows
   "Trial · 3 days left".
 - **During the trial** managers and office staff see a thin banner with the
@@ -26,8 +27,8 @@ end of Monday 9 November.
 - **Data is kept for 30 days** after the trial ends, then removed. Converting
   in that time keeps everything; anything outside the chosen package is
   locked but kept, as today.
-- **Emails:** the manager on day 5 (2 days left) and on the end day; Saj on
-  the end day.
+- **Emails:** the manager at 2 days left and on the end day; Saj on the end
+  day.
 
 ## What a trial can't do
 

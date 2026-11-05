@@ -11,13 +11,13 @@ import {
 } from "../lib/trial";
 
 /**
- * Free trials (TRIAL.md): seven days, ending at the end of the seventh day in
- * UK time, whatever time of year. The Care Bureau's starts Monday 2 November
- * 2026 (GMT) and ends at the end of Monday 9th.
+ * Free trials (TRIAL.md): 30 days, ending at the end of the 30th day in UK
+ * time, whatever time of year. One starting Monday 2 November 2026 (GMT) ends
+ * at the end of Wednesday 2 December.
  */
 describe("trial dates", () => {
-  it("ends at the end of the day a week after it starts, in GMT", () => {
-    expect(trialEndFrom("2026-11-02").toISOString()).toBe("2026-11-09T23:59:59.999Z");
+  it("ends at the end of the day 30 days after it starts, in GMT", () => {
+    expect(trialEndFrom("2026-11-02").toISOString()).toBe("2026-12-02T23:59:59.999Z");
   });
 
   it("ends at 23:59 British summer time, an hour earlier in UTC", () => {
@@ -35,8 +35,8 @@ describe("trial dates", () => {
   });
 
   it("crosses the clocks going back without losing the end of the day", () => {
-    // 22 Oct BST → 29 Oct GMT (clocks go back 25 Oct 2026).
-    expect(trialEndFrom("2026-10-22").toISOString()).toBe("2026-10-29T23:59:59.999Z");
+    // 22 Oct BST → 21 Nov GMT (clocks go back 25 Oct 2026).
+    expect(trialEndFrom("2026-10-22").toISOString()).toBe("2026-11-21T23:59:59.999Z");
   });
 });
 

@@ -55,8 +55,8 @@ export async function inviteOrganisationAction(
   const packageTier = String(formData.get("packageTier") ?? "");
   const serviceType = String(formData.get("serviceType") ?? "");
   const sizeBand = String(formData.get("sizeBand") ?? "");
-  // A free trial is Enterprise for 7 days from the day given, as the org
-  // page's Start 7-day trial does (TRIAL.md); the package is chosen at convert.
+  // A free trial is Enterprise for TRIAL_DAYS from the day given, as the org
+  // page's Start trial does (TRIAL.md); the package is chosen at convert.
   const trial = formData.get("trial") === "on";
   const trialStart = String(formData.get("trialStart") ?? "") || ukDateKey(new Date());
 

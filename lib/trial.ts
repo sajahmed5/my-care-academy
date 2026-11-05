@@ -1,7 +1,7 @@
 /**
- * Free trials (TRIAL.md, 30 Oct 2026): seven days of Enterprise, ending at the
- * end of the seventh day in UK time; then the whole company pauses, and its
- * records are kept for 30 days.
+ * Free trials (TRIAL.md, 30 Oct 2026; 30 days since 5 Nov 2026): 30 days of
+ * Enterprise, ending at the end of the 30th day in UK time; then the whole
+ * company pauses, and its records are kept for 30 days.
  *
  * Pure: no Supabase import, safe in client components. The date lives on
  * organisations.trial_ends_at; null means not on a trial.
@@ -9,7 +9,9 @@
 
 import { UK_TIME_ZONE } from "@/lib/dates";
 
-export const TRIAL_DAYS = 7;
+export const TRIAL_DAYS = 30;
+/** What Extend adds, on the platform's organisation page. */
+export const TRIAL_EXTEND_DAYS = 7;
 /** How long a lapsed trial's records are kept before they're removed. */
 export const TRIAL_KEEP_DAYS = 30;
 
@@ -58,8 +60,8 @@ export function endOfUkDay(key: string): Date {
 }
 
 /**
- * When a trial starting on this UK date ends: the end of the day a week
- * later, so one started on Monday 2 November runs to the end of Monday 9th.
+ * When a trial starting on this UK date ends: the end of the day TRIAL_DAYS
+ * later, so one started on Monday 2 November runs to the end of Wednesday 2 December.
  */
 export function trialEndFrom(startKey: string): Date {
   return endOfUkDay(addDaysToKey(startKey, TRIAL_DAYS));
@@ -67,7 +69,7 @@ export function trialEndFrom(startKey: string): Date {
 
 /** A trial a week longer than it was, still ending at the end of a day. */
 export function extendedTrialEnd(current: Date): Date {
-  return endOfUkDay(addDaysToKey(ukDateKey(current), TRIAL_DAYS));
+  return endOfUkDay(addDaysToKey(ukDateKey(current), TRIAL_EXTEND_DAYS));
 }
 
 /** Whole UK calendar days from one date key to another. */

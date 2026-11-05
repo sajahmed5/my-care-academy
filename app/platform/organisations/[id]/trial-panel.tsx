@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PACKAGE_TIERS } from "@/lib/organisations";
 import { formatDate } from "@/lib/dates";
-import { daysLeftLabel, trialState, ukDateKey } from "@/lib/trial";
+import { TRIAL_DAYS, TRIAL_EXTEND_DAYS, daysLeftLabel, trialState, ukDateKey } from "@/lib/trial";
 import type { SaveState } from "@/app/platform/actions";
 import { convertTrialAction, extendTrialAction, startTrialAction } from "./trial-actions";
 
@@ -26,7 +26,7 @@ export function TrialPanel({ orgId, trialEndsAt }: { orgId: string; trialEndsAt:
       <form action={start} className="space-y-3">
         <input type="hidden" name="orgId" value={orgId} />
         <p className="text-sm text-muted-foreground">
-          Gives them everything in Enterprise for 7 days, ending at 11:59pm on the 7th day. Face-to-face booking,
+          Gives them everything in Enterprise for {TRIAL_DAYS} days, ending at 11:59pm on the last day. Face-to-face booking,
           bespoke report building and AI are held back. When it ends the whole company pauses, and their records are
           kept for 30 days.
         </p>
@@ -36,7 +36,7 @@ export function TrialPanel({ orgId, trialEndsAt }: { orgId: string; trialEndsAt:
             <Input id="trial-start" name="start" type="date" defaultValue={ukDateKey(new Date())} className="w-44" />
           </div>
           <Button type="submit" disabled={starting}>
-            {starting ? "Starting…" : "Start 7-day trial"}
+            {starting ? `Starting…` : `Start ${TRIAL_DAYS}-day trial`}
           </Button>
         </div>
         {startState.error && <p className="text-sm text-rose-600">{startState.error}</p>}
@@ -70,7 +70,7 @@ export function TrialPanel({ orgId, trialEndsAt }: { orgId: string; trialEndsAt:
       <form action={extend}>
         <input type="hidden" name="orgId" value={orgId} />
         <Button type="submit" variant="outline" disabled={extending}>
-          {extending ? "Extending…" : "Extend 7 days"}
+          {extending ? "Extending…" : `Extend ${TRIAL_EXTEND_DAYS} days`}
         </Button>
         {extendState.error && <p className="mt-2 text-sm text-rose-600">{extendState.error}</p>}
       </form>

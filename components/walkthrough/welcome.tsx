@@ -35,8 +35,8 @@ export function Welcome({
     return () => document.removeEventListener("keydown", onKey);
   }, [onSkip]);
 
-  // A trial that has only just started reads as a fresh week; a manager
-  // added on day four reads what is left.
+  // A trial that has only just started reads as a fresh start; a manager
+  // added part-way through reads what is left.
   const pill = daysLeft >= TRIAL_DAYS - 1 ? `Your ${TRIAL_DAYS}-day trial has started` : `Trial · ${daysLeftLabel(daysLeft)}`;
 
   return (
@@ -54,7 +54,7 @@ export function Welcome({
           Welcome to My Care Academy{firstName ? `, ${firstName}` : ""}
         </h1>
         <p className="mt-2.5 text-[15px] leading-relaxed text-muted-foreground sm:text-base">
-          You have everything in Enterprise for a week. Take a two-minute tour of where things are, then work through a short list of things to try, so by {endsOn} you&apos;ll know whether it fits
+          You have everything in Enterprise for {TRIAL_DAYS} days. Take a two-minute tour of where things are, then work through a short list of things to try, so by {endsOn} you&apos;ll know whether it fits
           {orgName ? ` ${orgName}` : " your service"}.
         </p>
         <ul className="mt-4 grid gap-2.5 text-[15px]">

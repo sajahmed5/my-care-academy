@@ -511,7 +511,7 @@ export function TopNav({
   due?: { total: number; byPath: Record<string, number> };
   /** Who can see what: the area keys an office worker can't open (lib/office-access.ts). */
   hidden?: string[];
-  /** The free trial, while it runs: "Trial · 7 days left", linking to the packages for a manager. */
+  /** The free trial, while it runs: "Trial · 12 days left", linking to the packages for a manager. */
   trial?: { label: string; href: string | null } | null;
   /** Unread notifications about their own training. */
   notifications?: number;

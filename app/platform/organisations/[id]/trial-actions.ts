@@ -21,8 +21,8 @@ function done(orgId: string) {
 }
 
 /**
- * Seven days of Enterprise from the day given (today unless set ahead, so a
- * company can be made ready before it starts), ending at the end of the 7th.
+ * TRIAL_DAYS of Enterprise from the day given (today unless set ahead, so a
+ * company can be made ready before it starts), ending at the end of the last day.
  */
 export async function startTrialAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
   const context = await requireRole("platform_admin");
@@ -51,7 +51,7 @@ export async function startTrialAction(_prev: SaveState, formData: FormData): Pr
   return { ok: true };
 }
 
-/** Another seven days on the current end, or from today if it has passed. */
+/** Another TRIAL_EXTEND_DAYS on the current end, or from today if it has passed. */
 export async function extendTrialAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
   const context = await requireRole("platform_admin");
   const orgId = String(formData.get("orgId") ?? "");
