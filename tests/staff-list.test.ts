@@ -68,6 +68,13 @@ describe("lastActiveLabel", () => {
     expect(lastActiveLabel(new Date(now - 45 * DAY).toISOString(), now, fmt).stale).toBe(true);
     expect(lastActiveLabel(null, now, fmt)).toEqual({ label: "Never signed in", stale: true });
   });
+  it("counts UK calendar days, not 24-hour blocks", () => {
+    const tenAm = Date.UTC(2026, 10, 5, 10);
+    expect(lastActiveLabel(new Date(Date.UTC(2026, 10, 4, 14, 41)).toISOString(), tenAm, fmt).label).toBe("Yesterday");
+    expect(lastActiveLabel(new Date(Date.UTC(2026, 10, 5, 0, 5)).toISOString(), tenAm, fmt).label).toBe("Today");
+    // 23:30 UTC on 30 June is 00:30 on 1 July in London.
+    expect(lastActiveLabel(new Date(Date.UTC(2026, 5, 30, 23, 30)).toISOString(), Date.UTC(2026, 6, 1, 9), fmt).label).toBe("Today");
+  });
 });
 
 describe("roleLine", () => {

@@ -5,12 +5,10 @@ import Link from "next/link";
 import type { OrgEngagementRow } from "@/lib/platform-orgs";
 import { tierLabel } from "@/lib/organisations";
 import { OrgNudgeButton } from "../org-nudge-button";
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatDateTime, ukDaysAgo } from "@/lib/dates";
 import { daysLeftLabel, trialState } from "@/lib/trial";
 import { allHref, latest } from "@/lib/latest";
 import { ViewAll } from "@/components/view-all";
-
-const DAY = 86_400_000;
 
 function fmtDate(d: string | null): string {
   if (!d) return "Never";
@@ -21,9 +19,14 @@ function fmtDate(d: string | null): string {
   });
 }
 
+// The last sign-in to the minute (UK time), shown under "Today" or
+// "3 days ago" and in the export.
+const fmtDateTime = (d: string) =>
+  formatDateTime(d, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
 function lastActive(d: string | null): { label: string; stale: boolean } {
   if (!d) return { label: "Never", stale: true };
-  const days = Math.floor((Date.now() - new Date(d).getTime()) / DAY);
+  const days = ukDaysAgo(d);
   if (days <= 0) return { label: "Today", stale: false };
   if (days === 1) return { label: "Yesterday", stale: false };
   if (days < 30) return { label: `${days} days ago`, stale: false };
@@ -94,7 +97,7 @@ export function OrgsTable({ rows, all }: { rows: OrgEngagementRow[]; all?: strin
         String(r.completed),
         `${r.completionPct}%`,
         String(r.overdue),
-        r.lastActive ? fmtDate(r.lastActive) : "Never",
+        r.lastActive ? fmtDateTime(r.lastActive) : "Never",
       ]
         .map(csvCell)
         .join(","),
@@ -225,8 +228,15 @@ export function OrgsTable({ rows, all }: { rows: OrgEngagementRow[]; all?: strin
                     <td className="px-3 py-2">{r.overdue}</td>
                     <td className="px-3 py-2 whitespace-nowrap">
                       <span className={active.stale ? "text-rose-600" : "text-muted-foreground"}>
-                        {active.label}
+                        {r.lastActive && active.label === fmtDate(r.lastActive)
+                          ? fmtDateTime(r.lastActive)
+                          : active.label}
                       </span>
+                      {r.lastActive && active.label !== fmtDate(r.lastActive) && (
+                        <span className="block text-[13px] text-muted-foreground">
+                          {fmtDateTime(r.lastActive)}
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-right">
                       <OrgNudgeButton orgId={r.id} size="xs" />

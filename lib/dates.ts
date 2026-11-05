@@ -57,3 +57,18 @@ export function formatDateTime(
     ...options,
   });
 }
+
+/** The UK calendar day a moment falls on, as a whole-day count. */
+function ukDayNumber(value: DateInput): number {
+  const ymd = new Date(value).toLocaleDateString("en-CA", { timeZone: UK_TIME_ZONE });
+  return Math.round(Date.parse(`${ymd}T00:00:00Z`) / 86_400_000);
+}
+
+/**
+ * How many UK calendar days ago a moment was: 0 for any time today, 1 for
+ * yesterday. Counting 24-hour blocks instead said "Today" for 4pm yesterday
+ * at 10am, right beside a date that read yesterday's.
+ */
+export function ukDaysAgo(value: DateInput, now: DateInput = Date.now()): number {
+  return ukDayNumber(now) - ukDayNumber(value);
+}

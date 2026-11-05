@@ -1,4 +1,5 @@
 import { bucketOf, isInactive30d, isNeverActive, type OrgLearnerRow } from "./org-learners";
+import { ukDaysAgo } from "./dates";
 
 /**
  * The staff list (redesign, 1 Nov 2026, docs/redesign image 3): each row is
@@ -110,7 +111,7 @@ export function matchesQuery(r: StaffRow, query: string): boolean {
 /** "Today", "Yesterday", "3 days ago", a date, or "Never signed in". */
 export function lastActiveLabel(iso: string | null, now: number = Date.now(), fmt: (iso: string) => string): { label: string; stale: boolean } {
   if (!iso) return { label: "Never signed in", stale: true };
-  const days = Math.floor((now - new Date(iso).getTime()) / 86_400_000);
+  const days = ukDaysAgo(iso, now);
   const stale = days > 30;
   if (days <= 0) return { label: "Today", stale };
   if (days === 1) return { label: "Yesterday", stale };
