@@ -89,6 +89,14 @@ export default function TrainingPricingPage() {
       </section>
 
       <Section className="-mt-4 pt-0">
+        {/* Where the monthly / annual switch sat: the free trial instead
+            (Saj, 6 Nov 2026), so nobody has to pick a package to try it. */}
+        <div className="mb-8 flex flex-col items-center gap-3 text-center">
+          <PillLink href="/free-trial">
+            Try it free for 30 days <Arrow />
+          </PillLink>
+          <p className="text-sm text-[#0f2f3c]/70">Everything in Enterprise, no card needed. Choose a package when you&apos;re ready.</p>
+        </div>
         <TierCards
           tiers={PACKAGE_TIERS.map((tier) => ({
             value: tier.value,

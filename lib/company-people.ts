@@ -107,7 +107,8 @@ export async function addCompanyPerson(
     trial: { startsKey: string | null; endsAt: Date } | null;
     /** Everyone else in, for the trial welcome's "who else". */
     others: { name: string; roleLabel: string }[];
-    sentBy: string;
+    /** Who set them up, for the copy of the email; null when they signed themselves up. */
+    sentBy: string | null;
   },
 ): Promise<PersonOutcome> {
   const base = { name: p.name || p.email, email: p.email, role: p.role, access: p.access };

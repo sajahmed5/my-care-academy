@@ -137,11 +137,11 @@ export default function Home() {
               Stockport by a care company.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <PillLink href="/contact?topic=demo">
-                Book a demo <Arrow />
+              <PillLink href="/free-trial">
+                Try it free for 30 days <Arrow />
               </PillLink>
-              <PillLink href="/training" tone="ghost">
-                See what&apos;s covered
+              <PillLink href="/contact?topic=demo" tone="ghost">
+                Book a demo
               </PillLink>
             </div>
           </div>

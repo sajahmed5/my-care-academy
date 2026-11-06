@@ -30,6 +30,30 @@ end of Monday 9 November.
 - **Emails:** the manager at 2 days left and on the end day; Saj on the end
   day.
 
+## Signing up on the website (6 Nov 2026)
+
+A care company starts its own trial from **/free-trial** ("Try it free for
+30 days": the header, the home page, the pricing page where the monthly /
+annual switch was, and every closing band). Nobody at our end sets it up.
+
+- **The form:** company name, the person's name and email, phone (optional),
+  kind of service, size band, and a tick. Any email address; small providers
+  run on Gmail.
+- **What it makes:** the same company and the same welcome email as the
+  platform's invite form — Enterprise, `trial_ends_at` the end of day 30
+  from today, the person as its manager, the trial welcome with the set-up
+  button (`lib/company-people.ts`, `sentBy` null). Nothing works until that
+  button is pressed, so the address is proven. The company is empty; the
+  first-sign-in walkthrough leads them.
+- **Guards:** the contact form's honeypot and a per-IP throttle (3 an hour),
+  one trial per email address (any account anywhere), and no second company
+  under a name already here. Saj gets an email for every sign-up, reply-to
+  the person, with a button to the company's platform page; the audit log
+  records `organisation.signed_up`.
+- Pure parts in `lib/trial-signup.ts` (the form's reading, the email to us);
+  the action in `app/(marketing)/free-trial/actions.ts`.
+- **"Book a demo"** stays as the way to book a call with us.
+
 ## What a trial can't do
 
 - **Face-to-face booking** — off. They see the page and the sessions, with

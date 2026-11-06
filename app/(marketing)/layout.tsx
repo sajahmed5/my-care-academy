@@ -47,13 +47,22 @@ export default function MarketingLayout({
             >
               Sign in
             </Link>
+            {/* Two ways in (Saj, 6 Nov 2026): a free trial they start themselves,
+                and a demo call with us. On a phone only the trial fits in the
+                pill; the demo is in the menu. */}
             <Link
               href="/contact?topic=demo"
+              className="hidden whitespace-nowrap rounded-full border border-[#134f63]/15 px-4 py-2 text-sm font-medium text-[#0f2f3c] transition hover:bg-[#134f63]/5 sm:inline-flex"
+            >
+              Book a demo
+            </Link>
+            <Link
+              href="/free-trial"
               className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-[#134f63] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1d6f8a]"
             >
-              Book a demo <ArrowRight className="size-4 max-[380px]:hidden" />
+              Try it free <ArrowRight className="size-4 max-[380px]:hidden" />
             </Link>
-            <MobileMenu links={[...NAV, { href: "/login", label: "Sign in" }]} />
+            <MobileMenu links={[...NAV, { href: "/contact?topic=demo", label: "Book a demo" }, { href: "/login", label: "Sign in" }]} />
           </nav>
         </div>
       </header>

@@ -205,8 +205,11 @@ export function CtaBand({ title, body }: { title: string; body: string }) {
         <H2 className="text-white">{title}</H2>
         <p className="mt-4 text-lg text-white/80">{body}</p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <PillLink href="/contact?topic=demo" tone="white">
-            Book a demo <Arrow />
+          <PillLink href="/free-trial" tone="white">
+            Try it free for 30 days <Arrow />
+          </PillLink>
+          <PillLink href="/contact?topic=demo" tone="outline-white">
+            Book a demo
           </PillLink>
           <PillLink href="tel:+441616944701" tone="outline-white">
             0161 694 4701
