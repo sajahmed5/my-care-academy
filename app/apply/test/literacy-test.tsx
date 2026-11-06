@@ -204,7 +204,7 @@ export function LiteracyTest({ token }: { token: string }) {
           <svg className="h-7 w-7" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M4 10l4 4 8-8" /></svg>
         </div>
         <h1 className="mt-4 text-xl font-semibold text-slate-900">All done{info.firstName ? `, ${info.firstName}` : ""}</h1>
-        <p className="mt-2 text-sm text-slate-600">Your answers have been handed in. {info.company || "The office"} will talk to you about the next step.</p>
+        <p className="mt-2 text-sm text-slate-600">Your answers have been submitted. {info.company || "The office"} will talk to you about the next step.</p>
       </div>
     );
   }
@@ -248,7 +248,7 @@ export function LiteracyTest({ token }: { token: string }) {
       <main className="flex-1 px-4 pb-28 pt-5">
         {review ? (
           <div>
-            <p className="text-sm text-slate-600">{unanswered.length ? `${unanswered.length} question${unanswered.length === 1 ? " has" : "s have"} no answer yet. Tap one to go back to it.` : "Every question has an answer. Hand in when you are ready."}</p>
+            <p className="text-sm text-slate-600">{unanswered.length ? `${unanswered.length} question${unanswered.length === 1 ? " has" : "s have"} no answer yet. Tap one to go back to it.` : "Every question has an answer. Submit when you are ready."}</p>
             <ul className="mt-4 grid grid-cols-5 gap-2">
               {questions.map((x, i) => (
                 <li key={x.id}><button type="button" onClick={() => { setReview(false); setIndex(i); }} className={`w-full rounded-lg border py-3 text-sm font-semibold ${answered(x, answers[x.id]) ? "border-emerald-500 bg-emerald-50 text-emerald-800" : "border-amber-400 bg-amber-50 text-amber-900"}`}>{i + 1}</button></li>
@@ -303,14 +303,14 @@ export function LiteracyTest({ token }: { token: string }) {
           {review ? (
             <>
               <button type="button" disabled={busy} onClick={() => setReview(false)} className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700">Back</button>
-              <button type="button" disabled={busy} onClick={() => { void finish(); }} className="flex-1 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Handing in…" : unanswered.length ? `Hand in anyway (${unanswered.length} blank)` : "Hand in"}</button>
+              <button type="button" disabled={busy} onClick={() => { void finish(); }} className="flex-1 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">{busy ? "Submitting…" : unanswered.length ? `Submit anyway (${unanswered.length} blank)` : "Submit answers"}</button>
             </>
           ) : (
             <>
               <button type="button" disabled={index === 0} onClick={() => setIndex((i) => Math.max(0, i - 1))} className="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-40">Back</button>
               {index + 1 < questions.length
                 ? <button type="button" onClick={() => setIndex((i) => i + 1)} className="flex-1 rounded-lg bg-slate-800 px-4 py-3 text-sm font-semibold text-white">Next</button>
-                : <button type="button" onClick={() => setReview(true)} className="flex-1 rounded-lg bg-slate-800 px-4 py-3 text-sm font-semibold text-white">Check and hand in</button>}
+                : <button type="button" onClick={() => setReview(true)} className="flex-1 rounded-lg bg-slate-800 px-4 py-3 text-sm font-semibold text-white">Check and submit</button>}
             </>
           )}
         </div>
