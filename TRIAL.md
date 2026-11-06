@@ -52,7 +52,16 @@ annual switch was, and every closing band). Nobody at our end sets it up.
   records `organisation.signed_up`.
 - Pure parts in `lib/trial-signup.ts` (the form's reading, the email to us);
   the action in `app/(marketing)/free-trial/actions.ts`.
-- **"Book a demo"** stays as the way to book a call with us.
+- **Book a demo** (6 Nov 2026): on the success screen, a 30-minute demo
+  with us, from `lib/demo-booking.ts`. On offer: 30-minute slots 9am to 5pm
+  UK time on the next 10 working days (never today), less weekends and bank
+  holidays, every Tuesday from 2pm and every Thursday 10:30 to 12:30, and
+  any slot already booked (`demo_bookings`, one live booking per slot). The
+  booking must be the company's manager's email, from the sign-up that just
+  happened. We're emailed to confirm it, they get the time back, and the
+  company's platform page lists it under Free trial. The header's Book a
+  demo button went when this arrived; the other pages' buttons still go to
+  the contact form.
 
 ## What a trial can't do
 

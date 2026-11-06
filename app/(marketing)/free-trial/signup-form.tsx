@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Loader2, MailCheck, Phone } from "lucide-react";
+import { ArrowRight, CalendarDays, CheckCircle2, Loader2, MailCheck, Phone } from "lucide-react";
 import { SERVICE_TYPES, SIZE_BANDS } from "@/lib/organisations";
 import type { TrialSignupValues } from "@/lib/trial-signup";
 import { startTrialAction } from "./actions";
+import { DemoBookingForm } from "./demo-booking-form";
 import { INITIAL_TRIAL_SIGNUP_STATE } from "./signup";
 
 const field =
@@ -26,11 +27,13 @@ function FieldError({ id, children }: { id: string; children?: string }) {
 /**
  * The free-trial sign-up: the company, the person who'll manage it, and
  * what kind of service it is. On success they're told to look in their
- * inbox for the welcome email, whose button sets their password.
+ * inbox for the welcome email, whose button sets their password, and
+ * offered a demo (Saj, 6 Nov 2026): Book a demo opens the chooser in place.
  */
 export function TrialSignupForm() {
   const [state, formAction, pending] = useActionState(startTrialAction, INITIAL_TRIAL_SIGNUP_STATE);
   const panelRef = useRef<HTMLDivElement>(null);
+  const [booking, setBooking] = useState(false);
 
   // Move focus to the outcome so it is announced rather than silently
   // swapped in below the fold.
@@ -70,9 +73,22 @@ export function TrialSignupForm() {
           </p>
         )}
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+          {state.booking && !booking && (
+            <button
+              type="button"
+              onClick={() => setBooking(true)}
+              className="inline-flex items-center gap-2 rounded-full bg-[#134f63] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d6f8a]"
+            >
+              <CalendarDays className="size-4" /> Book a demo
+            </button>
+          )}
           <a
             href="tel:+441616944701"
-            className="inline-flex items-center gap-2 rounded-full bg-[#134f63] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d6f8a]"
+            className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
+              state.booking
+                ? "border border-[#134f63]/20 text-[#134f63] hover:bg-[#134f63]/5"
+                : "bg-[#134f63] text-white hover:bg-[#1d6f8a]"
+            }`}
           >
             <Phone className="size-4" /> 0161 694 4701
           </a>
@@ -83,6 +99,11 @@ export function TrialSignupForm() {
             See the courses <ArrowRight className="size-4" />
           </Link>
         </div>
+        {state.booking && booking && (
+          <div className="mt-6">
+            <DemoBookingForm orgId={state.booking.orgId} email={state.email ?? ""} phone={state.booking.phone} />
+          </div>
+        )}
       </div>
     );
   }

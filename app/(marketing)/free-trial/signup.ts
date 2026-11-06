@@ -16,6 +16,21 @@ export interface TrialSignupState {
   endsOn?: string;
   /** Whether the welcome email went; when not, we get in touch instead. */
   emailed?: boolean;
+  /**
+   * Who just signed up, so the success screen can book them a demo
+   * (lib/demo-booking.ts). Left off a bot's "success", which made nothing.
+   */
+  booking?: { orgId: string; orgName: string; name: string; phone: string | null };
 }
 
 export const INITIAL_TRIAL_SIGNUP_STATE: TrialSignupState = { status: "idle" };
+
+/** The demo chooser's state, after Book this demo. */
+export interface DemoBookingState {
+  status: "idle" | "booked" | "error";
+  error?: string;
+  /** "Tuesday 10 November, 10:00 to 10:30", once booked. */
+  when?: string;
+}
+
+export const INITIAL_DEMO_BOOKING_STATE: DemoBookingState = { status: "idle" };

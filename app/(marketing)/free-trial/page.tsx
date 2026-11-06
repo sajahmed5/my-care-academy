@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CalendarClock, CreditCard, ShieldCheck, Sparkles } from "lucide-react";
+import { CalendarClock, CalendarDays, CreditCard, ShieldCheck, Sparkles } from "lucide-react";
 import { TRIAL_DAYS, TRIAL_KEEP_DAYS } from "@/lib/trial";
+import { DEMO_MINUTES } from "@/lib/demo-booking";
 import { BreadcrumbLd } from "@/components/structured-data";
 import { CheckItem, H2, Section } from "../ui";
 import { TrialSignupForm } from "./signup-form";
@@ -15,8 +16,9 @@ export const metadata: Metadata = {
 /**
  * Where "Try it free for 30 days" lands (TRIAL.md, 6 Nov 2026): a care
  * company signs itself up and is on the same 30-day Enterprise trial the
- * platform's invite form makes, with nobody at our end involved. "Book a
- * demo" stays as the way to book a call with us.
+ * platform's invite form makes, with nobody at our end involved. Once
+ * signed up they can book a 30-minute demo with us from the success screen
+ * (lib/demo-booking.ts), which is where the header's Book a demo went.
  */
 export default function FreeTrialPage() {
   return (
@@ -81,6 +83,16 @@ export default function FreeTrialPage() {
               <Link href="/training/pricing" className="mt-3 inline-block text-sm font-semibold text-[#9a6414] underline underline-offset-2">
                 See the packages
               </Link>
+            </div>
+
+            <div className="rounded-3xl bg-white p-6 ring-1 ring-[#134f63]/10 sm:p-7">
+              <h3 className="font-display flex items-center gap-2 text-lg font-semibold text-[#0f2f3c]">
+                <CalendarDays className="size-5 text-[#3a9fc4]" /> Want a walkthrough?
+              </h3>
+              <p className="mt-3 text-sm text-[#0f2f3c]/70">
+                Once you&apos;ve signed up you can book a {DEMO_MINUTES}-minute demo on a day and time that suits you,
+                and one of us will take you round it on a call.
+              </p>
             </div>
 
             <div className="rounded-3xl bg-white p-6 ring-1 ring-[#134f63]/10 sm:p-7">

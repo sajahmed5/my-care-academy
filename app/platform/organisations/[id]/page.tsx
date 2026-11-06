@@ -31,6 +31,7 @@ import { RemoveOrganisation } from "./remove-organisation";
 import { TrialPanel } from "./trial-panel";
 import { EmailsPanel } from "./emails-panel";
 import type { EmailShow } from "@/lib/org-emails";
+import { demoSlotLabel } from "@/lib/demo-booking";
 
 // Removing an organisation deletes every account and file it holds, which
 // runs longer than an ordinary page action.
@@ -78,7 +79,7 @@ export default async function OrganisationDetailPage({
   // tab — every learner with their enrolments and certificates (the heaviest
   // read on the page) even to open the settings form, which needs a count.
   const showsLearners = section === "overview" || section === "learners";
-  const [{ data: org }, staff, learners, settings, learnerCounts] = await Promise.all([
+  const [{ data: org }, staff, learners, settings, learnerCounts, demos] = await Promise.all([
     supabase
       .from("organisations")
       .select(
@@ -127,6 +128,16 @@ export default async function OrganisationDetailPage({
             .in("role", STAFF_ROLES)
             .neq("status", "deactivated"),
         ]).then(([all, cur]) => ({ all: all.count ?? 0, current: cur.count ?? 0 })),
+    // Demos booked from the free-trial page, for the Free trial card.
+    section === "settings"
+      ? supabase
+          .from("demo_bookings")
+          .select("id, name, email, phone, starts_at, status")
+          .eq("organisation_id", id)
+          .neq("status", "cancelled")
+          .order("starts_at", { ascending: true })
+          .then(({ data }) => (data ?? []) as { id: string; name: string; email: string; phone: string | null; starts_at: string; status: string }[])
+      : ([] as { id: string; name: string; email: string; phone: string | null; starts_at: string; status: string }[]),
   ]);
   const { overrides, ticks } = settings;
 
@@ -317,8 +328,22 @@ export default async function OrganisationDetailPage({
             <CardHeader>
               <CardTitle>Free trial</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-5">
               <TrialPanel orgId={org.id} trialEndsAt={(org.trial_ends_at as string | null) ?? null} />
+              {demos.length > 0 && (
+                <div className="text-sm">
+                  <p className="font-medium">Demos booked from the website</p>
+                  <ul className="mt-1.5 space-y-1 text-muted-foreground">
+                    {demos.map((d) => (
+                      <li key={d.id}>
+                        {demoSlotLabel(d.starts_at)} · {d.name} ({d.email}
+                        {d.phone ? `, ${d.phone}` : ""}) ·{" "}
+                        {d.status === "requested" ? "to confirm" : d.status}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

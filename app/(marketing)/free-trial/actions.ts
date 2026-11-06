@@ -11,7 +11,16 @@ import { formatDate } from "@/lib/dates";
 import { addCompanyPerson, emailsInUse } from "@/lib/company-people";
 import { trialEndFrom, ukDateKey } from "@/lib/trial";
 import { parseTrialSignup, trialSignupNotificationEmail } from "@/lib/trial-signup";
-import type { TrialSignupState } from "./signup";
+import {
+  demoBookedNotificationEmail,
+  demoRequestedEmail,
+  demoSlotLabel,
+  demoSlots,
+  isOfferedDemoSlot,
+  ukInstant,
+  type DemoDay,
+} from "@/lib/demo-booking";
+import type { DemoBookingState, TrialSignupState } from "./signup";
 
 /** Where we hear about each sign-up. Overridable so a preview can divert it. */
 const INBOX = process.env.CONTACT_INBOX ?? "hello@mycareacademy.co.uk";
@@ -142,5 +151,113 @@ export async function startTrialAction(_prev: TrialSignupState, form: FormData):
 
   revalidatePath("/platform");
   revalidatePath("/platform/organisations");
-  return { status: "sent", email: values.email, endsOn, emailed };
+  return {
+    status: "sent",
+    email: values.email,
+    endsOn,
+    emailed,
+    booking: { orgId, orgName: values.orgName, name: values.name, phone: values.phone || null },
+  };
+}
+
+/**
+ * The demo slots open right now (lib/demo-booking.ts), less the ones
+ * already booked. Read when the success screen's Book a demo is pressed, so
+ * the list is fresh, not from whenever the page was built.
+ */
+export async function loadDemoSlotsAction(): Promise<DemoDay[]> {
+  const now = new Date();
+  const offered = demoSlots(now);
+  if (offered.length === 0) return [];
+  const { data } = await createAdminClient()
+    .from("demo_bookings")
+    .select("starts_at")
+    .neq("status", "cancelled")
+    .gte("starts_at", ukInstant(offered[0].day, 0).toISOString())
+    .lte("starts_at", ukInstant(offered[offered.length - 1].day, 24 * 60).toISOString());
+  return demoSlots(
+    now,
+    (data ?? []).map((r) => r.starts_at as string),
+  );
+}
+
+/**
+ * Book a demo for a company that has just signed up: the slot must be one
+ * we offer today and still free, and the email must be the manager of the
+ * company named, so nobody can book under another company from outside.
+ * We're emailed to confirm it; they get a copy of the time.
+ */
+export async function bookDemoAction(_prev: DemoBookingState, form: FormData): Promise<DemoBookingState> {
+  const orgId = (form.get("orgId") ?? "").toString().trim();
+  const email = (form.get("email") ?? "").toString().trim().toLowerCase().slice(0, 200);
+  const phone = (form.get("phone") ?? "").toString().trim().slice(0, 40) || null;
+  const startsAt = (form.get("startsAt") ?? "").toString().trim();
+
+  if (!startsAt) return { status: "error", error: "Pick a day and a time first." };
+  if (!/^[0-9a-f-]{36}$/.test(orgId) || !email) {
+    return { status: "error", error: "Something's missing. Sign up again, or give us a ring." };
+  }
+  if (!isOfferedDemoSlot(startsAt)) {
+    return { status: "error", error: "That time isn't on offer any more. Pick another." };
+  }
+
+  const h = await headers();
+  const ip = (h.get("x-forwarded-for") ?? "unknown").split(",")[0].trim();
+  if (!rateLimit(`demo-booking:${ip}`, 5, 60 * 60_000)) {
+    return { status: "error", error: `That's a few bookings from here already. Ring us on 0161 694 4701 and we'll sort a time.` };
+  }
+
+  const admin = createAdminClient();
+  const [{ data: manager }, { data: org }] = await Promise.all([
+    admin.from("users").select("full_name").eq("organisation_id", orgId).eq("email", email).eq("role", "org_admin").limit(1).maybeSingle(),
+    admin.from("organisations").select("name").eq("id", orgId).maybeSingle(),
+  ]);
+  if (!manager || !org) {
+    return { status: "error", error: "We couldn't match that to your sign-up. Give us a ring and we'll book it for you." };
+  }
+  const booking = {
+    orgId,
+    orgName: org.name as string,
+    name: ((manager.full_name as string | null) ?? "").trim() || email,
+    email,
+    phone,
+    startsAt: new Date(startsAt).toISOString(),
+  };
+
+  const { error } = await admin.from("demo_bookings").insert({
+    organisation_id: orgId,
+    org_name: booking.orgName,
+    name: booking.name,
+    email,
+    phone,
+    starts_at: booking.startsAt,
+  });
+  if (error) {
+    // 23505: the slot's unique index — someone took it between the list and the press.
+    if (error.code === "23505") return { status: "error", error: "That time has just been taken. Pick another." };
+    console.error("demo booking: couldn't be saved:", error.message);
+    return { status: "error", error: "Something went wrong at our end. Try again in a minute, or give us a ring." };
+  }
+
+  await logAudit({
+    organisationId: orgId,
+    action: "organisation.demo_booked",
+    entity: "organisation",
+    entityId: orgId,
+    detail: { starts_at: booking.startsAt, email },
+  });
+
+  try {
+    const origin = await siteOrigin();
+    await Promise.all([
+      sendEmail({ to: INBOX, ...demoBookedNotificationEmail(booking, origin), replyTo: email }),
+      sendEmail({ to: email, ...demoRequestedEmail(booking), replyTo: INBOX }),
+    ]);
+  } catch (e) {
+    // The booking stands; it's on the company's platform page either way.
+    console.error("demo booking: emails failed:", e);
+  }
+
+  revalidatePath(`/platform/organisations/${orgId}`);
+  return { status: "booked", when: demoSlotLabel(booking.startsAt) };
 }
