@@ -55,7 +55,7 @@ const FAQ: [string, string][] = [
   ["Is there a per-learner charge?", "No. Every plan includes unlimited learners and admin users. You pay one monthly price for your organisation."],
   ["Which courses are included?", "The full library of 59 CQC-aligned care courses, with interactive content, a 20-question assessment and a branded, verifiable certificate for each."],
   ["Can carers do the training on their phones?", "Yes. Courses are built for phones first, and most are finished in one sitting."],
-  ["Is there a contract?", "Monthly plans can be cancelled at any time. Annual plans get two months free."],
+  ["Is there a contract?", "Yes. Every package is a 12-month contract, billed monthly. Prices exclude VAT."],
   ["What about mock CQC inspections and management support?", "Those are quoted separately, based on the size of your service. Ask us and we will talk it through."],
 ];
 
@@ -99,7 +99,7 @@ export default function TrainingPricingPage() {
             highlight: PRICE[tier.value].highlight,
           }))}
         />
-        <p className="mt-4 text-center text-sm text-[#0f2f3c]/70">Prices exclude VAT. Annual plans get two months free.</p>
+        <p className="mt-4 text-center text-sm text-[#0f2f3c]/70">Prices exclude VAT. Every package is a 12-month contract, billed monthly.</p>
       </Section>
 
       <Section>

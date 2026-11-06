@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import { Check } from "lucide-react";
 import { PillLink } from "../../ui";
 
@@ -13,31 +10,18 @@ export type TierCard = {
   highlight?: boolean;
 };
 
-/** Four tiers with a monthly / annual switch (annual = two months free). */
+/**
+ * Four tiers, each a monthly price on a 12-month contract (Saj, 6 Nov 2026).
+ * The monthly / annual switch and its two months free are gone: there is one
+ * price per package, and nothing here changes after it loads.
+ */
 export default function TierCards({ tiers }: { tiers: TierCard[] }) {
-  const [annual, setAnnual] = useState(false);
   const gbp = (n: number) => `£${Math.round(n).toLocaleString("en-GB")}`;
   return (
     <div>
-      <div className="mb-8 flex justify-center">
-        <div className="inline-flex rounded-full bg-white p-1 shadow-sm ring-1 ring-[#134f63]/10" role="tablist">
-          {[["Monthly", false], ["Annual · 2 months free", true]].map(([label, val]) => (
-            <button
-              key={String(label)}
-              type="button"
-              role="tab"
-              aria-selected={annual === val}
-              onClick={() => setAnnual(Boolean(val))}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${annual === val ? "bg-[#134f63] text-white" : "text-[#134f63]"}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
         {tiers.map((t) => {
-          const price = annual ? (t.monthly * 10) / 12 : t.monthly;
+          const price = t.monthly;
           return (
             <div
               key={t.value}
@@ -51,7 +35,7 @@ export default function TierCards({ tiers }: { tiers: TierCard[] }) {
                 <span className={`text-base font-medium ${t.highlight ? "text-white/60" : "text-[#0f2f3c]/70"}`}> /month</span>
               </div>
               <div className={`text-sm ${t.highlight ? "text-white/70" : "text-[#0f2f3c]/70"}`}>
-                {annual ? `${gbp(t.monthly * 10)} a year, billed annually` : "per organisation, cancel any time"}
+                per organisation · 12-month contract
               </div>
               <p className={`mt-4 text-sm ${t.highlight ? "text-white/85" : "text-[#0f2f3c]/70"}`}>{t.tagline}</p>
               <ul className="mt-5 space-y-2.5 text-sm">
