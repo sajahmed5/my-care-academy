@@ -84,9 +84,42 @@ export function sessionDay(startsAt: string): string {
   return `${weekday} ${formatDate(startsAt, { day: "numeric", month: "long", year: "numeric" })}`;
 }
 
-/** "Thursday 5 November 2026, 09:30 to 12:30" — how a session's time is written. */
+/**
+ * The days a session runs on, written out: one day as sessionDay does, or a
+ * run of days as "Monday 16 to Wednesday 18 November 2026", repeating the
+ * month or year on the first side only when the last day's differ.
+ */
+export function sessionDates(startsAt: string, endsAt: string): string {
+  if (ukDay(startsAt) === ukDay(endsAt)) return sessionDay(startsAt);
+  const part = (at: string, o: Intl.DateTimeFormatOptions) => formatDate(at, o);
+  const sameYear = part(startsAt, { year: "numeric" }) === part(endsAt, { year: "numeric" });
+  const sameMonth = sameYear && part(startsAt, { month: "long" }) === part(endsAt, { month: "long" });
+  const first = `${part(startsAt, { weekday: "long" })} ${part(startsAt, { day: "numeric" })}${
+    sameMonth ? "" : ` ${part(startsAt, { month: "long" })}`
+  }${sameYear ? "" : ` ${part(startsAt, { year: "numeric" })}`}`;
+  return `${first} to ${sessionDay(endsAt)}`;
+}
+
+/**
+ * "Thursday 5 November 2026, 09:30 to 12:30" — how a session's time is
+ * written. A session over several days (induction runs for three) reads
+ * "Monday 16 to Wednesday 18 November 2026, 09:30 to 16:30 each day".
+ */
 export function sessionWhen(startsAt: string, endsAt: string): string {
-  return `${sessionDay(startsAt)}, ${ukTime(startsAt)} to ${ukTime(endsAt)}`;
+  const times = `${ukTime(startsAt)} to ${ukTime(endsAt)}`;
+  if (ukDay(startsAt) === ukDay(endsAt)) return `${sessionDay(startsAt)}, ${times}`;
+  return `${sessionDates(startsAt, endsAt)}, ${times} each day`;
+}
+
+/** The longest a session can run, in days: a typo in the last day can't block a year of closed days. */
+export const MAX_SESSION_DAYS = 31;
+
+/** Every UK day a session covers, first to last, "2026-11-16" … "2026-11-18". */
+export function sessionDays(startsAt: string | Date, endsAt: string | Date): string[] {
+  const last = ukDay(endsAt);
+  const days: string[] = [];
+  for (let d = ukDay(startsAt); d <= last && days.length <= MAX_SESSION_DAYS; d = nextUkDay(d)) days.push(d);
+  return days;
 }
 
 /** Whether a booking can still be cancelled: 48 hours or more before it starts. */

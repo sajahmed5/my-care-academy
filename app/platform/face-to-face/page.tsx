@@ -3,7 +3,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { OFFICE_ADDRESS, sessionDay, sessionTitle, ukDay, ukTime } from "@/lib/face-to-face";
+import { OFFICE_ADDRESS, sessionDates, sessionTitle, ukDay, ukTime } from "@/lib/face-to-face";
 import { formatDate } from "@/lib/dates";
 import { SessionForm } from "./session-form";
 import { ClosedDays } from "./closed-days";
@@ -115,9 +115,10 @@ function SessionTable({ rows, booked, empty }: { rows: SessionRow[]; booked: Map
           {rows.map((s) => (
             <tr key={s.id} className={s.cancelled_at ? "text-muted-foreground line-through" : undefined}>
               <td className="py-2 pr-3 whitespace-nowrap">
-                {sessionDay(s.starts_at)}
+                {sessionDates(s.starts_at, s.ends_at)}
                 <span className="block text-xs text-muted-foreground">
                   {ukTime(s.starts_at)}–{ukTime(s.ends_at)}
+                  {ukDay(s.starts_at) !== ukDay(s.ends_at) && " each day"}
                 </span>
               </td>
               <td className="py-2 pr-3">

@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { sessionTitle, sessionWhen, ukDay, ukTime } from "@/lib/face-to-face";
+import { sessionDays, sessionTitle, sessionWhen, ukDay, ukTime } from "@/lib/face-to-face";
 import { formatDateTime } from "@/lib/dates";
 import { SessionForm } from "../session-form";
 import { CancelSession } from "./cancel-session";
@@ -129,13 +129,14 @@ export default async function FaceToFaceSessionPage({ params }: { params: Promis
                 courses={(courses ?? []).map((c) => ({ id: c.id as string, title: c.title as string }))}
                 closedDays={Object.fromEntries(
                   (closed ?? [])
-                    .filter((d) => d.day !== ukDay(s.starts_at as string))
+                    .filter((d) => !sessionDays(s.starts_at as string, s.ends_at as string).includes(d.day as string))
                     .map((d) => [d.day as string, (d.reason as string | null) ?? null]),
                 )}
                 session={{
                   id: s.id as string,
                   what: s.kind === "course" ? `course:${s.course_id}` : (s.kind as string),
                   date: ukDay(s.starts_at as string),
+                  lastDay: ukDay(s.ends_at as string),
                   start: ukTime(s.starts_at as string),
                   end: ukTime(s.ends_at as string),
                   trainer: (s.trainer_name as string | null) ?? "",

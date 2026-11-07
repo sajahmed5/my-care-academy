@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
-import { ukDay, ukLocalToDate } from "@/lib/face-to-face";
+import { MAX_SESSION_DAYS, sessionDays, ukDay, ukLocalToDate } from "@/lib/face-to-face";
 import { emailBookings } from "@/lib/face-to-face-email";
 import { completeInPerson } from "@/lib/in-person-completion";
 import { formatDate } from "@/lib/dates";
@@ -33,6 +33,9 @@ interface SessionFields {
 function readSession(formData: FormData): SessionFields | string {
   const what = String(formData.get("what") ?? "");
   const date = String(formData.get("date") ?? "");
+  // The last day, for a session over several (induction runs for three);
+  // left blank, it is the first day.
+  const lastDay = String(formData.get("lastDay") ?? "").trim() || date;
   const start = String(formData.get("start") ?? "");
   const end = String(formData.get("end") ?? "");
   const trainer = String(formData.get("trainer") ?? "").trim();
@@ -43,11 +46,14 @@ function readSession(formData: FormData): SessionFields | string {
   const kind = what === "induction" || what === "refresher" ? what : what.startsWith("course:") ? "course" : null;
   const courseId = kind === "course" ? what.slice("course:".length) : null;
   if (!kind || (kind === "course" && !courseId)) return "Choose what the session is.";
-  if (!DAY.test(date)) return "Choose the day.";
+  if (!DAY.test(date)) return "Choose the first day.";
+  if (!DAY.test(lastDay)) return "Choose the last day, or leave it blank for a one-day session.";
+  if (lastDay < date) return "The last day can't be before the first.";
   const startsAt = ukLocalToDate(date, start);
-  const endsAt = ukLocalToDate(date, end);
+  const endsAt = ukLocalToDate(lastDay, end);
   if (!startsAt || !endsAt) return "Give a start and finish time.";
   if (endsAt <= startsAt) return "The finish time must be after the start.";
+  if (sessionDays(startsAt, endsAt).length > MAX_SESSION_DAYS) return `A session can run for up to ${MAX_SESSION_DAYS} days.`;
   if (!Number.isInteger(places) || places < 1 || places > 200) return "Give the number of places, from 1 to 200.";
   if (trainer.length > 200) return "The trainer's name is too long.";
   if (notes.length > 2000) return "The notes are too long.";
@@ -62,11 +68,13 @@ function readSession(formData: FormData): SessionFields | string {
   };
 }
 
-/** The closed-day message, in words, when the session lands on one. */
-async function closedDayClash(admin: ReturnType<typeof createAdminClient>, startsAt: string): Promise<string | null> {
-  const { data } = await admin.from("face_to_face_closed_days").select("reason").eq("day", ukDay(startsAt)).maybeSingle();
+/** The closed-day message, in words, when any day the session runs on is one. */
+async function closedDayClash(admin: ReturnType<typeof createAdminClient>, startsAt: string, endsAt: string): Promise<string | null> {
+  const days = sessionDays(startsAt, endsAt);
+  const { data } = await admin.from("face_to_face_closed_days").select("day, reason").in("day", days).order("day").limit(1).maybeSingle();
   if (!data) return null;
-  return `That day is marked closed${data.reason ? ` (${data.reason})` : ""}. Choose another day, or remove the closed day first.`;
+  const which = days.length > 1 ? `${formatDate(`${data.day}T12:00:00Z`, { weekday: "long", day: "numeric", month: "long" })} is` : "That day is";
+  return `${which} marked closed${data.reason ? ` (${data.reason})` : ""}. Choose other days, or remove the closed day first.`;
 }
 
 export async function createSessionAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
@@ -76,7 +84,7 @@ export async function createSessionAction(_prev: SaveState, formData: FormData):
   if (new Date(fields.starts_at) <= new Date()) return { ok: false, error: "Set the session up for a time still to come." };
 
   const admin = createAdminClient();
-  const clash = await closedDayClash(admin, fields.starts_at);
+  const clash = await closedDayClash(admin, fields.starts_at, fields.ends_at);
   if (clash) return { ok: false, error: clash };
 
   const { data, error } = await admin
@@ -107,7 +115,7 @@ export async function updateSessionAction(_prev: SaveState, formData: FormData):
   if (!same(fields.starts_at, before.starts_at as string) && new Date(fields.starts_at) <= new Date()) {
     return { ok: false, error: "Move the session to a time still to come." };
   }
-  const clash = await closedDayClash(admin, fields.starts_at);
+  const clash = await closedDayClash(admin, fields.starts_at, fields.ends_at);
   if (clash) return { ok: false, error: clash };
   const { count } = await admin
     .from("face_to_face_bookings")
@@ -198,17 +206,17 @@ export async function addClosedDayAction(_prev: SaveState, formData: FormData): 
   if (reason.length > 200) return { ok: false, error: "Keep the reason short." };
 
   const admin = createAdminClient();
-  // A session already on the day has to go first — closing round it would
-  // leave people booked on a day nothing runs.
+  // A session already on the day — or running across it — has to go first;
+  // closing round it would leave people booked on a day nothing runs.
   const from = ukLocalToDate(day, "00:00")!;
   const to = new Date(from.getTime() + 36 * 3600_000);
   const { data: sessions } = await admin
     .from("face_to_face_sessions")
-    .select("starts_at")
+    .select("starts_at, ends_at")
     .is("cancelled_at", null)
-    .gte("starts_at", from.toISOString())
-    .lt("starts_at", to.toISOString());
-  const onDay = (sessions ?? []).filter((s) => ukDay(s.starts_at as string) === day).length;
+    .lt("starts_at", to.toISOString())
+    .gte("ends_at", from.toISOString());
+  const onDay = (sessions ?? []).filter((s) => sessionDays(s.starts_at as string, s.ends_at as string).includes(day)).length;
   if (onDay > 0) {
     return { ok: false, error: `There ${onDay === 1 ? "is a session" : `are ${onDay} sessions`} that day. Cancel or move ${onDay === 1 ? "it" : "them"} first.` };
   }

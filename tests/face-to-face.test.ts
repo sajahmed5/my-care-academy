@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  MAX_SESSION_DAYS,
   canCancelBooking,
   nextUkDay,
+  sessionDates,
+  sessionDays,
   sessionTitle,
   sessionWhen,
   ukDay,
@@ -49,6 +52,25 @@ describe("UK times for face-to-face sessions", () => {
   it("steps to the next day across a month end", () => {
     expect(nextUkDay("2026-10-31")).toBe("2026-11-01");
     expect(nextUkDay("2026-12-31")).toBe("2027-01-01");
+  });
+
+  // Induction training runs for three days (issue 91).
+  it("writes a session over several days as a run, with the times each day", () => {
+    expect(sessionWhen("2026-11-16T09:30:00Z", "2026-11-18T16:30:00Z")).toBe(
+      "Monday 16 to Wednesday 18 November 2026, 09:30 to 16:30 each day",
+    );
+    expect(sessionDates("2026-11-30T09:30:00Z", "2026-12-02T16:30:00Z")).toBe("Monday 30 November to Wednesday 2 December 2026");
+    expect(sessionDates("2026-12-30T09:30:00Z", "2027-01-05T16:30:00Z")).toBe(
+      "Wednesday 30 December 2026 to Tuesday 5 January 2027",
+    );
+    expect(sessionDates("2026-11-05T09:30:00Z", "2026-11-05T12:30:00Z")).toBe("Thursday 5 November 2026");
+  });
+
+  it("lists every UK day a session covers, and stops at the cap", () => {
+    expect(sessionDays("2026-11-16T09:30:00Z", "2026-11-18T16:30:00Z")).toEqual(["2026-11-16", "2026-11-17", "2026-11-18"]);
+    // 23:30 UTC in summer is already the next UK day.
+    expect(sessionDays("2026-06-30T23:30:00Z", "2026-07-01T15:00:00Z")).toEqual(["2026-07-01"]);
+    expect(sessionDays("2026-01-01T09:00:00Z", "2026-12-31T17:00:00Z").length).toBe(MAX_SESSION_DAYS + 1);
   });
 });
 
