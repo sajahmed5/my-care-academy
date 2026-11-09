@@ -46,6 +46,7 @@ export function ProfileTabs({
   hiddenSections?: string[];
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -57,7 +58,9 @@ export function ProfileTabs({
   useEffect(() => {
     if (!moreOpen) return;
     function onDown(e: MouseEvent) {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+      const t = e.target as Node;
+      if (moreButtonRef.current?.contains(t) || moreRef.current?.contains(t)) return;
+      setMoreOpen(false);
     }
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setMoreOpen(false);
@@ -115,44 +118,46 @@ export function ProfileTabs({
             </Link>
           );
         })}
-        {/* The panel hangs off the nav, not this wrapper: the row scrolls
-            sideways, and a scroll box clips anything positioned inside it. */}
         {more.length > 0 && (
-          <div ref={moreRef} className="static shrink-0">
-            <button
-              type="button"
-              aria-expanded={moreOpen}
-              aria-haspopup="true"
-              onClick={() => setMoreOpen((o) => !o)}
-              className={tabClass(!!activeInMore)}
-            >
-              {activeInMore ? activeInMore.label : "More"}
-              <ChevronDown className={cn("size-4 transition-transform", moreOpen && "rotate-180")} aria-hidden />
-            </button>
-            {moreOpen && (
-              <div role="menu" className="absolute right-3 top-full z-20 mt-1 w-60 rounded-2xl border bg-popover p-1.5 text-popover-foreground shadow-xl">
-                {more.map((s) => {
-                  const isActive = s.key === active;
-                  return (
-                    <Link
-                      key={s.key}
-                      role="menuitem"
-                      href={href(s)}
-                      aria-current={isActive ? "page" : undefined}
-                      className={cn(
-                        "flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm",
-                        isActive ? "bg-accent font-bold text-accent-foreground" : "font-medium hover:bg-muted",
-                      )}
-                    >
-                      {tab(s, isActive)}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <button
+            ref={moreButtonRef}
+            type="button"
+            aria-expanded={moreOpen}
+            aria-haspopup="true"
+            onClick={() => setMoreOpen((o) => !o)}
+            className={cn(tabClass(!!activeInMore), "shrink-0")}
+          >
+            {activeInMore ? activeInMore.label : "More"}
+            <ChevronDown className={cn("size-4 transition-transform", moreOpen && "rotate-180")} aria-hidden />
+          </button>
         )}
       </div>
+      {/* The panel is a sibling of the row, positioned against the nav: the
+          row scrolls sideways and is `relative` (so the hidden labels inside
+          it don't widen the page on a phone), and a scroll box clips anything
+          positioned against it. Inside the row the panel opened but was cut
+          off entirely, so "More" looked empty (issue report 96, 7 Nov 2026). */}
+      {more.length > 0 && moreOpen && (
+        <div ref={moreRef} role="menu" className="absolute right-3 top-full z-20 mt-1 w-60 rounded-2xl border bg-popover p-1.5 text-popover-foreground shadow-xl">
+          {more.map((s) => {
+            const isActive = s.key === active;
+            return (
+              <Link
+                key={s.key}
+                role="menuitem"
+                href={href(s)}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm",
+                  isActive ? "bg-accent font-bold text-accent-foreground" : "font-medium hover:bg-muted",
+                )}
+              >
+                {tab(s, isActive)}
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </nav>
   );
 }
