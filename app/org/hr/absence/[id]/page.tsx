@@ -78,9 +78,12 @@ export default async function AbsencePage({ params }: { params: Promise<{ id: st
 
         <Card>
           <CardContent className={card}>
-            <h3 className="font-semibold">Fit note</h3>
+            <h3 className="font-semibold">GP fit note</h3>
+            <p className="text-sm text-muted-foreground">
+              The doctor&apos;s Statement of Fitness for Work, not the self-certificate: for the first 7 days their own word is enough, and that is recorded under Evidence above.
+            </p>
             {needsFitNote(absence, today) && !a.fit_note_path && (
-              <p className="text-sm text-amber-800">Off more than 7 days: a fit note is needed from the eighth day.</p>
+              <p className="text-sm text-amber-800">Off more than 7 days: a GP fit note is needed from the eighth day.</p>
             )}
             <FitNote id={id} held={!!a.fit_note_path} name={(a.fit_note_name as string | null) ?? null} until={a.fit_note_until ? fmt(a.fit_note_until as string) : null} />
           </CardContent>

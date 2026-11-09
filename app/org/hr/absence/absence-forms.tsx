@@ -103,8 +103,8 @@ export function AbsenceForm({
         <div className="space-y-1">
           <label htmlFor="ab-cert" className={label}>Evidence</label>
           <select id="ab-cert" className={`${selectClass} w-48`} value={f.certification} onChange={(e) => set({ certification: e.target.value })}>
-            <option value="self">Self-certified (up to 7 days)</option>
-            <option value="fit_note">Fit note</option>
+            <option value="self">Self-certified (their own word, up to 7 days)</option>
+            <option value="fit_note">GP fit note (from the eighth day)</option>
             <option value="none">None yet</option>
           </select>
         </div>
@@ -182,12 +182,12 @@ export function FitNote({ id, held, name, until }: { id: string; held: boolean; 
         </p>
       )}
       <div className="flex flex-wrap items-center gap-2">
-        <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-8 w-40" aria-label="Fit note runs to" />
+        <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-8 w-40" aria-label="GP fit note runs to" />
         <Input
           type="file"
           accept="image/*,application/pdf"
           onChange={(e) => {
-            const big = tooBigMessage(e.target.files?.[0], "The fit note");
+            const big = tooBigMessage(e.target.files?.[0], "The GP fit note");
             if (big) e.target.value = "";
             setMessage(big);
             setFile(big ? null : (e.target.files?.[0] ?? null));
@@ -206,7 +206,7 @@ export function FitNote({ id, held, name, until }: { id: string; held: boolean; 
             })
           }
         >
-          {held ? "Upload a new one" : "Upload the fit note"}
+          {held ? "Upload a new one" : "Upload the GP fit note"}
         </Button>
         {message && <span role="status" className="text-xs text-muted-foreground">{message}</span>}
       </div>
