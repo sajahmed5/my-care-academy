@@ -3,7 +3,7 @@
 import { STAFF_ROLES } from "@/lib/roles";
 import { requireConsole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { cellText } from "@/lib/matrix";
+import { cellText, statusText } from "@/lib/matrix";
 import { fetchAll } from "@/lib/fetch-all";
 import { courseOf, loadCourseIndex } from "@/lib/org-learners";
 
@@ -16,7 +16,8 @@ export interface MatrixCourse {
 export interface MatrixRow {
   name: string;
   email: string;
-  /** "Active" or "Left" — a leaver's row is history, not a gap to chase. */
+  /** "Active", "Never signed in", "Not signed in for a month (last …)" or
+   *  "Left" — see statusText. A leaver's row is history, not a gap to chase. */
   status: string;
   /** courseId -> cell text; never blank, see cellText. */
   cells: Record<string, string>;
@@ -50,7 +51,7 @@ export async function exportTrainingMatrixAction(
     fetchAll((f, t) => {
       let q = supabase
         .from("users")
-        .select("id, full_name, email, status")
+        .select("id, full_name, email, status, last_seen_at")
         .in("role", STAFF_ROLES);
       if (orgId) q = q.eq("organisation_id", orgId);
       return q.order("id").range(f, t);
@@ -118,6 +119,7 @@ export async function exportTrainingMatrixAction(
     (u) => options.includeLeavers || u.status !== "deactivated",
   );
 
+  const now = Date.now();
   const rows: MatrixRow[] = staff.map((u) => {
     const cells: Record<string, string> = {};
     for (const course of courses) {
@@ -129,7 +131,7 @@ export async function exportTrainingMatrixAction(
     return {
       name: u.full_name ?? u.email ?? "",
       email: u.email ?? "",
-      status: u.status === "deactivated" ? "Left" : "Active",
+      status: statusText({ status: u.status, last_seen_at: u.last_seen_at ?? null }, now),
       cells,
     };
   });

@@ -9,6 +9,7 @@ import { Pill } from "@/components/pill";
 import { initials } from "@/lib/initials";
 import { dateColumn, numberColumn, textColumn, type SortColumn } from "@/lib/table-sort";
 import { formatDate, formatDateTime } from "@/lib/dates";
+import { statusText } from "@/lib/matrix";
 import { cn } from "@/lib/utils";
 import {
   filterLabel,
@@ -116,7 +117,7 @@ export function LearnersTable({
         r.name,
         roleLine(r),
         r.email ?? "",
-        r.status === "deactivated" ? "Left" : "Active",
+        statusText({ status: r.status, last_seen_at: r.lastSeenAt }, now),
         `${r.stats.overallPct}%`,
         String(r.stats.assigned),
         String(r.stats.completed),

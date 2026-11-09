@@ -34,3 +34,27 @@ export function cellText(
   if (enrolmentStatus === "expired") return "Expired — needs retaking";
   return "Assigned, not started";
 }
+
+const DAY = 86_400_000;
+
+/**
+ * What the Status column says about the person.
+ *
+ * "Active" used to mean only "not a leaver", so someone who had never signed
+ * in was exported as Active and the manager read it as wrong (issue report
+ * 102, 7 Nov 2026). The three states are the staff list's own: a leaver is
+ * history; no last_seen_at means invited but never signed in (they still have
+ * no password); a month without a sign-in is the list's "Not signed in for a
+ * month" filter. Otherwise they are active.
+ */
+export function statusText(
+  u: { status: string; last_seen_at: string | null },
+  now: number = Date.now(),
+): string {
+  if (u.status === "deactivated") return "Left";
+  if (!u.last_seen_at) return "Never signed in";
+  if (now - new Date(u.last_seen_at).getTime() > 30 * DAY) {
+    return `Not signed in for a month (last ${ddmmyyyy(u.last_seen_at)})`;
+  }
+  return "Active";
+}
