@@ -76,7 +76,7 @@ Before any production deploy: `npm run build && npm run lint && npm test`.
 | `RESEND_API_KEY` | Email |
 | `EMAIL_FROM` | Verified domain sender, e.g. `noreply@mycareacademy.co.uk` |
 | `CRON_SECRET` | Long random string; Vercel Cron sends it as a Bearer token |
-| `MFA_ENFORCED` | **Set to `true` for production** (admins must use TOTP) |
+| `MFA_ENFORCED` | **Set to `true` for production** (console roles must use TOTP). The code enforces unless the value is literally `false` (`lib/auth.ts`) |
 | `NEXT_PUBLIC_SITE_URL` | Public site URL (used for invite/checkout links) |
 
 ## 2. Supabase
@@ -93,14 +93,41 @@ Before any production deploy: `npm run build && npm run lint && npm test`.
 
 ## 3. Security
 
-- [ ] `MFA_ENFORCED=true` — admins forced through TOTP at AAL2.
-- [ ] RLS enabled on every table; cross-org access covered by tests
-      (`npm test` → `security-audit`, `rls`, `enrolments`, `forms-rls`, `recruitment-rls`,
-      `quiz-rls`).
-- [ ] Audit trail (`audit_logs`) records org/staff/candidate/billing changes.
-- [ ] Rate limiting on the public verify page (swap the in-memory limiter for Upstash/Vercel KV
-      at scale — `lib/rate-limit.ts`).
-- [ ] Rotate any secret that was shared during setup (Supabase keys, Stripe keys, Resend key).
+Re-checked against the code and the live dashboards on 9 November 2026 (v3.15.0), after the
+full QA review of 2 November (`docs/QA-REPORT.md`).
+
+- [ ] `MFA_ENFORCED=true` — console roles forced through TOTP at AAL2.
+      *In the code:* done. `requireAdminMfa()` in `lib/auth.ts` sends `platform_admin`,
+      `org_admin` and `org_office` to `/mfa` unless they are at AAL2, and the only thing that
+      switches it off is the value `false` (`tests/mfa.test.ts`). *On Vercel:* the variable is
+      set for Production (created at setup, July 2026) but its value can't be read from here.
+      **Still to do:** one look at Project → Settings → Environment Variables to confirm it
+      isn't `false`.
+- [x] RLS enabled on every table; cross-org access covered by tests.
+      Vitest: `security-audit`, `rls`, `enrolments`, `forms-rls`, `recruitment-rls`, `quiz-rls`
+      plus the per-feature `*-rls` suites (bespoke reports, candidate login, company forms,
+      entitlements, face-to-face, feedback rounds, form records, observations, office role,
+      service audits, staff audits, stars). Playwright: `tests/e2e/cross-org.spec.ts` (a
+      manager of another company, a carer and a signed-out visitor get nothing from record
+      pages or files). Live security advisors on 9 Nov 2026 list no table without RLS; the four
+      service-role-only tables (`integration_keys`, `alert_endpoints`, `alert_deliveries`,
+      `policy_reminder_log`) have RLS on and no policies on purpose (QA finding 13).
+- [x] Audit trail (`audit_logs`) records org/staff/candidate/billing changes.
+      `logAudit()` in `lib/audit.ts` is called from about fifty places: the platform console's
+      organisation pages (package, status, removal, integration keys), a staff member's file
+      and evidence pack, recruitment, the Stripe webhook and `/org/billing`, every Settings
+      page, HR letters, leavers and probation, and a learner's own account deletion. The
+      platform console shows the latest entries on Platform → Settings (`/platform/settings`).
+- [x] Rate limiting on the public verify page — in place: 15 look-ups per IP per minute
+      (`app/(marketing)/verify/page.tsx`, `lib/rate-limit.ts`), with a visible "slow down"
+      message. The limiter is still in-memory and per instance, which is fine at today's
+      volume; the swap for Upstash / Vercel KV is only needed at scale and is not scheduled.
+      Sign-in itself relies on Supabase Auth's own throttling (QA decision Q13).
+- [ ] Rotate any secret that was shared during setup (Supabase keys, Resend key).
+      **Still to do, Saj's call.** Nothing in the code can show this. Vercel's variable list
+      shows the Supabase, Resend and cron secrets were created at setup (July 2026) and never
+      re-added, so no rotation has happened since. There are no Stripe keys on Vercel: billing
+      is parked. QA finding 20 confirmed no secret is in any tracked file.
 
 ## 4. Stripe
 
@@ -119,9 +146,29 @@ sends `Authorization: Bearer $CRON_SECRET` automatically. Verify a manual run:
 
 ## 6. GDPR
 
-- [ ] Privacy policy live at `/privacy`; cookie-consent banner shown.
-- [ ] Learners can export data + delete their account from `/learn`.
+- [x] Privacy policy live at `/privacy` (`app/(marketing)/privacy/page.tsx`, with the public
+      site's header and footer since v2.28.1; sections on what we hold, your rights, cookies
+      and retention). Cookie banner: `components/cookie-consent.tsx`, mounted in
+      `app/layout.tsx` on every page, essential cookies only, remembered in the browser.
+      The public-site crawl and accessibility runs visit `/privacy`
+      (`tests/e2e/flows-documents.spec.ts`, `tests/e2e/a11y.spec.ts`).
+- [x] Learners can export data + delete their account from `/learn`.
+      `/learn/profile` → "Download a copy of your data" (a CSV of the training record: course,
+      completion, expiry, certificate number, best score — `exportMyDataAction`) and
+      "Delete my account" (`deleteMyAccountAction`: purges their stored files, anonymises
+      their email log and reports, writes an audit entry, deletes the login;
+      `tests/user-erasure.test.ts`). Console roles can't self-delete: another administrator
+      removes them. Note the export is the training record only, not every table that names
+      the person (forms, supervisions, HR); widen it if a subject-access request ever needs
+      more.
 - [ ] Data-retention window set (`app_settings.data_retention_months`, default 36).
+      **Still outstanding.** The setting exists (migration `20260701154605`) but nothing reads
+      it: no cron job or query deletes or anonymises records by age, and the 7-year retention
+      review of 26 Oct 2026 (migration `20261026100000_retention_dates`) was withdrawn the
+      same day. Records are kept for as long as the organisation exists (`lib/org-removal.ts`),
+      while the privacy policy says they are kept "for the period configured by your employer".
+      Needs a decision on the policy (per company? per record type? the 7-year CQC/HMRC
+      periods for staff records?) before anything is built.
 
 ## 7. Launch smoke test
 
@@ -136,4 +183,4 @@ sends `Authorization: Bearer $CRON_SECRET` automatically. Verify a manual run:
 - **Rotate a secret:** update in Supabase/Stripe/Resend, then update Vercel env and redeploy.
 - **Disable an org:** platform console → open org → set status *suspended* (members blocked).
 - **Reset a user's password:** Supabase Auth → user → send recovery, or admin API.
-- **Investigate activity:** platform console → Automation → Audit log / Recent notifications.
+- **Investigate activity:** platform console → Settings (`/platform/settings`) → Audit log, or query `audit_logs` directly.
