@@ -80,7 +80,7 @@ export default async function AbsenceOverviewPage() {
           due.off.map((a) =>
             row(a.id, `/org/hr/absence/${a.id}`, name(a.user_id), (
               <>
-                <span>{a.reason} · since {fmt(a.start_date)} · {daysOff(a, today)} days</span>
+                <span>{a.reason} · since {fmt(a.start_date)} · {daysOff(a, today)} day{daysOff(a, today) === 1 ? "" : "s"}</span>
                 {needsFitNote(a, today) && <span className="rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-700">Fit note needed</span>}
               </>
             )),
