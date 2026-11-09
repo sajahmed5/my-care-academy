@@ -13,6 +13,9 @@ import { dueCounts } from "@/lib/service-audits";
 import { runHref } from "@/lib/client-qa";
 import { formatDate, UK_TIME_ZONE } from "@/lib/dates";
 import { trialState } from "@/lib/trial";
+import { FLAT_PRICE_GBP, gbp, growthIsCheaper, trainingOnlyPrice } from "@/lib/pricing";
+import { countCarers } from "@/lib/carers";
+import { GrowthNudge } from "@/components/growth-nudge";
 import { gettingStarted, shouldOfferTour, todayChecklist, type TaskFacts } from "@/lib/walkthrough";
 import { loadEnrolments } from "@/lib/learner-data";
 import { GettingStarted } from "@/components/walkthrough/getting-started";
@@ -140,7 +143,7 @@ export default async function OrgDashboard() {
 
   // All reads go through RLS — a console user only ever sees their own org.
   // The explicit organisation filter is for the planner, not for security.
-  const [{ data: organisation }, allLearners, enabled, member, ownCourses] = await Promise.all([
+  const [{ data: organisation }, allLearners, enabled, member, ownCourses, carers] = await Promise.all([
     supabase.from("organisations").select("name, package_tier").eq("id", orgId).single(),
     loadOrgLearners(supabase, orgId),
     enabledMap(context),
@@ -148,6 +151,9 @@ export default async function OrgDashboard() {
     // Their own training, for the card on the right: a manager or office
     // worker has courses too, and nothing else in the console says so.
     loadEnrolments(context.userId),
+    // Carers charged for on Training only (lib/pricing.ts), for the nudge
+    // below once Growth would be cheaper.
+    countCarers(supabase, orgId),
   ]);
   const ownOpen = ownCourses.filter((e) => e.status !== "completed");
   const ownOverdue = ownOpen.filter((e) => isOverdue(e.due_date, e.status, now)).length;
@@ -271,6 +277,17 @@ export default async function OrgDashboard() {
     ...(totals.expired > 0 ? [{ key: "expired", label: "to retake", count: totals.expired, className: "bg-danger-foreground", dot: "bg-danger-foreground" }] : []),
   ];
 
+  // A Training only company that has grown past the point where Growth is
+  // cheaper is asked whether it wants to move up (Saj, 9 Nov 2026). Managers
+  // only: an office worker can't change the package.
+  const growthNudge =
+    context.role === "org_admin" &&
+    organisation?.package_tier === "core" &&
+    trial.kind === "none" &&
+    growthIsCheaper(carers) && (
+      <GrowthNudge carers={carers} costNow={gbp(trainingOnlyPrice(carers).total)} growthPrice={gbp(FLAT_PRICE_GBP.core_forms)} dismissable />
+    );
+
   const firstName = (member?.fullName ?? "").trim().split(/\s+/)[0] || null;
   const today = formatDate(now.toISOString(), { weekday: "long", day: "numeric", month: "long" });
 
@@ -306,6 +323,7 @@ export default async function OrgDashboard() {
       }
     >
       <div className="space-y-6">
+        {growthNudge}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           <div className="col-span-2 xl:col-span-1">
             <ReadinessCard r={ready} />

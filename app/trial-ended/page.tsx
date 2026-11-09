@@ -12,7 +12,8 @@ import {
 } from "@/lib/auth";
 import { formatDate } from "@/lib/dates";
 import { PACKAGE_TIERS, TIER_DETAILS, tierLabel } from "@/lib/organisations";
-import { LIST_PRICE_GBP } from "@/lib/pricing";
+import { priceLabel } from "@/lib/pricing";
+import { countCarers } from "@/lib/carers";
 import { STAFF_ROLES } from "@/lib/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -43,7 +44,12 @@ export default async function TrialEndedPage() {
 
   const orgId = context.organisationId;
   const supabase = await createClient();
-  const { data: org } = await supabase.from("organisations").select("name, package_tier").eq("id", orgId).maybeSingle();
+  const [{ data: org }, carers] = await Promise.all([
+    supabase.from("organisations").select("name, package_tier").eq("id", orgId).maybeSingle(),
+    // Training only is priced per carer (lib/pricing.ts): the card shows what
+    // this company would pay for the carers it put on during the trial.
+    countCarers(createAdminClient(), orgId),
+  ]);
   const orgName = (org?.name as string | undefined) ?? "Your company";
   const endedOn = formatDate(trial.endsAt, longDate);
   const keptUntil = formatDate(trial.removeAt, longDate);
@@ -164,7 +170,8 @@ export default async function TrialEndedPage() {
               options={PACKAGE_TIERS.map((t) => ({
                 value: t.value,
                 label: t.label,
-                price: LIST_PRICE_GBP[t.value],
+                price: priceLabel(t.value, carers).figure,
+                per: priceLabel(t.value, carers).per,
                 points: TIER_DETAILS[t.value].features.slice(0, 4),
               }))}
             />

@@ -1,36 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, GraduationCap, ShieldCheck, Users } from "lucide-react";
-import { PACKAGE_TIERS, TIER_DETAILS } from "@/lib/organisations";
-import { HIGHLIGHTED_TIER, LIST_PRICE_GBP } from "@/lib/pricing";
+import { PACKAGE_TIERS, TIER_DETAILS, type PackageTier } from "@/lib/organisations";
+import { CARER_BANDS, FLAT_PRICE_GBP, GROWTH_FROM_CARERS, HIGHLIGHTED_TIER, QUOTED_TIER, gbp, trainingOnlyPrice } from "@/lib/pricing";
 import TierCards from "./tier-cards";
+import TrainingOnly from "./training-only";
 import { Arrow, CtaBand, H2, PillLink, Section } from "../../ui";
 import { BreadcrumbLd, FaqLd } from "@/components/structured-data";
 
 export const metadata: Metadata = {
-  title: "Care training pricing — unlimited learners | My Care Academy",
+  title: "Care training pricing — per carer, or one flat price | My Care Academy",
   description:
-    "One monthly price per care service, unlimited learners and admins. 59 CQC-aligned care courses and verifiable certificates included.",
+    "Online training from £5 a carer a month, or one flat monthly price with unlimited carers for HR, checks and audits too. 59 CQC-aligned care courses and verifiable certificates included.",
   alternates: { canonical: "/training/pricing" },
 };
 
-// Monthly prices per organisation. CONFIRMED by Saj on 23 Oct 2026, replacing
-// the 7 Oct figures: Growth and Pro were both £79, which stopped making sense
-// once the packages became a ladder — Pro contains Growth, so an equal price
-// made Growth the plan nobody should buy.
-//
-// List prices and the highlighted plan live in lib/pricing.ts, which platform
-// analytics also reads — one number, two places that show it.
-const PRICE: Record<string, { monthly: number; highlight?: boolean }> = Object.fromEntries(
-  PACKAGE_TIERS.map((t) => [
-    t.value,
-    { monthly: LIST_PRICE_GBP[t.value], highlight: t.value === HIGHLIGHTED_TIER || undefined },
-  ]),
-);
+// Prices live in lib/pricing.ts, which the console and platform analytics
+// also read — one set of numbers, several places that show it. CONFIRMED by
+// Saj on 9 Nov 2026: Training only is per carer in bands, and the three
+// packages above it are one flat price with unlimited carers.
+const FLAT_TIERS = PACKAGE_TIERS.filter((t) => t.value !== "core");
+const FIRST_BAND = gbp(CARER_BANDS[0].gbp);
+const LAST_BAND = gbp(CARER_BANDS[CARER_BANDS.length - 1].gbp);
+const EXAMPLE = trainingOnlyPrice(20);
 
 // Every package, line by line: the tick starts at the first package that has
 // it and runs up the ladder. The same matrix as tier_features (20261029120000)
-// and TIER_DETAILS — change one, change all three.
+// and TIER_DETAILS — change one, change all three. The first row is not a
+// feature but who you pay for: per carer on Training only, unlimited above.
 const COMPARE: { label: string; detail: string; from: number }[] = [
   { label: "Online training", detail: "Courses, inductions, matrix, certificates and reminders", from: 0 },
   { label: "HR pack", detail: "Recruitment to leaving: documents, probation, sickness, holidays, disciplinary, grievance, leavers", from: 1 },
@@ -52,10 +49,16 @@ const COMPARE: { label: string; detail: string; from: number }[] = [
 ];
 
 const FAQ: [string, string][] = [
-  ["Is there a per-learner charge?", "No. Every plan includes unlimited learners and admin users. You pay one monthly price for your organisation."],
+  ["Is there a per-learner charge?", "Only on Training only, where you pay for each carer on the system every month. Growth, Pro and Enterprise are one flat price for your organisation with unlimited carers."],
+  ["How is the per-carer price worked out?", `In bands, like income tax: your first ${CARER_BANDS[0].upTo} carers are ${FIRST_BAND} each, carers ${CARER_BANDS[0].upTo + 1} to ${CARER_BANDS[1].upTo} are ${gbp(CARER_BANDS[1].gbp)}, ${CARER_BANDS[1].upTo + 1} to ${CARER_BANDS[2].upTo} are ${gbp(CARER_BANDS[2].gbp)} and anyone over ${CARER_BANDS[2].upTo} is ${LAST_BAND}. A team of ${EXAMPLE.carers} pays ${EXAMPLE.parts.map((p) => `${p.count} × ${gbp(p.gbp)}`).join(" plus ")}, which is ${gbp(EXAMPLE.total)} a month.`],
+  ["Who counts as a carer?", "Anyone with a learner account that month. Managers and admin users are free on every plan."],
+  ["What happens when someone leaves?", "Mark them as a leaver and they stop counting from the next bill. Their certificates and training record stay on file."],
+  ["Can I start with training and add a package later?", "Yes. Move up whenever you like; the per-carer charge stops and the flat package price takes over."],
+  [`What happens when my team passes ${GROWTH_FROM_CARERS - 1} carers?`, `At ${GROWTH_FROM_CARERS} carers, Training only would cost more than Growth, which is ${gbp(FLAT_PRICE_GBP.core_forms)} a month for unlimited carers and includes the HR pack. We'll ask whether you'd like to move to Growth. You can stay on Training only if you prefer.`],
   ["Which courses are included?", "The full library of 59 CQC-aligned care courses, with interactive content, a 20-question assessment and a branded, verifiable certificate for each."],
   ["Can carers do the training on their phones?", "Yes. Courses are built for phones first, and most are finished in one sitting."],
-  ["Is there a contract?", "Yes. Every package is a 12-month contract, billed monthly. Prices exclude VAT."],
+  ["Is there a contract?", "Growth, Pro and Enterprise are a 12-month contract, billed monthly. Training only is monthly rolling. Prices exclude VAT."],
+  [`Why is Enterprise "from" ${gbp(FLAT_PRICE_GBP.full)}?`, `Enterprise includes face-to-face training, Care Certificate assessment and bespoke reports, which we deliver for your service rather than switch on. ${gbp(FLAT_PRICE_GBP.full)} a month covers a typical provider; we quote a firm figure once we know your size.`],
   ["What about mock CQC inspections and management support?", "Those are quoted separately, based on the size of your service. Ask us and we will talk it through."],
 ];
 
@@ -75,15 +78,16 @@ export default function TrainingPricingPage() {
             <GraduationCap className="size-4" /> Training · pricing
           </div>
           <h1 className="font-display mt-4 max-w-3xl text-balance text-4xl font-semibold leading-[1.02] tracking-tight text-[#2b1d0e] sm:text-6xl">
-            One price for the whole team
+            Pay per carer for training. One price for everything else.
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-[#2b1d0e]/70">
-            Four packages, from training alone to everything a care service runs on. Unlimited learners on every one.
+            Just need online training? Pay for the carers you train, and nothing more. Need HR, checks and audits too?
+            Pick a package and pay one flat price for your whole service, with unlimited carers.
           </p>
           <ul className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#2b1d0e]/75">
-            <li className="inline-flex items-center gap-2"><Users className="size-4 text-[#9a6414]" /> Unlimited learners and admins</li>
             <li className="inline-flex items-center gap-2"><GraduationCap className="size-4 text-[#9a6414]" /> 59 CQC-aligned courses</li>
             <li className="inline-flex items-center gap-2"><ShieldCheck className="size-4 text-[#9a6414]" /> Certificates verifiable online</li>
+            <li className="inline-flex items-center gap-2"><Users className="size-4 text-[#9a6414]" /> Unlimited managers and admins on every plan</li>
           </ul>
         </div>
       </section>
@@ -95,23 +99,39 @@ export default function TrainingPricingPage() {
           <PillLink href="/free-trial">
             Try it free for 30 days <Arrow />
           </PillLink>
-          <p className="text-sm text-[#0f2f3c]/70">Everything in Enterprise, no card needed. Choose a package when you&apos;re ready.</p>
+          <p className="text-sm text-[#0f2f3c]/70">Everything in Enterprise, no card needed. Choose how you pay when you&apos;re ready.</p>
         </div>
-        <TierCards
-          tiers={PACKAGE_TIERS.map((tier) => ({
-            value: tier.value,
-            label: tier.label,
-            monthly: PRICE[tier.value].monthly,
-            tagline: TIER_DETAILS[tier.value].tagline,
-            features: TIER_DETAILS[tier.value].features,
-            highlight: PRICE[tier.value].highlight,
-          }))}
-        />
-        <p className="mt-4 text-center text-sm text-[#0f2f3c]/70">Prices exclude VAT. Every package is a 12-month contract, billed monthly.</p>
+        <TrainingOnly features={TIER_DETAILS.core.features} />
+      </Section>
+
+      <Section tone="soft">
+        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-[#9a6414]">Route two</div>
+        <H2 className="mt-2">Need more than training?</H2>
+        <p className="mt-3 max-w-2xl text-[#0f2f3c]/70">
+          Three packages, each one flat monthly price for your whole service. Unlimited carers, managers and admins, so
+          nobody is counting heads. Each package includes everything in the one before it.
+        </p>
+        <div className="mt-6">
+          <TierCards
+            tiers={FLAT_TIERS.map((tier) => ({
+              value: tier.value,
+              label: tier.label,
+              price: `${tier.value === QUOTED_TIER ? "from " : ""}${gbp(FLAT_PRICE_GBP[tier.value as Exclude<PackageTier, "core">])}`,
+              quoted: tier.value === QUOTED_TIER,
+              tagline: TIER_DETAILS[tier.value].tagline,
+              features: TIER_DETAILS[tier.value].features,
+              highlight: tier.value === HIGHLIGHTED_TIER || undefined,
+            }))}
+          />
+        </div>
+        <p className="mt-4 text-center text-sm text-[#0f2f3c]/70">
+          Prices exclude VAT. Packages are a 12-month contract, billed monthly. Training only is billed monthly on the
+          carers you have that month.
+        </p>
       </Section>
 
       <Section>
-        <H2>Compare every package</H2>
+        <H2>Compare every option</H2>
         <p className="mt-2 text-[#0f2f3c]/70">Each package includes everything in the one before it.</p>
         <div className="mt-6 overflow-x-auto rounded-2xl ring-1 ring-[#134f63]/12">
           <table className="w-full min-w-[720px] border-collapse text-sm">
@@ -119,13 +139,29 @@ export default function TrainingPricingPage() {
               <tr className="bg-[#f5faf9]">
                 <th scope="col" className="px-5 py-3.5 text-left font-semibold">What&apos;s included</th>
                 {PACKAGE_TIERS.map((t) => (
-                  <th key={t.value} scope="col" className="w-28 px-3 py-3.5 font-semibold">
+                  <th key={t.value} scope="col" className="w-32 px-3 py-3.5 font-semibold">
                     {t.label}
+                    <span className="block text-xs font-medium text-[#0f2f3c]/70">
+                      {t.value === "core"
+                        ? `${FIRST_BAND} to ${LAST_BAND} per carer`
+                        : `${t.value === QUOTED_TIER ? "from " : ""}${gbp(FLAT_PRICE_GBP[t.value as Exclude<PackageTier, "core">])} flat`}
+                    </span>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
+              <tr className="border-t border-[#134f63]/10">
+                <th scope="row" className="px-5 py-3.5 text-left font-normal">
+                  <span className="font-semibold">Learners</span>
+                  <span className="block text-[13px] text-[#0f2f3c]/70">Who you can put on the system</span>
+                </th>
+                {PACKAGE_TIERS.map((t) => (
+                  <td key={t.value} className="px-3 py-3.5 text-center text-sm">
+                    {t.value === "core" ? "Pay per carer" : <span className="font-semibold text-[#047857]">Unlimited</span>}
+                  </td>
+                ))}
+              </tr>
               {COMPARE.map((row) => (
                 <tr key={row.label} className="border-t border-[#134f63]/10">
                   <th scope="row" className="px-5 py-3.5 text-left font-normal">

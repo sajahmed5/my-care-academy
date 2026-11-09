@@ -206,4 +206,6 @@ new table, for a single carer's erasure.
 
 Parked. The original account is closed and every `STRIPE_*` variable was deleted from Vercel and
 the local env files on 23 Oct 2026. When a new account exists: prices to match the published
-£49 / £99 / £149 / £249, and HG Care's dead `stripe_customer_id` to clear.
+ones (`lib/pricing.ts`, 9 Nov 2026: Training only per carer in graduated bands, Growth £300,
+Pro £450, Enterprise from £750 — `scripts/setup-stripe.mjs` creates them), and HG Care's dead
+`stripe_customer_id` to clear.

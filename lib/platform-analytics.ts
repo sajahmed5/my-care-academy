@@ -1,7 +1,7 @@
 import { STAFF_ROLES } from "@/lib/roles";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PACKAGE_TIERS, type PackageTier } from "@/lib/organisations";
-import { LIST_PRICE_GBP } from "@/lib/pricing";
+import { monthlyListPrice } from "@/lib/pricing";
 import { FEATURES } from "@/lib/features";
 import { fetchAll } from "@/lib/fetch-all";
 import { formatDate } from "./dates";
@@ -27,8 +27,10 @@ export interface PlatformAnalytics {
   adoption: FeatureAdoption[];
   subStatus: Slice[];
   /**
-   * List price of every active organisation's package, in GBP. List price, not
-   * what each one is charged — discounts live in Stripe — so the tile says so.
+   * List price of every active organisation's package, in GBP: the flat price
+   * of Growth, Pro and Enterprise, and Training only's per-carer bands for the
+   * carers each company has (lib/pricing.ts). List price, not what each one is
+   * charged — discounts live in Stripe — so the tile says so.
    */
   mrr: number;
   coursePopularity: CoursePopularity[];
@@ -86,6 +88,7 @@ export async function loadPlatformAnalytics(
     courses,
     { data: ticks },
     exceptions,
+    carerRows,
   ] = await Promise.all([
     // Every organisation, paged: one request answers at most 1,000 rows.
     fetchAll<OrgRecord>((from, to) =>
@@ -137,7 +140,22 @@ export async function loadPlatformAnalytics(
           .order("feature_key")
           .range(from, to),
     ),
+    // Carers charged for on Training only (lib/carers.ts): one row per carer
+    // on the platform, paged.
+    fetchAll<{ id: string; organisation_id: string | null }>((from, to) =>
+      supabase
+        .from("users")
+        .select("id, organisation_id")
+        .eq("role", "learner")
+        .neq("status", "deactivated")
+        .order("id")
+        .range(from, to),
+    ),
   ]);
+  const carersByOrg = new Map<string, number>();
+  for (const c of carerRows) {
+    if (c.organisation_id) carersByOrg.set(c.organisation_id, (carersByOrg.get(c.organisation_id) ?? 0) + 1);
+  }
 
   // Tier mix + subscription status + MRR.
   const tierCount = new Map<PackageTier, number>();
@@ -151,7 +169,7 @@ export async function loadPlatformAnalytics(
     // MRR at list price. The agreed-amount field that used to feed this was
     // removed on 24 Oct 2026 as confusing; discounts belong in Stripe.
     // A company on a free trial (TRIAL.md) pays nothing yet.
-    if (o.status !== "suspended" && !o.trial_ends_at) mrr += LIST_PRICE_GBP[tier] ?? 0;
+    if (o.status !== "suspended" && !o.trial_ends_at) mrr += monthlyListPrice(tier, carersByOrg.get(o.id) ?? 0);
   }
 
   // Adoption, resolved the way has_feature() resolves it: an organisation's

@@ -9,7 +9,7 @@ import { TrialSignupForm } from "./signup-form";
 
 export const metadata: Metadata = {
   title: `Try My Care Academy free for ${TRIAL_DAYS} days | My Care Academy`,
-  description: `Start a ${TRIAL_DAYS}-day free trial of My Care Academy for your care service: everything in Enterprise, unlimited learners, no card needed. Set up in two minutes.`,
+  description: `Start a ${TRIAL_DAYS}-day free trial of My Care Academy for your care service: everything in Enterprise, unlimited carers, no card needed. Set up in two minutes.`,
   alternates: { canonical: "/free-trial" },
 };
 
@@ -59,7 +59,8 @@ export default function FreeTrialPage() {
               </h3>
               <ul className="mt-4 space-y-3">
                 <CheckItem title="Everything in Enterprise">
-                  Every package&apos;s features, unlimited learners and admins, for {TRIAL_DAYS} days.
+                  Every package&apos;s features, unlimited carers and admins, for {TRIAL_DAYS} days. Then pay per carer
+                  for training alone, or pick a package.
                 </CheckItem>
                 <CheckItem title="Training, HR, audits and governance">
                   The full course library, the HR pack, supervisions and spot checks, complaints and safeguarding,

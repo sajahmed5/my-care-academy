@@ -7,11 +7,12 @@ export const PACKAGE_TIERS = [
   // "with more professional names"), renamed to these on 23 Oct 2026. The
   // labels are the public names; the keys below are internal and unchanged.
   // The keys' old meanings no longer match since the 29 Oct 2026 regroup:
-  // core is Starter (training and the HR pack), core_forms is Growth (Staff
-  // Audits and the client list), core_recruitment
-  // is Pro (complaints, audits, forms and policies). Stripe's price env vars
-  // use the keys, so they stay.
-  { value: "core", label: "Starter" },
+  // core is Training only (called Starter until 9 Nov 2026: online training,
+  // priced per carer — lib/pricing.ts), core_forms is Growth (the HR pack,
+  // Staff Audits and the client list), core_recruitment is Pro (complaints,
+  // audits, forms and policies). Stripe's price env vars use the keys, so
+  // they stay.
+  { value: "core", label: "Training only" },
   { value: "core_forms", label: "Growth" },
   { value: "core_recruitment", label: "Pro" },
   { value: "full", label: "Enterprise" },
@@ -40,11 +41,12 @@ export const TIER_DETAILS: Record<
   // Regrouped 29 Oct 2026 (PACKAGES.md). Each line describes what is built
   // today: as the HR pack, Staff Audits and the rest grow, so does this copy.
   core: {
-    // Online training only (Saj's package spreadsheet, 30 Oct 2026).
-    tagline: "Train your whole team.",
+    // Online training only (Saj's package spreadsheet, 30 Oct 2026), priced
+    // per carer since 9 Nov 2026: managers and office workers are free.
+    tagline: "Train your whole team, and pay only for your carers.",
     features: [
       "Full CQC-aligned course library and induction programmes",
-      "Unlimited learners and admin users",
+      "Pay per carer, less for each one as your team grows; managers and admin users free",
       "Certificates with verification and expiry tracking",
       "Training matrix and CSV exports",
       "Automated reminders and weekly digest emails",
@@ -53,7 +55,7 @@ export const TIER_DETAILS: Record<
   core_forms: {
     tagline: "Hire, check and support your staff.",
     features: [
-      "Everything in Starter",
+      "Everything in Training only, with unlimited carers for one flat price",
       "HR pack: recruitment to leaving: documents, probation, sickness, holidays, disciplinary and grievance",
       "Supervisions and appraisals, with agreed actions tracked",
       "Spot checks and competency assessments",

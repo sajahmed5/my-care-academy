@@ -61,7 +61,7 @@ const FAQ: [string, string][] = [
   ],
   [
     "What does it cost?",
-    "One monthly price for the whole service, with unlimited learners and admin users — no per-carer charge, and every course on every plan. The plans are on the pricing page.",
+    "Pay per carer for online training, from £5 a carer a month with the rate dropping as your team grows, or one flat monthly price for the whole service with unlimited carers when you need HR, checks and audits too. Every course is on every plan. The prices are on the pricing page.",
   ],
 ];
 

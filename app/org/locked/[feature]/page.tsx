@@ -6,7 +6,8 @@ import { hasFeature } from "@/lib/entitlements";
 import { FEATURES, type FeatureKey } from "@/lib/features";
 import { LOCKED_COPY } from "@/lib/locked";
 import { PACKAGE_TIERS, tierLabel, type PackageTier } from "@/lib/organisations";
-import { LIST_PRICE_GBP } from "@/lib/pricing";
+import { priceLabel } from "@/lib/pricing";
+import { countCarers } from "@/lib/carers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { buttonVariants } from "@/components/ui/button";
@@ -35,9 +36,12 @@ export default async function LockedFeaturePage({
   if (await hasFeature(context, key)) redirect(copy.home);
 
   const admin = createAdminClient();
-  const [{ data: org }, { data: ticks }] = await Promise.all([
+  const [{ data: org }, { data: ticks }, carers] = await Promise.all([
     admin.from("organisations").select("package_tier").eq("id", context.organisationId!).maybeSingle(),
     admin.from("tier_features").select("tier_key").eq("feature_key", key),
+    // Training only is per carer (lib/pricing.ts), so "compared with" needs
+    // what this company pays for the carers it has.
+    countCarers(admin, context.organisationId!),
   ]);
   const current = (org?.package_tier ?? "core") as PackageTier;
   const ticked = new Set((ticks ?? []).map((t) => t.tier_key as string));
@@ -88,7 +92,8 @@ export default async function LockedFeaturePage({
               </Link>
               {needed && (
                 <span className="text-sm text-muted-foreground">
-                  £{LIST_PRICE_GBP[needed]} a month, compared with £{LIST_PRICE_GBP[current]} for {tierLabel(current)}.
+                  {priceLabel(needed).figure} {priceLabel(needed).per}, compared with {priceLabel(current, carers).figure}{" "}
+                  {priceLabel(current, carers).per} on {tierLabel(current)}.
                 </span>
               )}
             </>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { adminClient } from "./helpers";
-import { LIST_PRICE_GBP } from "../lib/pricing";
+import { monthlyListPrice } from "../lib/pricing";
 import type { PackageTier } from "../lib/organisations";
 import { loadPlatformAnalytics } from "../lib/platform-analytics";
 
@@ -32,13 +32,21 @@ describe("platform analytics", () => {
   it("counts MRR at list price for every active organisation", async () => {
     const admin = adminClient();
     const analytics = await loadPlatformAnalytics(admin);
-    const { data: orgs } = await admin.from("organisations").select("package_tier, status, trial_ends_at");
+    const { data: orgs } = await admin.from("organisations").select("id, package_tier, status, trial_ends_at");
     let total = 0;
     for (const o of orgs ?? []) {
       // Suspended companies and free trials (TRIAL.md) pay nothing.
       if (o.status === "suspended" || o.trial_ends_at) continue;
-      total += LIST_PRICE_GBP[(o.package_tier ?? "core") as PackageTier] ?? 0;
+      // Training only is per carer (lib/pricing.ts): everyone with a learner
+      // account who has not left, counted the way lib/carers.ts counts them.
+      const { count } = await admin
+        .from("users")
+        .select("id", { count: "exact", head: true })
+        .eq("organisation_id", o.id)
+        .eq("role", "learner")
+        .neq("status", "deactivated");
+      total += monthlyListPrice((o.package_tier ?? "core") as PackageTier, count ?? 0);
     }
-    expect(analytics.mrr).toBe(total);
+    expect(analytics.mrr).toBeCloseTo(total, 2);
   }, 60_000);
 });

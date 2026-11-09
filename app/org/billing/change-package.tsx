@@ -8,7 +8,10 @@ import { requestPackageChangeAction } from "./package-actions";
 export interface PackageOption {
   value: string;
   label: string;
-  price: number;
+  /** "£300", "from £750", or Training only's figure for this company's carers. */
+  price: string;
+  /** What the figure is per: "a month, unlimited carers", "a month for your 20 carers". */
+  per: string;
   points: string[];
 }
 
@@ -63,8 +66,8 @@ export function ChangePackage({
                 )}
               </div>
               <p className="mt-1 text-xl font-bold">
-                £{o.price}
-                <span className="text-sm font-normal text-muted-foreground">/month</span>
+                {o.price}
+                <span className="block text-sm font-normal text-muted-foreground">{o.per}</span>
               </p>
               <ul className="mt-3 space-y-2 text-[13px]">
                 {o.points.map((p) => (

@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing, per carer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  /* Mock-up (9 Nov 2026): the public pricing page once online training is sold
+     per carer and the three bigger packages stay one flat price per service.
+     Same palette and type as app/(marketing): Outfit for headlines, Inter body,
+     the "day" sand hero and the "dusk" teal highlight card. Numbers tagged
+     "Assumption" are placeholders for Saj to confirm or replace. */
+  :root {
+    --ink: #0f2f3c; --ink-70: rgba(15,47,60,.7); --ink-35: rgba(15,47,60,.35);
+    --sand-ink: #2b1d0e; --sand-ink-70: rgba(43,29,14,.7); --gold: #9a6414; --rust: #8a4d0c;
+    --teal: #134f63; --teal-2: #1b6079; --sky: #8fd3ea; --green: #059669; --green-2: #047857;
+    --soft: #f5faf9; --ring: rgba(19,79,99,.12); --white: #fff; --bg: #fff;
+    --note: #fef3c7; --note-fg: #92400e; --note-ring: #f2d58a;
+    --font: "Inter", system-ui, -apple-system, sans-serif;
+    --display: "Outfit", "Inter", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #e7f1f4; --ink-70: rgba(231,241,244,.72); --ink-35: rgba(231,241,244,.35);
+      --soft: #12262e; --ring: rgba(143,211,234,.18); --white: #16303a; --bg: #0c1c22;
+      --note: #3b2a08; --note-fg: #fcd34d; --note-ring: #6b4e0f; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #e7f1f4; --ink-70: rgba(231,241,244,.72); --ink-35: rgba(231,241,244,.35);
+    --soft: #12262e; --ring: rgba(143,211,234,.18); --white: #16303a; --bg: #0c1c22;
+    --note: #3b2a08; --note-fg: #fcd34d; --note-ring: #6b4e0f; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.55; }
+  h1, h2, h3, p, ul, dl, dt, dd { margin: 0; }
+  ul { padding: 0; list-style: none; }
+  .display { font-family: var(--display); letter-spacing: -0.01em; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+  .muted { color: var(--ink-70); }
+
+  /* review banner */
+  .review { background: var(--note); color: var(--note-fg); border-bottom: 1px solid var(--note-ring); font-size: 13.5px; }
+  .review .wrap { padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; }
+  .review strong { font-weight: 700; }
+  .tag { display: inline-block; vertical-align: middle; margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: var(--note); color: var(--note-fg); border: 1px solid var(--note-ring); font-size: 11px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; font-family: var(--font); }
+  .dusk .tag { background: rgba(255,255,255,.14); color: #ffe9b0; border-color: rgba(255,233,176,.4); }
+
+  /* nav */
+  .nav { position: sticky; top: 0; z-index: 2; background: var(--bg); }
+  .nav .wrap { height: 64px; display: flex; align-items: center; gap: 24px; }
+  .logo { font-family: var(--display); font-weight: 700; color: var(--teal); font-size: 17px; display: inline-flex; align-items: center; gap: 8px; }
+  .logo i { width: 22px; height: 22px; border-radius: 6px 6px 10px 10px; background: linear-gradient(160deg, var(--teal), var(--sky)); display: inline-block; }
+  .nav ul { margin-left: auto; display: flex; gap: 22px; font-size: 14px; font-weight: 500; align-items: center; }
+  .nav .pill { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--ring); }
+  .nav .pill.dark { background: var(--teal); color: #fff; border-color: var(--teal); }
+  @media (max-width: 720px) { .nav ul li:not(:last-child) { display: none; } }
+
+  /* hero */
+  .hero { color: var(--sand-ink); padding: 56px 0 40px;
+    background: radial-gradient(45% 45% at 85% 10%, #ffd58a 0%, rgba(255,213,138,0) 60%),
+                radial-gradient(60% 40% at 0% 100%, #ffe9c7 0%, rgba(255,233,199,0) 60%),
+                linear-gradient(180deg, #fff8ee 0%, #fdf1df 100%); }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
+  .hero h1 { margin-top: 14px; font-size: clamp(34px, 5.5vw, 58px); font-weight: 600; line-height: 1.04; max-width: 760px; text-wrap: balance; }
+  .hero p { margin-top: 18px; font-size: 18px; color: var(--sand-ink-70); max-width: 640px; }
+  .hero .facts { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 14px; color: rgba(43,29,14,.75); }
+  .hero .facts li::before { content: "✓"; color: var(--gold); margin-right: 8px; font-weight: 700; }
+
+  /* generic */
+  section { padding: 40px 0; }
+  section.soft { background: var(--soft); }
+  h2.display { font-size: clamp(26px, 3.4vw, 36px); font-weight: 600; line-height: 1.15; text-wrap: balance; }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 20px; border-radius: 999px; font-weight: 600; font-size: 14.5px; background: var(--teal); color: #fff; }
+  .pill.white { background: #fff; color: var(--teal); }
+  .pill.outline { background: transparent; color: var(--teal); border: 1px solid var(--teal); }
+  .centre { text-align: center; }
+  .card { background: var(--white); border-radius: 28px; padding: 28px; box-shadow: 0 20px 40px -24px rgba(19,79,99,.25); border: 1px solid var(--ring); }
+  .check li { display: flex; gap: 8px; font-size: 14px; margin-top: 10px; }
+  .check li::before { content: "✓"; color: var(--green); font-weight: 700; flex: none; }
+  .dusk .check li::before { color: var(--sky); }
+
+  /* route 1: training only */
+  .route { display: grid; gap: 28px; grid-template-columns: 1.1fr 1fr; align-items: start; }
+  @media (max-width: 860px) { .route { grid-template-columns: 1fr; } }
+  .price { margin-top: 14px; font-family: var(--display); font-size: 44px; font-weight: 600; line-height: 1; }
+  .price small { font-family: var(--font); font-size: 16px; font-weight: 500; color: var(--ink-70); margin-left: 4px; }
+  .dusk .price small { color: rgba(255,255,255,.65); }
+  .sub { margin-top: 4px; font-size: 14px; color: var(--ink-70); }
+  .calc { margin-top: 22px; padding: 18px 20px; border-radius: 18px; background: var(--soft); border: 1px solid var(--ring); }
+  .calc label { font-size: 13px; font-weight: 600; color: var(--ink-70); display: flex; justify-content: space-between; }
+  .calc input[type=range] { width: 100%; margin: 10px 0 4px; accent-color: var(--teal); }
+  .calc .out { font-family: var(--display); font-size: 26px; font-weight: 600; }
+  .calc .out span { font-family: var(--font); font-size: 14px; font-weight: 500; color: var(--ink-70); }
+  .ticks { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-35); }
+  .sum { font-size: 12.5px; margin-top: 2px; }
+  .upgrade { margin: 10px -20px -18px; padding: 2px 20px 16px; border-radius: 0 0 18px 18px; background: var(--teal); color: #fff; }
+  .upgrade .out span { color: rgba(255,255,255,.7); }
+  .calc.is-growth { border-color: var(--teal); }
+  .bands { width: 100%; min-width: 0; border-collapse: collapse; margin-top: 18px; font-size: 14px; }
+  .bands td { padding: 8px 0; border-top: 1px solid var(--ring); }
+  .bands tr:first-child td { border-top: 0; }
+  .bands td + td { text-align: right; font-weight: 600; white-space: nowrap; }
+
+  /* route 2: packages */
+  .tiers { display: grid; gap: 20px; grid-template-columns: repeat(3, 1fr); margin-top: 22px; }
+  @media (max-width: 860px) { .tiers { grid-template-columns: 1fr; } }
+  .tier { display: flex; flex-direction: column; }
+  .tier .label { font-size: 12px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
+  .dusk { color: #fff; border-color: var(--teal);
+    background: radial-gradient(55% 45% at 15% 0%, rgba(143,211,234,.35) 0%, rgba(143,211,234,0) 60%),
+                radial-gradient(50% 40% at 95% 100%, rgba(5,150,105,.22) 0%, rgba(5,150,105,0) 60%),
+                linear-gradient(180deg, #134f63 0%, #1b6079 100%); }
+  .dusk .label { color: var(--sky); }
+  .dusk .sub, .dusk .muted { color: rgba(255,255,255,.72); }
+  .tier .tagline { margin-top: 14px; font-size: 14px; color: var(--ink-70); }
+  .dusk .tagline { color: rgba(255,255,255,.85); }
+  .tier .cta { margin-top: auto; padding-top: 28px; }
+  .tier .cta .pill { width: 100%; }
+
+  /* compare */
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 720px; }
+  .table-wrap { overflow-x: auto; border-radius: 18px; border: 1px solid var(--ring); margin-top: 22px; }
+  th, td { padding: 13px 14px; text-align: left; border-top: 1px solid var(--ring); }
+  thead th { background: var(--soft); border-top: 0; font-weight: 600; }
+  thead th.col { text-align: center; width: 128px; }
+  thead th.col small { display: block; font-weight: 500; color: var(--ink-70); font-size: 12px; margin-top: 2px; }
+  td.c { text-align: center; }
+  td.c .y { color: var(--green-2); font-weight: 700; }
+  td.c .n { color: var(--ink-35); }
+  td small { display: block; color: var(--ink-70); font-size: 13px; }
+
+  /* faq */
+  .faq { max-width: 760px; margin: 0 auto; }
+  .faq > div { padding: 18px 0; border-top: 1px solid var(--ring); }
+  .faq > div:first-of-type { border-top: 0; }
+  .faq dt { font-weight: 600; }
+  .faq dd { margin-top: 4px; color: var(--ink-70); }
+
+  /* elsewhere on the site */
+  .elsewhere { display: grid; gap: 14px; margin-top: 18px; }
+  .change { display: grid; grid-template-columns: 180px 1fr 1fr; gap: 16px; align-items: start; padding: 16px 18px; border-radius: 16px; background: var(--white); border: 1px solid var(--ring); font-size: 14px; }
+  @media (max-width: 760px) { .change { grid-template-columns: 1fr; } }
+  .change .where { font-weight: 600; }
+  .change .where small { display: block; font-weight: 400; color: var(--ink-70); font-size: 12.5px; }
+  .change .before { color: var(--ink-70); text-decoration: line-through; text-decoration-color: rgba(138,77,12,.5); }
+  .change .after { font-weight: 500; }
+  .change .k { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-35); display: block; margin-bottom: 2px; }
+  .stat { display: inline-block; padding: 14px 18px; border-radius: 14px; background: var(--soft); border: 1px solid var(--ring); }
+  .stat b { font-family: var(--display); font-size: 28px; font-weight: 600; color: #1d6f8a; display: block; line-height: 1.1; }
+  .stat span { font-size: 13px; color: var(--ink-70); }
+
+  .footer { padding: 28px 0 48px; font-size: 13px; color: var(--ink-70); text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="review">
+  <div class="wrap">
+    <strong>Mock-up for review.</strong>
+    <span>The per-carer bands, Growth £300, Pro £450, Enterprise from £750 and the switch to Growth at 73 carers are agreed (Saj, 9 Nov 2026). Anything marked <span class="tag" style="margin-left:0">Assumption</span> is still a placeholder: that the bands are per month, who counts as a carer, the contract and the package name.</span>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="wrap">
+    <span class="logo"><i></i>mycareacademy</span>
+    <ul>
+      <li>Training</li><li>Pricing</li><li>Contact</li><li>Verify a certificate</li>
+      <li><span class="pill">Sign in</span></li>
+      <li><span class="pill dark">Free trial →</span></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Training · pricing</div>
+    <h1 class="display">Pay per carer for training. One price for everything else.</h1>
+    <p>Just need online training? Pay for the carers you train, and nothing more. Need HR, checks and audits too? Pick a package and pay one flat price for your whole service, with unlimited learners.</p>
+    <ul class="facts">
+      <li>59 CQC-aligned courses</li>
+      <li>Certificates verifiable online</li>
+      <li>Unlimited managers and admins on every plan</li>
+    </ul>
+  </div>
+</header>
+
+<section>
+  <div class="wrap centre">
+    <span class="pill">Try it free for 30 days →</span>
+    <p class="muted" style="margin-top:12px; font-size:14px">Everything in Enterprise, no card needed. Choose how you pay when you're ready.</p>
+  </div>
+</section>
+
+<!-- Route 1 -->
+<section style="padding-top:8px">
+  <div class="wrap">
+    <div class="route">
+      <div>
+        <div class="eyebrow">Route one</div>
+        <h2 class="display" style="margin-top:10px">Online training only</h2>
+        <p class="muted" style="margin-top:12px; max-width:480px">The full course library, certificates, the training matrix and reminders. You pay for each carer on the system, and the rate drops as your team grows: the first 15 at one rate, the next 10 at a lower one, and so on. Best for teams of up to 72 carers: from 73, Growth costs less and includes unlimited carers.</p>
+        <ul class="check" style="margin-top:16px">
+          <li>Full CQC-aligned course library and induction programmes</li>
+          <li>Certificates with verification and expiry tracking</li>
+          <li>Training matrix and CSV exports</li>
+          <li>Automated reminders and weekly digest emails</li>
+          <li>Managers and admin users free <span class="tag">Assumption</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="label" style="font-size:12px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--gold)">Training only <span class="tag">Assumption: name</span></div>
+        <div class="price">£5 <small>per carer / month</small> <span class="tag">Assumption: per month</span></div>
+        <div class="sub">Less for each carer as your team grows · monthly rolling, cancel any time <span class="tag">Assumption</span></div>
+        <table class="bands" aria-label="Price per carer by team size">
+          <tr><td>Your first 15 carers</td><td>£5 each</td></tr>
+          <tr><td>Carers 16 to 25</td><td>£4.50 each</td></tr>
+          <tr><td>Carers 26 to 50</td><td>£4 each</td></tr>
+          <tr><td>Carers 51 and over</td><td>£3.50 each</td></tr>
+        </table>
+        <div class="calc">
+          <label><span>Carers on the system</span><span id="n">20</span></label>
+          <input id="r" type="range" min="1" max="100" value="20" step="1" aria-label="Number of carers">
+          <div class="ticks"><span>1</span><span>50</span><span>100</span></div>
+          <div id="pay">
+            <div class="out" style="margin-top:10px">£<span id="total">97.50</span> <span>a month, excluding VAT</span></div>
+            <div class="sum muted" id="sum">15 × £5 + 5 × £4.50</div>
+          </div>
+          <div id="upgrade" class="upgrade" hidden>
+            <div class="out" style="margin-top:10px">Growth · £300 <span>a month, unlimited carers</span></div>
+            <p class="sum" style="color:inherit"><span id="would">73</span> carers on Training only would be £<span id="wouldcost">300.50</span>. Growth is £300 for your whole service, however many carers you have, and includes the HR pack, supervisions and spot checks.</p>
+          </div>
+        </div>
+        <div class="cta" style="margin-top:22px"><span class="pill" style="width:100%" id="cta">Choose Training only</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Route 2 -->
+<section class="soft">
+  <div class="wrap">
+    <div class="eyebrow">Route two</div>
+    <h2 class="display" style="margin-top:10px">Need more than training?</h2>
+    <p class="muted" style="margin-top:12px; max-width:620px">Three packages, each one flat monthly price for your whole service. Unlimited learners, managers and admins, so nobody is counting heads. Each package includes everything in the one before it.</p>
+
+    <div class="tiers">
+      <div class="card tier dusk">
+        <div class="label">Growth</div>
+        <div class="price">£300 <small>/month</small></div>
+        <div class="sub">per organisation · unlimited learners · 12-month contract</div>
+        <p class="tagline">Hire, check and support your staff.</p>
+        <ul class="check">
+          <li>Everything in Training only</li>
+          <li>HR pack: recruitment to leaving: documents, probation, sickness, holidays, disciplinary and grievance</li>
+          <li>Supervisions and appraisals, with agreed actions tracked</li>
+          <li>Spot checks and competency assessments</li>
+          <li>Performance plans, raised when a check isn't met, with reviews and an outcome</li>
+          <li>A client list, uploaded from a spreadsheet and linked to checks, audits and concerns</li>
+        </ul>
+        <div class="cta"><span class="pill white">Choose Growth</span></div>
+      </div>
+
+      <div class="card tier">
+        <div class="label">Pro</div>
+        <div class="price">£450 <small>/month</small></div>
+        <div class="sub">per organisation · unlimited learners · 12-month contract</div>
+        <p class="tagline">Run your whole compliance in one place.</p>
+        <ul class="check">
+          <li>Everything in Growth</li>
+          <li>Complaints, accidents and safeguarding</li>
+          <li>Client QAs; medication, care plan, infection control, staff file and training audits</li>
+          <li>A monthly governance report for CQC's well-led question</li>
+          <li>Forms, and feedback surveys for families and staff</li>
+          <li>CQC policies and procedures, with who has read each one</li>
+        </ul>
+        <div class="cta"><span class="pill">Choose Pro</span></div>
+      </div>
+
+      <div class="card tier">
+        <div class="label">Enterprise</div>
+        <div class="price"><small style="margin:0 2px 0 0">from</small> £750 <small>/month</small></div>
+        <div class="sub">per organisation · unlimited learners · 12-month contract · quoted for your service</div>
+        <p class="tagline">For larger and growing providers.</p>
+        <ul class="check">
+          <li>Everything in Pro</li>
+          <li>Face-to-face training at our Stockport office, with unlimited places</li>
+          <li>Care Certificate workplace assessment</li>
+          <li>Your own classroom sessions, with QR sign-in, on the training matrix</li>
+          <li>White label: your own web address, logo and colour on every page, email and PDF</li>
+          <li>Rostering integration: MyRoster, or any system through our API, with alerts</li>
+          <li>Bespoke reports, built for you within 10 working days</li>
+          <li>Priority support</li>
+        </ul>
+        <div class="cta"><span class="pill">Ask for a quote</span></div>
+      </div>
+    </div>
+    <p class="muted centre" style="margin-top:16px; font-size:14px">Prices exclude VAT. Packages are a 12-month contract, billed monthly. Training only is billed monthly on the carers you have that month. <span class="tag">Assumption</span></p>
+  </div>
+</section>
+
+<!-- Compare -->
+<section>
+  <div class="wrap">
+    <h2 class="display">Compare every option</h2>
+    <p class="muted" style="margin-top:8px">Each package includes everything in the one before it.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>What's included</th>
+            <th class="col">Training only<small>£5 to £3.50 per carer</small></th>
+            <th class="col">Growth<small>£300 flat</small></th>
+            <th class="col">Pro<small>£450 flat</small></th>
+            <th class="col">Enterprise<small>from £750</small></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><b>Learners</b><small>Who you can put on the system</small></td><td class="c">Pay per carer</td><td class="c"><span class="y">Unlimited</span></td><td class="c"><span class="y">Unlimited</span></td><td class="c"><span class="y">Unlimited</span></td></tr>
+          <tr><td><b>Online training</b><small>Courses, inductions, matrix, certificates and reminders</small></td><td class="c"><span class="y">✓</span></td><td class="c"><span class="y">✓</span></td><td class="c"><span class="y">✓</span></td><td class="c"><span class="y">✓</span></td></tr>
+          <tr><td><b>HR pack</b><small>Recruitment to leaving</small></td><td class="c"><span class="n">—</span></td><td class="c"><span class="y">✓</span></td><td class="c"><span class="y">✓</span></td><td class="c"><span class="y">✓</span></td></tr>
+          <tr><td><b>Supervisions, spot checks, performance plans</b></td><td class="c"><span class="n">—</span></td><td class="c"><span class="y">✓</span></td><td class="c"><span class="y">✓</span></td><td class="c"><span class="y">✓</span></td></tr>
+          <tr><td><b>Client list</b></td><td class="c"><span class="n">—</span></td><td class="c"><span class="y">✓</span></td><td class="c"><span class="y">✓</span></td><td class="c"><span class="y">✓</span></td></tr>
+          <tr><td><b>Complaints and safeguarding</b></td><td class="c"><span class="n">—</span></td><td class="c"><span class="n">—</span></td><td class="c"><span class="y">✓</span></td><td class="c"><span class="y">✓</span></td></tr>
+          <tr><td><b>Service audits, forms, policies</b></td><td class="c"><span class="n">—</span></td><td class="c"><span class="n">—</span></td><td class="c"><span class="y">✓</span></td><td class="c"><span class="y">✓</span></td></tr>
+          <tr><td><b>Face-to-face, Care Certificate, classroom</b></td><td class="c"><span class="n">—</span></td><td class="c"><span class="n">—</span></td><td class="c"><span class="n">—</span></td><td class="c"><span class="y">✓</span></td></tr>
+          <tr><td><b>White label, rostering, bespoke reports, priority support</b></td><td class="c"><span class="n">—</span></td><td class="c"><span class="n">—</span></td><td class="c"><span class="n">—</span></td><td class="c"><span class="y">✓</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="margin-top:10px; font-size:13px">The compare table gains one row, "Learners", at the top. Every other row stays as it is today; shortened here only to keep the mock-up short.</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="soft">
+  <div class="wrap">
+    <h2 class="display centre">Care training pricing — questions people ask</h2>
+    <dl class="faq" style="margin-top:20px">
+      <div><dt>Is there a per-learner charge?</dt><dd>Only on Training only, where you pay for each carer on the system every month <span class="tag">Assumption: per month</span>. Growth, Pro and Enterprise are one flat price for your organisation with unlimited learners.</dd></div>
+      <div><dt>How is the per-carer price worked out?</dt><dd>In bands, like income tax: your first 15 carers are £5 each, carers 16 to 25 are £4.50, 26 to 50 are £4 and anyone over 50 is £3.50. A team of 20 pays 15 × £5 plus 5 × £4.50, which is £97.50 a month.</dd></div>
+      <div><dt>Who counts as a carer?</dt><dd>Anyone with a learner account that month. Managers and admin users are free on every plan. <span class="tag">Assumption</span></dd></div>
+      <div><dt>What happens when someone leaves?</dt><dd>Mark them as a leaver and they stop counting from the next bill. Their certificates and training record stay on file.</dd></div>
+      <div><dt>Can I start with training and add a package later?</dt><dd>Yes. Move up whenever you like; the per-carer charge stops and the flat package price takes over.</dd></div>
+      <div><dt>What happens when my team passes 72 carers?</dt><dd>At 73 carers, Training only would cost more than Growth, which is £300 a month for unlimited carers and includes the HR pack. We'll ask whether you'd like to move to Growth. You can stay on Training only if you prefer.</dd></div>
+      <div><dt>Which courses are included?</dt><dd>The full library of 59 CQC-aligned care courses, with interactive content, a 20-question assessment and a branded, verifiable certificate for each.</dd></div>
+      <div><dt>Is there a contract?</dt><dd>Growth, Pro and Enterprise are a 12-month contract, billed monthly. Training only is monthly rolling. Prices exclude VAT. <span class="tag">Assumption</span></dd></div>
+      <div><dt>Why is Enterprise "from" £750?</dt><dd>Enterprise includes face-to-face training, Care Certificate assessment and bespoke reports, which we deliver for your service rather than switch on. £750 a month covers a typical provider; we quote a firm figure once we know your size.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- Elsewhere -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Not on this page</div>
+    <h2 class="display" style="margin-top:10px">Everywhere else the site has to change</h2>
+    <p class="muted" style="margin-top:8px; max-width:640px">The same wording, before and after, so nothing on the site contradicts the pricing page.</p>
+
+    <div class="elsewhere">
+      <div class="change">
+        <div class="where">Homepage<small>Trust stats row</small></div>
+        <div><span class="k">Now</span><span class="stat"><b>£0</b><span>per carer, on every plan</span></span></div>
+        <div><span class="k">After</span><span class="stat"><b>£5</b><span>a carer a month for training, less as you grow</span></span></div>
+      </div>
+      <div class="change">
+        <div class="where">Homepage<small>Trust stats row</small></div>
+        <div><span class="k">Now</span><span class="stat"><b>Unlimited</b><span>learners, managers and admins</span></span></div>
+        <div><span class="k">After</span><span class="stat"><b>Unlimited</b><span>learners on Growth and above</span></span></div>
+      </div>
+      <div class="change">
+        <div class="where">Pricing page<small>Browser title and search listing</small></div>
+        <div><span class="k">Now</span><span class="before">Care training pricing — unlimited learners | My Care Academy</span></div>
+        <div><span class="k">After</span><span class="after">Care training pricing — per carer, or one flat price | My Care Academy</span></div>
+      </div>
+      <div class="change">
+        <div class="where">Manchester &amp; Stockport page<small>Pricing line</small></div>
+        <div><span class="k">Now</span><span class="before">One monthly price for the whole service, with unlimited learners and admin users — no per-carer charge, and every course on every plan.</span></div>
+        <div><span class="k">After</span><span class="after">Pay per carer for online training, or one monthly price for the whole service with unlimited learners when you need HR, checks and audits too.</span></div>
+      </div>
+      <div class="change">
+        <div class="where">Free trial page<small>What the trial includes</small></div>
+        <div><span class="k">Now</span><span class="before">Every package's features, unlimited learners and admins, for 30 days.</span></div>
+        <div><span class="k">After</span><span class="after">Everything in Enterprise, unlimited learners and admins, for 30 days. Then pay per carer for training, or pick a package.</span></div>
+      </div>
+      <div class="change">
+        <div class="where">Console: locked feature<small>Upsell line a manager sees</small></div>
+        <div><span class="k">Now</span><span class="before">Growth is £99 a month, compared with £49 for Starter.</span></div>
+        <div><span class="k">After</span><span class="after">Growth is £300 a month for your whole service, with unlimited learners and the HR pack, instead of the £97.50 you pay today for 20 carers on Training only.</span></div>
+      </div>
+      <div class="change">
+        <div class="where">Console: Today and Billing<small>Training only, 73 carers or more</small></div>
+        <div><span class="k">Now</span><span class="before">Nothing: there is no per-carer plan to outgrow.</span></div>
+        <div><span class="k">After</span><span class="after">A banner for managers: "You have 75 carers, so Training only costs £307.50 a month. Growth is £300 for unlimited carers and includes the HR pack. Move to Growth?" with a button that opens the Billing page. Dismissable, and it comes back if the count rises again.</span></div>
+      </div>
+      <div class="change">
+        <div class="where">Console: Billing and Trial ended<small>Package cards</small></div>
+        <div><span class="k">Now</span><span class="before">Starter · £49 /month · per organisation</span></div>
+        <div><span class="k">After</span><span class="after">Training only · per carer /month · 20 carers on your account today: 15 at £5 and 5 at £4.50, so £97.50 a month</span></div>
+      </div>
+      <div class="change">
+        <div class="where">Platform analytics<small>MRR</small></div>
+        <div><span class="k">Now</span><span class="before">Every Starter organisation counts as £49.</span></div>
+        <div><span class="k">After</span><span class="after">A Training only organisation counts as its banded total for its active carers: 20 carers is £97.50.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="footer">Mock-up 8 · 9 Nov 2026 · docs/redesign/My-Care-Academy-8-Pricing-per-carer.html</div>
+
+<script>
+  (function () {
+    var r = document.getElementById("r"), n = document.getElementById("n"), t = document.getElementById("total"), s = document.getElementById("sum");
+    var pay = document.getElementById("pay"), up = document.getElementById("upgrade"), would = document.getElementById("would"), wouldcost = document.getElementById("wouldcost"), cta = document.getElementById("cta"), calc = document.querySelector(".calc");
+    // Growth is £300 flat with unlimited carers (Saj, 9 Nov 2026). 72 carers on
+    // Training only is £297 and 73 is £300.50, so from 73 the slider shows Growth.
+    var GROWTH = 300;
+    // Marginal bands (Saj, 9 Nov 2026): each carer is charged at the rate of
+    // the band they fall in, so carer 16 costs £4.50 whatever carers 1–15 cost.
+    var BANDS = [[15, 5], [25, 4.5], [50, 4], [Infinity, 3.5]];
+    function gbp(x) { return x % 1 ? x.toFixed(2) : String(x); }
+    function go() {
+      var c = +r.value, from = 0, total = 0, parts = [];
+      for (var i = 0; i < BANDS.length && c > from; i++) {
+        var upto = Math.min(c, BANDS[i][0]), k = upto - from;
+        total += k * BANDS[i][1]; parts.push(k + " × £" + gbp(BANDS[i][1])); from = upto;
+      }
+      n.textContent = c; t.textContent = gbp(total); s.textContent = parts.join(" + ");
+      var growth = total > GROWTH;
+      pay.hidden = growth; up.hidden = !growth; calc.classList.toggle("is-growth", growth);
+      would.textContent = c; wouldcost.textContent = gbp(total);
+      cta.textContent = growth ? "Choose Growth" : "Choose Training only";
+    }
+    r.addEventListener("input", go); go();
+  })();
+</script>
+</body>
+</html>

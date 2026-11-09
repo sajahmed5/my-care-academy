@@ -19,7 +19,7 @@ of, and the actions outstanding against them — one page, one person.
 That matters because of the moment it is built for. An inspector asks for a staff member's
 file, and the provider currently assembles it from a folder, an inbox and three systems. We
 hand them a dated PDF. Nothing else we sell is as easy to demonstrate in ten seconds, and it is
-the reason a provider pays £149 rather than £15 a head for courses elsewhere.
+the reason a provider pays a flat monthly price for Pro rather than £15 a head for courses elsewhere.
 
 It is also the spine the rest of the roadmap hangs from: every new compliance area (supervisions,
 audits, incidents) becomes **one more section on this page** rather than one more tab in the nav.

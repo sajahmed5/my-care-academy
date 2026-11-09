@@ -8,7 +8,9 @@ import {
   tierLabel,
   type PackageTier,
 } from "@/lib/organisations";
-import { LIST_PRICE_GBP } from "@/lib/pricing";
+import { FLAT_PRICE_GBP, gbp, growthIsCheaper, priceLabel, trainingOnlyPrice } from "@/lib/pricing";
+import { countCarers } from "@/lib/carers";
+import { GrowthNudge } from "@/components/growth-nudge";
 import { ChangePackage } from "./change-package";
 import { formatMoney, getBillingSummary } from "@/lib/account-billing";
 import { SettingsShell } from "@/app/org/settings/settings-shell";
@@ -105,15 +107,22 @@ export default async function AccountPage({
   }));
 
   const admin = createAdminClient();
-  const [whiteLabel, ai, aiMonth] = await Promise.all([
+  const [whiteLabel, ai, aiMonth, carers] = await Promise.all([
     hasFeature(context, "platform.white_label"),
     aiStatus(admin, context.organisationId!),
     monthCharge(admin, context.organisationId!),
+    // Training only is priced per carer (lib/pricing.ts), so the cards show
+    // what this company would pay for the carers it has today.
+    countCarers(admin, context.organisationId!),
   ]);
 
   const tier = (org?.package_tier ?? "core") as PackageTier;
   const trial = trialState((org?.trial_ends_at as string | null) ?? null);
   const details = TIER_DETAILS[tier];
+  const list = priceLabel(tier, carers);
+  // Past the team size where Growth is cheaper, a Training only company is
+  // asked whether it wants to move up (Saj, 9 Nov 2026).
+  const nudge = tier === "core" && trial.kind === "none" && growthIsCheaper(carers);
   const billing = await getBillingSummary({
     stripe_customer_id: org?.stripe_customer_id ?? null,
     stripe_subscription_id: org?.stripe_subscription_id ?? null,
@@ -130,13 +139,20 @@ export default async function AccountPage({
             </p>
             <div className="mt-1 flex items-baseline justify-between gap-3">
               <h2 className="text-2xl font-bold">{tierLabel(tier)}</h2>
-              {billing.price && (
+              {billing.price ? (
                 <p className="text-lg font-semibold">
                   {formatMoney(billing.price.amount, billing.price.currency)}
                   <span className="text-sm font-normal opacity-80">
                     /{billing.price.interval}
                   </span>
                 </p>
+              ) : (
+                trial.kind === "none" && (
+                  <p className="text-right text-lg font-semibold">
+                    {list.figure}
+                    <span className="block text-xs font-normal opacity-80">{list.per}</span>
+                  </p>
+                )
               )}
             </div>
             <p className="mt-1 text-sm opacity-90">
@@ -156,6 +172,14 @@ export default async function AccountPage({
             </ul>
           </CardContent>
         </Card>
+
+        {nudge && (
+          <GrowthNudge
+            carers={carers}
+            costNow={gbp(trainingOnlyPrice(carers).total)}
+            growthPrice={gbp(FLAT_PRICE_GBP.core_forms)}
+          />
+        )}
 
         {/* Change your package: the packages side by side, and a request to us. */}
         <Card id="change" className="scroll-mt-20">
@@ -178,7 +202,8 @@ export default async function AccountPage({
               options={PACKAGE_TIERS.map((t) => ({
                 value: t.value,
                 label: t.label,
-                price: LIST_PRICE_GBP[t.value],
+                price: priceLabel(t.value, carers).figure,
+                per: priceLabel(t.value, carers).per,
                 points: TIER_DETAILS[t.value].features.slice(0, 4),
               }))}
             />

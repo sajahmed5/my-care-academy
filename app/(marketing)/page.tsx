@@ -32,10 +32,10 @@ export const metadata: Metadata = {
 const TRUST = [
   ["2002", "the year we started in care"],
   [String(COURSES), "CQC-aligned care courses"],
-  ["Unlimited", "learners, managers and admins"],
-  // Was "0 add-on modules to buy later" — not true once the Care Certificate
-  // observation and the policy packs were sold as add-ons. Per-carer pricing is.
-  ["£0", "per carer, on every plan"],
+  ["Unlimited", "carers on Growth and above"],
+  // Was "£0 per carer, on every plan" until 9 Nov 2026, when online training
+  // alone became per carer (lib/pricing.ts). The packages above it stay flat.
+  ["£5", "a carer a month for training, less as you grow"],
 ];
 
 /** A desktop monitor with a browser bar — the product pictures sit in these. */
