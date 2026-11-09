@@ -1,4 +1,5 @@
 import { daysUntil, expiryFlag, isOverdue } from "@/lib/engine-logic";
+import { DUE_SOON_DAYS } from "@/lib/records";
 
 /*
  * A learner's training record as plain data, and the sums over it. Kept apart
@@ -40,8 +41,9 @@ export interface LearnerStats {
   expired: number;
   certificates: number;
   overdue: number;
-  /** Not completed, has a due date inside 60 days, and not yet overdue —
-   *  the window where chasing still prevents a breach (issue #29). */
+  /** Not completed, has a due date inside DUE_SOON_DAYS (30), and not yet
+   *  overdue — the window where chasing still prevents a breach (issue #29).
+   *  Was 60; the same 30-day window every other due list uses (9 Nov 2026). */
   dueSoon: number;
   expiring: number;
   completionPct: number;
@@ -83,7 +85,7 @@ export function learnerStats(
   const dueSoon = enrolments.filter((e) => {
     if (e.status === "completed" || !e.due_date) return false;
     if (isOverdue(e.due_date, e.status, now)) return false;
-    return daysUntil(new Date(e.due_date), now) <= 60;
+    return daysUntil(new Date(e.due_date), now) <= DUE_SOON_DAYS;
   }).length;
 
   // Expiring = latest cert per course flagged amber/red but not yet expired.

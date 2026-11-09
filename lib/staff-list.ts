@@ -52,7 +52,7 @@ export const SEGMENTS: { key: Filter; label: string }[] = [
 /** The rest, behind the Filters button. */
 export const MORE_FILTERS: { key: Filter; label: string; group: string }[] = [
   { key: "overdue", label: "Overdue training", group: "Training" },
-  { key: "due_soon", label: "Due in the next 60 days", group: "Training" },
+  { key: "due_soon", label: "Due in the next 30 days", group: "Training" },
   { key: "in_progress", label: "In progress", group: "Training" },
   { key: "not_started", label: "Not started", group: "Training" },
   { key: "completed", label: "Everything completed", group: "Training" },

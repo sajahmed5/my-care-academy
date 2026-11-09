@@ -71,14 +71,14 @@ beforeAll(async () => {
   const { error: eErr } = await admin.from("enrolments").insert([
     // Completed after its due date — a late completion; certificate expiring in 30 days.
     enrol(learnerOne, c1, { status: "completed", progress: 100, due_date: dateIn(-10), assigned_at: at(-90) }),
-    // Due in 59 days: due soon. Two certificates with the same issue time.
-    enrol(learnerOne, c2, { status: "in_progress", progress: 40, due_date: dateIn(59), assigned_at: at(-5) }),
+    // Due in 29 days: due soon. Two certificates with the same issue time.
+    enrol(learnerOne, c2, { status: "in_progress", progress: 40, due_date: dateIn(29), assigned_at: at(-5) }),
     // Due yesterday, not started: overdue.
     enrol(learnerOne, c3, { status: "not_started", due_date: dateIn(-1), assigned_at: at(-30) }),
     // Expired, renewed long ago: newest certificate expired 35 days ago.
     enrol(learnerOne, c4, { status: "expired", progress: 100, assigned_at: at(-800) }),
-    // Due in 61 days: not due soon. Time spent and a reminder sent.
-    enrol(learnerOne, c5, { status: "in_progress", progress: 100, due_date: dateIn(61), time_spent: 300, last_reminder_at: at(-2) }),
+    // Due in 31 days: not due soon. Time spent and a reminder sent.
+    enrol(learnerOne, c5, { status: "in_progress", progress: 100, due_date: dateIn(31), time_spent: 300, last_reminder_at: at(-2) }),
     // Due today (UTC midnight is already past): overdue.
     enrol(twin, c1, { status: "not_started", due_date: dateIn(0), time_spent: 15 }),
     enrol(leaver, c2, { status: "in_progress", progress: 10 }),
