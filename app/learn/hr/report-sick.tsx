@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { selectClass, textareaClass } from "@/components/hr/fields";
-import { ABSENCE_REASONS } from "@/lib/hr/absence";
 import { reportSickAction } from "./actions";
 
-export function ReportSick() {
+/** `reasons` is the company's list, less injury at work: that's reported by phone. */
+export function ReportSick({ reasons }: { reasons: Array<{ key: string; label: string }> }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [on, setOn] = useState(new Date().toISOString().slice(0, 10));
@@ -28,8 +28,8 @@ export function ReportSick() {
           <label htmlFor="rs-reason" className="text-xs font-medium">What&apos;s wrong</label>
           <select id="rs-reason" className={`${selectClass} w-64`} value={reason} onChange={(e) => setReason(e.target.value)}>
             <option value="">Choose…</option>
-            {ABSENCE_REASONS.filter((r) => r !== "Injury at work").map((r) => (
-              <option key={r}>{r}</option>
+            {reasons.map((r) => (
+              <option key={r.key} value={r.label}>{r.label}</option>
             ))}
           </select>
         </div>

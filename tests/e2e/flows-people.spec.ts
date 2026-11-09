@@ -647,7 +647,7 @@ test.describe("absence", () => {
     // Back before they went off: refused.
     await page.locator("#ab-start").fill("2026-10-25");
     await page.locator("#ab-back").fill("2026-10-20");
-    await page.locator("#ab-reason").selectOption("Cold, flu or COVID-19");
+    await page.locator("#ab-reason").selectOption("Illness (cold, flu, stomach bug)");
     await page.getByRole("button", { name: "Record the absence" }).click();
     await expect(page.getByRole("status")).toContainText("They came back after they went off");
     // No reason: refused.
@@ -656,12 +656,12 @@ test.describe("absence", () => {
     await page.getByRole("button", { name: "Record the absence" }).click();
     await expect(page.getByRole("status")).toContainText("Choose the reason.");
     // 10,000 characters of detail, with HTML in it.
-    await page.locator("#ab-reason").selectOption("Cold, flu or COVID-19");
+    await page.locator("#ab-reason").selectOption("Illness (cold, flu, stomach bug)");
     await page.locator("#ab-detail").fill(`<b>QA</b> ${"detail ".repeat(1500)}`);
     await page.getByRole("button", { name: "Record the absence" }).click();
     await expect(page.getByRole("status")).toContainText("Saved.");
     const absence = (await adminDb().from("sickness_absences").select("id, start_date, returned_on, reason, reason_detail, rtw_status").eq("user_id", carer.id).single()).data!;
-    expect(absence).toMatchObject({ start_date: "2026-10-25", returned_on: "2026-10-28", reason: "Cold, flu or COVID-19", rtw_status: "none" });
+    expect(absence).toMatchObject({ start_date: "2026-10-25", returned_on: "2026-10-28", reason: "Illness (cold, flu, stomach bug)", rtw_status: "none" });
     // Finding (Low): the detail box has no limit, and the server keeps the
     // first 1,000 characters without telling anyone the rest was dropped.
     expect((absence.reason_detail as string).length).toBe(1000);

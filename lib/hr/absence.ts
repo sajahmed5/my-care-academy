@@ -21,23 +21,66 @@ import { addDays } from "./probation";
  * Pure: the file, the Absence page and the weekly email all read from here.
  */
 
-export const DV = "Sickness and diarrhoea";
+export interface AbsenceReason {
+  /** One of ours (illness, injury…), or own_… for one the company added. */
+  key: string;
+  label: string;
+  /** Never counts towards a trigger: counting it can be discrimination. */
+  excluded: boolean;
+}
 
-export const ABSENCE_REASONS = [
-  DV,
-  "Cold, flu or COVID-19",
-  "Back, neck or other muscle pain",
-  "Stress, anxiety or depression",
-  "Headache or migraine",
-  "Injury at work",
-  "Injury outside work",
-  "Operation or hospital stay",
-  "Pregnancy-related",
-  "Other",
+/**
+ * Our reasons: broad on purpose (Saj, 9 Nov 2026: the first list was far
+ * too specific). A company renames, removes or adds to them under Settings →
+ * HR → Absence; the two that must never count stay, whatever they're called.
+ */
+export const OUR_ABSENCE_REASONS: AbsenceReason[] = [
+  { key: "illness", label: "Illness (cold, flu, stomach bug)", excluded: false },
+  { key: "injury", label: "Injury", excluded: false },
+  { key: "injury_at_work", label: "Injury at work", excluded: true },
+  { key: "mental_health", label: "Stress or mental health", excluded: false },
+  { key: "medical", label: "Operation, hospital or medical appointment", excluded: false },
+  { key: "pregnancy", label: "Pregnancy-related", excluded: true },
+  { key: "other", label: "Other", excluded: false },
 ];
 
-/** Reasons that never count towards a trigger: counting them can be discrimination. */
-export const EXCLUDED_REASONS = ["Pregnancy-related", "Injury at work"];
+/** Kept on every company's list, and always left out of the triggers: the law, not a preference. */
+export const PROTECTED_REASON_KEYS = ["injury_at_work", "pregnancy"];
+export const MAX_REASONS = 20;
+
+/**
+ * The company's list from hr_settings.absence_reasons, or ours when it has
+ * none. Labels are what the absence record stores, so each is unique;
+ * the protected two are put back if they're missing.
+ */
+export function sanitiseReasons(raw: unknown): AbsenceReason[] {
+  if (!Array.isArray(raw)) return OUR_ABSENCE_REASONS;
+  const ours = new Set(OUR_ABSENCE_REASONS.map((r) => r.key));
+  const out: AbsenceReason[] = [];
+  for (const item of raw.slice(0, MAX_REASONS)) {
+    const r = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+    const label = typeof r.label === "string" ? r.label.replace(/\s+/g, " ").trim().slice(0, 60) : "";
+    const key = typeof r.key === "string" && (ours.has(r.key) || /^own_[a-z0-9]{4,12}$/.test(r.key)) ? r.key : null;
+    if (!label || !key || out.some((t) => t.key === key || t.label.toLowerCase() === label.toLowerCase())) continue;
+    out.push({ key, label, excluded: PROTECTED_REASON_KEYS.includes(key) || r.excluded === true });
+  }
+  for (const key of PROTECTED_REASON_KEYS) {
+    if (!out.some((r) => r.key === key)) {
+      const back = OUR_ABSENCE_REASONS.find((r) => r.key === key)!;
+      if (!out.some((r) => r.label.toLowerCase() === back.label.toLowerCase())) out.push(back);
+    }
+  }
+  return out.length ? out : OUR_ABSENCE_REASONS;
+}
+
+export const sameAsOurReasons = (list: AbsenceReason[]) =>
+  list.length === OUR_ABSENCE_REASONS.length && list.every((r, i) => r.key === OUR_ABSENCE_REASONS[i].key && r.label === OUR_ABSENCE_REASONS[i].label && r.excluded === OUR_ABSENCE_REASONS[i].excluded);
+
+/** The reason an absence record names, by its label, or null for one no longer on the list. */
+export const reasonByLabel = (reasons: AbsenceReason[], label: string) => reasons.find((r) => r.label === label) ?? null;
+
+/** Never counts towards a trigger, by its label (an old label no longer listed counts). */
+export const reasonExcluded = (reasons: AbsenceReason[], label: string) => reasonByLabel(reasons, label)?.excluded === true;
 
 export const SELF_CERT_DAYS = 7;
 export const RTW_DUE_DAYS = 3;

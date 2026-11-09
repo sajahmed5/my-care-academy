@@ -127,8 +127,11 @@ to appeal; the capability case itself comes with disciplinary.*
 ## Sickness absence and return to work
 
 - The office records an absence: start and return dates, the reason as a
-  category, self-certified up to 7 days or a fit note uploaded (with its end
-  date) beyond that. Reporting sick from the carer's own login is a company
+  category (ours are broad — illness, injury, injury at work, stress or
+  mental health, operation or hospital, pregnancy-related, other — and the
+  company renames, removes or adds to them under Settings → HR → Absence),
+  self-certified up to 7 days or a fit note uploaded (with its end date)
+  beyond that. Reporting sick from the carer's own login is a company
   switch, off by default — in homecare carers usually ring the on-call line.
 - A **return-to-work interview** is due within 3 days of coming back, and
   shows in Who's due. It asks the care question: for sickness and diarrhoea,

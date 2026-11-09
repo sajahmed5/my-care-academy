@@ -11,7 +11,7 @@ import { sendEmailBatch } from "@/lib/email";
 import { emailButton, emailLayout, esc } from "@/lib/email-layout";
 import { siteOrigin } from "@/lib/site-url";
 import { formatDate } from "@/lib/dates";
-import { ABSENCE_REASONS } from "@/lib/hr/absence";
+import { reasonByLabel, sanitiseReasons } from "@/lib/hr/absence";
 import { personName } from "@/lib/hr/server";
 import { unitFor, validateLeave, type LeaveInput } from "@/lib/hr/holidays-server";
 import { createCase, emailNewGrievance } from "@/lib/hr/cases-server";
@@ -35,12 +35,14 @@ export async function reportSickAction(input: { startDate: string; reason: strin
   if (!(await hasFeature(context, "recruitment.tracker"))) return { ok: false, error: "Not available." };
   const admin = createAdminClient();
   const orgId = context.organisationId!;
-  const { data: settings } = await admin.from("hr_settings").select("self_report_sickness").eq("organisation_id", orgId).maybeSingle();
+  const { data: settings } = await admin.from("hr_settings").select("self_report_sickness, absence_reasons").eq("organisation_id", orgId).maybeSingle();
   if (settings?.self_report_sickness !== true) return { ok: false, error: "Your company takes sickness by phone. Ring the office or the on-call line." };
   if (!ISO.test(input.startDate)) return { ok: false, error: "Choose your first day off." };
   const today = new Date().toISOString().slice(0, 10);
   if (input.startDate > today) return { ok: false, error: "You can report from today, not ahead." };
-  if (!ABSENCE_REASONS.includes(input.reason)) return { ok: false, error: "Choose what's wrong." };
+  // The company's own list; an injury at work is reported by phone, never from here.
+  const reason = reasonByLabel(sanitiseReasons(settings?.absence_reasons), input.reason);
+  if (!reason || reason.key === "injury_at_work") return { ok: false, error: "Choose what's wrong." };
   const { data: open } = await admin.from("sickness_absences").select("id").eq("user_id", context.userId).is("returned_on", null).limit(1);
   if (open?.length) return { ok: false, error: "You're already off sick. The office records when you're back." };
   const { error } = await admin.from("sickness_absences").insert({
@@ -50,8 +52,8 @@ export async function reportSickAction(input: { startDate: string; reason: strin
     reason: input.reason,
     reason_detail: input.note.replace(/\r/g, "").trim().slice(0, 1000) || null,
     certification: "self",
-    excluded_from_triggers: input.reason === "Pregnancy-related",
-    exclusion_reason: input.reason === "Pregnancy-related" ? input.reason : null,
+    excluded_from_triggers: reason.excluded,
+    exclusion_reason: reason.excluded ? reason.label : null,
     reported_by_self: true,
     reported_by: context.userId,
   });

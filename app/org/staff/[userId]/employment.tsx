@@ -7,7 +7,7 @@ import { PROBATION_STATUS_LABEL, outcomeLabel, probationFromRow, schedule, type 
 import { templateFor } from "@/lib/hr/letters";
 import { EmploymentForm, ProbationLine } from "./employment-forms";
 import { AbsenceForm } from "@/app/org/hr/absence/absence-forms";
-import { bradford, daysOff, needsFitNote, rtwOutstanding, sanitiseTriggers, type Absence } from "@/lib/hr/absence";
+import { bradford, daysOff, needsFitNote, rtwOutstanding, sanitiseReasons, sanitiseTriggers, type Absence } from "@/lib/hr/absence";
 import { addDays } from "@/lib/hr/probation";
 import { STATUS_LABEL, amountText, balance, canApprove, holidaySettingsFromRow, leaveTypeLabel, leaveTypesFor, leaveYear, type LeaveRequest } from "@/lib/hr/holidays";
 import { AllowanceForm, CancelLeave, DecideLeave, LeaveForm } from "@/app/org/hr/holidays/holiday-forms";
@@ -137,7 +137,7 @@ export async function AbsencePanel({ supabase, userId, orgId }: { supabase: Supa
         .order("id")
         .range(from, to),
     ),
-    supabase.from("hr_settings").select("bradford_triggers").eq("organisation_id", orgId).maybeSingle(),
+    supabase.from("hr_settings").select("bradford_triggers, absence_reasons").eq("organisation_id", orgId).maybeSingle(),
   ]);
   const absences = rows as unknown as Absence[];
   const today = new Date().toISOString().slice(0, 10);
@@ -157,7 +157,7 @@ export async function AbsencePanel({ supabase, userId, orgId }: { supabase: Supa
       <Card>
         <CardContent className="space-y-3 pt-6">
           <h3 className="font-semibold">Record an absence</h3>
-          <AbsenceForm userId={userId} />
+          <AbsenceForm userId={userId} reasons={sanitiseReasons(settings?.absence_reasons)} />
         </CardContent>
       </Card>
       {absences.length > 0 && (

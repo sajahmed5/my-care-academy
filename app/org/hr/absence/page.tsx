@@ -7,7 +7,7 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/lib/dates";
 import { loadCurrentCarers } from "@/app/org/due/load";
-import { absenceDue, daysOff, needsFitNote, sanitiseTriggers, type Absence } from "@/lib/hr/absence";
+import { absenceDue, daysOff, needsFitNote, sanitiseReasons, sanitiseTriggers, type Absence } from "@/lib/hr/absence";
 import { AbsenceForm } from "./absence-forms";
 import { addDays } from "@/lib/hr/probation";
 
@@ -38,7 +38,7 @@ export default async function AbsenceOverviewPage() {
         .range(f, t),
     ),
     fetchAll((f, t) => supabase.from("absence_welfare_meetings").select("absence_id, held_on").eq("organisation_id", orgId).order("absence_id").order("id").range(f, t)),
-    supabase.from("hr_settings").select("bradford_triggers").eq("organisation_id", orgId).maybeSingle(),
+    supabase.from("hr_settings").select("bradford_triggers, absence_reasons").eq("organisation_id", orgId).maybeSingle(),
   ]);
   const names = new Map(people.map((p) => [p.id, p.name]));
   const due = absenceDue(absences as unknown as Absence[], meetings as never, sanitiseTriggers(settings?.bradford_triggers), today, new Set(names.keys()));
@@ -71,7 +71,7 @@ export default async function AbsenceOverviewPage() {
         <Card>
           <CardContent className="space-y-3 pt-6">
             <h3 className="font-semibold">Record an absence</h3>
-            <AbsenceForm people={people} />
+            <AbsenceForm people={people} reasons={sanitiseReasons(settings?.absence_reasons)} />
           </CardContent>
         </Card>
 

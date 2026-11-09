@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { absenceDue, bradford, daysOff, needsFitNote, rtwDueOn, rtwFlags, sanitiseTriggers, welfareDueOn, type Absence } from "../lib/hr/absence";
+import { OUR_ABSENCE_REASONS, absenceDue, bradford, daysOff, needsFitNote, reasonExcluded, rtwDueOn, rtwFlags, sameAsOurReasons, sanitiseReasons, sanitiseTriggers, welfareDueOn, type Absence } from "../lib/hr/absence";
 
 const today = "2026-10-30";
 const ab = (over: Partial<Absence>): Absence => ({
@@ -7,7 +7,7 @@ const ab = (over: Partial<Absence>): Absence => ({
   user_id: "u",
   start_date: "2026-10-01",
   returned_on: "2026-10-03",
-  reason: "Cold, flu or COVID-19",
+  reason: "Illness (cold, flu, stomach bug)",
   certification: "self",
   fit_note_until: null,
   excluded_from_triggers: false,
@@ -76,5 +76,34 @@ describe("across the company", () => {
     expect(due.off.map((a) => a.id)).toEqual(["off"]);
     expect(due.rtw.map((a) => [a.id, a.dueOn, a.late])).toEqual([["rtw", "2026-10-31", false]]);
     expect(due.triggers.map((t) => [t.userId, t.score])).toEqual([["b", 8]]);
+  });
+});
+
+describe("the company's reasons", () => {
+  it("are ours until the company changes them", () => {
+    expect(sanitiseReasons(null)).toBe(OUR_ABSENCE_REASONS);
+    expect(sanitiseReasons("x")).toBe(OUR_ABSENCE_REASONS);
+    expect(sameAsOurReasons(sanitiseReasons([...OUR_ABSENCE_REASONS]))).toBe(true);
+  });
+  it("keep renamed, dropped and added reasons, but never lose pregnancy or injury at work", () => {
+    const list = sanitiseReasons([
+      { key: "illness", label: "  Short-term  illness ", excluded: true },
+      { key: "own_abc123", label: "Dental", excluded: false },
+      { key: "own_abc123", label: "Twice", excluded: false },
+      { key: "made_up", label: "Bad key" },
+      { key: "own_def456", label: "dental" },
+      { key: "pregnancy", label: "Pregnancy", excluded: false },
+      { key: "other", label: "" },
+    ]);
+    expect(list).toEqual([
+      { key: "illness", label: "Short-term illness", excluded: true },
+      { key: "own_abc123", label: "Dental", excluded: false },
+      { key: "pregnancy", label: "Pregnancy", excluded: true },
+      { key: "injury_at_work", label: "Injury at work", excluded: true },
+    ]);
+    expect(sameAsOurReasons(list)).toBe(false);
+    expect(reasonExcluded(list, "Pregnancy")).toBe(true);
+    expect(reasonExcluded(list, "Dental")).toBe(false);
+    expect(reasonExcluded(list, "Cold, flu or COVID-19")).toBe(false);
   });
 });

@@ -3,10 +3,14 @@
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MAX_REASONS, OUR_ABSENCE_REASONS, PROTECTED_REASON_KEYS, type AbsenceReason } from "@/lib/hr/absence";
 import { saveAbsenceSettingsAction } from "../actions";
 
-export function AbsenceSettingsForm({ selfReport, triggers }: { selfReport: boolean; triggers: number[] }) {
+const newKey = () => `own_${Math.random().toString(36).slice(2, 10)}`;
+
+export function AbsenceSettingsForm({ selfReport, reasons, triggers }: { selfReport: boolean; reasons: AbsenceReason[]; triggers: number[] }) {
   const [on, setOn] = useState(selfReport);
+  const [list, setList] = useState<AbsenceReason[]>(reasons);
   const [points, setPoints] = useState(triggers.join(", "));
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -17,7 +21,7 @@ export function AbsenceSettingsForm({ selfReport, triggers }: { selfReport: bool
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
-          const r = await saveAbsenceSettingsAction({ selfReport: on, triggers: points.split(/[,\s]+/).map(Number) });
+          const r = await saveAbsenceSettingsAction({ selfReport: on, reasons: list, triggers: points.split(/[,\s]+/).map(Number) });
           setMessage(r.ok ? "Saved." : r.error ?? "That didn't save.");
         });
       }}
@@ -33,6 +37,40 @@ export function AbsenceSettingsForm({ selfReport, triggers }: { selfReport: bool
             </span>
           </span>
         </label>
+      </section>
+      <section className={card}>
+        <h3 className="font-semibold">Reasons</h3>
+        <p className="text-sm text-muted-foreground">
+          What the office picks from when recording an absence, and staff when reporting sick. Rename ours, take them off, or add your own. An absence already
+          recorded keeps the reason it was given.
+        </p>
+        <ul className="space-y-2">
+          {list.map((r, i) => {
+            const locked = PROTECTED_REASON_KEYS.includes(r.key);
+            const patch = (p: Partial<AbsenceReason>) => setList(list.map((x, j) => (j === i ? { ...x, ...p } : x)));
+            return (
+              <li key={r.key} className="flex flex-wrap items-center gap-2">
+                <Input value={r.label} onChange={(e) => patch({ label: e.target.value })} maxLength={60} className="w-72" aria-label="Reason" />
+                <label className="flex items-center gap-1.5 text-sm">
+                  <input type="checkbox" checked={r.excluded} disabled={locked} onChange={(e) => patch({ excluded: e.target.checked })} /> Never counts towards the triggers
+                </label>
+                {locked ? (
+                  <span className="text-xs text-muted-foreground">Always kept: counting it can be discrimination</span>
+                ) : (
+                  <Button type="button" size="xs" variant="ghost" onClick={() => setList(list.filter((_, j) => j !== i))}>Remove</Button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        <div className="flex flex-wrap items-center gap-2">
+          {list.length < MAX_REASONS && (
+            <Button type="button" size="sm" variant="outline" onClick={() => setList([...list, { key: newKey(), label: "", excluded: false }])}>
+              Add a reason
+            </Button>
+          )}
+          <Button type="button" size="sm" variant="ghost" onClick={() => setList(OUR_ABSENCE_REASONS)}>Back to ours</Button>
+        </div>
       </section>
       <section className={card}>
         <h3 className="font-semibold">Trigger points</h3>

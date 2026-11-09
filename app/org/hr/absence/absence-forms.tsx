@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Field } from "@/components/recruit/application-fields";
 import { selectClass, textareaClass } from "@/components/hr/fields";
 import { isShown, type Answers, type FieldError } from "@/lib/recruitment-application";
-import { ABSENCE_REASONS, EXCLUDED_REASONS, RTW_SECTIONS } from "@/lib/hr/absence";
+import { RTW_SECTIONS, reasonByLabel, reasonExcluded, type AbsenceReason } from "@/lib/hr/absence";
 import {
   addWelfareMeetingAction,
   deleteAbsenceAction,
@@ -27,16 +27,20 @@ const label = "text-xs font-medium";
 /**
  * Record an absence, or change one. With `people`, the office picks who
  * (the Absence page); without, it's for the person whose file it's on.
+ * `reasons` is the company's list (Settings → HR → Absence); an absence
+ * recorded under a reason since dropped from it keeps that reason.
  */
 export function AbsenceForm({
   userId,
   people,
+  reasons,
   absenceId,
   initial,
   onDone,
 }: {
   userId?: string;
   people?: Array<{ id: string; name: string }>;
+  reasons: AbsenceReason[];
   absenceId?: string;
   initial?: AbsenceInput;
   onDone?: (id?: string) => void;
@@ -49,7 +53,8 @@ export function AbsenceForm({
   const [message, setMessage] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const set = (patch: Partial<AbsenceInput>) => setF((x) => ({ ...x, ...patch }));
-  const autoExcluded = EXCLUDED_REASONS.includes(f.reason);
+  const autoExcluded = reasonExcluded(reasons, f.reason);
+  const stale = initial?.reason && !reasonByLabel(reasons, initial.reason) ? initial.reason : null;
   return (
     <form
       className="space-y-3"
@@ -89,8 +94,9 @@ export function AbsenceForm({
           <label htmlFor="ab-reason" className={label}>Reason</label>
           <select id="ab-reason" className={`${selectClass} w-64`} value={f.reason} onChange={(e) => set({ reason: e.target.value })}>
             <option value="">Choose…</option>
-            {ABSENCE_REASONS.map((r) => (
-              <option key={r}>{r}</option>
+            {stale && <option value={stale}>{stale} (no longer on your list)</option>}
+            {reasons.map((r) => (
+              <option key={r.key} value={r.label}>{r.label}</option>
             ))}
           </select>
         </div>

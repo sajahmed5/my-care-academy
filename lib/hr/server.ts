@@ -8,6 +8,7 @@ import { addMonths } from "@/lib/records";
 import { renderLetterPdf, ukDate } from "@/lib/hr-pdf";
 import { letterDoc, sanitiseLetterhead, type LetterDoc } from "@/lib/hr/letterhead";
 import { draftLetter, hrLetterHtml, sanitiseOverrides, templateInForce, type LetterValues } from "@/lib/hr/letters";
+import { sanitiseReasons, type AbsenceReason } from "./absence";
 import { DEFAULT_PROBATION, probationFromRow, type ProbationFacts, type ProbationSettings } from "@/lib/hr/probation";
 
 /**
@@ -38,6 +39,12 @@ export async function hrPerson(admin: Admin, orgId: string | null, userId: strin
   const { data } = await admin.from("users").select("id, full_name, email, role, status, organisation_id").eq("id", userId).maybeSingle();
   if (!data || data.organisation_id !== orgId || !(STAFF_ROLES as readonly string[]).includes(data.role as string)) return null;
   return data as Person;
+}
+
+/** The company's absence reasons: ours, unless they've changed them under Settings → HR → Absence. */
+export async function absenceReasons(admin: Admin, orgId: string): Promise<AbsenceReason[]> {
+  const { data } = await admin.from("hr_settings").select("absence_reasons").eq("organisation_id", orgId).maybeSingle();
+  return sanitiseReasons(data?.absence_reasons);
 }
 
 export async function loadHrSettingsRow(admin: Admin, orgId: string): Promise<Record<string, unknown> | null> {

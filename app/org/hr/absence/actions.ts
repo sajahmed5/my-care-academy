@@ -7,8 +7,8 @@ import { requireConsole, type UserContext } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAudit } from "@/lib/audit";
 import { sanitiseWith, validateSection, type FieldError } from "@/lib/recruitment-application";
-import { ABSENCE_REASONS, EXCLUDED_REASONS, RTW_SECTIONS } from "@/lib/hr/absence";
-import { HR_BUCKET, hrPerson, type Admin } from "@/lib/hr/server";
+import { RTW_SECTIONS, reasonByLabel, type AbsenceReason } from "@/lib/hr/absence";
+import { HR_BUCKET, absenceReasons, hrPerson, type Admin } from "@/lib/hr/server";
 import { fileFromDataUrl } from "@/lib/data-url";
 
 /**
@@ -32,15 +32,21 @@ export interface AbsenceInput {
 /** The details box: enough for a note, not a report (the column was cut here silently before). */
 const DETAIL_MAX = 1000;
 
-function clean(input: AbsenceInput): { row?: Record<string, unknown>; error?: string } {
+/**
+ * `reasons` is the company's list; `current` is what the absence says now,
+ * kept on an edit even when the company has since dropped it from the list.
+ */
+function clean(input: AbsenceInput, reasons: AbsenceReason[], current?: string): { row?: Record<string, unknown>; error?: string } {
   if (!ISO.test(input.startDate)) return { error: "Choose the first day off." };
   if (input.returnedOn && !ISO.test(input.returnedOn)) return { error: "Check the return date." };
   if (input.returnedOn && input.returnedOn <= input.startDate) return { error: "They came back after they went off: check the dates." };
-  if (!ABSENCE_REASONS.includes(input.reason)) return { error: "Choose the reason." };
+  const reason = reasonByLabel(reasons, input.reason);
+  if (!reason && !(current && input.reason === current)) return { error: "Choose the reason." };
   const certification = ["self", "fit_note", "none"].includes(input.certification) ? input.certification : "self";
   // Pregnancy-related and work injuries never count; the office can leave others out, with a reason.
-  const excluded = EXCLUDED_REASONS.includes(input.reason) || input.excluded;
-  const exclusionReason = EXCLUDED_REASONS.includes(input.reason) ? input.reason : input.exclusionReason.replace(/\s+/g, " ").trim().slice(0, 200);
+  const never = reason?.excluded === true;
+  const excluded = never || input.excluded;
+  const exclusionReason = never ? input.reason : input.exclusionReason.replace(/\s+/g, " ").trim().slice(0, 200);
   if (excluded && !exclusionReason) return { error: "Say why it's left out of the triggers (for example, related to a disability)." };
   const detail = input.reasonDetail.replace(/\r/g, "").trim();
   if (detail.length > DETAIL_MAX) return { error: `Keep the details under ${DETAIL_MAX.toLocaleString("en-GB")} characters (${detail.length.toLocaleString("en-GB")} now).` };
@@ -75,7 +81,7 @@ export async function recordAbsenceAction(userId: string, input: AbsenceInput): 
   const context = await requireConsole();
   const admin = createAdminClient();
   if (!(await hrPerson(admin, context.organisationId, userId))) return { ok: false, error: "That person is not one of your staff." };
-  const { row, error } = clean(input);
+  const { row, error } = clean(input, await absenceReasons(admin, context.organisationId!));
   if (!row) return { ok: false, error };
   // Two spells for the same days is a mistake, not two absences.
   const { data: overlap } = await admin
@@ -102,7 +108,7 @@ export async function updateAbsenceAction(id: string, input: AbsenceInput): Prom
   const admin = createAdminClient();
   const absence = await loadAbsence(admin, context, id);
   if (!absence) return { ok: false, error: "Absence not found." };
-  const { row, error } = clean(input);
+  const { row, error } = clean(input, await absenceReasons(admin, context.organisationId!), absence.reason as string);
   if (!row) return { ok: false, error };
   const { error: upErr } = await admin.from("sickness_absences").update(row).eq("id", id);
   if (upErr) return { ok: false, error: "That didn't save. Try again." };

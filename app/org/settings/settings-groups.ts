@@ -72,7 +72,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       {
         href: "/org/settings/hr/absence",
         label: "Absence",
-        hint: "Whether staff can report sick from their own login, and your Bradford Factor trigger points.",
+        hint: "Whether staff can report sick from their own login, the reasons you record, and your Bradford Factor trigger points.",
       },
       {
         href: "/org/settings/hr/holidays",

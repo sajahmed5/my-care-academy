@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/lib/dates";
 import type { Answers } from "@/lib/recruitment-application";
 import { daysOff, isLongTerm, needsFitNote, rtwDueOn, rtwFlags, welfareDueOn, type Absence } from "@/lib/hr/absence";
-import { hrPerson, personName } from "@/lib/hr/server";
+import { absenceReasons, hrPerson, personName } from "@/lib/hr/server";
 import { AbsenceForm, DeleteAbsence, FitNote, OhForm, RtwForm, WelfareForm } from "../absence-forms";
 
 const fmt = (d: string | null) => (d ? formatDate(d, { day: "numeric", month: "short", year: "numeric" }) : "—");
@@ -26,7 +26,10 @@ export default async function AbsencePage({ params }: { params: Promise<{ id: st
   if (!a || a.organisation_id !== context.organisationId) notFound();
   const person = await hrPerson(admin, context.organisationId, a.user_id as string);
   if (!person) notFound();
-  const { data: meetings } = await admin.from("absence_welfare_meetings").select("id, held_on, how, notes").eq("absence_id", id).order("held_on");
+  const [{ data: meetings }, reasons] = await Promise.all([
+    admin.from("absence_welfare_meetings").select("id, held_on, how, notes").eq("absence_id", id).order("held_on"),
+    absenceReasons(admin, context.organisationId!),
+  ]);
   const today = new Date().toISOString().slice(0, 10);
   const absence = a as unknown as Absence;
   const days = daysOff(absence, today);
@@ -58,6 +61,7 @@ export default async function AbsencePage({ params }: { params: Promise<{ id: st
             <h3 className="font-semibold">The absence</h3>
             <AbsenceForm
               absenceId={id}
+              reasons={reasons}
               initial={{
                 startDate: a.start_date as string,
                 returnedOn: (a.returned_on as string | null) ?? "",

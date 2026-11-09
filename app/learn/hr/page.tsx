@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/lib/dates";
 import { PROBATION_STATUS_LABEL } from "@/lib/hr/probation";
 import { ReportSick } from "./report-sick";
+import { sanitiseReasons } from "@/lib/hr/absence";
 import { RaiseGrievance } from "./raise-grievance";
 import { ExitForm } from "@/components/hr/exit-form";
 import { submitExitInterviewAction } from "./actions";
@@ -46,7 +47,7 @@ export default async function MyHrPage() {
       .order("booked_on"),
     admin
       .from("hr_settings")
-      .select("self_report_sickness, leave_year_start, bank_holidays_from_allowance, max_off_at_once, leave_types")
+      .select("self_report_sickness, absence_reasons, leave_year_start, bank_holidays_from_allowance, max_off_at_once, leave_types")
       .eq("organisation_id", context.organisationId!)
       .maybeSingle(),
     // Their own absences: the dates and reason only, never the manager's notes.
@@ -159,7 +160,7 @@ export default async function MyHrPage() {
                   You&apos;re off sick from {short(offNow.start_date as string)} ({offNow.reason as string}). The office records the day you&apos;re back.
                 </p>
               ) : settings?.self_report_sickness ? (
-                <ReportSick />
+                <ReportSick reasons={sanitiseReasons(settings?.absence_reasons).filter((r) => r.key !== "injury_at_work")} />
               ) : (
                 <p className="text-muted-foreground">If you&apos;re too ill to work, ring the office or the on-call line as soon as you can.</p>
               )}

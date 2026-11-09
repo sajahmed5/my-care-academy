@@ -8,7 +8,7 @@ import { logAudit } from "@/lib/audit";
 import { sanitiseProbation } from "@/lib/hr/probation";
 import { sanitiseOverrides, templateFor } from "@/lib/hr/letters";
 import { sanitiseLetterhead, type Letterhead } from "@/lib/hr/letterhead";
-import { sanitiseTriggers } from "@/lib/hr/absence";
+import { sameAsOurReasons, sanitiseReasons, sanitiseTriggers, type AbsenceReason } from "@/lib/hr/absence";
 import { sanitiseLeaveTypes } from "@/lib/hr/holidays";
 
 /**
@@ -79,14 +79,25 @@ export async function saveLetterheadAction(input: Letterhead): Promise<{ ok: boo
   return { ok: true };
 }
 
-export async function saveAbsenceSettingsAction(input: { selfReport: boolean; triggers: number[] }): Promise<{ ok: boolean; error?: string }> {
+export async function saveAbsenceSettingsAction(input: { selfReport: boolean; reasons: AbsenceReason[]; triggers: number[] }): Promise<{ ok: boolean; error?: string }> {
   const context = await gate();
   const triggers = sanitiseTriggers(input.triggers);
-  const ok = await patchSettings(context.organisationId!, context.userId, { self_report_sickness: input.selfReport, bradford_triggers: triggers });
+  const typed = (Array.isArray(input.reasons) ? input.reasons : []).filter((r) => typeof r?.label === "string" && r.label.trim());
+  const labels = typed.map((r) => r.label.replace(/\s+/g, " ").trim().toLowerCase());
+  if (new Set(labels).size !== labels.length) return { ok: false, error: "Two reasons have the same name: give each its own." };
+  // Blank rows are dropped; the two that must stay come back if they were somehow lost.
+  const reasons = sanitiseReasons(typed);
+  if (reasons.length < 2) return { ok: false, error: "Keep at least one reason besides pregnancy and injury at work." };
+  const ok = await patchSettings(context.organisationId!, context.userId, {
+    self_report_sickness: input.selfReport,
+    bradford_triggers: triggers,
+    absence_reasons: sameAsOurReasons(reasons) ? null : reasons,
+  });
   if (!ok) return { ok: false, error: "The settings couldn't be saved. Try again." };
-  await logAudit({ context, action: "hr.absence_settings_saved", entity: "organisation", entityId: context.organisationId!, detail: { selfReport: input.selfReport, triggers } });
+  await logAudit({ context, action: "hr.absence_settings_saved", entity: "organisation", entityId: context.organisationId!, detail: { selfReport: input.selfReport, triggers, reasons: reasons.map((r) => r.label) } });
   revalidatePath("/org/settings/hr/absence");
   revalidatePath("/org/hr/absence");
+  revalidatePath("/learn/hr");
   return { ok: true };
 }
 
