@@ -57,11 +57,14 @@ export default async function RecruitmentPage({ searchParams }: { searchParams: 
     return { c, stages, stage: currentStage(stages), next: nextMove(stages) };
   });
   const live = rows.filter((r) => r.c.status === "candidate");
-  const shown = rows.filter((r) =>
-    show === "hired" ? r.c.status === "hired"
-      : show === "rejected" ? r.c.status === "rejected"
-        : r.c.status === "candidate" && (show === "us" ? r.next.who === "us" : show === "them" ? r.next.who === "them" : true),
-  );
+  const inFilter = (r: (typeof rows)[number], key: string) =>
+    key === "hired" ? r.c.status === "hired"
+      : key === "rejected" ? r.c.status === "rejected"
+        : r.c.status === "candidate" && (key === "us" ? r.next.who === "us" : key === "them" ? r.next.who === "them" : true);
+  const shown = rows.filter((r) => inFilter(r, show));
+  // Each pill carries its count: with the tiles all at 0 and the list empty,
+  // nothing else says where the candidates are.
+  const counts = Object.fromEntries(FILTERS.map((f) => [f.key, rows.filter((r) => inFilter(r, f.key)).length]));
 
   const monthStart = new Date();
   monthStart.setDate(1);
@@ -120,7 +123,7 @@ export default async function RecruitmentPage({ searchParams }: { searchParams: 
                     show === f.key ? "bg-foreground text-background" : "border bg-card text-foreground hover:bg-muted"
                   }`}
                 >
-                  {f.label}
+                  {f.label} ({counts[f.key]})
                 </Link>
               ))}
             </nav>
