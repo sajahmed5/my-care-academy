@@ -192,9 +192,9 @@ export default async function OrgDashboard() {
   const neverRows = learners.filter(isNeverActive);
   const dueSoonRows = learners.filter((r) => r.stats.dueSoon > 0);
   const training: TodoLine[] = [
-    overdueRows.length > 0 && { key: "overdue", tone: "alert" as const, text: `Overdue training: ${nameList(overdueRows)}`, href: "/org/learners?filter=overdue", action: "Choose who" },
-    neverRows.length > 0 && { key: "never", tone: "alert" as const, text: `Never signed in: ${nameList(neverRows)}`, href: "/org/learners?filter=never", action: "Choose who" },
-    dueSoonRows.length > 0 && { key: "due_soon", tone: "warn" as const, text: `Training due in the next 60 days: ${nameList(dueSoonRows)}`, href: "/org/learners?filter=due_soon", action: "Choose who" },
+    overdueRows.length > 0 && { key: "overdue", tone: "alert" as const, text: `Overdue training: ${nameList(overdueRows)}`, href: "/org/learners?filter=overdue", action: "Pick who to remind" },
+    neverRows.length > 0 && { key: "never", tone: "alert" as const, text: `Never signed in: ${nameList(neverRows)}`, href: "/org/learners?filter=never", action: "Pick who to remind" },
+    dueSoonRows.length > 0 && { key: "due_soon", tone: "warn" as const, text: `Training due in the next 60 days: ${nameList(dueSoonRows)}`, href: "/org/learners?filter=due_soon", action: "Pick who to remind" },
     totals.expiring > 0 && { key: "expiring", tone: "warn" as const, text: `Certificates expiring: ${plural(totals.expiring, "certificate")} soon or already expired`, href: "/org/certificates", action: "See which" },
   ].filter((r): r is TodoLine => !!r);
 
