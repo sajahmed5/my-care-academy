@@ -117,15 +117,23 @@ export function AbsenceForm({
         )}
       </div>
       {autoExcluded ? (
-        <p className="text-xs text-muted-foreground">{f.reason} absence never counts towards the triggers.</p>
+        <p className="text-xs text-muted-foreground">{f.reason} absence never counts towards the triggers: the law, not a choice.</p>
       ) : (
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" checked={f.excluded} onChange={(e) => set({ excluded: e.target.checked })} /> Leave out of the triggers
-          </label>
-          {f.excluded && (
-            <Input value={f.exclusionReason} onChange={(e) => set({ exclusionReason: e.target.value })} placeholder="Why (for example, related to a disability)" className="w-80" maxLength={200} />
-          )}
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={f.excluded} onChange={(e) => set({ excluded: e.target.checked })} /> Leave out of the triggers
+            </label>
+            {f.excluded && (
+              <Input value={f.exclusionReason} onChange={(e) => set({ exclusionReason: e.target.value })} placeholder="Why (for example, related to a disability)" className="w-80" maxLength={200} />
+            )}
+          </div>
+          {/* What the triggers are (issue report 92): the word alone meant nothing to a manager. */}
+          <p className="text-xs text-muted-foreground">
+            Every absence adds to the person&apos;s absence score (the Bradford Factor: short, frequent spells count most).
+            When it passes one of the trigger points set under Settings → HR → Absence, they show on the Absence page so you can decide what to do.
+            Tick this when the absence shouldn&apos;t count, for example one related to a disability, and say why.
+          </p>
         </div>
       )}
       <div className="flex items-center gap-3">

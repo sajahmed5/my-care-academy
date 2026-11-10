@@ -149,7 +149,7 @@ export default async function AbsenceOverviewPage() {
               </span>
             </div>
           )),
-          "Nobody has reached a trigger point. Nothing happens on its own when someone does: you decide.",
+          "Nobody has reached a trigger point. The trigger points are the absence scores set under Settings → HR → Absence (the Bradford Factor: short, frequent spells count most). Nothing happens on its own when someone does: you decide.",
         )}
       </div>
     </DashboardShell>
