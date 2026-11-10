@@ -6,9 +6,9 @@ import { probationFromRow } from "@/lib/hr/probation";
 import { ProbationSettingsForm } from "./probation-form";
 
 /**
- * Probation (HR-PACK.md): how long it lasts and when it's reviewed — 6
- * months with reviews at 1, 3 and 6 by default, the contract template's
- * length — and who signs HR letters. Managers only.
+ * Probation (HR-PACK.md): how long it lasts and when it's reviewed — 3
+ * months with reviews at 1, 2 and 3 by default, which the contract template
+ * reads — and who signs HR letters. Managers only.
  */
 export default async function HrSettingsPage() {
   const context = await requireRole("org_admin");

@@ -105,8 +105,11 @@ the appeal heard by that manager ("wherever possible").*
 
 ## Probation reviews
 
-- 6 months by default (the contract template's length), with reviews at 1, 3
-  and 6 months. The company can change both.
+- 3 months by default, the usual length in care, with reviews at 1, 2 and 3
+  months (issue report 95, 10 Nov 2026: it was 6 with reviews at 1, 3 and 6).
+  The company can change both; the contract template reads the length from
+  the setting. A company still at the old default was moved to the new one,
+  along with the probation end of anyone in probation with no review held.
 - The review form asks about conduct and performance and fills in what the
   site already knows: induction and Care Certificate progress, training
   overdue, spot check and competency results, supervisions held.

@@ -50,7 +50,7 @@ describe("the staff file audit", () => {
 
   it("counts probation done once reviewed, and not yet due for a new starter", () => {
     expect(s.people[0].checks.probation).toEqual({ result: "pass", detail: "Reviewed 1 Jul 2025" });
-    expect(s.people[1].checks.probation).toEqual({ result: "na", detail: "Not due until 1 Mar 2027" });
+    expect(s.people[1].checks.probation).toEqual({ result: "na", detail: "Not due until 1 Dec 2026" });
     const late = buildStaffFileSnapshot([{ id: "c", name: "Cy", joinedOn: "2025-01-01" }], [], [], now);
     expect(late.people[0].checks.probation.result).toBe("fail");
   });

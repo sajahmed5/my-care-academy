@@ -43,8 +43,8 @@ export const STAFF_FILE_CHECKS = [
 
 export const TRAINING_CHECKS = [{ key: "training", label: "Training up to date" }];
 
-/** A new starter's probation: reviewed within this many months of joining, unless the company's contract says otherwise. */
-export const PROBATION_MONTHS = 6;
+/** A new starter's probation: reviewed within this many months of joining, unless the company's contract says otherwise. The HR pack's default (issue report 95). */
+export const PROBATION_MONTHS = 3;
 
 const fmt = (d: string) => formatDate(d, { day: "numeric", month: "short", year: "numeric" });
 

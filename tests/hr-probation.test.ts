@@ -8,15 +8,17 @@ const emp = (over: Record<string, unknown> = {}) => ({ start_date: "2026-05-01",
 describe("probation settings", () => {
   it("keep reviews inside the probation, sorted, and always the end", () => {
     expect(sanitiseProbation({ months: 6, reviewMonths: [3, 1, 6, 9, 1] })).toEqual({ months: 6, reviewMonths: [1, 3, 6] });
-    expect(sanitiseProbation({ months: 0, reviewMonths: [] })).toEqual({ months: 6, reviewMonths: [6] });
+    expect(sanitiseProbation({ months: 0, reviewMonths: [] })).toEqual({ months: 3, reviewMonths: [3] });
   });
 });
 
 describe("the review points", () => {
-  it("fall 1 and 3 months in, and at the end", () => {
+  // emp() has a six-month end on file (the old default, or an extension): the
+  // review months come from the settings, the end from the person.
+  it("fall 1 and 2 months in, and at the end", () => {
     expect(reviewPoints(emp(), DEFAULT_PROBATION).map((p) => [p.dueOn, p.isFinal])).toEqual([
       ["2026-06-01", false],
-      ["2026-08-01", false],
+      ["2026-07-01", false],
       ["2026-11-01", true],
     ]);
   });
@@ -27,7 +29,7 @@ describe("the review points", () => {
     const pts = reviewPoints(emp({ probation_ends_on: "2027-01-01", probation_status: "extended" }), DEFAULT_PROBATION, ["2026-11-01"]);
     expect(pts.map((p) => [p.dueOn, p.label])).toEqual([
       ["2026-06-01", "1-month review"],
-      ["2026-08-01", "3-month review"],
+      ["2026-07-01", "2-month review"],
       ["2026-11-01", "End of probation review"],
       ["2027-01-01", "End of extended probation"],
     ]);
@@ -52,7 +54,7 @@ describe("who's due", () => {
       "2026-08-10",
     );
     expect(rows.map((r) => [r.person.name, r.group, r.next?.dueOn ?? null])).toEqual([
-      ["Ann", "overdue", "2026-08-01"],
+      ["Ann", "overdue", "2026-07-01"],
       ["Bob", "no_start", null],
     ]);
   });
@@ -62,7 +64,7 @@ describe("who's due", () => {
     expect(lines[1].state).toBe("later");
   });
   it("stops chasing an earlier review once a later one is held", () => {
-    const lines = schedule(emp(), DEFAULT_PROBATION, [{ id: "r", due_on: "2026-08-01", status: "held", booked_on: null, booked_time: null, held_on: "2026-08-02", outcome: "on_track", is_final: false }], "2026-08-10");
+    const lines = schedule(emp(), DEFAULT_PROBATION, [{ id: "r", due_on: "2026-07-01", status: "held", booked_on: null, booked_time: null, held_on: "2026-07-02", outcome: "on_track", is_final: false }], "2026-07-10");
     expect(lines.map((l) => l.state)).toEqual(["skipped", "held", "later"]);
   });
 });

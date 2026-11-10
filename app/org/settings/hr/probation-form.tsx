@@ -38,11 +38,11 @@ export function ProbationSettingsForm(props: { months: number; reviewMonths: num
           </div>
           <div className="space-y-1">
             <label htmlFor="hr-reviews" className="text-sm font-medium">Reviews before the end, months in</label>
-            <Input id="hr-reviews" value={reviews} onChange={(e) => setReviews(e.target.value)} placeholder="1, 3" className="w-40" />
+            <Input id="hr-reviews" value={reviews} onChange={(e) => setReviews(e.target.value)} placeholder="1, 2" className="w-40" />
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
-          There is always a review at the end, which decides it: passed, extended or not passed. Our contract template says 6 months; if you change this, change your contract to match.
+          There is always a review at the end, which decides it: passed, extended or not passed. Three months is usual in care; the contract template takes its length from here, and a change applies to people who join from now on.
         </p>
       </section>
       <section className={card}>

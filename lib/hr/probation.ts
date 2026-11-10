@@ -2,10 +2,11 @@ import { addMonths } from "@/lib/records";
 import type { FormSection } from "@/lib/recruitment-application";
 
 /**
- * Probation reviews (HR-PACK.md, agreed 29 Oct 2026): 6 months by default
- * (the contract template's length), with reviews at 1, 3 and 6 months; the
- * company can change both. The last review decides: passed, extended (by how
- * long and why) or not passed.
+ * Probation reviews (HR-PACK.md, agreed 29 Oct 2026): 3 months by default,
+ * the usual length in care (issue report 95, 10 Nov 2026; it was 6), with
+ * reviews at 1, 2 and 3 months; the company can change both, and the
+ * contract template reads the length from here. The last review decides:
+ * passed, extended (by how long and why) or not passed.
  *
  * Pure: the file, the Who's due list and the weekly email all read the
  * schedule from here, so they can never disagree.
@@ -16,7 +17,7 @@ export interface ProbationSettings {
   reviewMonths: number[];
 }
 
-export const DEFAULT_PROBATION: ProbationSettings = { months: 6, reviewMonths: [1, 3, 6] };
+export const DEFAULT_PROBATION: ProbationSettings = { months: 3, reviewMonths: [1, 2, 3] };
 
 export function probationFromRow(row: Record<string, unknown> | null | undefined): ProbationSettings {
   const months = Number(row?.probation_months);
