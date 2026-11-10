@@ -7,6 +7,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { sendEmail } from "@/lib/email";
 import { siteOrigin } from "@/lib/site-url";
 import { reportReceivedEmail } from "@/lib/report-email";
+import { isReportKind } from "@/app/platform/reports/status";
 
 export interface SubmitReportResult {
   ok: boolean;
@@ -21,6 +22,8 @@ export interface SubmitReportResult {
  * the private issue-screenshots bucket. Returns the human-friendly report_no.
  */
 export async function submitReportAction(input: {
+  /** What kind it is (issue report 100); anything unknown is a problem. */
+  kind?: string;
   summary: string;
   description?: string;
   pagePath?: string;
@@ -36,6 +39,7 @@ export async function submitReportAction(input: {
 
   const summary = input.summary?.trim();
   if (!summary) return { ok: false, error: "Please describe the issue." };
+  const kind = isReportKind(input.kind) ? input.kind : "problem";
 
   const admin = createAdminClient();
 
@@ -63,6 +67,7 @@ export async function submitReportAction(input: {
       reporter_email: context.email,
       reporter_role: context.role,
       page_path: input.pagePath?.slice(0, 512) ?? null,
+      kind,
       summary: summary.slice(0, 200),
       description: input.description?.trim().slice(0, 5000) || null,
       screenshot_path: screenshotPath,
@@ -79,7 +84,7 @@ export async function submitReportAction(input: {
     action: "issue_report.created",
     entity: "issue_report",
     entityId: String(data.report_no),
-    detail: { summary: summary.slice(0, 200), page: input.pagePath ?? null },
+    detail: { kind, summary: summary.slice(0, 200), page: input.pagePath ?? null },
   });
 
   // Confirm it in writing (issue #47). Best-effort: a mail failure must not
@@ -96,6 +101,7 @@ export async function submitReportAction(input: {
         (reporter?.full_name as string | null) ?? null,
         {
           reportNo: Number(data.report_no),
+          kind,
           summary: summary.slice(0, 200),
           description: input.description?.trim().slice(0, 5000) || null,
         },

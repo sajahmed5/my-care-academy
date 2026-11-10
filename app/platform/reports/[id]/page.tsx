@@ -11,13 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { STATUS_LABELS, statusPillClass } from "../status";
+import { KIND_LABELS, STATUS_LABELS, kindPillClass, statusPillClass } from "../status";
 import { StatusForm } from "./status-form";
 import { formatDateTime } from "@/lib/dates";
 
 interface ReportDetail {
   id: string;
   report_no: number;
+  kind: string | null;
   summary: string;
   description: string | null;
   reporter_email: string | null;
@@ -52,7 +53,7 @@ export default async function ReportDetailPage({
   const { data } = await supabase
     .from("issue_reports")
     .select(
-      "id, report_no, summary, description, reporter_email, reporter_role, organisation_id, page_path, screenshot_path, status, admin_note, created_at",
+      "id, report_no, kind, summary, description, reporter_email, reporter_role, organisation_id, page_path, screenshot_path, status, admin_note, created_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -89,8 +90,9 @@ export default async function ReportDetailPage({
                   </span>{" "}
                   {report.summary}
                 </CardTitle>
-                <CardDescription>
-                  Reported {fmt(report.created_at)}
+                <CardDescription className="flex flex-wrap items-center gap-2">
+                  <span className={kindPillClass}>{KIND_LABELS[report.kind ?? "problem"] ?? report.kind}</span>
+                  <span>Reported {fmt(report.created_at)}</span>
                 </CardDescription>
               </div>
               <span className={statusPillClass(report.status)}>

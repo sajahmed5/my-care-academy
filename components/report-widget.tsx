@@ -7,11 +7,43 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { submitReportAction } from "@/app/report/actions";
+import { KIND_LABELS, REPORT_KINDS, type ReportKind } from "@/app/platform/reports/status";
 
 const textareaClass =
   "flex w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
 
 type Phase = "form" | "sent";
+
+/**
+ * The form's words for each kind of report (issue report 100): a question
+ * isn't asked "what isn't working?".
+ */
+const WORDS: Record<ReportKind, { summary: string; example: string; more: string; moreExample: string }> = {
+  problem: {
+    summary: "What isn't working?",
+    example: "e.g. Certificate won't download",
+    more: "What happened? (optional)",
+    moreExample: "What were you doing when it went wrong?",
+  },
+  question: {
+    summary: "What would you like to know?",
+    example: "e.g. What does “Leave out of the triggers” mean?",
+    more: "Anything more? (optional)",
+    moreExample: "Where you were, and what you were trying to do",
+  },
+  wording: {
+    summary: "Which words, and what should they say?",
+    example: "e.g. “1 days” should be “1 day”",
+    more: "Anything more? (optional)",
+    moreExample: "Where on the page it is",
+  },
+  idea: {
+    summary: "What's the idea?",
+    example: "e.g. Show who's off sick and on holiday on one page",
+    more: "Anything more? (optional)",
+    moreExample: "What it would make easier",
+  },
+};
 
 /** Fired by the phone menu's "Report a problem" item to open the widget. */
 export const OPEN_REPORT_EVENT = "report-widget:open";
@@ -27,6 +59,7 @@ export const OPEN_REPORT_EVENT = "report-widget:open";
 export function ReportWidget() {
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>("form");
+  const [kind, setKind] = useState<ReportKind>("problem");
   const [summary, setSummary] = useState("");
   const [description, setDescription] = useState("");
   const [include, setInclude] = useState(true);
@@ -90,6 +123,7 @@ export function ReportWidget() {
 
   function reset() {
     setPhase("form");
+    setKind("problem");
     setSummary("");
     setDescription("");
     setInclude(true);
@@ -116,6 +150,7 @@ export function ReportWidget() {
     setSubmitting(true);
     setError(null);
     const res = await submitReportAction({
+      kind,
       summary,
       description,
       pagePath:
@@ -169,7 +204,7 @@ export function ReportWidget() {
           >
             <div className="flex items-start justify-between gap-3">
               <h3 id="report-title" className="text-lg font-semibold">
-                {phase === "sent" ? "Thanks for the report" : "Something not working?"}
+                {phase === "sent" ? "Thanks for the report" : "Tell us about it"}
               </h3>
               <button
                 type="button"
@@ -206,16 +241,40 @@ export function ReportWidget() {
             ) : (
               <form onSubmit={submit} className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Use this to tell us about a problem with the site. Your course
-                  answers don&apos;t go here.
+                  A problem with the site, a question, wording to change or an
+                  idea. Your course answers don&apos;t go here.
                 </p>
+                <fieldset className="space-y-2">
+                  <legend className="text-sm font-medium">What is it?</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {REPORT_KINDS.map((k) => {
+                      const active = kind === k;
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          role="radio"
+                          aria-checked={active}
+                          onClick={() => setKind(k)}
+                          className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                            active
+                              ? "border-foreground bg-foreground text-background"
+                              : "hover:bg-accent"
+                          }`}
+                        >
+                          {KIND_LABELS[k]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
                 <div className="space-y-2">
-                  <Label htmlFor="report-summary">What isn&apos;t working?</Label>
+                  <Label htmlFor="report-summary">{WORDS[kind].summary}</Label>
                   <Input
                     id="report-summary"
                     value={summary}
                     onChange={(e) => setSummary(e.target.value)}
-                    placeholder="e.g. Certificate won't download"
+                    placeholder={WORDS[kind].example}
                     maxLength={200}
                     required
                     autoFocus
@@ -223,16 +282,14 @@ export function ReportWidget() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="report-description">
-                    What happened? (optional)
-                  </Label>
+                  <Label htmlFor="report-description">{WORDS[kind].more}</Label>
                   <textarea
                     id="report-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
                     maxLength={5000}
-                    placeholder="What were you doing when it went wrong?"
+                    placeholder={WORDS[kind].moreExample}
                     className={textareaClass}
                   />
                 </div>

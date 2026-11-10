@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { REPORT_STATUSES, STATUS_LABELS, statusPillClass } from "./status";
+import { KIND_LABELS, REPORT_KINDS, REPORT_STATUSES, STATUS_LABELS, kindPillClass, statusPillClass } from "./status";
 import { formatDate } from "@/lib/dates";
 
 export interface ReportRow {
   id: string;
   report_no: number;
+  kind: string | null;
   summary: string;
   reporter_email: string | null;
   reporter_role: string | null;
@@ -25,6 +26,13 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "all", label: "All" },
 ];
 
+type KindFilter = "all" | (typeof REPORT_KINDS)[number];
+
+const chip = (active: boolean) =>
+  `rounded-full border px-3 py-1 text-sm transition-colors ${
+    active ? "border-foreground bg-foreground text-background" : "hover:bg-accent"
+  }`;
+
 function fmt(d: string): string {
   return formatDate(d, {
     day: "numeric",
@@ -36,9 +44,15 @@ function fmt(d: string): string {
 export function ReportsTable({ rows }: { rows: ReportRow[] }) {
   // Default to the actionable set — open issues.
   const [filter, setFilter] = useState<Filter>("open");
-  const shown = useMemo(
+  // And by kind (issue report 100), within the status chosen.
+  const [kind, setKind] = useState<KindFilter>("all");
+  const byStatus = useMemo(
     () => (filter === "all" ? rows : rows.filter((r) => r.status === filter)),
     [rows, filter],
+  );
+  const shown = useMemo(
+    () => (kind === "all" ? byStatus : byStatus.filter((r) => (r.kind ?? "problem") === kind)),
+    [byStatus, kind],
   );
 
   return (
@@ -49,16 +63,7 @@ export function ReportsTable({ rows }: { rows: ReportRow[] }) {
             f.key === "all" ? rows.length : rows.filter((r) => r.status === f.key).length;
           const active = filter === f.key;
           return (
-            <button
-              key={f.key}
-              type="button"
-              onClick={() => setFilter(f.key)}
-              className={`rounded-full border px-3 py-1 text-sm transition-colors ${
-                active
-                  ? "border-foreground bg-foreground text-background"
-                  : "hover:bg-accent"
-              }`}
-            >
+            <button key={f.key} type="button" onClick={() => setFilter(f.key)} className={chip(active)}>
               {f.label}{" "}
               <span className={active ? "opacity-80" : "text-muted-foreground"}>
                 {count}
@@ -67,10 +72,25 @@ export function ReportsTable({ rows }: { rows: ReportRow[] }) {
           );
         })}
       </div>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={() => setKind("all")} className={chip(kind === "all")}>
+          Every kind
+        </button>
+        {REPORT_KINDS.map((k) => {
+          const count = byStatus.filter((r) => (r.kind ?? "problem") === k).length;
+          return (
+            <button key={k} type="button" onClick={() => setKind(k)} className={chip(kind === k)}>
+              {KIND_LABELS[k]}{" "}
+              <span className={kind === k ? "opacity-80" : "text-muted-foreground"}>{count}</span>
+            </button>
+          );
+        })}
+      </div>
 
       {shown.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">
-          No {filter === "all" ? "" : `${filter} `}issues.
+          No {filter === "all" ? "" : `${filter} `}
+          {kind === "all" ? "issues" : `reports of the kind “${KIND_LABELS[kind]}”`}.
         </p>
       ) : (
         <div className="overflow-x-auto">
@@ -99,11 +119,10 @@ export function ReportsTable({ rows }: { rows: ReportRow[] }) {
                     >
                       {r.summary}
                     </Link>
-                    {r.page_path && (
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {r.page_path}
-                      </span>
-                    )}
+                    <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className={kindPillClass}>{KIND_LABELS[r.kind ?? "problem"] ?? r.kind}</span>
+                      {r.page_path && <span className="truncate">{r.page_path}</span>}
+                    </span>
                   </td>
                   <td className="py-2 pr-2 text-muted-foreground">
                     {r.reporter_email ?? "—"}

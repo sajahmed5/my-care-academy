@@ -28,7 +28,7 @@ export default async function ReportsAdminPage({
     supabase
       .from("issue_reports")
       .select(
-        "id, report_no, summary, reporter_email, reporter_role, page_path, status, created_at",
+        "id, report_no, kind, summary, reporter_email, reporter_role, page_path, status, created_at",
       )
       .order("created_at", { ascending: false })
       .order("id")

@@ -1,7 +1,7 @@
 import { requireAdminMfa, requireUser, assertActiveMember } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/dashboard-shell";
-import { STATUS_LABELS, statusPillClass } from "@/app/platform/reports/status";
+import { KIND_LABELS, STATUS_LABELS, kindPillClass, statusPillClass } from "@/app/platform/reports/status";
 import { formatDate } from "@/lib/dates";
 
 export const metadata = { title: "My reports" };
@@ -28,7 +28,7 @@ export default async function MyReportsPage() {
   // Filtered to the caller explicitly: a platform admin's RLS reads every report.
   const { data } = await supabase
     .from("issue_reports")
-    .select("id, report_no, summary, description, status, admin_note, created_at, updated_at")
+    .select("id, report_no, kind, summary, description, status, admin_note, created_at, updated_at")
     .eq("user_id", context.userId)
     .order("created_at", { ascending: false })
     .limit(200);
@@ -58,11 +58,14 @@ export default async function MyReportsPage() {
                       <span className="font-mono text-muted-foreground">#{r.report_no}</span>{" "}
                       {r.summary}
                     </p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className={kindPillClass}>{KIND_LABELS[r.kind ?? "problem"] ?? r.kind}</span>
+                      <span>
                       Reported {fmt(r.created_at)}
                       {r.updated_at && fmt(r.updated_at) !== fmt(r.created_at)
                         ? ` · updated ${fmt(r.updated_at)}`
                         : ""}
+                      </span>
                     </p>
                   </div>
                   <span className={statusPillClass(r.status)}>

@@ -78,6 +78,17 @@ describe("report received email (issue #47)", () => {
     expect(html).not.toContain("What you told us");
   });
 
+  it("says what kind it was (issue report 100), and treats an unknown kind as a problem", () => {
+    const q = reportReceivedEmail(null, { reportNo: 49, summary: "What are triggers?", kind: "question" }, "https://x");
+    expect(q.html).toContain("You asked <strong>#49 What are triggers?</strong>");
+    const i = reportReceivedEmail(null, { reportNo: 50, summary: "One page", kind: "idea" }, "https://x");
+    expect(i.html).toContain("You suggested <strong>#50");
+    const p = reportReceivedEmail(null, { reportNo: 51, summary: "Broken", kind: "whatever" }, "https://x");
+    expect(p.html).toContain("You reported <strong>#51");
+    const old = reportReceivedEmail(null, { reportNo: 52, summary: "Broken" }, "https://x");
+    expect(old.html).toContain("You reported <strong>#52");
+  });
+
   it("escapes what they typed", () => {
     const { html } = reportReceivedEmail(
       "<b>",

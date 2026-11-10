@@ -66,16 +66,25 @@ export function reportUpdateEmail(
  * screen, but people expect something in writing — and without it there's no
  * way to tell the Report button worked.
  */
+/** How the confirmation names each kind of report (issue report 100). */
+const KIND_VERBS: Record<string, string> = {
+  problem: "You reported",
+  question: "You asked",
+  wording: "You asked for the wording to change:",
+  idea: "You suggested",
+};
+
 export function reportReceivedEmail(
   name: string | null,
-  report: { reportNo: number; summary: string; description?: string | null },
+  report: { reportNo: number; summary: string; description?: string | null; kind?: string | null },
   origin: string,
 ): { subject: string; html: string } {
   const detail = (report.description ?? "").trim();
+  const verb = KIND_VERBS[report.kind ?? "problem"] ?? KIND_VERBS.problem;
   const html = emailLayout({
     heading: "Thanks — we've got your report",
     body: `<p>Hi ${esc(name?.trim() || "there")},</p>
-    <p>You reported <strong>#${report.reportNo} ${esc(report.summary)}</strong>. It's with the support team, and we'll email you when there's an update.</p>
+    <p>${verb} <strong>#${report.reportNo} ${esc(report.summary)}</strong>. It's with the support team, and we'll email you when there's an update.</p>
     ${
       detail
         ? `<p style="margin:16px 0 4px;font-weight:600">What you told us</p>
