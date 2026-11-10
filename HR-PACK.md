@@ -152,6 +152,11 @@ injuries at work never count towards a trigger; the office can leave out
 others (a disability) with a reason. The capability case link comes with
 disciplinary.*
 
+*10 Nov 2026 (issue report 94): Absence and Holidays stay two pages, but
+both open with the same Who's off this week strip as Today (leave and
+sickness together), and both record time off from one place: the office
+says off sick or holiday first, then fills in that form.*
+
 ## Holidays
 
 Added 29 Oct 2026: not every company uses MyRoster to record holidays, so the
@@ -182,7 +187,10 @@ someone), a Holidays tab on the file (allowance per leave year, taken,
 booked, left), My HR (balance, requests, taking one back), Who's off on
 the Overview (leave and sickness), Settings → HR → Holidays. The amount is
 suggested from weekdays and the bank holiday rule (England and Wales,
-2026–2028) and can always be changed: only the rota knows.*
+2026–2028) and can always be changed: only the rota knows. Since 10 Nov
+2026 the page opens with Who's off this week (leave and sickness) in place
+of its own today-and-this-week cards, and Record time off takes sickness
+too (issue report 94).*
 
 ## Leavers
 

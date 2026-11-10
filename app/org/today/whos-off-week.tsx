@@ -13,8 +13,10 @@ const DAY_LABEL = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
  * Who's off this week, as a seven-day strip (redesign, 1 Nov 2026): a dot
  * under each day somebody is away, and under it who and why. Approved
  * leave and anyone off sick, from today. Nothing without the HR pack.
+ * On Today, and at the top of Absence and Holidays (issue report 94), so
+ * who's in and who isn't is one list wherever it's looked for.
  */
-export async function WhosOffWeek({ context }: { context: UserContext }) {
+export async function WhosOffWeek({ context, calendarLink = true }: { context: UserContext; calendarLink?: boolean }) {
   const supabase = await createClient();
   const today = new Date().toISOString().slice(0, 10);
   const weekEnd = addDays(today, 6);
@@ -65,9 +67,11 @@ export async function WhosOffWeek({ context }: { context: UserContext }) {
         <h2 id="whos-off-heading" className="text-lg font-extrabold tracking-tight">
           Who&apos;s off this week
         </h2>
-        <Link href="/org/hr/holidays" className="text-sm font-bold text-primary hover:underline">
-          Calendar
-        </Link>
+        {calendarLink && (
+          <Link href="/org/hr/holidays" className="text-sm font-bold text-primary hover:underline">
+            Calendar
+          </Link>
+        )}
       </div>
       <ol className="mt-4 grid grid-cols-7 gap-1.5">
         {days.map((d, i) => {

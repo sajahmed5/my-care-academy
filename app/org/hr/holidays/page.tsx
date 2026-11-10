@@ -9,15 +9,19 @@ import { formatDate } from "@/lib/dates";
 import { STAFF_ROLES } from "@/lib/roles";
 import { addDays } from "@/lib/hr/probation";
 import { BANK_HOLIDAYS, amountText, canApprove, clashes, holidaySettingsFromRow, leaveTypeLabel, leaveTypesFor, overlaps, type LeaveRequest } from "@/lib/hr/holidays";
-import { DecideLeave, LeaveForm } from "./holiday-forms";
+import { sanitiseReasons } from "@/lib/hr/absence";
+import { WhosOffWeek } from "@/app/org/today/whos-off-week";
+import { TimeOffEntry } from "../time-off-entry";
+import { DecideLeave } from "./holiday-forms";
 
 const fmt = (d: string) => formatDate(d, { weekday: "short", day: "numeric", month: "short" });
 
 /**
- * Holidays across the company (HR-PACK.md): requests waiting, with who else
- * is off on those days; who's off this week; a month's calendar; and leave
- * entered for someone. Managers and office approve carers' leave; only
- * managers approve office staff's; nobody approves their own.
+ * Holidays across the company (HR-PACK.md): who's off this week (leave and
+ * sickness, the same strip as Today); requests waiting, with who else is
+ * off on those days; a month's calendar; and time off entered for someone.
+ * Managers and office approve carers' leave; only managers approve office
+ * staff's; nobody approves their own.
  */
 export default async function HolidaysPage({ searchParams }: { searchParams: Promise<{ month?: string }> }) {
   const context = await requireConsole();
@@ -29,7 +33,6 @@ export default async function HolidaysPage({ searchParams }: { searchParams: Pro
   const month = monthParam && /^\d{4}-\d{2}$/.test(monthParam) ? monthParam : today.slice(0, 7);
   const monthStart = `${month}-01`;
   const monthEnd = addDays(`${nextMonth(month)}-01`, -1);
-  const weekEnd = addDays(today, 6);
 
   const [people, requests, { data: settingsRow }] = await Promise.all([
     fetchAll((f, t) =>
@@ -45,7 +48,7 @@ export default async function HolidaysPage({ searchParams }: { searchParams: Pro
         .order("id")
         .range(f, t),
     ),
-    supabase.from("hr_settings").select("leave_year_start, bank_holidays_from_allowance, max_off_at_once, leave_types").eq("organisation_id", orgId).maybeSingle(),
+    supabase.from("hr_settings").select("leave_year_start, bank_holidays_from_allowance, max_off_at_once, leave_types, absence_reasons").eq("organisation_id", orgId).maybeSingle(),
   ]);
   const s = holidaySettingsFromRow(settingsRow);
   const types = leaveTypesFor(s.own);
@@ -54,8 +57,6 @@ export default async function HolidaysPage({ searchParams }: { searchParams: Pro
   const all = requests as unknown as Array<LeaveRequest & { note: string | null; over_limit: boolean }>;
   const approved = all.filter((r) => r.status === "approved");
   const waiting = all.filter((r) => r.status === "requested").sort((a, b) => a.start_date.localeCompare(b.start_date));
-  const offToday = approved.filter((r) => overlaps(r, today, today));
-  const offWeek = approved.filter((r) => overlaps(r, addDays(today, 1), weekEnd) && !offToday.includes(r));
   const sortedPeople = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
 
   const days: string[] = [];
@@ -65,6 +66,8 @@ export default async function HolidaysPage({ searchParams }: { searchParams: Pro
   return (
     <DashboardShell title="Holidays" context={context}>
       <div className="space-y-6">
+        <WhosOffWeek context={context} calendarLink={false} />
+
         <section className="space-y-2">
           <h3 className="text-sm font-semibold text-muted-foreground">Waiting for a decision ({waiting.length})</h3>
           {waiting.length === 0 ? (
@@ -107,41 +110,6 @@ export default async function HolidaysPage({ searchParams }: { searchParams: Pro
           )}
         </section>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardContent className="space-y-2 pt-6 text-sm">
-              <p className="font-semibold">Off today ({offToday.length})</p>
-              {offToday.length === 0 ? (
-                <p className="text-muted-foreground">Nobody.</p>
-              ) : (
-                <ul className="space-y-1">
-                  {offToday.map((r) => (
-                    <li key={r.id}>
-                      {name(r.user_id)} <span className="text-muted-foreground">· back after {fmt(r.end_date)}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="space-y-2 pt-6 text-sm">
-              <p className="font-semibold">Off later this week ({offWeek.length})</p>
-              {offWeek.length === 0 ? (
-                <p className="text-muted-foreground">Nobody.</p>
-              ) : (
-                <ul className="space-y-1">
-                  {offWeek.map((r) => (
-                    <li key={r.id}>
-                      {name(r.user_id)} <span className="text-muted-foreground">· {fmt(r.start_date)} to {fmt(r.end_date)}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
         <section className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-muted-foreground">
@@ -178,8 +146,14 @@ export default async function HolidaysPage({ searchParams }: { searchParams: Pro
 
         <Card>
           <CardContent className="space-y-3 pt-6">
-            <h3 className="font-semibold">Add leave for someone</h3>
-            <LeaveForm types={types} unit="days" bankHolidaysFromAllowance={s.bankHolidaysFromAllowance} people={sortedPeople} canApproveNow />
+            <h3 className="font-semibold">Record time off</h3>
+            <TimeOffEntry
+              start="leave"
+              people={sortedPeople}
+              reasons={sanitiseReasons(settingsRow?.absence_reasons)}
+              types={types}
+              bankHolidaysFromAllowance={s.bankHolidaysFromAllowance}
+            />
           </CardContent>
         </Card>
       </div>

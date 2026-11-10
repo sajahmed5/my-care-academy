@@ -8,8 +8,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatDate } from "@/lib/dates";
 import { loadCurrentCarers } from "@/app/org/due/load";
 import { absenceDue, daysOff, needsFitNote, sanitiseReasons, sanitiseTriggers, type Absence } from "@/lib/hr/absence";
-import { AbsenceForm } from "./absence-forms";
+import { holidaySettingsFromRow, leaveTypesFor } from "@/lib/hr/holidays";
 import { addDays } from "@/lib/hr/probation";
+import { WhosOffWeek } from "@/app/org/today/whos-off-week";
+import { TimeOffEntry } from "../time-off-entry";
 
 const fmt = (d: string) => formatDate(d, { day: "numeric", month: "short", year: "numeric" });
 
@@ -38,8 +40,13 @@ export default async function AbsenceOverviewPage() {
         .range(f, t),
     ),
     fetchAll((f, t) => supabase.from("absence_welfare_meetings").select("absence_id, held_on").eq("organisation_id", orgId).order("absence_id").order("id").range(f, t)),
-    supabase.from("hr_settings").select("bradford_triggers, absence_reasons").eq("organisation_id", orgId).maybeSingle(),
+    supabase
+      .from("hr_settings")
+      .select("bradford_triggers, absence_reasons, leave_year_start, bank_holidays_from_allowance, max_off_at_once, leave_types")
+      .eq("organisation_id", orgId)
+      .maybeSingle(),
   ]);
+  const holidays = holidaySettingsFromRow(settings);
   const names = new Map(people.map((p) => [p.id, p.name]));
   const due = absenceDue(absences as unknown as Absence[], meetings as never, sanitiseTriggers(settings?.bradford_triggers), today, new Set(names.keys()));
   const name = (id: string) => names.get(id) ?? "Someone who has left";
@@ -68,10 +75,18 @@ export default async function AbsenceOverviewPage() {
   return (
     <DashboardShell title="Absence" context={context}>
       <div className="space-y-6">
+        <WhosOffWeek context={context} />
+
         <Card>
           <CardContent className="space-y-3 pt-6">
-            <h3 className="font-semibold">Record an absence</h3>
-            <AbsenceForm people={people} reasons={sanitiseReasons(settings?.absence_reasons)} />
+            <h3 className="font-semibold">Record time off</h3>
+            <TimeOffEntry
+              start="sick"
+              people={people}
+              reasons={sanitiseReasons(settings?.absence_reasons)}
+              types={leaveTypesFor(holidays.own)}
+              bankHolidaysFromAllowance={holidays.bankHolidaysFromAllowance}
+            />
           </CardContent>
         </Card>
 
