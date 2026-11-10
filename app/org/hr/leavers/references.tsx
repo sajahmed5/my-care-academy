@@ -18,6 +18,11 @@ export async function References({ userId, context }: { userId: string; context:
     <Card>
       <CardContent className="space-y-4 pt-6">
         <h3 className="font-semibold">References given</h3>
+        <p className="text-sm text-muted-foreground">
+          {refs?.length
+            ? "What new employers have asked, and what was sent."
+            : "Nothing yet. When a new employer asks about them, record it here: a factual reference (dates, role, reason for leaving) is drafted from the file, and a manager checks and sends it."}
+        </p>
         {(refs ?? []).map((r) => (
           <div key={r.id as string} className="space-y-2 rounded-lg border p-3 text-sm">
             <p className="font-medium">

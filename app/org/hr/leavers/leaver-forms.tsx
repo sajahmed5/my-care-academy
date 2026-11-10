@@ -221,24 +221,50 @@ export function LeaverDbs({ leaverId, status, on }: { leaverId: string; status: 
   );
 }
 
+/**
+ * A new employer's reference request. Behind a button until it's needed
+ * (issue report 101): most leavers never get one, and an empty form made
+ * the section look like something to fill in.
+ */
 export function ReferenceRequestForm({ userId }: { userId: string }) {
   const { run, pending, note } = useRun();
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [org, setOrg] = useState("");
   const [email, setEmail] = useState("");
   const [on, setOn] = useState(new Date().toISOString().slice(0, 10));
+  if (!open) {
+    return (
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+        A new employer has asked for a reference
+      </Button>
+    );
+  }
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-2">
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Who asked" className="w-48" aria-label="Who asked" />
-        <Input value={org} onChange={(e) => setOrg(e.target.value)} placeholder="Their organisation" className="w-56" aria-label="Their organisation" />
-        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Their email" className="w-60" aria-label="Their email" />
-        <Input type="date" value={on} onChange={(e) => setOn(e.target.value)} className="w-40" aria-label="Received on" />
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-3">
+        <div className="space-y-1">
+          <label htmlFor="ref-name" className={lab}>Who asked</label>
+          <Input id="ref-name" value={name} onChange={(e) => setName(e.target.value)} className="w-48" />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="ref-org" className={lab}>Their organisation</label>
+          <Input id="ref-org" value={org} onChange={(e) => setOrg(e.target.value)} className="w-56" />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="ref-email" className={lab}>Their email (the reference goes there)</label>
+          <Input id="ref-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-60" />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="ref-on" className={lab}>Asked on</label>
+          <Input id="ref-on" type="date" value={on} onChange={(e) => setOn(e.target.value)} className="w-40" />
+        </div>
       </div>
-      <div className="flex items-center gap-3">
-        <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => newReferenceRequestAction(userId, { requesterName: name, requesterOrg: org, requesterEmail: email, receivedOn: on }), "Drafted below.")}>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button size="sm" disabled={pending} onClick={() => run(() => newReferenceRequestAction(userId, { requesterName: name, requesterOrg: org, requesterEmail: email, receivedOn: on }), "Drafted below.")}>
           Record the request and draft the reference
         </Button>
+        <Button size="sm" variant="ghost" disabled={pending} onClick={() => setOpen(false)}>Cancel</Button>
         {note}
       </div>
     </div>
