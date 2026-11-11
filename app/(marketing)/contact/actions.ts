@@ -68,7 +68,7 @@ export async function submitEnquiryAction(
   if (!rateLimit(`contact:${ip}`, 5, 600_000)) {
     return {
       status: "error",
-      error: `You've sent us a few already — please call 0161 694 4701 or email ${INBOX} and we'll pick it up from there.`,
+      error: `You've sent us a few already — please call 0161 470 8088 or email ${INBOX} and we'll pick it up from there.`,
       values,
     };
   }
@@ -99,7 +99,7 @@ export async function submitEnquiryAction(
   if (!delivered) {
     return {
       status: "error",
-      error: `Sorry — something went wrong sending that. Please call 0161 694 4701 or email ${INBOX} and we'll get straight back to you.`,
+      error: `Sorry — something went wrong sending that. Please call 0161 470 8088 or email ${INBOX} and we'll get straight back to you.`,
       values,
     };
   }

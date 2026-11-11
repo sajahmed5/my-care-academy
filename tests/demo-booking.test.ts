@@ -114,7 +114,7 @@ describe("the demo emails", () => {
     const { subject, html } = demoRequestedEmail(booking);
     expect(subject).toBe("Your demo: Tuesday 10 November, 10:00 to 10:30 — My Care Academy");
     expect(html).toContain("Hi Jane,");
-    expect(html).toContain("0161 694 4701");
+    expect(html).toContain("0161 470 8088");
     expect(html).toContain("Hargreaves Home Care");
   });
 });

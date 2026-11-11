@@ -86,7 +86,7 @@ export function DemoBookingForm({
         </p>
       ) : days.length === 0 ? (
         <p className="mt-4 text-sm text-[#0f2f3c]/70">
-          Nothing to book just now. Ring us on 0161 694 4701 and we&apos;ll sort a time.
+          Nothing to book just now. Ring us on 0161 470 8088 and we&apos;ll sort a time.
         </p>
       ) : (
         <>

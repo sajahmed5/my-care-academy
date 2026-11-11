@@ -92,7 +92,7 @@ describe("enquiry receipt (to them)", () => {
 
   it("gives them the phone number and a link built from the real origin", () => {
     const { html } = enquiryReceivedEmail(base, "https://www.mycareacademy.co.uk");
-    expect(html).toContain("tel:+441616944701");
+    expect(html).toContain("tel:+441614708088");
     expect(html).toContain("https://www.mycareacademy.co.uk/training");
   });
 

@@ -86,7 +86,7 @@ export function enquiryReceivedEmail(
     heading: "Thanks — we've got your enquiry",
     body: `<p>Hi ${esc(firstName)},</p>
     <p>Thanks for getting in touch with My Care Academy about <strong>${esc(enquiry.topicLabel.toLowerCase())}</strong>. One of us will come back to you within one working day.</p>
-    <p>If it's urgent, call us on <a href="tel:+441616944701" style="color:#0f8178">0161 694 4701</a> — we're here 9am to 5pm, Monday to Friday.</p>
+    <p>If it's urgent, call us on <a href="tel:+441614708088" style="color:#0f8178">0161 470 8088</a> — we're here 9am to 5pm, Monday to Friday.</p>
     ${
       message
         ? `<p style="margin:20px 0 4px;font-weight:600">What you told us</p>
@@ -94,7 +94,7 @@ export function enquiryReceivedEmail(
         : ""
     }
     ${emailButton(`${origin}/training`, "See the course library")}`,
-    footer: "My Care Academy · 107 Wellington Road, Stockport, SK4 2LR · 0161 694 4701<br>You're receiving this because you sent us an enquiry. There's nothing to do with this email — it's just your copy.",
+    footer: "My Care Academy · 107 Wellington Road, Stockport, SK4 2LR · 0161 470 8088<br>You're receiving this because you sent us an enquiry. There's nothing to do with this email — it's just your copy.",
   });
 
   return { subject: "We've got your enquiry — My Care Academy", html };

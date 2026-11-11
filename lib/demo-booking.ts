@@ -201,8 +201,8 @@ export function demoRequestedEmail(b: DemoBooking): { subject: string; html: str
     <h2 style="margin:0 0 4px">Your demo is booked in</h2>
     <p>Hi ${esc(firstName)},</p>
     <p>Thanks for booking a demo of My Care Academy for <strong>${esc(b.orgName)}</strong>. We've got you down for <strong>${esc(when)}</strong> (UK time), about ${DEMO_MINUTES} minutes.</p>
-    <p>We'll confirm by email with how we'll call you. If that time stops suiting you, reply to this email or ring us on <a href="tel:+441616944701" style="color:#0f8178">0161 694 4701</a> and we'll find another.</p>
-    <p style="color:#888;font-size:12px;margin-top:24px">My Care Academy · 107 Wellington Road, Stockport, SK4 2LR · 0161 694 4701</p>
+    <p>We'll confirm by email with how we'll call you. If that time stops suiting you, reply to this email or ring us on <a href="tel:+441614708088" style="color:#0f8178">0161 470 8088</a> and we'll find another.</p>
+    <p style="color:#888;font-size:12px;margin-top:24px">My Care Academy · 107 Wellington Road, Stockport, SK4 2LR · 0161 470 8088</p>
   </div>`;
   return { subject: `Your demo: ${when} — My Care Academy`, html };
 }

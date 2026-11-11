@@ -10,7 +10,7 @@ import { toTopic } from "./topics";
 export const metadata: Metadata = {
   title: "Contact us — book a demo or ask a question | My Care Academy",
   description:
-    "Get in touch with My Care Academy. Book a demo, ask about pricing, mock CQC inspections or the Care Certificate — or call 0161 694 4701. Stockport, Greater Manchester.",
+    "Get in touch with My Care Academy. Book a demo, ask about pricing, mock CQC inspections or the Care Certificate — or call 0161 470 8088. Stockport, Greater Manchester.",
   alternates: { canonical: "/contact" },
 };
 
@@ -88,10 +88,10 @@ export default async function ContactPage({
                   </span>
                   <div>
                     <a
-                      href="tel:+441616944701"
+                      href="tel:+441614708088"
                       className="font-semibold text-[#0f2f3c] hover:text-[#134f63]"
                     >
-                      0161 694 4701
+                      0161 470 8088
                     </a>
                     <p className="text-[#0f2f3c]/70">
                       9am–5pm, Monday to Friday

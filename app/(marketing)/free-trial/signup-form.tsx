@@ -83,14 +83,14 @@ export function TrialSignupForm() {
             </button>
           )}
           <a
-            href="tel:+441616944701"
+            href="tel:+441614708088"
             className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${
               state.booking
                 ? "border border-[#134f63]/20 text-[#134f63] hover:bg-[#134f63]/5"
                 : "bg-[#134f63] text-white hover:bg-[#1d6f8a]"
             }`}
           >
-            <Phone className="size-4" /> 0161 694 4701
+            <Phone className="size-4" /> 0161 470 8088
           </a>
           <Link
             href="/training"

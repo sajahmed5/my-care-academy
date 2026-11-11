@@ -211,8 +211,8 @@ export function CtaBand({ title, body }: { title: string; body: string }) {
           <PillLink href="/contact?topic=demo" tone="outline-white">
             Book a demo
           </PillLink>
-          <PillLink href="tel:+441616944701" tone="outline-white">
-            0161 694 4701
+          <PillLink href="tel:+441614708088" tone="outline-white">
+            0161 470 8088
           </PillLink>
         </div>
       </div>

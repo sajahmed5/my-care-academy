@@ -153,7 +153,7 @@ export default function CareTrainingManchesterStockportPage() {
             </p>
             <p className="mt-3 flex items-center gap-3">
               <Phone className="size-4 shrink-0 text-[#1d6f8a]" />
-              <a href="tel:+441616944701" className="font-semibold hover:underline">0161 694 4701</a>
+              <a href="tel:+441614708088" className="font-semibold hover:underline">0161 470 8088</a>
             </p>
             <p className="mt-3 flex items-center gap-3">
               <ShieldCheck className="size-4 shrink-0 text-[#1d6f8a]" />

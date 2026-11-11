@@ -82,10 +82,10 @@ export function EnquiryForm({
         </p>
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
           <a
-            href="tel:+441616944701"
+            href="tel:+441614708088"
             className="inline-flex items-center gap-2 rounded-full bg-[#134f63] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#1d6f8a]"
           >
-            <Phone className="size-4" /> 0161 694 4701
+            <Phone className="size-4" /> 0161 470 8088
           </a>
           <Link
             href="/training"

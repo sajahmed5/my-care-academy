@@ -59,7 +59,7 @@ export async function startTrialAction(_prev: TrialSignupState, form: FormData):
   if (!rateLimit(`trial-signup:${ip}`, 3, 60 * 60_000)) {
     return {
       status: "error",
-      error: `That's a few sign-ups from here already. Call us on 0161 694 4701 or email ${INBOX} and we'll get you in.`,
+      error: `That's a few sign-ups from here already. Call us on 0161 470 8088 or email ${INBOX} and we'll get you in.`,
       values,
     };
   }
@@ -204,7 +204,7 @@ export async function bookDemoAction(_prev: DemoBookingState, form: FormData): P
   const h = await headers();
   const ip = (h.get("x-forwarded-for") ?? "unknown").split(",")[0].trim();
   if (!rateLimit(`demo-booking:${ip}`, 5, 60 * 60_000)) {
-    return { status: "error", error: `That's a few bookings from here already. Ring us on 0161 694 4701 and we'll sort a time.` };
+    return { status: "error", error: `That's a few bookings from here already. Ring us on 0161 470 8088 and we'll sort a time.` };
   }
 
   const admin = createAdminClient();

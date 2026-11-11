@@ -18,7 +18,7 @@ const ORGANISATION = {
   description:
     "Online care training for UK home care providers and care homes: CQC-aligned courses, verifiable certificates, mock CQC inspections and management support.",
   foundingDate: "2002",
-  telephone: "+441616944701",
+  telephone: "+441614708088",
   email: "hello@mycareacademy.co.uk",
   address: {
     "@type": "PostalAddress",
