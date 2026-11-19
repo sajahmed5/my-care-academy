@@ -90,8 +90,6 @@ export async function startTrialAction(_prev: TrialSignupState, form: FormData):
       name: values.orgName,
       package_tier: "full",
       trial_ends_at: endsAt.toISOString(),
-      service_type: values.serviceType,
-      size_band: values.sizeBand,
     })
     .select("id")
     .single();
@@ -122,8 +120,6 @@ export async function startTrialAction(_prev: TrialSignupState, form: FormData):
       package_tier: "full",
       trial_starts: todayKey,
       trial_ends_at: endsAt.toISOString(),
-      service_type: values.serviceType,
-      size_band: values.sizeBand,
       manager: { email: values.email, emailed },
     },
   });
@@ -136,8 +132,6 @@ export async function startTrialAction(_prev: TrialSignupState, form: FormData):
         name: values.name,
         email: values.email,
         phone: values.phone || null,
-        serviceType: values.serviceType,
-        sizeBand: values.sizeBand,
         endsOn,
         emailed,
       },

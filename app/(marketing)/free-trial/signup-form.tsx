@@ -3,7 +3,6 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, CheckCircle2, Loader2, MailCheck, Phone } from "lucide-react";
-import { SERVICE_TYPES, SIZE_BANDS } from "@/lib/organisations";
 import type { TrialSignupValues } from "@/lib/trial-signup";
 import { startTrialAction } from "./actions";
 import { DemoBookingForm } from "./demo-booking-form";
@@ -11,7 +10,6 @@ import { INITIAL_TRIAL_SIGNUP_STATE } from "./signup";
 
 const field =
   "w-full rounded-xl border border-[#134f63]/15 bg-white px-4 py-3 text-sm text-[#0f2f3c] outline-none transition placeholder:text-[#0f2f3c]/35 focus:border-[#3a9fc4] focus:ring-4 focus:ring-[#3a9fc4]/15";
-const select = `${field} appearance-none bg-[url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%230f2f3c" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>')] bg-[length:18px] bg-[right_1rem_center] bg-no-repeat pr-11`;
 const labelClass = "block text-sm font-semibold text-[#0f2f3c]";
 const hintClass = "text-xs font-normal text-[#0f2f3c]/70";
 
@@ -25,8 +23,8 @@ function FieldError({ id, children }: { id: string; children?: string }) {
 }
 
 /**
- * The free-trial sign-up: the company, the person who'll manage it, and
- * what kind of service it is. On success they're told to look in their
+ * The free-trial sign-up: the company, and the person who'll manage it
+ * with their phone number (required since 19 Nov 2026). On success they're told to look in their
  * inbox for the welcome email, whose button sets their password, and
  * offered a demo (Saj, 6 Nov 2026): Book a demo opens the chooser in place.
  */
@@ -188,71 +186,25 @@ export function TrialSignupForm() {
             />
             <FieldError id="email-error">{errors.email}</FieldError>
           </div>
-
-          <div>
-            <label htmlFor="phone" className={labelClass}>
-              Phone <span className={hintClass}>(optional)</span>
-            </label>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              autoComplete="tel"
-              defaultValue={v.phone ?? ""}
-              className={`mt-1.5 ${field}`}
-              placeholder="0161 000 0000"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="serviceType" className={labelClass}>
-              Kind of service
-            </label>
-            <select
-              id="serviceType"
-              name="serviceType"
-              key={`service-${v.serviceType ?? ""}`}
-              defaultValue={v.serviceType ?? ""}
-              aria-invalid={errors.serviceType ? true : undefined}
-              aria-describedby={errors.serviceType ? "serviceType-error" : undefined}
-              className={`mt-1.5 ${select}`}
-            >
-              <option value="" disabled>
-                Choose one
-              </option>
-              {SERVICE_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-            <FieldError id="serviceType-error">{errors.serviceType}</FieldError>
-          </div>
         </div>
 
         <div>
-          <label htmlFor="sizeBand" className={labelClass}>
-            How many staff?
+          <label htmlFor="phone" className={labelClass}>
+            Phone
           </label>
-          <select
-            id="sizeBand"
-            name="sizeBand"
-            key={`size-${v.sizeBand ?? ""}`}
-            defaultValue={v.sizeBand ?? ""}
-            aria-invalid={errors.sizeBand ? true : undefined}
-            aria-describedby={errors.sizeBand ? "sizeBand-error" : undefined}
-            className={`mt-1.5 ${select}`}
-          >
-            <option value="" disabled>
-              Choose one
-            </option>
-            {SIZE_BANDS.map((b) => (
-              <option key={b.value} value={b.value}>
-                {b.label}
-              </option>
-            ))}
-          </select>
-          <FieldError id="sizeBand-error">{errors.sizeBand}</FieldError>
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            autoComplete="tel"
+            required
+            defaultValue={v.phone ?? ""}
+            aria-invalid={errors.phone ? true : undefined}
+            aria-describedby={errors.phone ? "phone-error" : undefined}
+            className={`mt-1.5 ${field}`}
+            placeholder="0161 000 0000"
+          />
+          <FieldError id="phone-error">{errors.phone}</FieldError>
         </div>
 
         <div>

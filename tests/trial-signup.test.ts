@@ -12,8 +12,6 @@ const good = {
   name: "Jane Hargreaves",
   email: "Jane@HargreavesCare.co.uk",
   phone: "0161 000 0000",
-  serviceType: "homecare",
-  sizeBand: "10_to_25",
   agree: "on",
 };
 
@@ -26,13 +24,18 @@ describe("the free-trial sign-up form", () => {
 
   it("names every missing field, not just the first", () => {
     const { fieldErrors } = parseTrialSignup(form({ email: "not-an-address" }));
-    expect(Object.keys(fieldErrors).sort()).toEqual(["agree", "email", "name", "orgName", "serviceType", "sizeBand"]);
+    expect(Object.keys(fieldErrors).sort()).toEqual(["agree", "email", "name", "orgName", "phone"]);
     expect(fieldErrors.email).toMatch(/doesn't look like/);
   });
 
-  it("refuses a service type or size band that isn't one of ours", () => {
-    const { fieldErrors } = parseTrialSignup(form({ ...good, serviceType: "hospital", sizeBand: "huge" }));
-    expect(Object.keys(fieldErrors).sort()).toEqual(["serviceType", "sizeBand"]);
+  it("needs a phone number with enough digits, in any usual format", () => {
+    expect(parseTrialSignup(form({ ...good, phone: "" })).fieldErrors).toEqual({
+      phone: "We need a phone number so we can help you get set up.",
+    });
+    expect(parseTrialSignup(form({ ...good, phone: "12345" })).fieldErrors.phone).toMatch(/doesn't look like/);
+    for (const phone of ["07700 900123", "+44 (0)161 470 8088", "0161-470-8088"]) {
+      expect(parseTrialSignup(form({ ...good, phone })).fieldErrors).toEqual({});
+    }
   });
 
   it("needs the box ticked", () => {
@@ -47,8 +50,6 @@ const signup: TrialSignup = {
   name: "Jane Hargreaves",
   email: "jane@hargreavescare.co.uk",
   phone: null,
-  serviceType: "homecare",
-  sizeBand: "10_to_25",
   endsOn: "Sunday 6 December",
   emailed: true,
 };
@@ -58,8 +59,6 @@ describe("the sign-up email to us", () => {
     const { subject, html } = trialSignupNotificationEmail(signup, "https://www.mycareacademy.co.uk");
     expect(subject).toBe("Free trial started — Hargreaves Home Care (Jane Hargreaves)");
     expect(html).toContain("https://www.mycareacademy.co.uk/platform/organisations/org-1");
-    expect(html).toContain("Homecare");
-    expect(html).toContain("10–25 staff");
     expect(html).toContain("end of Sunday 6 December");
     expect(html).not.toContain("Phone");
     expect(html).toContain("welcome email has gone");

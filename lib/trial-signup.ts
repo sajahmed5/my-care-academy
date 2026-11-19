@@ -9,7 +9,6 @@
  */
 
 import { esc } from "@/lib/email-layout";
-import { SERVICE_TYPES, SIZE_BANDS, serviceTypeLabel, sizeBandLabel } from "@/lib/organisations";
 
 /** What the visitor typed, kept so a rejected form comes back filled in. */
 export interface TrialSignupValues {
@@ -17,8 +16,6 @@ export interface TrialSignupValues {
   name: string;
   email: string;
   phone: string;
-  serviceType: string;
-  sizeBand: string;
   agree: boolean;
 }
 
@@ -40,8 +37,6 @@ export function parseTrialSignup(form: FormData): { values: TrialSignupValues; f
     name: str(form, "name", 100),
     email: str(form, "email", 200).toLowerCase(),
     phone: str(form, "phone", 40),
-    serviceType: str(form, "serviceType", 20),
-    sizeBand: str(form, "sizeBand", 20),
     agree: form.get("agree") === "on",
   };
   const fieldErrors: TrialSignupFieldErrors = {};
@@ -49,8 +44,12 @@ export function parseTrialSignup(form: FormData): { values: TrialSignupValues; f
   if (!values.name) fieldErrors.name = "Please tell us your name.";
   if (!values.email) fieldErrors.email = "We need an email address to send your welcome to.";
   else if (!EMAIL_RE.test(values.email)) fieldErrors.email = "That doesn't look like an email address.";
-  if (!SERVICE_TYPES.some((t) => t.value === values.serviceType)) fieldErrors.serviceType = "Choose the kind of service you run.";
-  if (!SIZE_BANDS.some((b) => b.value === values.sizeBand)) fieldErrors.sizeBand = "Choose roughly how many staff you have.";
+  // Required since 19 Nov 2026 (Saj), so we can ring every new trial. Loose
+  // on format: spaces, dashes, brackets and +44 are all fine, as long as
+  // there are enough digits to be a real number.
+  const digits = values.phone.replace(/\D/g, "").length;
+  if (!values.phone) fieldErrors.phone = "We need a phone number so we can help you get set up.";
+  else if (digits < 10 || digits > 15) fieldErrors.phone = "That doesn't look like a phone number.";
   if (!values.agree) fieldErrors.agree = "Please tick the box to carry on.";
   return { values, fieldErrors };
 }
@@ -61,8 +60,6 @@ export interface TrialSignup {
   name: string;
   email: string;
   phone: string | null;
-  serviceType: string;
-  sizeBand: string;
   /** "Sunday 6 December", the last day of the trial. */
   endsOn: string;
   /** Whether their welcome email went (it doesn't where sending is off). */
@@ -87,8 +84,6 @@ export function trialSignupNotificationEmail(s: TrialSignup, origin: string): { 
     row("Name", s.name),
     row("Email", s.email),
     s.phone ? row("Phone", s.phone) : "",
-    row("Service", serviceTypeLabel(s.serviceType)),
-    row("Size", sizeBandLabel(s.sizeBand)),
     row("Trial ends", `end of ${s.endsOn}`),
   ]
     .filter(Boolean)
