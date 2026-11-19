@@ -7,7 +7,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { sendEmail } from "@/lib/email";
 import { siteOrigin } from "@/lib/site-url";
 import { logAudit } from "@/lib/audit";
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatDateTime } from "@/lib/dates";
 import { addCompanyPerson, emailsInUse } from "@/lib/company-people";
 import { trialEndFrom, ukDateKey } from "@/lib/trial";
 import { parseTrialSignup, trialSignupNotificationEmail } from "@/lib/trial-signup";
@@ -24,6 +24,13 @@ import type { DemoBookingState, TrialSignupState } from "./signup";
 
 /** Where we hear about each sign-up. Overridable so a preview can divert it. */
 const INBOX = process.env.CONTACT_INBOX ?? "hello@mycareacademy.co.uk";
+
+/**
+ * Every sign-up is also emailed here (Saj, 19 Nov 2026), so the office
+ * hears about each new trial. Overridable like INBOX; not sent twice when
+ * the two are the same address.
+ */
+const TRIAL_INBOX = process.env.TRIAL_SIGNUP_INBOX ?? "info@mycareacademy.co.uk";
 
 const longDate = { weekday: "long", day: "numeric", month: "long" } as const;
 
@@ -132,12 +139,14 @@ export async function startTrialAction(_prev: TrialSignupState, form: FormData):
         name: values.name,
         email: values.email,
         phone: values.phone || null,
+        signedUpAt: formatDateTime(new Date()),
         endsOn,
         emailed,
       },
       await siteOrigin(),
     );
-    await sendEmail({ to: INBOX, ...mail, replyTo: values.email });
+    const inboxes = [...new Set([INBOX, TRIAL_INBOX].map((a) => a.trim().toLowerCase()))];
+    await Promise.all(inboxes.map((to) => sendEmail({ to, ...mail, replyTo: values.email })));
   } catch (e) {
     // They're in regardless; the company is on the platform's list either way.
     console.error("trial sign-up: notification failed:", e);

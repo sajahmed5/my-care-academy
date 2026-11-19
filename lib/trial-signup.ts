@@ -60,6 +60,8 @@ export interface TrialSignup {
   name: string;
   email: string;
   phone: string | null;
+  /** When they pressed Start my free trial, "19 Nov 2026, 14:05" (UK time). */
+  signedUpAt: string;
   /** "Sunday 6 December", the last day of the trial. */
   endsOn: string;
   /** Whether their welcome email went (it doesn't where sending is off). */
@@ -84,6 +86,8 @@ export function trialSignupNotificationEmail(s: TrialSignup, origin: string): { 
     row("Name", s.name),
     row("Email", s.email),
     s.phone ? row("Phone", s.phone) : "",
+    row("Signed up", s.signedUpAt),
+    row("Package", "Enterprise (free trial)"),
     row("Trial ends", `end of ${s.endsOn}`),
   ]
     .filter(Boolean)

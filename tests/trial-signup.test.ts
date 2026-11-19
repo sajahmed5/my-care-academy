@@ -50,6 +50,7 @@ const signup: TrialSignup = {
   name: "Jane Hargreaves",
   email: "jane@hargreavescare.co.uk",
   phone: null,
+  signedUpAt: "19 Nov 2026, 14:05",
   endsOn: "Sunday 6 December",
   emailed: true,
 };
@@ -60,6 +61,8 @@ describe("the sign-up email to us", () => {
     expect(subject).toBe("Free trial started — Hargreaves Home Care (Jane Hargreaves)");
     expect(html).toContain("https://www.mycareacademy.co.uk/platform/organisations/org-1");
     expect(html).toContain("end of Sunday 6 December");
+    expect(html).toContain("19 Nov 2026, 14:05");
+    expect(html).toContain("Enterprise (free trial)");
     expect(html).not.toContain("Phone");
     expect(html).toContain("welcome email has gone");
   });
