@@ -1,8 +1,9 @@
 import type { PackageTier } from "./organisations";
 
 /**
- * What a package costs, in pounds a month. CONFIRMED by Saj on 9 Nov 2026,
- * replacing the 23 Oct figures (£49 / £99 / £149 / £249).
+ * What a package costs, in pounds a month. Growth, Pro and Enterprise set by
+ * Saj on 19 Nov 2026 (£299 / £499 / from £899), replacing the 9 Nov figures
+ * (£300 / £450 / from £750); the Training only bands are from 9 Nov.
  *
  * Two kinds of price. Training only (`core`) is per carer, in marginal bands:
  * every carer is charged at the rate of the band they fall in, so a team of
@@ -19,12 +20,12 @@ import type { PackageTier } from "./organisations";
 
 /** Flat monthly price of each package above Training only. */
 export const FLAT_PRICE_GBP: Record<Exclude<PackageTier, "core">, number> = {
-  core_forms: 300,
-  core_recruitment: 450,
-  full: 750,
+  core_forms: 299,
+  core_recruitment: 499,
+  full: 899,
 };
 
-/** Enterprise is "from £750": the final figure is quoted for the service. */
+/** Enterprise is "from £899": the final figure is quoted for the service. */
 export const QUOTED_TIER: PackageTier = "full";
 
 /** Training only, per carer a month: carers 1–15, 16–25, 26–50, 51 and over. */
@@ -65,7 +66,7 @@ export function trainingOnlyPrice(carers: number): TrainingOnlyPrice {
 /**
  * The team size from which Growth is the cheaper choice: the first carer
  * count where Training only costs more than Growth's flat price (73 with the
- * bands above: 72 carers is £297, 73 is £300.50). A Training only company
+ * bands above: 72 carers is £297, 73 is £300.50, over Growth's £299). A Training only company
  * this size is asked whether it wants to move up (Saj, 9 Nov 2026).
  */
 export const GROWTH_FROM_CARERS: number = (() => {

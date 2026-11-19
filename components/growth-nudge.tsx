@@ -44,7 +44,7 @@ export function GrowthNudge({
   carers: number;
   /** What Training only costs this month, e.g. "£307.50". */
   costNow: string;
-  /** Growth's flat price, e.g. "£300". */
+  /** Growth's flat price, e.g. "£299". */
   growthPrice: string;
   dismissable?: boolean;
 }) {

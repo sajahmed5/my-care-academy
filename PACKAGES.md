@@ -6,18 +6,18 @@ mock-ups of the new and changed screens, then the build once they're approved.
 Each package includes everything in the one below. A customer buys a whole
 package; there are no single add-ons for now.
 
-Prices (Saj, 9 Nov 2026, `lib/pricing.ts`). Training only (called Starter
+Prices (Saj, 9 Nov 2026; Growth, Pro and Enterprise changed 19 Nov 2026, `lib/pricing.ts`). Training only (called Starter
 until 9 Nov 2026) is per carer a month, in marginal bands: the first 15
 carers at £5, carers 16–25 at £4.50, 26–50 at £4, 51 and over at £3.50, so a
 team of 20 pays 15 × £5 + 5 × £4.50 = £97.50. Managers and office workers are
 not charged for, nor is a deactivated carer. Monthly rolling. The three
 packages above it are one flat price for the whole company, unlimited carers,
-12-month contract: Growth £300, Pro £450, Enterprise from £750 (quoted for the
-service). 72 carers on Training only is £297 and 73 is £300.50, so from 73
+12-month contract: Growth £299, Pro £499, Enterprise from £899 (quoted for the
+service). 72 carers on Training only is £297 and 73 is £300.50, more than Growth's £299, so from 73
 carers a Training only company is asked on Today and on the Billing page
 whether it wants to move to Growth (`components/growth-nudge.tsx`).
 
-| | Training only, per carer | Growth £300 | Pro £450 | Enterprise from £750 |
+| | Training only, per carer | Growth £299 | Pro £499 | Enterprise from £899 |
 |---|:-:|:-:|:-:|:-:|
 | Online training | ✓ | ✓ | ✓ | ✓ |
 | HR pack | | ✓ | ✓ | ✓ |

@@ -8,7 +8,7 @@ import { requestPackageChangeAction } from "./package-actions";
 export interface PackageOption {
   value: string;
   label: string;
-  /** "£300", "from £750", or Training only's figure for this company's carers. */
+  /** "£299", "from £899", or Training only's figure for this company's carers. */
   price: string;
   /** What the figure is per: "a month, unlimited carers", "a month for your 20 carers". */
   per: string;

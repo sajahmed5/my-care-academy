@@ -32,11 +32,11 @@ const TIERS = [
       { up_to: "inf", unit_amount: 350 },
     ],
   },
-  { env: "STRIPE_PRICE_CORE_FORMS", name: "My Care Academy — Growth", amount: 30000 },
-  { env: "STRIPE_PRICE_CORE_RECRUITMENT", name: "My Care Academy — Pro", amount: 45000 },
-  // Enterprise is "from £750": a discount on the subscription brings an
+  { env: "STRIPE_PRICE_CORE_FORMS", name: "My Care Academy — Growth", amount: 29900 },
+  { env: "STRIPE_PRICE_CORE_RECRUITMENT", name: "My Care Academy — Pro", amount: 49900 },
+  // Enterprise is "from £899": a discount on the subscription brings an
   // agreed quote below this.
-  { env: "STRIPE_PRICE_FULL", name: "My Care Academy — Enterprise", amount: 75000 },
+  { env: "STRIPE_PRICE_FULL", name: "My Care Academy — Enterprise", amount: 89900 },
 ];
 
 for (const t of TIERS) {

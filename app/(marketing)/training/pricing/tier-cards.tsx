@@ -4,7 +4,7 @@ import { PillLink } from "../../ui";
 export type TierCard = {
   value: string;
   label: string;
-  /** "£300", or "from £750" for the quoted package. */
+  /** "£299", or "from £899" for the quoted package. */
   price: string;
   quoted?: boolean;
   tagline: string;
