@@ -1,7 +1,9 @@
 "use client";
 
-import { startTransition, useActionState, useEffect } from "react";
-import { KeyRound, ShieldMinus, ShieldPlus, Trash2 } from "lucide-react";
+import { startTransition, useActionState, useEffect, useState } from "react";
+import { KeyRound, Pencil, ShieldMinus, ShieldPlus, Trash2 } from "lucide-react";
+import { formatDate, formatDateTime } from "@/lib/dates";
+import type { PersonOrigin } from "@/lib/person-origin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +13,7 @@ import { TemporaryPasswordReveal } from "@/components/temporary-password-reveal"
 import {
   inviteOrgAdminAction,
   removeOrgUserAction,
+  renameOrgUserAction,
   setOrgUserRoleAction,
   setTemporaryPasswordAction,
   type AddPersonState,
@@ -22,6 +25,86 @@ export interface OrgPerson {
   name: string;
   email: string | null;
   role: string;
+  /** Console people only: when the account was made, and who added them. */
+  addedOn?: string;
+  origin?: PersonOrigin | null;
+}
+
+const ROLE_NAMES: Record<string, string> = { org_admin: "manager", org_office: "office worker", learner: "learner" };
+
+/** "Added 5 Nov 2026, 13:15 by My Care Academy · made a manager 6 Nov by Gavin Chilcott" */
+function OriginLine({ person }: { person: OrgPerson }) {
+  if (!person.addedOn && !person.origin) return null;
+  const added = person.origin?.added;
+  const change = person.origin?.roleChange;
+  return (
+    <span className="mt-0.5 block text-xs text-muted-foreground">
+      {added
+        ? <>Added {formatDateTime(added.at)} by {added.by}</>
+        : person.addedOn
+          ? <>Added {formatDateTime(person.addedOn)}, by whom wasn&apos;t recorded</>
+          : null}
+      {change && (
+        <>
+          {" · "}made {ROLE_NAMES[change.to] === "office worker" ? "an" : "a"} {ROLE_NAMES[change.to] ?? change.to}{" "}
+          {formatDate(change.at)} by {change.by}
+        </>
+      )}
+    </span>
+  );
+}
+
+/** The name, with a pencil that turns it into a box to correct it. */
+function NameEditor({ orgId, person }: { orgId: string; person: OrgPerson }) {
+  const [editing, setEditing] = useState(false);
+  const [state, formAction, pending] = useActionState(async (prev: SaveState, data: FormData) => {
+    const result = await renameOrgUserAction(prev, data);
+    if (result.ok) setEditing(false);
+    return result;
+  }, {} as SaveState);
+
+  if (!editing) {
+    return (
+      <>
+        <span className="font-medium">{person.name}</span>{" "}
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          title={`Change ${person.name}'s name`}
+          aria-label={`Change ${person.name}'s name`}
+          className="inline-flex size-6 items-center justify-center rounded-full align-middle text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <Pencil className="size-3.5" aria-hidden />
+        </button>{" "}
+      </>
+    );
+  }
+  return (
+    <form action={formAction} className="my-1 flex flex-wrap items-center gap-2">
+      <input type="hidden" name="orgId" value={orgId} />
+      <input type="hidden" name="userId" value={person.id} />
+      <Input
+        name="name"
+        defaultValue={person.name === person.email ? "" : person.name}
+        aria-label="Full name"
+        required
+        maxLength={120}
+        autoFocus
+        className="h-8 w-56"
+      />
+      <Button type="submit" size="sm" disabled={pending}>
+        {pending ? "Saving…" : "Save"}
+      </Button>
+      <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)} disabled={pending}>
+        Cancel
+      </Button>
+      {state.error && (
+        <span role="alert" className="text-xs text-destructive">
+          {state.error}
+        </span>
+      )}
+    </form>
+  );
 }
 
 /** Surfaces the error from a role/remove action without swallowing it. */
@@ -113,11 +196,12 @@ function AdminRow({ orgId, person, children }: { orgId: string; person: OrgPerso
   return (
     <li className="flex flex-wrap items-center justify-between gap-2 py-2">
       <span className="min-w-0">
-        <span className="font-medium">{person.name}</span>{" "}
+        <NameEditor orgId={orgId} person={person} />
         <span className="text-muted-foreground">{person.email}</span>{" "}
         <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
           {person.role === "org_office" ? "Office" : "Manager"}
         </span>
+        <OriginLine person={person} />
       </span>
       <span className="flex flex-wrap items-center gap-2">
         <form

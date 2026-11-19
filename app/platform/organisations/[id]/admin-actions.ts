@@ -88,10 +88,44 @@ export async function inviteOrgAdminAction(
     organisationId: orgId,
     action: "org.admin_invited",
     entity: "user",
-    detail: { email: person.email, organisationId: orgId, role: person.role, access: person.access },
+    detail: { email: person.email, name: person.name, organisationId: orgId, role: person.role, access: person.access },
   });
   revalidatePath(`/platform/organisations/${orgId}`);
   return { ok: true, outcome };
+}
+
+/**
+ * Correct the name of a manager or office worker (Saj, 19 Nov 2026), say
+ * one typed wrong when they were added. They can still change it themselves
+ * from their account page; this is for when they haven't.
+ */
+export async function renameOrgUserAction(_prev: SaveState, formData: FormData): Promise<SaveState> {
+  const context = await requireRole("platform_admin");
+  const orgId = String(formData.get("orgId") ?? "");
+  const userId = String(formData.get("userId") ?? "");
+  const name = String(formData.get("name") ?? "").replace(/\s+/g, " ").trim();
+  if (!name) return { ok: false, error: "The name can't be empty." };
+  if (name.length > 120) return { ok: false, error: "That name is too long." };
+
+  const admin = createAdminClient();
+  const target = await assertInOrg(admin, userId, orgId);
+  if (!target) return { ok: false, error: "That person isn't in this organisation." };
+  const { data: before } = await admin.from("users").select("full_name").eq("id", userId).maybeSingle();
+  if ((before?.full_name ?? "") === name) return { ok: true };
+
+  const { error } = await admin.from("users").update({ full_name: name }).eq("id", userId);
+  if (error) return { ok: false, error: error.message };
+
+  await logAudit({
+    context,
+    organisationId: orgId,
+    action: "org.user_renamed",
+    entity: "user",
+    entityId: userId,
+    detail: { email: target.email, from: before?.full_name ?? null, to: name },
+  });
+  revalidatePath(`/platform/organisations/${orgId}`);
+  return { ok: true };
 }
 
 /** Move a person between learner, office worker and manager. */

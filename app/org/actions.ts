@@ -69,7 +69,7 @@ export async function inviteStaffAction(
       context,
       action: "user.invited",
       entity: "user",
-      detail: { email, role },
+      detail: { email, name, role },
     });
     await refreshDueBadge();
     revalidatePath("/org");

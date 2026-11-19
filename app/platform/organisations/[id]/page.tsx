@@ -19,6 +19,7 @@ import { isInactive30d, isNeverActive, loadOrgLearners } from "@/lib/org-learner
 import { LearnersTable } from "@/app/org/learners/learners-table";
 import { EditOrgForm } from "./edit-org-form";
 import { OrgAdmins, type OrgPerson } from "./org-admins";
+import { ORIGIN_ACTIONS, personOrigins, type OriginActor, type OriginAuditRow } from "@/lib/person-origin";
 import { OrgNudgeButton } from "../../org-nudge-button";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchAll } from "@/lib/fetch-all";
@@ -208,7 +209,9 @@ export default async function OrganisationDetailPage({
     email: u.email,
     role: u.role,
   });
-  const admins = staff.filter((u) => isConsoleRole(u.role as UserRole)).map(person);
+  const consoleStaff = staff.filter((u) => isConsoleRole(u.role as UserRole));
+  const origins = section === "overview" ? await loadOrigins(org.id, consoleStaff) : new Map();
+  const admins = consoleStaff.map((u) => ({ ...person(u), addedOn: u.created_at, origin: origins.get(u.id) ?? null }));
   // Only active learners can be usefully promoted — a leaver can't log in.
   const promotable = staff
     .filter((u) => u.role === "learner" && u.status !== "deactivated")
@@ -288,8 +291,8 @@ export default async function OrganisationDetailPage({
               <CardHeader>
                 <CardTitle>Admins</CardTitle>
                 <CardDescription>
-                  Who can manage this organisation. Role changes apply when that
-                  person&apos;s session next refreshes.
+                  Who can manage this organisation, and who added them. Role
+                  changes apply when that person&apos;s session next refreshes.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -444,4 +447,37 @@ export default async function OrganisationDetailPage({
       </div>
     </DashboardShell>
   );
+}
+
+/**
+ * Who added each manager and office worker, and when, from the audit trail
+ * (lib/person-origin.ts). Adds are logged against the company; a role change
+ * made from the platform isn't, so those are found by the person's id.
+ */
+async function loadOrigins(orgId: string, people: { id: string; email: string | null }[]) {
+  if (people.length === 0) return new Map();
+  const admin = createAdminClient();
+  const cols = "action, created_at, entity_id, actor_id, actor_email, detail";
+  const [{ data: adds }, { data: roles }] = await Promise.all([
+    admin
+      .from("audit_logs")
+      .select(cols)
+      .eq("organisation_id", orgId)
+      .in("action", ORIGIN_ACTIONS.filter((a) => a !== "org.user_role_changed"))
+      .limit(1000),
+    admin
+      .from("audit_logs")
+      .select(cols)
+      .eq("action", "org.user_role_changed")
+      .in("entity_id", people.map((p) => p.id))
+      .limit(1000),
+  ]);
+  const rows = [...(adds ?? []), ...(roles ?? [])] as OriginAuditRow[];
+  const actorIds = [...new Set(rows.map((r) => r.actor_id).filter((id): id is string => !!id))];
+  const actors = new Map<string, OriginActor>();
+  if (actorIds.length > 0) {
+    const { data } = await admin.from("users").select("id, full_name, role").in("id", actorIds);
+    for (const a of data ?? []) actors.set(a.id as string, { name: a.full_name as string | null, role: a.role as string | null });
+  }
+  return personOrigins(people, rows, actors);
 }
