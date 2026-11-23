@@ -99,8 +99,8 @@ export default function MarketingLayout({
                   </Link>
                 </li>
                 <li>
-                  <a href="mailto:hello@mycareacademy.co.uk" className="hover:text-[#134f63]">
-                    hello@mycareacademy.co.uk
+                  <a href="mailto:info@mycareacademy.co.uk" className="hover:text-[#134f63]">
+                    info@mycareacademy.co.uk
                   </a>
                 </li>
                 <li>

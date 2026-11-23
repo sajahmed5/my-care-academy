@@ -14,7 +14,14 @@ import { TOPICS, isTeamSize, toTopic } from "./topics";
 import type { EnquiryState, EnquiryValues } from "./enquiry";
 
 /** Where website enquiries land. Overridable so a preview can divert them. */
-const INBOX = process.env.CONTACT_INBOX ?? "hello@mycareacademy.co.uk";
+const INBOX = process.env.CONTACT_INBOX ?? "info@mycareacademy.co.uk";
+
+/**
+ * Every enquiry is also emailed here (Saj, 23 Nov 2026), so both inboxes see
+ * it. Overridable like INBOX; not sent twice when the two are the same.
+ */
+const ALSO_INBOX = process.env.CONTACT_ALSO_INBOX ?? "hello@mycareacademy.co.uk";
+const INBOXES = [...new Set([INBOX, ALSO_INBOX].map((a) => a.trim().toLowerCase()))];
 
 const str = (form: FormData, key: string, max: number): string =>
   (form.get(key) ?? "").toString().trim().slice(0, max);
@@ -85,13 +92,19 @@ export async function submitEnquiryAction(
   };
 
   const notification = enquiryNotificationEmail(enquiry);
-  const delivered = await sendEmail({
-    to: INBOX,
-    subject: notification.subject,
-    html: notification.html,
-    // So the team replies to the enquirer, not to our own sending address.
-    replyTo: enquiry.email,
-  });
+  const sent = await Promise.all(
+    INBOXES.map((to) =>
+      sendEmail({
+        to,
+        subject: notification.subject,
+        html: notification.html,
+        // So the team replies to the enquirer, not to our own sending address.
+        replyTo: enquiry.email,
+      }),
+    ),
+  );
+  // Reaching either inbox means we have it.
+  const delivered = sent.some(Boolean);
 
   // An enquiry we cannot deliver must not be answered with a thank-you page:
   // the visitor would walk away believing we had it. Say so and give them the
@@ -117,13 +130,13 @@ export async function submitEnquiryAction(
 
     const admin = createAdminClient();
     await admin.from("email_log").insert([
-      {
+      ...INBOXES.map((to, i) => ({
         organisation_id: null,
-        to_email: INBOX,
+        to_email: to,
         type: "contact_enquiry",
         subject: notification.subject,
-        sent: true,
-      },
+        sent: sent[i],
+      })),
       {
         organisation_id: null,
         to_email: enquiry.email,

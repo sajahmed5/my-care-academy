@@ -23,14 +23,15 @@ import {
 import type { DemoBookingState, TrialSignupState } from "./signup";
 
 /** Where we hear about each sign-up. Overridable so a preview can divert it. */
-const INBOX = process.env.CONTACT_INBOX ?? "hello@mycareacademy.co.uk";
+const INBOX = process.env.CONTACT_INBOX ?? "info@mycareacademy.co.uk";
 
 /**
- * Every sign-up is also emailed here (Saj, 19 Nov 2026), so the office
- * hears about each new trial. Overridable like INBOX; not sent twice when
+ * Every sign-up is also emailed here (Saj, 19 Nov 2026), so both inboxes
+ * hear about each new trial — hello@ stayed on it when the public address
+ * moved to info@ (23 Nov 2026). Overridable like INBOX; not sent twice when
  * the two are the same address.
  */
-const TRIAL_INBOX = process.env.TRIAL_SIGNUP_INBOX ?? "info@mycareacademy.co.uk";
+const TRIAL_INBOX = process.env.TRIAL_SIGNUP_INBOX ?? "hello@mycareacademy.co.uk";
 
 const longDate = { weekday: "long", day: "numeric", month: "long" } as const;
 

@@ -104,10 +104,10 @@ export default async function ContactPage({
                   </span>
                   <div>
                     <a
-                      href="mailto:hello@mycareacademy.co.uk"
+                      href="mailto:info@mycareacademy.co.uk"
                       className="font-semibold break-all text-[#0f2f3c] hover:text-[#134f63]"
                     >
-                      hello@mycareacademy.co.uk
+                      info@mycareacademy.co.uk
                     </a>
                     <p className="text-[#0f2f3c]/70">
                       For anything you&apos;d rather put in writing

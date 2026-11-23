@@ -9,7 +9,7 @@ import { emailLayout, esc } from "@/lib/email-layout";
 import { logAudit } from "@/lib/audit";
 import { SAME_TEAM_COOKIE, SAME_TEAM_PRODUCTS, type SameTeamProduct } from "@/lib/same-team";
 
-const INBOX = process.env.CONTACT_INBOX ?? "hello@mycareacademy.co.uk";
+const INBOX = process.env.CONTACT_INBOX ?? "info@mycareacademy.co.uk";
 
 /**
  * "I'm interested" on the "You may also be interested in" card (TRIAL.md): tells us who,

@@ -8,7 +8,7 @@ import { PACKAGE_TIERS, tierLabel, type PackageTier } from "@/lib/organisations"
 import { createClient } from "@/lib/supabase/server";
 import { trialState } from "@/lib/trial";
 
-const INBOX = process.env.CONTACT_INBOX ?? "hello@mycareacademy.co.uk";
+const INBOX = process.env.CONTACT_INBOX ?? "info@mycareacademy.co.uk";
 
 /**
  * A manager asks to move to another package (29 Oct 2026). Package changes

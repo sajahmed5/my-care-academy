@@ -8,7 +8,7 @@ import { logAudit } from "@/lib/audit";
 import { removeOrganisation } from "@/lib/org-removal";
 import { trialRemovalStep, trialState } from "@/lib/trial";
 
-const INBOX = process.env.CONTACT_INBOX ?? "hello@mycareacademy.co.uk";
+const INBOX = process.env.CONTACT_INBOX ?? "info@mycareacademy.co.uk";
 
 const longDate = { weekday: "long", day: "numeric", month: "long", year: "numeric" } as const;
 

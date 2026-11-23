@@ -13,7 +13,7 @@ import { reportDueOn, ukToday } from "@/lib/bespoke/working-days";
 import { newRequestEmail, requestMessageEmail } from "@/lib/bespoke/request-email";
 import type { SaveState } from "@/app/platform/actions";
 
-const INBOX = process.env.CONTACT_INBOX ?? "hello@mycareacademy.co.uk";
+const INBOX = process.env.CONTACT_INBOX ?? "info@mycareacademy.co.uk";
 
 /**
  * The company's side of a bespoke report request (BESPOKE-REPORTS.md): a

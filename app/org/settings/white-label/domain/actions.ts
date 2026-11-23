@@ -11,7 +11,7 @@ import { normaliseDomain } from "@/lib/custom-domain";
 import { recheckDomain } from "@/lib/company-host";
 import type { SaveState } from "@/app/platform/actions";
 
-const INBOX = process.env.CONTACT_INBOX ?? "hello@mycareacademy.co.uk";
+const INBOX = process.env.CONTACT_INBOX ?? "info@mycareacademy.co.uk";
 const NOT_IN_PLAN = "Your own web address is included with white label, in Enterprise.";
 
 /** Tell us: an address asked for, or its record now in place. */

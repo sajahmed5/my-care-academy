@@ -9,7 +9,7 @@ import { TRIAL_KEEP_DAYS, trialEmailDue, trialState } from "@/lib/trial";
 
 type Admin = ReturnType<typeof createAdminClient>;
 
-const INBOX = process.env.CONTACT_INBOX ?? "hello@mycareacademy.co.uk";
+const INBOX = process.env.CONTACT_INBOX ?? "info@mycareacademy.co.uk";
 
 const longDate = { weekday: "long", day: "numeric", month: "long" } as const;
 
