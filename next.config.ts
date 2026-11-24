@@ -25,6 +25,19 @@ const nextConfig: NextConfig = {
       { source: "/rostering/:path*", destination: "https://myroster.care", permanent: true },
       // /services became /training on 9 Sept 2026; a 301 passes the ranking on.
       { source: "/services", destination: "/training", permanent: true },
+      // Addresses people and search engines still try, mostly from the old
+      // website (seen in the request logs, 24 Nov 2026). Each goes to the page
+      // that now does the job instead of a 404.
+      { source: "/about", destination: "/", permanent: true },
+      { source: "/about-us", destination: "/", permanent: true },
+      { source: "/contact-us", destination: "/contact", permanent: true },
+      { source: "/get-in-touch", destination: "/contact", permanent: true },
+      { source: "/log-in", destination: "/login", permanent: true },
+      { source: "/auth", destination: "/login", permanent: false },
+      { source: "/course-category/:slug*", destination: "/training/courses", permanent: true },
+      { source: "/courses/feed", destination: "/training/courses", permanent: true },
+      { source: "/groups/:slug*", destination: "/", permanent: true },
+      { source: "/wp-sitemap.xml", destination: "/sitemap.xml", permanent: true },
       // Each add-on's own setup moved under Settings, for managers (30 Oct
       // 2026). Saved links land in the new place; an office worker is sent home.
       { source: "/org/recruitment/settings", destination: "/org/settings/recruitment", permanent: false },
@@ -34,6 +47,16 @@ const nextConfig: NextConfig = {
       { source: "/org/staff-audits/forms/edit", destination: "/org/settings/staff-audits/edit", permanent: false },
       { source: "/org/complaints/stages", destination: "/org/settings/complaints/process", permanent: false },
       { source: "/org/complaints/link", destination: "/org/settings/complaints/link", permanent: false },
+    ];
+  },
+
+  // iPhones and iPads ask for these fixed names before reading the page's own
+  // icon tag (bookmarks, Home Screen, link previews). Serve app/apple-icon.png
+  // under both instead of a 404, without keeping a second copy of the file.
+  async rewrites() {
+    return [
+      { source: "/apple-touch-icon.png", destination: "/apple-icon.png" },
+      { source: "/apple-touch-icon-precomposed.png", destination: "/apple-icon.png" },
     ];
   },
 
