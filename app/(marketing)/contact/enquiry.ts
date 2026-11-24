@@ -4,6 +4,7 @@
  * constant cannot live beside the action that returns it.
  */
 import type { EnquiryTopic } from "./topics";
+import type { HumanChallenge } from "@/lib/human-check";
 
 /** What the visitor typed, kept so a rejected form comes back filled in. */
 export interface EnquiryValues {
@@ -22,6 +23,10 @@ export interface EnquiryState {
   error?: string;
   fieldErrors?: Partial<Record<keyof EnquiryValues, string>>;
   values?: EnquiryValues;
+  /** A fresh are-you-a-person question: a token answers only once. */
+  challenge?: HumanChallenge;
+  /** Why the are-you-a-person answer was refused, shown under that field. */
+  humanError?: string;
 }
 
 export const INITIAL_ENQUIRY_STATE: EnquiryState = { status: "idle" };

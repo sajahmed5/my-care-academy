@@ -4,6 +4,7 @@ import { Clock, Mail, MapPin, Phone, ShieldCheck } from "lucide-react";
 import { PACKAGE_TIERS } from "@/lib/organisations";
 import { BreadcrumbLd } from "@/components/structured-data";
 import { H2, Section } from "../ui";
+import { newHumanChallenge, humanCheckSecret } from "@/lib/human-check";
 import { EnquiryForm } from "./enquiry-form";
 import { toTopic } from "./topics";
 
@@ -72,6 +73,7 @@ export default async function ContactPage({
               <EnquiryForm
                 initialTopic={initialTopic}
                 initialMessage={initialMessage}
+                challenge={newHumanChallenge(humanCheckSecret())}
               />
             </div>
           </div>

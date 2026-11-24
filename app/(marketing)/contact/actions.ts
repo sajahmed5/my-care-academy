@@ -10,6 +10,12 @@ import {
   enquiryReceivedEmail,
   type Enquiry,
 } from "@/lib/contact-email";
+import {
+  checkHumanAnswer,
+  humanCheckSecret,
+  humanTokenNonce,
+  newHumanChallenge,
+} from "@/lib/human-check";
 import { TOPICS, isTeamSize, toTopic } from "./topics";
 import type { EnquiryState, EnquiryValues } from "./enquiry";
 
@@ -31,12 +37,26 @@ const str = (form: FormData, key: string, max: number): string =>
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /**
+ * Questions already answered on this instance, so one solved question can't
+ * be replayed to send a batch. Best-effort like the rate limit: each token
+ * also goes stale after a few hours.
+ */
+const usedTokens = new Map<string, number>();
+function claimToken(nonce: string): boolean {
+  const now = Date.now();
+  for (const [k, at] of usedTokens) if (now - at > 4 * 60 * 60_000) usedTokens.delete(k);
+  if (usedTokens.has(nonce)) return false;
+  usedTokens.set(nonce, now);
+  return true;
+}
+
+/**
  * Handle a website enquiry: the demo requests and "tell me more" messages that
  * used to depend on the visitor's own mail client.
  *
  * Public by design — there is no session to check. The protections are a
- * per-IP throttle, a honeypot field, and length caps on everything stored or
- * emailed. Nothing the visitor types is ever interpolated into HTML unescaped
+ * per-IP throttle, a honeypot field, an are-you-a-person question
+ * (lib/human-check) and length caps on everything stored or emailed. Nothing the visitor types is ever interpolated into HTML unescaped
  * (see lib/contact-email).
  */
 export async function submitEnquiryAction(
@@ -64,8 +84,33 @@ export async function submitEnquiryAction(
     fieldErrors.email = "That doesn't look like an email address.";
   if (values.teamSize && !isTeamSize(values.teamSize)) values.teamSize = "";
 
-  if (Object.keys(fieldErrors).length > 0) {
-    return { status: "error", fieldErrors, values };
+  const secret = humanCheckSecret();
+  // Every rejected form goes back with a new question: a token answers once.
+  const reject = (state: Omit<EnquiryState, "status" | "challenge">): EnquiryState => ({
+    status: "error",
+    values,
+    challenge: newHumanChallenge(secret),
+    ...state,
+  });
+
+  const token = str(form, "humanToken", 200);
+  const human = checkHumanAnswer(secret, token, str(form, "human", 20));
+  // Posted faster than anyone could read the form: a bot. Like the honeypot,
+  // it gets the success screen and nothing is sent.
+  if (human === "too-fast") return { status: "sent" };
+
+  let humanError: string | undefined;
+  if (human === "wrong" || human === "invalid") {
+    humanError = "That's not quite right — please try this one.";
+  } else if (human === "expired") {
+    humanError = "That question timed out — please answer this one.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0 || humanError) {
+    return reject({ fieldErrors, humanError });
+  }
+  if (!claimToken(humanTokenNonce(token))) {
+    return reject({ humanError: "Please answer this new question to send it again." });
   }
 
   // Throttle per IP. Generous enough that a care manager filling the form in
@@ -73,11 +118,9 @@ export async function submitEnquiryAction(
   const h = await headers();
   const ip = (h.get("x-forwarded-for") ?? "unknown").split(",")[0].trim();
   if (!rateLimit(`contact:${ip}`, 5, 600_000)) {
-    return {
-      status: "error",
+    return reject({
       error: `You've sent us a few already — please call 0161 470 8088 or email ${INBOX} and we'll pick it up from there.`,
-      values,
-    };
+    });
   }
 
   const enquiry: Enquiry = {
@@ -110,11 +153,9 @@ export async function submitEnquiryAction(
   // the visitor would walk away believing we had it. Say so and give them the
   // phone number instead.
   if (!delivered) {
-    return {
-      status: "error",
+    return reject({
       error: `Sorry — something went wrong sending that. Please call 0161 470 8088 or email ${INBOX} and we'll get straight back to you.`,
-      values,
-    };
+    });
   }
 
   // The enquirer's own copy, and the log entries, are best-effort: the enquiry

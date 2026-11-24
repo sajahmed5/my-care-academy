@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Loader2, Phone } from "lucide-react";
 import { submitEnquiryAction } from "./actions";
 import { INITIAL_ENQUIRY_STATE, type EnquiryValues } from "./enquiry";
+import type { HumanChallenge } from "@/lib/human-check";
 import { TEAM_SIZES, TOPICS, TOPIC_KEYS, type EnquiryTopic } from "./topics";
 
 const field =
@@ -31,9 +32,12 @@ function FieldError({ id, children }: { id: string; children?: string }) {
 export function EnquiryForm({
   initialTopic,
   initialMessage = "",
+  challenge: initialChallenge,
 }: {
   initialTopic: EnquiryTopic;
   initialMessage?: string;
+  /** The are-you-a-person question, asked by the server (lib/human-check). */
+  challenge: HumanChallenge;
 }) {
   const [state, formAction, pending] = useActionState(
     submitEnquiryAction,
@@ -100,6 +104,7 @@ export function EnquiryForm({
 
   const v: Partial<EnquiryValues> = state.values ?? {};
   const errors = state.fieldErrors ?? {};
+  const challenge = state.challenge ?? initialChallenge;
 
   return (
     <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-[#134f63]/10 sm:p-8">
@@ -244,6 +249,35 @@ export function EnquiryForm({
             className={`mt-1.5 ${field} resize-y`}
             placeholder="Tell us what you're looking for, or when suits for a call."
           />
+        </div>
+
+        <div className="rounded-2xl bg-[#eef6fa] p-4 sm:p-5">
+          <input type="hidden" name="humanToken" value={challenge.token} />
+          <label htmlFor="human" className={labelClass}>
+            Quick check that you&apos;re a person:{" "}
+            <span className="font-normal">{challenge.question}</span>
+          </label>
+          <input
+            id="human"
+            name="human"
+            key={challenge.token}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            required
+            maxLength={20}
+            aria-invalid={state.humanError ? true : undefined}
+            aria-describedby={state.humanError ? "human-error" : "human-hint"}
+            className={`mt-1.5 ${field} max-w-[10rem]`}
+            placeholder="Your answer"
+          />
+          {state.humanError ? (
+            <FieldError id="human-error">{state.humanError}</FieldError>
+          ) : (
+            <p id="human-hint" className={`mt-1.5 ${hintClass}`}>
+              Type the number — it stops automated spam reaching us.
+            </p>
+          )}
         </div>
 
         <button
